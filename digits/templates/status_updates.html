@@ -1,0 +1,26 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<ul>
+    {% for i in range(updates|length) %}
+    <li>
+        <span class="text-{{updates[i][0].css}}">{{updates[i][0].name}}</span>
+        at {{updates[i][1]|print_time}}
+        {% if i+1 < updates|length %}
+            <small>({{(updates[i+1][1]-updates[i][1])|print_time_diff}})</small>
+        {% elif not updates[i][0].is_running() %}
+            <br>
+            <small>(Total - {{(updates[i][1]-updates[0][1])|print_time_diff}})</small>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+
+{% if exception %}
+    <h4 class="text-danger">ERROR: {{exception}}</h4>
+    {% if traceback %}
+        <pre>
+{{traceback}}
+        </pre>
+    {% endif %}
+{% endif %}
+

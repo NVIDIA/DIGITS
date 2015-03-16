@@ -1,0 +1,45 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<div class="row">
+    <div class="col-sm-6">
+        <img src="{{image_src}}" style="width:{{image_width}}px;height:{{image_height}}px;" />
+    </div>
+
+    <div class="col-sm-6">
+        <h4>Predictions</h4>
+        <ul class="list-group">
+            {% for label, confidence in predictions %}
+            <li class="list-group-item">
+            <span class="badge">{{confidence}}%</span>
+            {{ label }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+{% if visualizations %}
+<table class="table">
+    <tr>
+        <th>Layer</th>
+        <th>Activations</th>
+        <th>Weights</th>
+    </tr>
+    {% for layer_name, activations, weights in visualizations %}
+    <tr>
+        <td><h4>{{layer_name}}</h4></td>
+        <td>
+            {% if activations %}
+            <img src="{{activations}}" />
+            {% endif %}
+        </td>
+        <td>
+            {% if weights %}
+            <img src="{{weights}}" />
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+

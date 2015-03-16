@@ -1,0 +1,16 @@
+#!/bin/bash
+# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
+
+# Set level
+if [ -z "$1" ]
+then
+    if [ -z "$DIGITS_LEVEL" ]
+    then
+        DIGITS_LEVEL=test
+    fi
+else
+    DIGITS_LEVEL=$1
+    shift
+fi
+
+DIGITS_LEVEL=$DIGITS_LEVEL nosetests --no-path-adjustment -v tools/ digits/ $@

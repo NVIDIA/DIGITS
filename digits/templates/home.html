@@ -1,0 +1,195 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+
+{% extends "layout.html" %}
+
+{% block head %}
+    {% with namespace = "/home" %}
+        {% include "socketio.html" %}
+    {% endwith %}
+{% endblock %}
+
+{% block content %}
+<script>
+function deleteJob(job_id) {
+    bootbox.confirm(
+            'Are you sure you want to delete this job?<br><br>All related files will be permanently removed.',
+            function(result) {
+                if (result)
+                    $.ajax('/jobs/' + job_id,
+                        {type: "DELETE"})
+                    .done(function() {
+                        window.location.reload(1);
+                        })
+                    .fail(function(data) { errorAlert(data); });
+            });
+    return false;
+}
+</script>
+<div class="page-header">
+    <h1>Home</h1>
+</div>
+
+{{ print_flashes() }}
+
+<div class="row">
+    <div class="col-sm-6">
+        <div class="well">
+
+<!-- Datasets -->
+
+<div class="pull-right">
+    New Dataset
+    <ul class="nav nav-pills">
+        {% for category in new_dataset_options %}
+        <li class="dropdown active">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                {{category[0]}} <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                {% for option in category[1] %}
+                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<h2>Datasets</h2>
+<br>
+
+
+<h3>In progress</h3>
+<ul id="datasets-running" class="list-group">
+    {% for job in running_datasets %}
+    <li class="list-group-item">
+        <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
+        <h4 class="list-group-item-heading"><a href="{{ url_for('show_job', job_id=job.id()) }}">{{ job.name() }}</a></h4>
+        <p class="list-group-item-text">
+        <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
+        <small>({{job.status_history[0][1]|print_time_since}} ago)</small>
+        <br />
+        <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
+    </li>
+    {% else %}
+    <li class="list-group-item"><i>None</i></li>
+    {% endfor %}
+</ul>
+
+<h3>Completed</h3>
+<div class="tab-content">
+    {% for batch in completed_datasets|batch(10) %}
+    <div class="tab-pane{{' active' if loop.index==1}}" id="completed-datasets-page-{{loop.index}}">
+        <ul class="list-group">
+            {% for job in batch %}
+            <li class="list-group-item">
+            <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
+                <h4 class="list-group-item-heading"><a href="{{ url_for('show_job', job_id=job.id()) }}">{{ job.name() }}</a></h4>
+                <p class="list-group-item-text">
+                <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
+                <br />
+                <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
+                <small>after {{(job.status_history[-1][1]-job.status_history[0][1])|print_time_diff}}</small>
+            </li>
+            {% else %}
+            <li class="list-group-item"><i>None</i></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+{% if completed_datasets|length > 10 %}
+<div class="text-center">
+    <ul class="pagination">
+        {% for i in range((completed_datasets|length/10)|round(0,'ceil')|int) %}
+        <li class="{{'active' if i==0}}"><a href="#completed-datasets-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div class="well">
+
+<!-- Models -->
+
+<div class="pull-right">
+    New Model
+    <ul class="nav nav-pills">
+        {% for category in new_model_options %}
+        <li class="dropdown active">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                {{category[0]}} <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                {% for option in category[1] %}
+                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<h2>Models</h2>
+<br>
+
+<h3>In progress</h3>
+<ul id="models-running" class="list-group">
+    {% for job in running_models %}
+    <li class="list-group-item">
+        <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
+        <h4 class="list-group-item-heading"><a href="{{ url_for('show_job', job_id=job.id()) }}">{{ job.name() }}</a></h4>
+        <p class="list-group-item-text">
+        <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
+        <small>({{job.status_history[0][1]|print_time_since}} ago)</small>
+        <br />
+        <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
+    </li>
+    {% else %}
+    <li class="list-group-item"><i>None</i></li>
+    {% endfor %}
+</ul>
+
+<h3>Completed</h3>
+<div class="tab-content">
+    {% for batch in completed_models|batch(10) %}
+    <div class="tab-pane{{' active' if loop.index==1}}" id="completed-models-page-{{loop.index}}">
+    <ul class="list-group">
+        {% for job in batch %}
+        <li id="job-{{job.id()}}" class="list-group-item">
+        <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
+            <h4 class="list-group-item-heading"><a href="{{ url_for('show_job', job_id=job.id()) }}">{{ job.name() }}</a></h4>
+            <p class="list-group-item-text">
+            <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
+            <br />
+            <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
+            <small>after {{(job.status_history[-1][1]-job.status_history[0][1])|print_time_diff}}</small>
+        </li>
+        {% else %}
+        <li class="list-group-item"><i>None</i></li>
+        {% endfor %}
+    </ul>
+    </div>
+    {% endfor %}
+</div>
+{% if completed_models|length > 10 %}
+<div class="text-center">
+    <ul class="pagination">
+        {% for i in range((completed_models|length/10)|round(0,'ceil')|int) %}
+        <li class="{{'active' if i==0}}"><a href="#completed-models-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

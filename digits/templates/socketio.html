@@ -1,0 +1,31 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<!-- Scripts for communicating with the SocketIO server -->
+<script type="text/javascript" src="/static/js/socket.io.js"></script>
+<script>
+WEB_SOCKET_DEBUG = true;
+var socket = io.connect("{{namespace}}");
+
+$(window).bind("beforeunload", function() {
+        socket.emit('leave');
+        socket.disconnect();
+    });
+
+{% if room -%}
+    socket.on('connect', function () {
+            socket.emit('join', {'room': '{{job.id()}}'});
+        });
+{% endif -%}
+
+
+socket.on('reconnect', function () {
+    });
+
+socket.on('reconnecting', function () {
+    });
+
+socket.on('error', function (error) {
+    });
+
+</script>
+

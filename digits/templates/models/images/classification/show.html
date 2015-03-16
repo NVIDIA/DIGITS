@@ -1,0 +1,254 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "job.html" %}
+
+{% block job_content %}
+
+{% set task = job.train_task() %}
+
+<div class="row">
+    <div class="col-sm-6">
+        <div class="well">
+            <dl>
+                <dt>Solver</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{{task.solver_file}}</a></dd>
+                <dt>Network (train/val)</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{{task.train_val_file}}</a></dd>
+                <dt>Network (deploy)</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
+            </dl>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div class="well">
+            <h4 class='text-center'>Dataset</h4>
+            {% if job.dataset %}
+            {% with dataset = job.dataset %}
+            {% include 'datasets/summary.html' %}
+            {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="well">
+            <script>
+function drawLossGraph(loss_data) {
+    $(".loss-graph").show();
+    var data = google.visualization.arrayToDataTable(loss_data);
+    new google.visualization.LineChart($(".loss-graph")[0]).
+        draw(data, {
+                //curveType: "function",
+                interpolateNulls: true,
+                legend: {
+                    position: 'top',
+                    },
+                hAxis: {
+                    title: 'Epoch',
+                    viewWindow: { min:0 }
+                    },
+                vAxes: {
+                    0: {title: 'Loss', minValue:0},
+                    1: {title: 'Accuracy (%)', minValue:0},
+                    },
+                series: {
+                    0: {
+                        // Training loss
+                        targetAxisIndex:0,
+                        color: '#dc3912',
+                        },
+                    1: {
+                        // Validation loss
+                        targetAxisIndex:0,
+                        color: '#ff9900',
+                        },
+                    2: {
+                        // Validation accuracy
+                        targetAxisIndex: 1,
+                        lineWidth: 6,
+                        pointSize: 10,
+                        color: '#3366cc',
+                        },
+                    },
+                chartArea: {
+                    left: "50",
+                    top: "50",
+                    width: $(".loss-graph").width() - 100,
+                    height: $(".loss-graph").height() - 100,
+                    },
+                });
+}
+function drawLRGraph(lr_data) {
+    $(".lr-graph").show();
+    var data = google.visualization.arrayToDataTable(lr_data);
+    new google.visualization.LineChart($(".lr-graph")[0]).
+        draw(data, {
+                //curveType: "function",
+                interpolateNulls: true,
+                hAxis: {
+                    title: 'Epoch',
+                    viewWindow: { min:0 }
+                    },
+                vAxis: {
+                    title: 'Learning Rate',
+//                    viewWindow: { min:0 }
+                    },
+                legend: {position: 'none'},
+                chartArea: {
+                    left: "100",
+                    top: "50",
+                    width: $(".lr-graph").width() - 150,
+                    height: $(".lr-graph").height() - 100,
+                    },
+                });
+}
+            </script>
+            <div class="loss-graph" style="height:500px;width:100%;display:none;"></div>
+            {% set loss_graph_data = job.train_task().loss_graph_data() %}
+            {% if loss_graph_data %}
+            <script>
+google.setOnLoadCallback(function() {
+        drawLossGraph(
+            {% autoescape false %}
+            {{loss_graph_data}}
+            {% endautoescape %}
+            );
+});
+            </script>
+            {% endif %}
+
+            <br>
+            <br>
+            <div class="lr-graph" style="height:300px;width:100%;display:none;"></div>
+            {% set lr_graph_data = job.train_task().lr_graph_data() %}
+            {% if lr_graph_data %}
+            <script>
+google.setOnLoadCallback(function() {
+        drawLRGraph(
+            {% autoescape false %}
+            {{lr_graph_data}}
+            {% endautoescape %}
+            );
+});
+            </script>
+            {% endif %}
+
+            {% set task = job.train_task() %}
+            <hr>
+            <form id="test-model-form" enctype="multipart/form-data" method="post"{% if not task.has_model() %}style="display:none;"{% endif %}>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="form-group">
+                            <label for="snapshot_epoch">Select Model</label>
+                            <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
+                            </select>
+                            <script>
+function updateSnapshotList(data) {
+    var selected = null;
+    var latest_selected = true;
+    if ($("#snapshot_epoch").find('option').length) {
+        latest_selected = ($("#snapshot_epoch").find('option').first().val() == $("#snapshot_epoch").val());
+        selected = $("#snapshot_epoch").val();
+    }
+    // remove old options
+    $("#snapshot_epoch").find("option").remove();
+    if (data.length)
+        $("#test-model-form").show();
+    for (var i=0; i<data.length; i++) {
+        option = data[i];
+        $("#snapshot_epoch").append('<option value="'+option[0]+'">'+option[1]+'</option>');
+    }
+    if (data.length) {
+        var value = selected;
+        if (!value || latest_selected)
+            value = data[0][0];
+        if (value)
+            $("#snapshot_epoch").val(value);
+    }
+}
+updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescape %});
+                            </script>
+                        </div>
+                        <button
+                            formaction="{{url_for('models_download_snapshot', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-info">
+                            Download
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="image_url" class="control-label">Image URL</label>
+                            <input type="text" id="image_url" name="image_url" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="image_file" class="control-label">Upload image</label>
+                            <input type="file" id="image_file" name="image_file" class="form-control">
+                        </div>
+                        <button name="test-one" onClick="return testOne();" class="btn btn-primary">Test one image</button>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="image_list" class="control-label">Upload Image List</label>
+                            <input type="file" id="image_list" name="image_list" class="form-control">
+                            <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="num_test_images" class="control-label">Number of images use from the file</label>
+                            <input type="text" id="num_test_images" name="num_test_images" class="form-control" value="100" placeholder="All">
+                            <small>Leave blank to use all</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="top_n" class="control-label">Number of images to show per category</label>
+                            <input type="text" id="top_n" name="top_n" class="form-control" placeholder="9">
+                        </div>
+                        <button name="test-many"
+                            formaction="{{url_for('image_classification_model_test_many', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            formtarget="_blank"
+                            class="btn btn-primary">
+                            Test several images
+                        </button>
+                        <small>This takes a while, be patient.</small>
+                    </div>
+                </div>
+            </form>
+
+            <script>
+function testOne() {
+    // grab all form data
+    var formData = new FormData($("#test-model-form")[0]);
+
+    $.ajax("{{url_for('image_classification_model_test_one', job_id=job.id())}}",
+            {
+                type: "POST",
+                data: formData,
+                // options to tell jQuery not to process data or worry about content-type
+                cache: false,
+                contentType: false,
+                processData: false,
+            })
+    .done(function(data) {
+            bootbox.alert({
+                message: data,
+                animate: false,
+                className: "wide-bootbox"
+                });
+            $(".wide-bootbox").animate({scrollTop: 0}, "");
+            })
+    .fail(function(data) { errorAlert(data); });
+    return false;
+}
+            </script>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

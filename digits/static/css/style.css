@@ -1,0 +1,17 @@
+body {
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+
+dl dd {
+    /* I've got some long filenames */
+    word-wrap: break-word;
+}
+
+div.progress div.progress-bar {
+    min-width: 20px;
+}
+
+.wide-bootbox > .modal-dialog {
+    width: 70%!important;
+}

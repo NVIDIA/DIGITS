@@ -1,0 +1,54 @@
+#!/usr/bin/python
+# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
+
+import sys
+import argparse
+
+# Only required if using SocketIO.run() and app.debug = False
+from gevent import monkey; monkey.patch_all()
+
+if __name__ == '__main__':
+    print '  ___  _  ___ _ _____ ___'
+    print ' |   \(_)/ __(_)_   _/ __|'
+    print ' | |) | | (_ | | | | \__ \\'
+    print ' |___/|_|\___|_| |_| |___/'
+    print
+
+    parser = argparse.ArgumentParser(description='Run DiGiTS in debug mode')
+    parser.add_argument('-p', '--port',
+            type=int,
+            default=5000,
+            help='Port to run app on (default 5000)'
+            )
+    parser.add_argument('-c', '--config',
+            action='store_true',
+            help='Reconfigure the application'
+            )
+    parser.add_argument('-d', '--debug',
+            action='store_true',
+            help='Run the application in debug mode (with the reloader)'
+            )
+
+    args = vars(parser.parse_args())
+
+    from digits import config
+
+    if not config.valid_config() or args['config']:
+        if not config.prompt_config():
+            sys.exit(1)
+
+    from digits.webapp import app, socketio, scheduler
+
+    try:
+        if not scheduler.start():
+            print 'ERROR: Scheduler would not start'
+        else:
+            app.debug = args['debug']
+            socketio.run(app, '0.0.0.0', args['port'],
+                    policy_server=False
+                    )
+    except KeyboardInterrupt:
+        pass
+    finally:
+        scheduler.stop()
+

@@ -1,0 +1,223 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes, print_exception %}
+
+{% extends "layout.html" %}
+
+{% block title %}
+{{job.name()}}
+{% endblock %}
+
+{% block head %}
+    <script src="{{ url_for('static', filename='js/google_api.js') }}"></script>
+    <script>
+google.load("visualization", "1", {packages:["corechart"]});
+    </script>
+    {% if job.status.is_running() %}
+        {% with namespace = "/jobs" %}
+            {% set room = job.id() %}
+            {% include 'socketio.html' %}
+        {% endwith %}
+        <script>
+function setPanelClass(selector, css) {
+    $(selector).removeClass("panel-default panel-primary panel-success panel-info panel-warning panel-danger");
+    $(selector).addClass('panel-'+css);
+}
+
+socket.on('job update', function (msg) {
+        if (msg['update'] == 'status') {
+            $("#job-statuses .panel-title small").html(msg['status']);
+            setPanelClass('#job-statuses', msg['css']);
+            $("#job-statuses .job-statuses").html(msg['html']);
+            if (!msg['running']) {
+                $("#abort-job").hide();
+            }
+        }
+    });
+
+socket.on('task update', function (msg) {
+        var status_selector = "#"+msg['task']+"-status";
+        if (msg['update'] == 'status') {
+            if (msg['show']) {
+                $(status_selector+"-collapse").collapse('show');
+            } else {
+                $(status_selector+"-collapse").collapse('hide');
+            }
+            if (msg['running']) {
+                $(status_selector+" .task-progress").show();
+            } else {
+                $(status_selector+" .task-progress").hide();
+            }
+            $(status_selector+" .panel-title small").html(msg['status']);
+            setPanelClass(status_selector, msg['css']);
+            $(status_selector+" .task-statuses").html(msg['html']);
+        }
+        else if (msg['update'] == 'progress') {
+            $(status_selector+" .task-progress .progress-bar").width(msg['percentage'] + '%');
+            $(status_selector+" .task-progress .progress-bar").html(msg['percentage'] + '%');
+            $(status_selector+" .task-progress .task-eta").html(msg['eta']);
+        }
+        else if (msg['update'] == 'distribution') {
+            drawDistributionGraph(msg['task'], msg['data']);
+        }
+        else if (msg['update'] == 'loss_graph') {
+            drawLossGraph(msg['data']);
+        }
+        else if (msg['update'] == 'lr_graph') {
+            drawLRGraph(msg['data']);
+        }
+        else if (msg['update'] == 'snapshots') {
+            updateSnapshotList(msg['data']);
+        }
+    });
+        </script>
+    {% endif %}
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{ url_for('show_job', job_id=job.id()) }}">{{job.job_type()}}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <div class="container">
+        <div class="row">
+            <div id="show-job-name" class="col-sm-12">
+                <h2 style="display:inline;">{{ job.name() }}</h2>
+                <a href=# onClick="$('#show-job-name').hide(); $('#edit-job-name').show(); return false;"><span class="glyphicon glyphicon-edit"></span></a>
+            </div>
+            <div id="edit-job-name" class="col-sm-4" style="display:none;">
+                <script>
+function updateJobName() {
+    var newName = $("input[name=job-name]").val();
+    $.ajax("{{url_for('edit_job', job_id=job.id())}}",
+            {
+                type: "PUT",
+                data: {"job_name": newName}
+                }
+          )
+    .done(function() {
+            $("#show-job-name h2").html(newName);
+            $('#edit-job-name').hide(); $('#show-job-name').show();
+            })
+    .fail(function(data) { errorAlert(data); });
+    return false;
+}
+                </script>
+                <input name="job-name" class="form-control" value="{{job.name()}}"/>
+                <a href=# class="btn btn-primary" onClick="updateJobName()">Update</a>
+                <a href=# class="btn btn-info" onClick="$('#edit-job-name').hide(); $('#show-job-name').show(); return false;">Cancel</a>
+            </div>
+        </div>
+        <small>{{ job.job_type() }}</small>
+        <div class="pull-right">
+            <a id="abort-job" class="btn btn-warning{{ ' hidden' if not job.status.is_running() }}">Abort Job</a>
+            <a id="delete-job" class="btn btn-danger">Delete Job</a>
+        </div>
+    </div>
+    <script>
+$('#abort-job').on('click', function(event) {
+        event.preventDefault();
+        bootbox.confirm(
+            'Are you sure you want to abort this job?',
+            function(result) {
+                if (result)
+                    $.ajax("{{url_for('abort_job', job_id=job.id())}}",
+                        {type: "POST"})
+                    .done(function() {
+                        $("#abort-job").hide();
+                        })
+                    .fail(function(data) { errorAlert(data); });
+            });
+        });
+
+$('#delete-job').on('click', function(event) {
+        event.preventDefault();
+        bootbox.confirm(
+            'Are you sure you want to delete this job?<br><br>All related files will be permanently removed.',
+            function(result) {
+                if (result)
+                    $.ajax("{{url_for('delete_job', job_id=job.id())}}",
+                        {type: "DELETE"})
+                    .done(function() {
+                        window.location = "{{url_for('home')}}";
+                        })
+                    .fail(function(data) { errorAlert(data); });
+            });
+        });
+    </script>
+</div>
+
+{{ print_flashes() }}
+
+<div class="row">
+    <!-- Job content -->
+    <div class="col-sm-8">
+        {% block job_content %}
+        {% endblock %}
+    </div>
+
+    <!-- Tasks -->
+    <div class="panel-group col-sm-4">
+        <div id="job-statuses" class="panel panel-{{job.status.css}}">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    Job Status
+                    <small>{{job.status.name}}</small>
+                </h4>
+            </div>
+            <div class="panel-collapse">
+                <div class="panel-body">
+                    <div class="job-statuses">
+                        {% with updates = job.status_history %}
+                            {% include "status_updates.html" %}
+                        {% endwith %}
+                    </div>
+                    <div class="panel-group">
+                        {% for task in job.tasks %}
+                            <div id="{{task.html_id()}}-status" class="panel panel-{{task.status.css}}">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" href="#{{task.html_id()}}-status-collapse">
+                                            {{task.name()}}
+                                            <small>{{task.status.name}}</small>
+                                            <span class="caret"></span>
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="{{task.html_id()}}-status-collapse" class="panel-collapse collapse{{' in' if task.status in ['R', 'E'] else ''}}">
+                                    <div class="panel-body">
+                                        <div class="task-progress" {% autoescape false %}{{' style="display:none;"' if not task.status == 'R' else ''}}{% endautoescape %}>
+                                            <div class="progress">
+                                                {% set percentage = (100*task.progress)|round|int %}
+                                                <div class="progress-bar" style="width:{{percentage}}%">
+                                                    {{percentage}}%
+                                                </div>
+                                            </div>
+                                            Estimated time remaining: <span class="task-eta">{{ task.est_done()|print_time_diff }}</span>
+                                            <br />
+                                            <br />
+                                        </div>
+                                        <div class="task-statuses">
+                                            {% with updates = task.status_history %}
+                                                {% if task.status == 'E' %}
+                                                    {% set exception = task.exception %}
+                                                    {% set traceback = task.traceback %}
+                                                {% endif %}
+                                                {% include "status_updates.html" %}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
