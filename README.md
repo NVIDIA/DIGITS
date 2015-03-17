@@ -79,3 +79,6 @@ You can run DiGiTS in two ways:
         the nginx.site to your nginx sites-enabled/ directory, then you can
         view your app at http://localhost/.
 
+
+Then, check out the [Getting Started](docs/GettingStarted.md) page.
+
