@@ -11,3 +11,4 @@ lmdb
 Pillow>=2.3.0
 scikit-image
 selenium
+beautifulsoup4

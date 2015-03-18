@@ -45,7 +45,7 @@ def image_classification_model_create():
     set_previous_network_snapshots(form)
 
     if not form.validate_on_submit():
-        return render_template('models/images/classification/new.html', form=form)
+        return render_template('models/images/classification/new.html', form=form), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:

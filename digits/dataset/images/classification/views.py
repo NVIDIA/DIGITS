@@ -204,35 +204,34 @@ def image_classification_dataset_new():
 @app.route(NAMESPACE, methods=['POST'])
 def image_classification_dataset_create():
     form = ImageClassificationDatasetForm()
-    if form.validate_on_submit():
-        job = None
-        try:
-            job = ImageClassificationDatasetJob(
-                    name        = form.dataset_name.data,
-                    image_dims  = (
-                        int(form.resize_height.data),
-                        int(form.resize_width.data),
-                        int(form.resize_channels.data),
-                        ),
-                    resize_mode = form.resize_mode.data
-                    )
+    if not form.validate_on_submit():
+        return render_template('datasets/images/classification/new.html', form=form), 400
 
-            if form.method.data == 'folder':
-                from_folders(job, form)
+    job = None
+    try:
+        job = ImageClassificationDatasetJob(
+                name        = form.dataset_name.data,
+                image_dims  = (
+                    int(form.resize_height.data),
+                    int(form.resize_width.data),
+                    int(form.resize_channels.data),
+                    ),
+                resize_mode = form.resize_mode.data
+                )
 
-            elif form.method.data == 'textfile':
-                from_files(job, form)
+        if form.method.data == 'folder':
+            from_folders(job, form)
 
-            scheduler.add_job(job)
-            return redirect(url_for('datasets_show', job_id=job.id()))
+        elif form.method.data == 'textfile':
+            from_files(job, form)
 
-        except:
-            if job:
-                scheduler.delete_job(job)
-            raise
+        scheduler.add_job(job)
+        return redirect(url_for('datasets_show', job_id=job.id()))
 
-    else:
-        return render_template('datasets/images/classification/new.html', form=form)
+    except:
+        if job:
+            scheduler.delete_job(job)
+        raise
 
 def show(job):
     """
