@@ -16,6 +16,8 @@
                 <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{{task.train_val_file}}</a></dd>
                 <dt>Network (deploy)</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
+                <dt>Raw caffe output</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}">{{task.caffe_log_file}}</a></dd>
             </dl>
         </div>
     </div>

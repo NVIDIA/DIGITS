@@ -20,7 +20,7 @@ from digits.utils import subclass, override, constants
 from digits.dataset import ImageClassificationDatasetJob
 
 # NOTE: Increment this everytime the pickled object changes
-PICKLE_VERSION = 1
+PICKLE_VERSION = 2
 
 @subclass
 class CaffeTrainTask(TrainTask):
@@ -57,6 +57,7 @@ class CaffeTrainTask(TrainTask):
         self.train_val_file = constants.CAFFE_TRAIN_VAL_FILE
         self.snapshot_prefix = constants.CAFFE_SNAPSHOT_PREFIX
         self.deploy_file = constants.CAFFE_DEPLOY_FILE
+        self.caffe_log_file = self.CAFFE_LOG
 
     def __getstate__(self):
         state = super(CaffeTrainTask, self).__getstate__()
@@ -73,6 +74,12 @@ class CaffeTrainTask(TrainTask):
 
     def __setstate__(self, state):
         super(CaffeTrainTask, self).__setstate__(state)
+
+        # Upgrade pickle file
+        if state['pickver_task_caffe_train'] == 1:
+            print 'upgrading %s' % self.job_id
+            self.caffe_log_file = self.CAFFE_LOG
+        self.pickver_task_caffe_train = PICKLE_VERSION
 
         # Make changes to self
         self.loaded_snapshot_file = None
