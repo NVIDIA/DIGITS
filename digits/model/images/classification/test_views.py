@@ -10,13 +10,21 @@ from caffe.proto import caffe_pb2
 
 from . import views as _
 import digits
+from digits.webapp import app, scheduler
 
 class BaseTestCase(object):
     @classmethod
     def setupClass(cls):
-        digits.webapp.app.config['TESTING'] = True
-        cls.app = digits.webapp.app.test_client()
+        app.config['TESTING'] = True
+        cls.app = app.test_client()
         cls.server = 'http://0.0.0.0:5000/'
+        cls.jobs = []
+        scheduler.running = True
+
+    @classmethod
+    def tearDownClass(cls):
+        scheduler.jobs = []
+        scheduler.running = False
 
 class TestCreate(BaseTestCase):
 
@@ -33,8 +41,21 @@ class TestCreate(BaseTestCase):
     def setupClass(cls):
         super(TestCreate, cls).setupClass()
 
-        with digits.webapp.app.test_request_context():
+        with app.test_request_context():
             cls.url = url_for('image_classification_model_create')
+
+        dj = mock.Mock(spec=digits.dataset.ImageClassificationDatasetJob)
+        dj.status.is_running.return_value = True
+        dj.id.return_value = 'dataset'
+        dj.name.return_value = ''
+
+        mj = mock.Mock(spec=digits.model.ImageClassificationModelJob)
+        mj.id.return_value = 'model'
+        mj.name.return_value = ''
+        mj.train_task.return_value.snapshots = [('path', 1)]
+        mj.train_task.return_value.network = caffe_pb2.NetParameter()
+
+        digits.webapp.scheduler.jobs = [dj, mj]
 
     def test_empty_request(self):
         """empty request"""
@@ -42,21 +63,22 @@ class TestCreate(BaseTestCase):
         assert rv.status_code == 400
         assert 'model_name' in self.get_error_msg(rv.data)
 
+    def test_crop_size(self):
+        """custom crop size"""
+
+        rv = self.app.post(self.url, data={
+            'method': 'standard',
+            'dataset': 'dataset',
+            'crop_size': 12,
+            'standard_networks': 'lenet',
+            'model_name': 'test',
+            })
+
+        assert scheduler.jobs[-1].train_task().crop_size == 12
+
     @unittest.skip('expected failure')
     def test_previous_network_pretrained_model(self):
         """previous network, pretrained model"""
-        mock_dataset_job = mock.Mock(spec=digits.dataset.ImageClassificationDatasetJob)
-        mock_dataset_job.status.is_running.return_value = True
-        mock_dataset_job.id.return_value = 'dataset'
-        mock_dataset_job.name.return_value = ''
-
-        mock_model_job = mock.Mock(spec=digits.model.ImageClassificationModelJob)
-        mock_model_job.id.return_value = 'model'
-        mock_model_job.name.return_value = ''
-        mock_model_job.train_task.return_value.snapshots = [('path', 1)]
-        mock_model_job.train_task.return_value.network = caffe_pb2.NetParameter()
-        digits.webapp.scheduler.running = True
-        digits.webapp.scheduler.jobs = [mock_dataset_job, mock_model_job]
 
         rv = self.app.post(self.url, data={
             'method': 'previous',
@@ -66,10 +88,6 @@ class TestCreate(BaseTestCase):
             # TODO: select snapshot 1
             })
 
-        digits.webapp.scheduler.running = False
-        jobs = digits.webapp.scheduler.jobs
-        digits.webapp.scheduler.jobs = []
-
-        assert jobs[-1].train_task().pretrained_model == 'path'
+        assert scheduler.jobs[-1].train_task().pretrained_model == 'path'
         assert False
 

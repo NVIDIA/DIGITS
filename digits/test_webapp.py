@@ -228,7 +228,7 @@ class WebappTestCase(BaseTestCase):
 
     def test_page_home(self):
         rv = self.app.get('/')
-        assert rv.status_code == 200
+        assert rv.status_code == 200, 'code is %s' % rv.status_code
         for h in ['Home', 'Datasets', 'Models']:
             assert h in rv.data
 
