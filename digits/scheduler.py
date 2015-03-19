@@ -327,6 +327,7 @@ class Scheduler:
                         if alldone:
                             job.status = Status.DONE
                             logger.info('Job complete.', job_id=job.id())
+                            job.save()
 
                 # save running jobs every 15 seconds
                 if not last_saved or time.time()-last_saved > 15:
