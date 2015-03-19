@@ -282,8 +282,11 @@ class Scheduler:
                                     job.status = Status.WAIT
                             else:
                                 job.status = Status.RUN
-                        # Delay start by one second for initial page load
-                        gevent.spawn_later(1, start_this_job, job)
+                        if config_option('level') == 'test':
+                            start_this_job(job)
+                        else:
+                            # Delay start by one second for initial page load
+                            gevent.spawn_later(1, start_this_job, job)
 
                     if job.status == Status.WAIT:
                         if isinstance(job, ModelJob):

@@ -648,6 +648,8 @@ def config_option(name):
     assert current_config.valid, 'loaded config is invalid'
     if name == 'log_file':
         return current_config.log_file
+    elif name == 'level':
+        return current_config.level
     else:
         return current_config.options[name]
 
