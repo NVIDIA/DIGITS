@@ -16,6 +16,13 @@ class ModelForm(Form):
         super(ModelForm, self).__init__(csrf_enabled=csrf_enabled, *args, **kwargs)
 
     ### Methods
+    def selection_exists_in_choices(form, field):
+        found=False
+        for i, choice in enumerate(field.choices):
+            if choice[0] == field.data:
+                found=True
+        if found == False:
+            raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
 
     def required_if_method(value):
         def _required(form, field):
@@ -144,13 +151,8 @@ class ModelForm(Form):
             choices = [],
             validators = [
                 required_if_method('previous'),
+                selection_exists_in_choices,
                 ],
-            )
-
-    previous_network_snapshots = wtforms.FieldList(
-            wtforms.SelectField('Snapshots',
-                validators = [validators.Optional()]
-                ),
             )
 
     custom_network = wtforms.TextAreaField('Custom Network',
@@ -174,4 +176,6 @@ class ModelForm(Form):
                 validators.DataRequired()
                 ]
             )
+
+
 

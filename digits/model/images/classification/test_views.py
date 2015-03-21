@@ -1,6 +1,8 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import re
+import os
+import tempfile
 
 import unittest
 import mock
@@ -52,10 +54,19 @@ class TestCreate(BaseTestCase):
         mj = mock.Mock(spec=digits.model.ImageClassificationModelJob)
         mj.id.return_value = 'model'
         mj.name.return_value = ''
-        mj.train_task.return_value.snapshots = [('path', 1)]
+        _, cls.temp_snapshot_path = tempfile.mkstemp() #instead of using a dummy hardcoded value as snapshot path, temp file path is used to avoid the filen't exists exception in views.py.
+        mj.train_task.return_value.snapshots = [(cls.temp_snapshot_path, 1)]
         mj.train_task.return_value.network = caffe_pb2.NetParameter()
 
         digits.webapp.scheduler.jobs = [dj, mj]
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCreate, cls).tearDownClass()
+        try:
+            os.remove(cls.temp_snapshot_path)
+        except OSError:
+            pass
 
     def test_empty_request(self):
         """empty request"""
@@ -76,7 +87,6 @@ class TestCreate(BaseTestCase):
 
         assert scheduler.jobs[-1].train_task().crop_size == 12
 
-    @unittest.skip('expected failure')
     def test_previous_network_pretrained_model(self):
         """previous network, pretrained model"""
 
@@ -85,9 +95,7 @@ class TestCreate(BaseTestCase):
             'model_name': 'test',
             'dataset': 'dataset',
             'previous_networks': 'model',
-            # TODO: select snapshot 1
+            'model-snapshot' : 1
             })
 
-        assert scheduler.jobs[-1].train_task().pretrained_model == 'path'
-        assert False
-
+        assert scheduler.jobs[-1].train_task().pretrained_model == self.temp_snapshot_path

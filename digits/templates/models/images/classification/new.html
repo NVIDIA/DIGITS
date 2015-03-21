@@ -421,12 +421,16 @@ function customizeNetwork(network, snapshot_list) {
                                 <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
                             </td>
                             <td>
-                                {% set snapshot_list = form.previous_network_snapshots[loop.index0] %}
-                                {% if snapshot_list.choices|length %}
-                                {{snapshot_list(class='form-control')}}
+                                {% set snapshot_list = previous_network_snapshots[loop.index0] %}
+                                {% if snapshot_list|length %}
+                                <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
+                                    {% for each_epoch in snapshot_list %}
+                                    <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
+                                    {% endfor %}
+                                </select>
                                 {% endif %}
                             </td>
-                            <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{snapshot_list.id}}');">Customize</a></td>
+                            <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot');">Customize</a></td>
                         </tr>
                         {% else %}
                         <tr>
@@ -436,26 +440,41 @@ function customizeNetwork(network, snapshot_list) {
                     </table>
                 </div>
 		<script>
-                    $(".btn.btn-sm").hide();   // hide all the buttons
-                    $("#network-tab-previous").find(".form-control").prop('disabled', 'disabled');  //hide all the select elements in "Previous Networks" tab
+                    $(".btn.btn-sm").css('visibility', 'hidden');   // hide all the buttons
+                    $("#network-tab-previous").find(".form-control").css('visibility', 'hidden'); //hide all the select elements in "Previous Networks" tab
+
                     var $stdtab_prev_clicked_tr = null;   
                     $("input:radio[name=standard_networks]").click(function(){
                        if ($stdtab_prev_clicked_tr != null) {
-                            $stdtab_prev_clicked_tr.find(".btn.btn-sm").hide();
-                        }
-                        $(this).parents('tr').find(".btn.btn-sm").show();
-                        $stdtab_prev_clicked_tr = $(this).parents('tr');
+                            $stdtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
+                       }
+                       $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
+                       $stdtab_prev_clicked_tr = $(this).parents('tr');
                     });
+
                     var $prevtab_prev_clicked_tr = null;   
                     $("input:radio[name=previous_networks]").click(function(){
                        if ($prevtab_prev_clicked_tr != null) {
-                            $prevtab_prev_clicked_tr.find(".btn.btn-sm").hide();
-                            $prevtab_prev_clicked_tr.find(".form-control").prop('disabled', 'disabled');
+                            $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
+                            $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
                         }
-                        $(this).parents('tr').find(".btn.btn-sm").show();
-                        $(this).parents('tr').find(".form-control").prop('disabled', false);
+                        $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
+                        $(this).parents('tr').find(".form-control").css('visibility', 'visible');
                         $prevtab_prev_clicked_tr = $(this).parents('tr');
                     });
+
+                    //fix to the following issue: when validation fails and the screen was re-displayed, the selected radio buttons in "previous networks" tab remains selected but the select input field and customize button beside the selected previous network is in hidden status, which is wrong. same issue exists in standard networks tab. The below code ensures that select field and customize button beside selected radio button will be visible even when validation fails.
+
+                    if($("input:radio[name=standard_networks]").is(":checked")) {
+                       $stdtab_prev_clicked_tr = $("input:radio[name=standard_networks]:checked").parents('tr');
+                       $stdtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
+                    }
+                    if($("input:radio[name=previous_networks]").is(":checked")) {
+                        $prevtab_prev_clicked_tr =  $("input:radio[name=previous_networks]:checked").parents('tr');
+                        $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
+                        $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'visible');
+                    }
+
                 </script>
                 <div id="network-tab-custom" class="tab-pane">
                     <script>
