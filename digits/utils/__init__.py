@@ -96,6 +96,13 @@ def sizeof_fmt(size, suffix='B'):
     Arguments:
     size -- size in bytes
     """
+    try:
+        size = int(size)
+    except ValueError:
+        return None
+    if size <= 0:
+        return '0 %s' % suffix
+
     size_name = ('', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
     i = int(math.floor(math.log(size,1024)))
     if i >= len(size_name):
