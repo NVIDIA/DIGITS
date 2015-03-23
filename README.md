@@ -4,7 +4,7 @@ DiGiTS is is a webapp for training deep learning models.
 
 ## Installation
 
-We install and run DiGiTS on Ubuntu 14.04.  We have successfully run DiGiTS on other Linux variants as well as OSX but at this time, only Ubuntu 14.04 is supported.
+DiGiTS is supported on Ubuntu 14.04.  DiGits has successfully run on other Linux variants as well as OSX but at this time, only Ubuntu 14.04 is supported.
 
 ### Prerequisites
 DiGiTS has several dependencies.
