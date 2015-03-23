@@ -1,13 +1,13 @@
-# DiGiTS (Deep GPU Training System)
+# DIGITS (Deep GPU Training System)
 
-DiGiTS is is a webapp for training deep learning models.
+DIGITS is is a webapp for training deep learning models.
 
 ## Installation
 
-DiGiTS is supported on Ubuntu 14.04.  DiGits has successfully run on other Linux variants as well as OSX but at this time, only Ubuntu 14.04 is supported.
+DIGITS is supported on Ubuntu 14.04.  DIGITS has successfully run on other Linux variants as well as OSX but at this time, only Ubuntu 14.04 is supported.
 
 ### Prerequisites
-DiGiTS has several dependencies.
+DIGITS has several dependencies.
 
 * CUDA
 * cuDNN library
@@ -56,7 +56,7 @@ Set environment variables:
 % export CAFFE_HOME=${HOME}/caffe
 </pre>
 
-### Install DiGiTS
+### Install DIGITS
 
 <pre>
 % cd $HOME
@@ -68,7 +68,7 @@ Set environment variables:
 
 ## Starting the server
 
-You can run DiGiTS in two ways:
+You can run DIGITS in two ways:
 
 1.  digits-devserver
         Starts a development server that listens on port 5000 (but you can
