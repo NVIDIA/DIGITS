@@ -12,7 +12,7 @@ import tempfile
 
 import ConfigParser
 
-_caffe_exe = None #XXX hack for passing to GpusOption
+import device_query
 
 ### ConfigOption classes
 
@@ -87,12 +87,9 @@ class CaffeRootOption(ConfigOption):
         return 'SYS'
 
     def validate(self, value):
-        global _caffe_exe
         if value == 'SYS':
             if not self.find_executable('caffe'):
                 raise ValueError('caffe binary cannot be found')
-            else:
-                _caffe_exe = 'caffe'
             try:
                 imp.find_module('caffe')
             except ImportError:
@@ -109,8 +106,6 @@ class CaffeRootOption(ConfigOption):
 #            if not os.path.exists(os.path.join(value, 'bin', 'caffe.bin')):
             if not os.path.exists(os.path.join(value, 'build', 'tools', 'caffe.bin')):
                 raise ValueError('Does not contain the caffe binary')
-
-            _caffe_exe = os.path.join(value, 'build', 'tools', 'caffe.bin')
 
             #XXX remove other caffe/python paths from PATH
             sys.path = [os.path.join(value, 'python')] + [p for p in sys.path if os.path.join('caffe', 'python') not in p]
@@ -137,21 +132,26 @@ class GpusOption(ConfigOption):
 
     def prompt_message(self):
         s = 'Attached devices:\n'
-        for gpu in self.query_gpus():
-            s += 'Device #%s:\n' % gpu['device_number']
-            s += '\tName: %s\n' % gpu['name']
-            s += '\tCompute capability: %s.%s\n' % (gpu['major_revision'], gpu['minor_revision'])
-            s += '\tMemory: %s\n' % self.convert_size(gpu['total_memory'])
-            s += '\tMultiprocessors: %s\n' % gpu['mp_count']
+        for device_id, gpu in enumerate(self.query_gpus()):
+            s += 'Device #%s:\n' % device_id
+            s += '\t%-20s %s\n' % ('Name', gpu.name)
+            s += '\t%-20s %s.%s\n' % ('Compute capability', gpu.major, gpu.minor)
+            s += '\t%-20s %s\n' % ('Memory', self.convert_size(gpu.totalGlobalMem))
+            s += '\t%-20s %s\n' % ('Multiprocessors', gpu.multiProcessorCount)
             s += '\n'
         return s + '\nInput the IDs of the devices you would like to use, separated by commas, in order of preference.'
 
     def default_value(self):
-        return ','.join([str(gpu['device_number']) for gpu in self.query_gpus()])
+        return ','.join([str(x) for x in xrange(len(self.query_gpus()))])
 
     def is_silent(self):
         try:
-            return len(self.query_gpus()) == 0
+            if len(self.query_gpus()) == 0:
+                print 'No GPUs found. Assuming CPU-only mode.'
+                print
+                return True
+            else:
+                return False
         except ValueError:
             return False
 
@@ -166,20 +166,13 @@ class GpusOption(ConfigOption):
         for word in value.split(','):
             num = int(word)
             found = False
-            for gpu in gpus:
-                if gpu['device_number'] == num:
-                    if 'chosen' in gpu:
-                        raise ValueError('You cannot select a GPU twice')
-                    else:
-                        found = True
-                        gpu['chosen'] = True
-                        break
-            if not found:
+            if not 0 <= num < len(gpus):
                 raise ValueError('There is no GPU #%d' % num)
-            else:
-                choices.append(num)
+            if num in choices:
+                raise ValueError('You cannot select a GPU twice')
+            choices.append(num)
 
-        if choices > 0:
+        if len(choices) > 0:
             return ','.join([str(num) for num in choices])
         else:
             raise ValueError('Empty list')
@@ -198,49 +191,13 @@ class GpusOption(ConfigOption):
     @classmethod
     def query_gpus(cls):
         """
-        Uses caffe's device_query method to get information
-        Returns an array of dicts
-
-        If CUDA_VISIBLE_DEVICES if set, it will affect this list
+        Return a list of device_query.CudaDeviceProp objects which contain all
+        the available information on each device
+        Order is preserved in this list - item 0 is gpu #0
         """
-        gpus = []
-        gpu_index = 0
-        valid = True
-        while valid:
-            try:
-                global _caffe_exe
-                if _caffe_exe is None:
-                    raise ValueError('Cannot query GPUs without a valid caffe_root')
-                output = subprocess.check_output(
-                        [_caffe_exe, 'device_query',
-                            '-gpu', str(gpu_index)
-                            ],
-                        stderr = subprocess.STDOUT)
-                gpu = {'device_number': gpu_index}
-                for line in output.split('\n'):
-                    match = re.match(r'.+\] (.+)$', line)
-                    if match:
-                        message = match.group(1)
-                        if message.startswith('Major revision number'):
-                            match = re.match(r'.+:\s+(\d+)\s*$', message)
-                            gpu['major_revision'] = int(match.group(1))
-                        elif message.startswith('Minor revision number'):
-                            match = re.match(r'.+:\s+(\d+)\s*$', message)
-                            gpu['minor_revision'] = int(match.group(1))
-                        elif message.startswith('Name'):
-                            match = re.match(r'.+:\s+(.+)*$', message)
-                            gpu['name'] = match.group(1)
-                        elif message.startswith('Total global memory'):
-                            match = re.match(r'.+:\s+(\d+)\s*$', message)
-                            gpu['total_memory'] = int(match.group(1))
-                        elif message.startswith('Number of multiprocessors'):
-                            match = re.match(r'.+:\s+(\d+)\s*$', message)
-                            gpu['mp_count'] = int(match.group(1))
-                gpus.append(gpu)
-                gpu_index += 1
-            except subprocess.CalledProcessError:
-                valid = False
-        return gpus
+        if not hasattr(cls, 'device_list'):
+            cls.device_list = device_query.get_devices()
+        return cls.device_list
 
 class JobsDirOption(ConfigOption):
     @staticmethod
@@ -562,10 +519,11 @@ class DigitsConfig:
                             valid = True
                             accept_previous = False
                             print
-                            print 'New value?'
                         elif value.startswith('y') or not value:
                             valid = True
                             accept_previous = True
+                        else:
+                            print 'Invalid input'
                     except KeyboardInterrupt:
                         return False
             if accept_previous:
@@ -586,6 +544,7 @@ class DigitsConfig:
                     return False
                 if default is not None and not value:
                     value = default
+                    print 'Accepting default value of "%s"' % value
                 try:
                     option.value = value
                     valid = True
