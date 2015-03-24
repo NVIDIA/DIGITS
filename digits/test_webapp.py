@@ -202,7 +202,7 @@ class BaseTestCase(unittest.TestCase):
             assert status['status'] in ['Initialized', 'Waiting', 'Running'], 'Invalid job status: %s' % status['status']
             time.sleep(polling_period)
             elapsed += polling_period
-            assert elapsed < timeout, 'Job completion timeout'
+            assert elapsed < timeout, 'Job took more than %s seconds' % timeout
 
     def job_abort(self, job_name):
         abort_url = self.jobs + job_name + '/abort'
