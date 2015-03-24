@@ -18,6 +18,10 @@
                 <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
                 <dt>Raw caffe output</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}">{{task.caffe_log_file}}</a></dd>
+                {% if task.pretrained_model %}
+                <dt>Pretrained Model</dt>
+                <dd>{{task.pretrained_model}}</dd>
+                {% endif %}
             </dl>
         </div>
     </div>

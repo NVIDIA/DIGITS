@@ -31,9 +31,10 @@ def image_classification_model_new():
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
-    set_previous_network_snapshots(form)
 
-    return render_template('models/images/classification/new.html', form=form, has_datasets=(len(get_datasets())==0))
+    prev_network_snapshots = get_previous_network_snapshots()
+
+    return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots, has_datasets=(len(get_datasets())==0))
 
 @app.route(NAMESPACE, methods=['POST'])
 def image_classification_model_create():
@@ -42,10 +43,11 @@ def image_classification_model_create():
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
-    set_previous_network_snapshots(form)
+
+    prev_network_snapshots = get_previous_network_snapshots()
 
     if not form.validate_on_submit():
-        return render_template('models/images/classification/new.html', form=form), 400
+        return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
@@ -81,13 +83,19 @@ def image_classification_model_create():
             network.CopyFrom(old_job.train_task().network)
             for i, choice in enumerate(form.previous_networks.choices):
                 if choice[0] == form.previous_networks.data:
-                    epoch = form.previous_network_snapshots[i].data
-                    if epoch != 'none':
+                    epoch = int(request.form['%s-snapshot' % form.previous_networks.data])
+                    if epoch != 0:
                         for filename, e in old_job.train_task().snapshots:
                             if e == epoch:
                                 pretrained_model = filename
                                 break
+
+                        if pretrained_model is None:
+                            raise Exception("For the job %s, selected pretrained_model for epoch %d is invalid!" % (form.previous_networks.data, epoch))
+                        if not (os.path.exists(pretrained_model)):
+                            raise Exception("Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
                     break
+
         elif form.method.data == 'custom':
             text_format.Merge(form.custom_network.data, network)
             pretrained_model = form.custom_network_snapshot.data.strip()
@@ -282,13 +290,11 @@ def get_previous_networks():
         )
         ]
 
-def set_previous_network_snapshots(form):
-    while len(form.previous_network_snapshots):
-        form.previous_network_snapshots.pop_entry()
-
+def get_previous_network_snapshots():
+    prev_network_snapshots = []
     for job_id, _ in get_previous_networks():
         job = scheduler.get_job(job_id)
-        e = form.previous_network_snapshots.append_entry()
-        e.choices = [('none', 'None')] + [(epoch, 'Epoch #%s' % epoch)
+        e = [(0, 'None')] + [(epoch, 'Epoch #%s' % epoch)
                 for _, epoch in reversed(job.train_task().snapshots)]
-
+        prev_network_snapshots.append(e)
+    return prev_network_snapshots
