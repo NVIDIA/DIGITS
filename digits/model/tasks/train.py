@@ -12,11 +12,12 @@ class TrainTask(Task):
     Defines required methods for child classes
     """
 
-    def __init__(self, dataset, train_epochs, learning_rate, lr_policy, **kwargs):
+    def __init__(self, dataset, train_epochs, snapshot_epochs, learning_rate, lr_policy, **kwargs):
         """
         Arguments:
         dataset -- a DatasetJob containing the dataset for this model
         train_epochs -- how many epochs of training data to train on
+        snapshot_epochs -- how many epochs to take a snapshot
         learning_rate -- the base learning rate
         lr_policy -- a hash of options to be used for the learning rate policy
 
@@ -38,6 +39,7 @@ class TrainTask(Task):
 
         self.dataset = dataset
         self.train_epochs = train_epochs
+        self.snapshot_epochs = snapshot_epochs
         self.learning_rate = learning_rate
         self.lr_policy = lr_policy
 

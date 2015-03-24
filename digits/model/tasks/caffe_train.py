@@ -308,7 +308,7 @@ class CaffeTrainTask(TrainTask):
         # Epochs -> Iterations
         train_iter = int(math.ceil(float(self.dataset.train_db_task().entries_count) / train_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
-        solver.snapshot = train_iter
+        solver.snapshot = train_iter * self.snapshot_epochs
         if self.dataset.val_db_task() and self.val_interval:
             solver.test_iter.append(int(math.ceil(float(self.dataset.val_db_task().entries_count) / val_data_layer.data_param.batch_size)))
             solver.test_interval = train_iter * self.val_interval
