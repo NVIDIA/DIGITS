@@ -13,4 +13,4 @@ else
     shift
 fi
 
-DIGITS_LEVEL=$DIGITS_LEVEL nosetests --no-path-adjustment -v tools/ digits/ $@
+DIGITS_LEVEL=$DIGITS_LEVEL $(command -v python) $(command -v nosetests) --no-path-adjustment -v tools/ digits/ $@
