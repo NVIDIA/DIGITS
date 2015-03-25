@@ -53,11 +53,12 @@ class ModelForm(Form):
             default=30,
             )
 
-    snapshot_epochs = wtforms.IntegerField('Snapshot epochs',
+    snapshot_epochs = wtforms.FloatField('Snapshot epochs',
+            default = 1,
             validators = [
-                validators.NumberRange(min=1)
-                ],
-            default=1,
+                validators.DataRequired(),
+                validators.NumberRange(min=0),
+                ]
             )
 
     val_interval = wtforms.IntegerField('Validation interval (in epochs)',
