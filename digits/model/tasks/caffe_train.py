@@ -312,7 +312,7 @@ class CaffeTrainTask(TrainTask):
         # Snapshot Validation
         if solver.snapshot<0:
             solver.snapshot=1
-        elif solver.snapshot>solver.max_iter
+        elif solver.snapshot>solver.max_iter:
             solver.snapshot=solver.max_iter
 
         if self.dataset.val_db_task() and self.val_interval:
@@ -627,12 +627,12 @@ class CaffeTrainTask(TrainTask):
             match = re.match(r'%s_iter_(\d+)\.caffemodel' % os.path.basename(self.snapshot_prefix), filename)
             if match:
                 iteration = int(match.group(1))
-                epoch = float(iteration) / (float(self.solver.max_iter)/self.train_epochs)
-                assert epoch.is_integer(), '%s is not an integer' % epoch
-                epoch = int(epoch)
+                # epoch = float(iteration) / (float(self.solver.max_iter)/self.train_epochs)
+                # assert epoch.is_integer(), '%s is not an integer' % epoch
+                # epoch = int(epoch)
                 snapshots.append( (
                         os.path.join(snapshot_dir, filename),
-                        epoch
+                        iteration
                         )
                     )
             # find solverstates
