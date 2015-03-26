@@ -173,7 +173,6 @@ class CaffeTrainTask(TrainTask):
         ### Write train_val file
 
         train_val_network = caffe_pb2.NetParameter()
-        default_batch_size = 16 #XXX Reasonable default?
 
         # data layers
         if train_data_layer is not None:
@@ -207,7 +206,7 @@ class CaffeTrainTask(TrainTask):
             train_data_layer.top.append('data')
             train_data_layer.top.append('label')
             train_data_layer.include.add(phase = caffe_pb2.TRAIN)
-            train_data_layer.data_param.batch_size = default_batch_size
+            train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
             if self.crop_size:
                 train_data_layer.transform_param.crop_size = self.crop_size
             if has_val_set:
@@ -215,7 +214,7 @@ class CaffeTrainTask(TrainTask):
                 val_data_layer.top.append('data')
                 val_data_layer.top.append('label')
                 val_data_layer.include.add(phase = caffe_pb2.TEST)
-                val_data_layer.data_param.batch_size = default_batch_size
+                val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
                 if self.crop_size:
                     val_data_layer.transform_param.crop_size = self.crop_size
         train_data_layer.data_param.source = self.dataset.path(self.dataset.train_db_task().db_name)
@@ -233,9 +232,9 @@ class CaffeTrainTask(TrainTask):
                 val_data_layer.data_param.batch_size = self.batch_size
         else:
             if not train_data_layer.data_param.HasField('batch_size'):
-                train_data_layer.data_param.batch_size = default_batch_size
+                train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
             if val_data_layer is not None and not val_data_layer.data_param.HasField('batch_size'):
-                val_data_layer.data_param.batch_size = default_batch_size
+                val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
         # hidden layers
         train_val_network.MergeFrom(hidden_layers)

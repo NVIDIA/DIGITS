@@ -11,6 +11,7 @@ MEAN_FILE_IMAGE = 'mean.jpg'
 
 # Classification jobs
 LABELS_FILE = 'labels.txt'
+DEFAULT_BATCH_SIZE = 16
 
 # Caffe
 MEAN_FILE_CAFFE = 'mean.binaryproto'
