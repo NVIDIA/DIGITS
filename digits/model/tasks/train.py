@@ -79,7 +79,7 @@ class TrainTask(Task):
         """
         Returns an array of arrays for creating an HTML select field
         """
-        return [[s[1], 'Epoch#Iter%s' % s[1]] for s in reversed(self.snapshots)]
+        return [[s[1], 'Epoch#%s' % s[1]] for s in reversed(self.snapshots)]
 
     def est_next_snapshot(self):
         """
