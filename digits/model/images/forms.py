@@ -11,7 +11,10 @@ class ImageModelForm(ModelForm):
     """
 
     crop_size = wtforms.IntegerField('Crop Size',
-            validators = [validators.Optional()]
+            validators = [
+                    validators.NumberRange(min=1),
+                    validators.Optional()
+                    ]
             )
     use_mean = wtforms.BooleanField('Subtract Mean File',
             default = True
