@@ -4,7 +4,7 @@ import os.path
 import json
 import traceback
 
-from flask import render_template, flash, redirect, session, url_for, abort, make_response, request
+from flask import render_template, flash, redirect, session, url_for, abort, make_response, request, jsonify
 from flask.ext.socketio import emit, join_room, leave_room
 
 from . import dataset, model
@@ -42,6 +42,25 @@ def home():
             running_models      = get_job_list(model.ModelJob, True),
             completed_models    = get_job_list(model.ModelJob, False),
             )
+
+@app.route('/index.json')
+def home_json():
+    datasets = get_job_list(dataset.DatasetJob, True) + get_job_list(dataset.DatasetJob, False)
+    datasets = [{
+        'name': j.name(),
+        'id': j.id(),
+        'status': j.status.name,
+        } for j in datasets]
+    models = get_job_list(model.ModelJob, True) + get_job_list(model.ModelJob, False)
+    models = [{
+        'name': j.name(),
+        'id': j.id(),
+        'status': j.status.name,
+        } for j in models]
+    return jsonify({
+        'datasets': datasets,
+        'models': models,
+        })
 
 def get_job_list(cls, running):
     return sorted(

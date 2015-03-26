@@ -6,7 +6,7 @@ import json
 import math
 
 from google.protobuf import text_format
-from flask import render_template, request, redirect, url_for, flash, make_response, abort
+from flask import render_template, request, redirect, url_for, flash, make_response, abort, jsonify
 from caffe.proto import caffe_pb2
 import caffe.draw
 
@@ -45,6 +45,20 @@ def models_show(job_id):
         return model_images.classification.views.show(job)
     else:
         abort(404)
+
+@app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
+def models_show_json(job_id):
+    job = scheduler.get_job(job_id)
+
+    if job is None:
+        abort(404)
+
+    return jsonify({
+        'id': job.id(),
+        'name': job.name(),
+        'status': job.status.name,
+        'snapshots': [s[1] for s in job.train_task().snapshots],
+        })
 
 ### Other routes
 

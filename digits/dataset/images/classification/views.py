@@ -235,7 +235,7 @@ def image_classification_dataset_create():
 
 def show(job):
     """
-    Called from digits.views.show_job()
+    Called from digits.dataset.views.datasets_show()
     """
     return render_template('datasets/images/classification/show.html', job=job)
 
