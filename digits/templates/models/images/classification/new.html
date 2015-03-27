@@ -122,6 +122,17 @@ $("#dataset").change(function() {
                             ></span>
                     </div>
                 </div>
+                <div class="form-group{{' has-error' if form.snapshot_epochs.errors}}">
+                    {{form.snapshot_epochs.label}}
+                    <div class="input-group">
+                        {{form.snapshot_epochs(class='form-control')}}
+                        <span name="snapshot_epochs_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="After how many epochs of training to take a snapshot?"
+                            ></span>
+                    </div>
+                </div>
                 <div class="form-group{{' has-error' if form.val_interval.errors}}">
                     {{form.val_interval.label}}
                     <div class="input-group">
