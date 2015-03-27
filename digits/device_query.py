@@ -2,6 +2,7 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import ctypes
+import platform
 
 class CudaDeviceProp(ctypes.Structure):
     """
@@ -81,7 +82,13 @@ def get_devices():
 
     # Load library
     try:
-        cudart = ctypes.cdll.LoadLibrary('libcudart.so')
+        if platform.system() == 'Linux':
+            cudart = ctypes.cdll.LoadLibrary('libcudart.so')
+        elif platform.system() == 'Darwin':
+            cudart = ctypes.cdll.LoadLibrary('libcudart.dylib')
+        else:
+            print 'Platform "%s" not supported' % platform.system()
+            return []
     except OSError as e:
         print 'OSError:', e
         print '\tTry setting your LD_LIBRARY_PATH'
