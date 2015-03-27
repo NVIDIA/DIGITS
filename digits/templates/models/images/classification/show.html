@@ -143,7 +143,14 @@ google.setOnLoadCallback(function() {
 
             {% set task = job.train_task() %}
             <hr>
-            <form id="test-model-form" enctype="multipart/form-data" method="post"{% if not task.has_model() %}style="display:none;"{% endif %}>
+            <form id="test-model-form"
+                enctype="multipart/form-data"
+                method="post"
+                onkeypress="return event.keyCode != 13;" {# Disable enter to submit #}
+                {% if not task.has_model() %}
+                style="display:none;"
+                {% endif %}
+                >
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="form-group">
@@ -178,7 +185,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             </script>
                         </div>
                         <button
-                            formaction="{{url_for('models_download_snapshot', job_id=job.id())}}"
+                            formaction="{{url_for('models_download', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             class="btn btn-info">

@@ -39,7 +39,7 @@ class Scheduler:
 
         # Keeps track of which GPUs are in use
         self.gpu_list = []
-        if gpu_list:
+        if gpu_list and gpu_list != 'NONE':
             if isinstance(gpu_list, str):
                 gpu_list = [int(x) for x in gpu_list.split(',')]
             elif isinstance(gpu_list, list):

@@ -4,7 +4,7 @@ import os.path
 import json
 import traceback
 
-from flask import render_template, flash, redirect, session, url_for, abort, make_response, request
+from flask import render_template, flash, redirect, session, url_for, abort, make_response, request, jsonify
 from flask.ext.socketio import emit, join_room, leave_room
 
 from . import dataset, model
@@ -43,6 +43,25 @@ def home():
             completed_models    = get_job_list(model.ModelJob, False),
             )
 
+@app.route('/index.json')
+def home_json():
+    datasets = get_job_list(dataset.DatasetJob, True) + get_job_list(dataset.DatasetJob, False)
+    datasets = [{
+        'name': j.name(),
+        'id': j.id(),
+        'status': j.status.name,
+        } for j in datasets]
+    models = get_job_list(model.ModelJob, True) + get_job_list(model.ModelJob, False)
+    models = [{
+        'name': j.name(),
+        'id': j.id(),
+        'status': j.status.name,
+        } for j in models]
+    return jsonify({
+        'datasets': datasets,
+        'models': models,
+        })
+
 def get_job_list(cls, running):
     return sorted(
             [j for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running],
@@ -78,6 +97,8 @@ def edit_job(job_id):
     job._name = request.form['job_name']
     return 'Changed job name from "%s" to "%s"' % (old_name, job.name())
 
+@app.route('/datasets/<job_id>/status', methods=['GET'])
+@app.route('/models/<job_id>/status', methods=['GET'])
 @app.route('/jobs/<job_id>/status', methods=['GET'])
 def job_status(job_id):
     job = scheduler.get_job(job_id)
@@ -91,6 +112,8 @@ def job_status(job_id):
         result['type'] = job.job_type()
     return json.dumps(result)
 
+@app.route('/datasets/<job_id>', methods=['DELETE'])
+@app.route('/models/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])
 def delete_job(job_id):
     job = scheduler.get_job(job_id)
@@ -101,6 +124,8 @@ def delete_job(job_id):
     else:
         return 'Job could not deleted!', 403
 
+@app.route('/datasets/<job_id>/abort', methods=['POST'])
+@app.route('/models/<job_id>/abort', methods=['POST'])
 @app.route('/jobs/<job_id>/abort', methods=['POST'])
 def abort_job(job_id):
     """Abort a job that is running"""

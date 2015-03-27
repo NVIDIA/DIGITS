@@ -9,6 +9,7 @@ import unittest
 
 from gevent import monkey
 monkey.patch_all()
+from bs4 import BeautifulSoup
 
 import numpy as np
 from skimage import io
@@ -18,7 +19,43 @@ from cStringIO import StringIO
 import webapp
 
 
+DUMMY_IMAGE_DIM = 10
+DUMMY_IMAGE_COUNT = 10 # per category
+
+# TODO: these might be too short on a slow system
+TIMEOUT_DATASET = 10
+TIMEOUT_MODEL = 10
+
+def create_dummy_dataset(data_path):
+    """
+    A very simple dataset - Red, Green and Blue PNGs
+    """
+    dim = DUMMY_IMAGE_DIM
+    count = DUMMY_IMAGE_COUNT
+    min_color = 200
+    labels = {'red': 0, 'green': 1, 'blue': 2}
+    # Stores the relative path of each image of the dataset.
+    images = {'red': [], 'green': [], 'blue': []}
+    for (label, idx) in labels.iteritems():
+        label_path = label
+        os.mkdir(os.path.join(data_path, label_path))
+
+        colors = np.linspace(min_color, 255, count)
+        for i in range(count):
+            pixel = [0, 0, 0]
+            pixel[idx] = colors[i]
+            img = np.full((dim, dim, 3), pixel, dtype=np.uint8)
+
+            img_path = os.path.join(label_path, str(i) + '.png')
+            io.imsave(os.path.join(data_path, img_path), img)
+            images[label].append(img_path)
+
+    return images
+
 def get_dummy_network():
+    """
+    A very simple network - one fully connected layer
+    """
     return \
     """
     layer {
@@ -50,85 +87,325 @@ def get_dummy_network():
     """
 
 
-def create_rgb_dataset(data_path):
-    dim = 64
-    count = 10
-    min_color = 200
-    labels = {'red': 0, 'green': 1, 'blue': 2}
-    # Stores the relative path of each image of the dataset.
-    images = {'red': [], 'green': [], 'blue': []}
-    for (label, idx) in labels.iteritems():
-        label_path = label
-        os.mkdir(os.path.join(data_path, label_path))
-
-        colors = np.linspace(min_color, 255, count)
-        for i in range(count):
-            pixel = [0, 0, 0]
-            pixel[idx] = colors[i]
-            img = np.full((dim, dim, 3), pixel, dtype=np.uint8)
-
-            img_path = os.path.join(label_path, str(i) + '.png')
-            io.imsave(os.path.join(data_path, img_path), img)
-            images[label].append(img_path)
-
-    return images
-
-
-class BaseTestCase(unittest.TestCase):
-
+class WebappBaseTest(object):
+    """
+    Defines some methods useful across the different webapp test suites
+    """
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
+        # Create some dummy data
         cls.data_path = tempfile.mkdtemp()
-        cls.images = create_rgb_dataset(cls.data_path)
+        cls.images = create_dummy_dataset(cls.data_path)
+        # Start up the server
+        assert webapp.scheduler.start(), "scheduler wouldn't start"
+        webapp.app.config['WTF_CSRF_ENABLED'] = False
+        webapp.app.config['TESTING'] = True
+        cls.app = webapp.app.test_client()
+        cls.created_jobs = []
 
     @classmethod
-    def teardown_class(cls):
+    def tearDownClass(cls):
+        # Remove all jobs
+        for job in cls.created_jobs:
+            cls.delete_job(job)
+        # Remove the dummy data
         shutil.rmtree(cls.data_path)
 
-    def setUp(self):
-        webapp.scheduler.start()
-        webapp.app.config['WTF_CSRF_ENABLED'] = False
-        webapp.app.config['debug'] = True
-        self.app = webapp.app.test_client()
-        self.server = 'http://0.0.0.0:5000/'
-        self.jobs = self.server + '/jobs/'
-        self.created_jobs = []
+    @classmethod
+    def create_dataset(cls, **data):
+        """
+        Create a dataset
+        Returns the job_id
+        Raises RuntimeError if job fails to create
 
-    def tearDown(self):
-        # If a test fail, some jobs might not be deleted correctly, try to cleanup all created jobs here.
-        for job in self.created_jobs:
-            self.job_try_delete(job)
+        Arguments:
+        data -- data to be sent with POST request
+        """
+        if 'dataset_name' not in data:
+            data['dataset_name'] = 'dummy_dataset'
+        rv = cls.app.post(
+                '/datasets/images/classification',
+                data = data)
+        if not 300 <= rv.status_code <= 310:
+            s = BeautifulSoup(rv.data)
+            div = s.select('div.alert-danger')
+            if div:
+                raise RuntimeError(div[0])
+            else:
+                raise RuntimeError('Failed to create dataset')
 
-        # Do not stop the scheduler here, since this action is
-        # asynchronous. This would likely cause the next test to fail.
+        job_id = cls.job_id_from_response(rv)
+        assert cls.dataset_exists(job_id), 'dataset not found after successful creation'
 
-    def job_exists(self, job_name):
-        job_url = self.jobs + job_name
-        rv = self.app.get(job_url, follow_redirects=True)
-        rv.close()
-        assert rv.status_code == 200 or rv.status_code == 404
-        return rv.status_code == 200
+        cls.created_jobs.append(job_id)
+        return job_id
 
-    def extract_name(self, rv):
+    @classmethod
+    def create_quick_dataset(cls, **kwargs):
+        """
+        Creates a simple dataset quickly
+        Returns the job_id
+
+        Keyword arguments:
+        kwargs -- any overrides you want to pass into the POST data
+        """
+        defaults = {
+                'method': 'folder',
+                'folder_train': cls.data_path,
+                'resize_width': DUMMY_IMAGE_DIM,
+                'resize_height': DUMMY_IMAGE_DIM,
+                }
+        defaults.update(kwargs)
+        return cls.create_dataset(**defaults)
+
+    @classmethod
+    def create_model(cls, **data):
+        """
+        Create a model
+        Returns the job_id
+        Raise RuntimeError if job fails to create
+
+        Arguments:
+        data -- data to be sent with POST request
+        """
+        if 'model_name' not in data:
+            data['model_name'] = 'dummy_model'
+        rv = cls.app.post(
+                '/models/images/classification',
+                data = data)
+        if not 300 <= rv.status_code <= 310:
+            s = BeautifulSoup(rv.data)
+            div = s.select('div.alert-danger')
+            if div:
+                raise RuntimeError(div[0])
+            else:
+                raise RuntimeError('Failed to create model')
+
+        job_id = cls.job_id_from_response(rv)
+        assert cls.model_exists(job_id), 'model not found after successful creation'
+
+        cls.created_jobs.append(job_id)
+        return job_id
+
+    @classmethod
+    def create_quick_model(cls, dataset_id, **kwargs):
+        """
+        Creates a simple model quickly
+        Returns the job_id
+
+        Arguments:
+        dataset_id -- id for the dataset
+
+        Keyword arguments:
+        kwargs -- any overrides you want to pass into the POST data
+        """
+        defaults = {
+                'dataset': dataset_id,
+                'method': 'custom',
+                'custom_network': get_dummy_network(),
+                'batch_size': DUMMY_IMAGE_COUNT,
+                'train_epochs': 1,
+                }
+        defaults.update(kwargs)
+        return cls.create_model(**defaults)
+
+    @classmethod
+    def job_id_from_response(cls, rv):
+        """
+        Extract the job_id from an HTTP response
+        """
         job_url = rv.headers['Location']
         parsed_url = urlparse(job_url)
-        job_name = parsed_url.path.split('/')[-1]
-        return job_name
+        return parsed_url.path.split('/')[-1]
 
-    def dataset_create_folder(self, name, folder):
-        create_url = self.server + '/datasets/images/classification'
-        body = {'dataset_name': name, 'method': 'folder', 'folder_train': folder}
-        rv = self.app.post(create_url, data=body)
-        rv.close()
-        assert rv.status_code >= 300 and rv.status_code <= 310, 'No redirect after dataset creation'
+    @classmethod
+    def dataset_exists(cls, job_id):
+        return cls.job_exists(job_id, 'datasets')
 
-        job_name = self.extract_name(rv)
-        assert self.job_exists(job_name)
+    @classmethod
+    def model_exists(cls, job_id):
+        return cls.job_exists(job_id, 'models')
 
-        self.created_jobs.append(job_name)
-        return job_name
+    @classmethod
+    def job_exists(cls, job_id, job_type='jobs'):
+        """
+        Test whether a job exists
+        """
+        url = '/%s/%s' % (job_type, job_id)
+        rv = cls.app.get(url, follow_redirects=True)
+        assert rv.status_code in [200, 404], 'got status code "%s" from "%s"' % (rv.status_code, url)
+        return rv.status_code == 200
 
-    def dataset_create_textfile(self, name, absolute_path=True):
+    @classmethod
+    def dataset_status(cls, job_id):
+        return cls.job_status(job_id, 'datasets')
+
+    @classmethod
+    def model_status(cls, job_id):
+        return cls.job_status(job_id, 'models')
+
+    @classmethod
+    def job_status(cls, job_id, job_type='jobs'):
+        """
+        Get the status of a job
+        """
+        url = '/%s/%s/status' % (job_type, job_id)
+        rv = cls.app.get(url)
+        assert rv.status_code == 200, 'Cannot get status of job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+        status = json.loads(rv.data)
+        return status['status']
+
+    @classmethod
+    def abort_dataset(cls, job_id):
+        return cls.abort_job(job_id, job_type='datasets')
+
+    @classmethod
+    def abort_model(cls, job_id):
+        return cls.abort_job(job_id, job_type='models')
+
+    @classmethod
+    def abort_job(cls, job_id, job_type='jobs'):
+        """
+        Abort a job
+        Returns the HTTP status code
+        """
+        print 'aborting job %s' % job_id
+        rv = cls.app.post('/%s/%s/abort' % (job_type, job_id))
+        return rv.status_code
+
+    @classmethod
+    def dataset_wait_completion(cls, job_id, **kwargs):
+        kwargs['job_type'] = 'datasets'
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = TIMEOUT_DATASET
+        return cls.job_wait_completion(job_id, **kwargs)
+
+    @classmethod
+    def model_wait_completion(cls, job_id, **kwargs):
+        kwargs['job_type'] = 'models'
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = TIMEOUT_MODEL
+        return cls.job_wait_completion(job_id, **kwargs)
+
+    @classmethod
+    def job_wait_completion(cls, job_id, timeout=10, polling_period=0.5, job_type='jobs'):
+        """
+        Poll the job status until it completes
+        Returns the final status
+
+        Arguments:
+        job_id -- the job to wait for
+
+        Keyword arguments:
+        timeout -- maximum wait time (seconds)
+        polling_period -- how often to poll (seconds)
+        job_type -- [datasets|models]
+        """
+        start = time.time()
+        while True:
+            status = cls.job_status(job_id, job_type=job_type)
+            if status in ['Done', 'Abort', 'Error']:
+                return status
+            assert (time.time() - start) < timeout, 'Job took more than %s seconds' % timeout
+            time.sleep(polling_period)
+
+    @classmethod
+    def delete_dataset(cls, job_id):
+        return cls.delete_job(job_id, job_type='datasets')
+
+    @classmethod
+    def delete_model(cls, job_id):
+        return cls.delete_job(job_id, job_type='models')
+
+    @classmethod
+    def delete_job(cls, job_id, job_type='jobs'):
+        """
+        Delete a job
+        Returns the HTTP status code
+        """
+        print 'deleting job %s' % job_id
+        rv = cls.app.delete('/%s/%s' % (job_type, job_id))
+        return rv.status_code
+
+################################################################################
+# Tests start here
+################################################################################
+
+class TestWebapp(WebappBaseTest):
+    """
+    Some app-wide tests
+    """
+    def test_page_home(self):
+        """home page"""
+        rv = self.app.get('/')
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        for h in ['Home', 'Datasets', 'Models']:
+            assert h in rv.data, 'unexpected page format'
+
+    def test_invalid_page(self):
+        """invalid page"""
+        rv = self.app.get('/foo')
+        assert rv.status_code == 404, 'should return 404'
+
+    def test_invalid_dataset(self):
+        """invalid dataset"""
+        assert not self.dataset_exists('foo'), "dataset shouldn't exist"
+
+    def test_invalid_model(self):
+        """invalid model"""
+        assert not self.model_exists('foo'), "model shouldn't exist"
+
+
+class TestDatasetCreation(WebappBaseTest):
+    """
+    Dataset creation tests
+    """
+    def test_page_dataset_new(self):
+        """new image classification dataset page"""
+        rv = self.app.get('/datasets/images/classification/new')
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        assert 'New Image Classification Dataset' in rv.data, 'unexpected page format'
+
+    def test_invalid_folder(self):
+        """invalid folder"""
+        empty_dir = tempfile.mkdtemp()
+        try:
+            job_id = self.create_dataset(
+                    method = 'folder',
+                    train_folder = empty_dir
+                    )
+        except RuntimeError:
+            return
+        raise AssertionError('Should have failed')
+
+    def test_create_delete(self):
+        """create, delete"""
+        job_id = self.create_quick_dataset()
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+    def test_create_wait_delete(self):
+        """create, wait, delete"""
+        job_id = self.create_quick_dataset()
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+    def test_create_abort_delete(self):
+        """create, abort, delete"""
+        job_id = self.create_quick_dataset()
+        assert self.abort_dataset(job_id) == 200, 'abort failed'
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+
+    def create_from_textfiles(self, absolute_path=True):
+        """
+        Create a dataset from textfiles
+
+        Arguments:
+        absolute_path -- if False, give relative paths and image folders
+        """
         textfile_train_images = ''
         textfile_labels_file = ''
         label_id = 0
@@ -147,228 +424,134 @@ class BaseTestCase(unittest.TestCase):
         # Use the same list for training and validation.
         val_upload = (StringIO(textfile_train_images), 'val.txt')
         labels_upload = (StringIO(textfile_labels_file), 'labels.txt')
-        body = {'dataset_name': name, 'method': 'textfile', 'textfile_train_images': train_upload,
-                'textfile_use_val': 'y', 'textfile_val_images': val_upload,
-                'textfile_labels_file': labels_upload}
+
+        data = {
+                'method': 'textfile',
+                'textfile_train_images': train_upload,
+                'textfile_use_val': 'y',
+                'textfile_val_images': val_upload,
+                'textfile_labels_file': labels_upload,
+                }
         if not absolute_path:
-            body['textfile_train_folder'] = self.data_path
-            body['textfile_val_folder'] = self.data_path
+            data['textfile_train_folder'] = self.data_path
+            data['textfile_val_folder'] = self.data_path
 
-        create_url = self.server + '/datasets/images/classification'
-        rv = self.app.post(create_url, data=body)
-        assert rv.status_code >= 300 and rv.status_code <= 310, 'No redirect after dataset creation'
+        return self.create_dataset(**data)
 
-        job_name = self.extract_name(rv)
-        assert self.job_exists(job_name)
+    def test_textfile_absolute(self):
+        """textfiles (absolute), wait"""
+        job_id = self.create_from_textfiles(absolute_path=True)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
 
-        self.created_jobs.append(job_name)
-        return job_name
-
-
-    def model_create(self, name, dataset):
-        network = get_dummy_network()
-        create_url = self.server + '/models/images/classification'
-        body = {'model_name': name, 'dataset': dataset, 'method': 'custom', 'custom_network': network}
-        rv = self.app.post(create_url, data=body)
-        rv.close()
-        assert rv.status_code >= 300 and rv.status_code <= 310, 'No redirect after model creation'
-
-        job_name = self.extract_name(rv)
-        assert self.job_exists(job_name)
-
-        self.created_jobs.append(job_name)
-        return job_name
-
-    def model_download(self, job_name, epoch):
-        body = {'snapshot_epoch': epoch}
-        download_url = self.server + '/models/' + job_name + '/download_snapshot'
-        rv = self.app.post(download_url, data=body)
-        rv.close()
-        assert rv.status_code == 200
-
-    def job_status(self, job_name):
-        status_url = self.jobs + job_name + '/status'
-        rv = self.app.get(status_url)
-        assert rv.status_code == 200, 'Cannot get status of job %s' % job_name
-        status = json.loads(rv.data)
-        return status
-
-    def job_wait_completion(self, job_name, timeout, polling_period=0.5):
-        elapsed = 0
-        while True:
-            status = self.job_status(job_name)
-            if status['status'] == 'Done':
-                break
-            assert status['status'] in ['Initialized', 'Waiting', 'Running'], 'Invalid job status: %s' % status['status']
-            time.sleep(polling_period)
-            elapsed += polling_period
-            assert elapsed < timeout, 'Job took more than %s seconds' % timeout
-
-    def job_abort(self, job_name):
-        abort_url = self.jobs + job_name + '/abort'
-        self.app.post(abort_url)
-
-    def job_try_delete(self, job_name):
-        rv = self.app.delete('/jobs/' + job_name)
-        rv.close()
-
-    def job_delete(self, job_name):
-        rv = self.app.delete('/jobs/' + job_name)
-        assert rv.status_code == 200
-        rv.close()
-
-    def job_delete_code(self, job_name):
-        rv = self.app.delete('/jobs/' + job_name)
-        rc = rv.status_code
-        rv.close()
-        return rc
+    def test_textfile_relative(self):
+        """textfiles (relative), wait"""
+        job_id = self.create_from_textfiles(absolute_path=False)
+        status = self.dataset_wait_completion(job_id)
+        assert status == 'Done', 'create failed "%s"' % status
 
 
-class WebappTestCase(BaseTestCase):
+class TestCreatedDataset(WebappBaseTest):
+    """
+    Tests on a dataset that has already been created
+    """
+    pass
 
-    def test_page_home(self):
-        rv = self.app.get('/')
-        assert rv.status_code == 200, 'code is %s' % rv.status_code
-        for h in ['Home', 'Datasets', 'Models']:
-            assert h in rv.data
-
-    def test_page_dataset_new(self):
-        dataset_new_url = self.server + '/datasets/images/classification/new'
-        rv = self.app.get(dataset_new_url)
-        assert rv.status_code == 200
-        assert 'New Image Classification Dataset' in rv.data
+class TestModelCreation(WebappBaseTest):
+    """
+    Model creation tests
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(TestModelCreation, cls).setUpClass()
+        cls.dataset_id = cls.create_dataset(
+                method = 'folder',
+                folder_train = cls.data_path,
+                resize_width = DUMMY_IMAGE_DIM,
+                resize_height = DUMMY_IMAGE_DIM,
+                )
 
     def test_page_model_new(self):
-        model_new_url = self.server + '/models/images/classification/new'
-        rv = self.app.get(model_new_url)
-        assert rv.status_code == 200
-        assert 'New Image Classification Model' in rv.data
+        """new image classification model page"""
+        rv = self.app.get('/models/images/classification/new')
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        assert 'New Image Classification Model' in rv.data, 'unexpected page format'
 
-    def test_invalid_page(self):
-        rv = self.app.get('/foo')
-        assert rv.status_code == 404
+    def test_create_delete(self):
+        """create, delete"""
+        job_id = self.create_quick_model(self.dataset_id)
+        assert self.delete_model(job_id) == 200, 'delete failed'
+        assert not self.model_exists(job_id), 'model exists after delete'
 
-    def test_invalid_job(self):
-        assert not self.job_exists('foo'), 'Invalid job query should return 404'
+    def test_create_wait_delete(self):
+        """create, wait, delete"""
+        job_id = self.create_quick_model(self.dataset_id)
+        assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+        assert self.delete_model(job_id) == 200, 'delete failed'
+        assert not self.model_exists(job_id), 'model exists after delete'
 
-    def test_dataset_create_delete(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(dataset_name), 'Job was not deleted'
+    def test_create_abort_delete(self):
+        """create, abort, delete"""
+        job_id = self.create_quick_model(self.dataset_id)
+        assert self.abort_model(job_id) == 200, 'abort failed'
+        assert self.delete_model(job_id) == 200, 'delete failed'
+        assert not self.model_exists(job_id), 'model exists after delete'
 
-    def test_dataset_create_invalid(self):
-        empty_dir = tempfile.mkdtemp()
-        dataset_name = self.dataset_create_folder('rgb_dataset', empty_dir)
-        time.sleep(3)
-        status = self.job_status(dataset_name)
-        assert status['status'] == 'Error'
+class TestCreatedModel(WebappBaseTest):
+    """
+    Tests on a model that has already been created
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(TestCreatedModel, cls).setUpClass()
+        cls.dataset_id = cls.create_quick_dataset()
+        assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'dataset creation failed'
+        cls.model_id = cls.create_quick_model(cls.dataset_id)
+        assert cls.model_wait_completion(cls.model_id) == 'Done', 'model creation failed'
 
-    def test_dataset_create_wait_delete(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        self.job_wait_completion(dataset_name, 10)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(dataset_name), 'Job was not deleted'
+    def download_model(self, extension):
+        rv = self.app.get('/models/%s/download.%s' % (self.model_id, extension))
+        assert rv.status_code == 200, 'download failed with %s' % rv.status_code
 
-    def test_dataset_create_abort_delete(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        self.job_abort(dataset_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(dataset_name), 'Job was not deleted'
+    def test_download(self):
+        """download model"""
+        for extension in ['tar', 'zip', 'tar.gz', 'tar.bz2']:
+            yield self.download_model, extension
 
-    def test_model_create_delete(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        model_name = self.model_create('rgb_model', dataset_name)
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(dataset_name), 'Job was not deleted'
-        assert not self.job_exists(model_name), 'Job was not deleted'
+class TestDatasetModelInteractions(WebappBaseTest):
+    """
+    Test the interactions between datasets and models
+    """
 
-    # Concurrently delete a dataset and create a model.
-    def test_model_create_with_deleted_database(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        self.job_wait_completion(dataset_name, 10)
-        self.job_delete(dataset_name)
+    def test_model_with_deleted_database(self):
+        """model on deleted dataset"""
+        dataset_id = self.create_quick_dataset()
+        assert self.delete_dataset(dataset_id) == 200, 'delete failed'
+        assert not self.dataset_exists(dataset_id), 'dataset exists after delete'
+
         try:
-            model_name = self.model_create('rgb_model', dataset_name)
-        except AssertionError:
-            pass
-        else:
-            self.job_delete(model_name)
-            assert False, 'Model creation should have failed'
+            model_id = self.create_quick_model(dataset_id)
+        except RuntimeError:
+            return
+        assert False, 'Should have failed'
 
-    def test_model_wait_create_delete(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        self.job_wait_completion(dataset_name, 10)
-        model_name = self.model_create('rgb_model', dataset_name)
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(model_name), 'ModelJob was not deleted'
-        assert not self.job_exists(dataset_name), 'DatasetJob was not deleted'
-
-    def test_model_wait_create_wait_delete(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        self.job_wait_completion(dataset_name, 10)
-        model_name = self.model_create('rgb_model', dataset_name)
-        self.job_wait_completion(model_name, 30)
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(model_name), 'ModelJob was not deleted'
-        assert not self.job_exists(dataset_name), 'DatasetJob was not deleted'
-
-    def test_model_download(self):
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        self.job_wait_completion(dataset_name, 10)
-        model_name = self.model_create('rgb_model', dataset_name)
-        self.job_wait_completion(model_name, 30)
-
-        self.model_download(model_name, 1)
-
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(model_name), 'ModelJob was not deleted'
-        assert not self.job_exists(dataset_name), 'DatasetJob was not deleted'
-
-    def test_model_create_wait_delete(self):
-        """
-        Create model while dataset still running
-        """
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        model_name = self.model_create('rgb_model', dataset_name)
-        self.job_wait_completion(model_name, 10)
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(model_name), 'ModelJob was not deleted'
-        assert not self.job_exists(dataset_name), 'DatasetJob was not deleted'
+    def test_model_on_running_dataset(self):
+        """model on running dataset"""
+        dataset_id = self.create_quick_dataset()
+        model_id = self.create_quick_model(dataset_id)
+        # should wait until dataset has finished
+        assert self.model_status(model_id) in ['Initialized', 'Waiting', 'Done'], 'model not waiting'
+        assert self.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
+        time.sleep(1)
+        # then it should start
+        assert self.model_status(model_id) in ['Running', 'Done'], "model didn't start"
+        self.abort_model(model_id)
 
     # A dataset should not be deleted while a model using it is running.
     def test_model_create_dataset_delete(self):
-        """
-        Delete dataset while model still running
-        """
-        dataset_name = self.dataset_create_folder('rgb_dataset', self.data_path)
-        model_name = self.model_create('rgb_model', dataset_name)
-        assert self.job_delete_code(dataset_name) == 403, 'Job should not have been deleted'
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(model_name), 'ModelJob was not deleted'
-        assert not self.job_exists(dataset_name), 'DatasetJob was not deleted'
+        """delete dataset with dependent model"""
+        dataset_id = self.create_quick_dataset()
+        model_id = self.create_quick_model(dataset_id)
+        assert self.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
+        assert self.delete_dataset(dataset_id) == 403, 'dataset deletion should not have succeeded'
+        self.abort_model(model_id)
 
-    def test_textfile_absolute_path(self):
-        dataset_name = self.dataset_create_textfile('rgb_dataset')
-        self.job_wait_completion(dataset_name, 10)
-        model_name = self.model_create('rgb_model', dataset_name)
-        self.job_wait_completion(model_name, 30)
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(model_name), 'ModelJob was not deleted'
-        assert not self.job_exists(dataset_name), 'DatasetJob was not deleted'
-
-    def test_textfile_relative_path(self):
-        dataset_name = self.dataset_create_textfile('rgb_dataset', absolute_path=False)
-        self.job_wait_completion(dataset_name, 10)
-        model_name = self.model_create('rgb_model', dataset_name)
-        self.job_wait_completion(model_name, 30)
-        self.job_delete(model_name)
-        self.job_delete(dataset_name)
-        assert not self.job_exists(model_name), 'ModelJob was not deleted'
-        assert not self.job_exists(dataset_name), 'DatasetJob was not deleted'

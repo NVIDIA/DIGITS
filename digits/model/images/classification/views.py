@@ -151,7 +151,7 @@ def image_classification_model_create():
 
 def show(job):
     """
-    Called from digits.views.show_job()
+    Called from digits.model.views.models_show()
     """
     return render_template('models/images/classification/show.html', job=job)
 

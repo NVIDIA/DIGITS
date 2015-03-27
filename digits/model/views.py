@@ -1,12 +1,15 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
+import io
 import re
 import json
 import math
+import tarfile
+import zipfile
 
 from google.protobuf import text_format
-from flask import render_template, request, redirect, url_for, flash, make_response, abort
+from flask import render_template, request, redirect, url_for, flash, make_response, abort, jsonify
 from caffe.proto import caffe_pb2
 import caffe.draw
 
@@ -45,6 +48,20 @@ def models_show(job_id):
         return model_images.classification.views.show(job)
     else:
         abort(404)
+
+@app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
+def models_show_json(job_id):
+    job = scheduler.get_job(job_id)
+
+    if job is None:
+        abort(404)
+
+    return jsonify({
+        'id': job.id(),
+        'name': job.name(),
+        'status': job.status.name,
+        'snapshots': [s[1] for s in job.train_task().snapshots],
+        })
 
 ### Other routes
 
@@ -137,25 +154,60 @@ def models_visualize_lr():
 
     return json.dumps(data)
 
-@app.route(NAMESPACE + '<job_id>/download_snapshot', methods=['POST'])
-def models_download_snapshot(job_id):
+@app.route(NAMESPACE + '<job_id>/download', methods=['GET', 'POST'])
+@app.route(NAMESPACE + '<job_id>/download.<extension>', methods=['GET', 'POST'])
+def models_download(job_id, extension='tar.gz'):
+    """
+    Return a tarball of all files required to run the model
+    """
     job = scheduler.get_job(job_id)
 
     if not job:
-        abort(404)
+        return 'Job not found', 404
 
-    epoch = int(request.form['snapshot_epoch'])
-    filename = None
+    epoch = -1
+    # GET ?epoch=n
+    if 'epoch' in request.args:
+        epoch = int(request.args['epoch'])
 
-    for f, e in job.train_task().snapshots:
-        if e == epoch:
-            filename = f
-            break
-    if not filename:
-        abort(400)
+    # POST ?snapshot_epoch=n (from form)
+    elif 'snapshot_epoch' in request.form:
+        epoch = int(request.form['snapshot_epoch'])
 
-    with open(job.path(filename), 'r') as infile:
-        response = make_response(infile.read())
-        response.headers["Content-Disposition"] = "attachment; filename=%s_epoch_%s.caffemodel" % (job.id(), epoch)
-        return response
+    task = job.train_task()
+
+    snapshot_filename = None
+    if epoch == -1 and len(task.snapshots):
+        epoch = task.snapshots[-1][1]
+        snapshot_filename = task.snapshots[-1][0]
+    else:
+        for f, e in task.snapshots:
+            if e == epoch:
+                snapshot_filename = f
+                break
+    if not snapshot_filename:
+        return 'Invalid epoch', 400
+
+    b = io.BytesIO()
+    if extension in ['tar', 'tar.gz', 'tgz', 'tar.bz2']:
+        # tar file
+        mode = ''
+        if extension in ['tar.gz', 'tgz']:
+            mode = 'gz'
+        elif extension in ['tar.bz2']:
+            mode = 'bz2'
+        with tarfile.open(fileobj=b, mode='w:%s' % mode) as tf:
+            for path, name in job.download_files(epoch):
+                tf.add(path, arcname=name)
+    elif extension in ['zip']:
+        with zipfile.ZipFile(b, 'w') as zf:
+            for path, name in job.download_files(epoch):
+                zf.write(path, arcname=name)
+    else:
+        return 'Unrecognized extension "%s"' % extension, 400
+
+    response = make_response(b.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)
+    return response
+
 
