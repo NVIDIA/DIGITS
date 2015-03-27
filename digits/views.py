@@ -97,6 +97,8 @@ def edit_job(job_id):
     job._name = request.form['job_name']
     return 'Changed job name from "%s" to "%s"' % (old_name, job.name())
 
+@app.route('/datasets/<job_id>/status', methods=['GET'])
+@app.route('/models/<job_id>/status', methods=['GET'])
 @app.route('/jobs/<job_id>/status', methods=['GET'])
 def job_status(job_id):
     job = scheduler.get_job(job_id)
@@ -110,6 +112,8 @@ def job_status(job_id):
         result['type'] = job.job_type()
     return json.dumps(result)
 
+@app.route('/datasets/<job_id>', methods=['DELETE'])
+@app.route('/models/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])
 def delete_job(job_id):
     job = scheduler.get_job(job_id)
@@ -120,6 +124,8 @@ def delete_job(job_id):
     else:
         return 'Job could not deleted!', 403
 
+@app.route('/datasets/<job_id>/abort', methods=['POST'])
+@app.route('/models/<job_id>/abort', methods=['POST'])
 @app.route('/jobs/<job_id>/abort', methods=['POST'])
 def abort_job(job_id):
     """Abort a job that is running"""
