@@ -454,7 +454,23 @@ class TestCreatedDataset(WebappBaseTest):
     """
     Tests on a dataset that has already been created
     """
-    pass
+    @classmethod
+    def setUpClass(cls):
+        super(TestCreatedDataset, cls).setUpClass()
+        cls.dataset_id = cls.create_quick_dataset()
+        assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'dataset creation failed'
+
+    def test_index_json(self):
+        """index.json"""
+        rv = self.app.get('/index.json')
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        found = False
+        for d in content['datasets']:
+            if d['id'] == self.dataset_id:
+                found = True
+                break
+        assert found, 'dataset not found in list'
 
 class TestModelCreation(WebappBaseTest):
     """
@@ -516,6 +532,26 @@ class TestCreatedModel(WebappBaseTest):
         """download model"""
         for extension in ['tar', 'zip', 'tar.gz', 'tar.bz2']:
             yield self.download_model, extension
+
+    def test_index_json(self):
+        """index.json"""
+        rv = self.app.get('/index.json')
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        found = False
+        for m in content['models']:
+            if m['id'] == self.model_id:
+                found = True
+                break
+        assert found, 'model not found in list'
+
+    def test_job_json(self):
+        """job.json"""
+        rv = self.app.get('/models/%s.json' % self.model_id)
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert content['id'] == self.model_id, 'expected different job_id'
+        assert len(content['snapshots']) > 0, 'no snapshots in list'
 
 class TestDatasetModelInteractions(WebappBaseTest):
     """
