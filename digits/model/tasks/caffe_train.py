@@ -298,7 +298,9 @@ class CaffeTrainTask(TrainTask):
 
         solver = caffe_pb2.SolverParameter()
         solver.net = self.train_val_file
-        if config_option('gpu_list'):
+        # TODO: detect if caffe is built with CPU_ONLY
+        gpu_list = config_option('gpu_list')
+        if gpu_list and gpu_list != 'NONE':
             solver.solver_mode = caffe_pb2.SolverParameter.GPU
         else:
             solver.solver_mode = caffe_pb2.SolverParameter.CPU

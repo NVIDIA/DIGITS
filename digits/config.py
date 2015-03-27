@@ -65,7 +65,7 @@ class CaffeRootOption(ConfigOption):
         return 'caffe_root'
 
     def prompt_message(self):
-        return 'Where is caffe installed? (enter "SYS" if installed system-wide)'
+        return 'Where is caffe installed?\n\t(enter "SYS" if installed system-wide)'
 
     def default_value(self):
         if 'CAFFE_HOME' in os.environ:
@@ -139,7 +139,7 @@ class GpusOption(ConfigOption):
             s += '\t%-20s %s\n' % ('Memory', self.convert_size(gpu.totalGlobalMem))
             s += '\t%-20s %s\n' % ('Multiprocessors', gpu.multiProcessorCount)
             s += '\n'
-        return s + '\nInput the IDs of the devices you would like to use, separated by commas, in order of preference.'
+        return s + '\nInput the IDs of the devices you would like to use, separated by commas, in order of preference.\n\t(enter "NONE" if you want to run in CPU-only mode)'
 
     def default_value(self):
         return ','.join([str(x) for x in xrange(len(self.query_gpus()))])
@@ -156,6 +156,9 @@ class GpusOption(ConfigOption):
             return False
 
     def validate(self, value):
+        if value == 'NONE':
+            return 'NONE'
+
         choices = []
         gpus = self.query_gpus()
 
