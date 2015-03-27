@@ -87,7 +87,7 @@ def get_dummy_network():
     """
 
 
-class WebappBaseTest(unittest.TestCase):
+class WebappBaseTest(object):
     """
     Defines some methods useful across the different webapp test suites
     """
@@ -105,10 +105,9 @@ class WebappBaseTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # Stop the server
+        # Remove all jobs
         for job in cls.created_jobs:
             cls.delete_job(job)
-#        assert webapp.scheduler.stop(), "scheduler wouldn't stop"
         # Remove the dummy data
         shutil.rmtree(cls.data_path)
 
@@ -509,11 +508,14 @@ class TestCreatedModel(WebappBaseTest):
         cls.model_id = cls.create_quick_model(cls.dataset_id)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'model creation failed'
 
-    @unittest.skip('download not enabled yet')
+    def download_model(self, extension):
+        rv = self.app.get('/models/%s/download.%s' % (self.model_id, extension))
+        assert rv.status_code == 200, 'download failed with %s' % rv.status_code
+
     def test_download(self):
         """download model"""
-        rv = self.app.get('/models/%s/download' % self.model_id)
-        assert rv.status_code == 200, 'download failed with %s' % rv.status_code
+        for extension in ['tar', 'zip', 'tar.gz', 'tar.bz2']:
+            yield self.download_model, extension
 
 class TestDatasetModelInteractions(WebappBaseTest):
     """
@@ -537,7 +539,7 @@ class TestDatasetModelInteractions(WebappBaseTest):
         dataset_id = self.create_quick_dataset()
         model_id = self.create_quick_model(dataset_id)
         # should wait until dataset has finished
-        assert self.model_status(model_id) == 'Waiting', 'model not waiting'
+        assert self.model_status(model_id) in ['Initialized', 'Waiting', 'Done'], 'model not waiting'
         assert self.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
         time.sleep(1)
         # then it should start
