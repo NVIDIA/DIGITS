@@ -122,14 +122,14 @@ $("#dataset").change(function() {
                             ></span>
                     </div>
                 </div>
-                <div class="form-group{{' has-error' if form.snapshot_epochs.errors}}">
-                    {{form.snapshot_epochs.label}}
+                <div class="form-group{{' has-error' if form.snapshot_interval.errors}}">
+                    {{form.snapshot_interval.label}}
                     <div class="input-group">
-                        {{form.snapshot_epochs(class='form-control')}}
-                        <span name="snapshot_epochs_explanation"
+                        {{form.snapshot_interval(class='form-control')}}
+                        <span name="snapshot_interval_explanation"
                             class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                             data-container="body"
-                            title="After how many epochs of training to take a snapshot?"
+                            title="How many epochs of training between taking a snapshot?"
                             ></span>
                     </div>
                 </div>
@@ -140,7 +140,7 @@ $("#dataset").change(function() {
                         <span name="val_interval_explanation"
                             class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                             data-container="body"
-                            title="After how many epochs of training to run through one pass of the validation data?"
+                            title="How many epochs of training between running through one pass of the validation data?"
                             ></span>
                     </div>
                 </div>

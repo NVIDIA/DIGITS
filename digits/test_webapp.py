@@ -512,6 +512,24 @@ class TestModelCreation(WebappBaseTest):
         assert self.delete_model(job_id) == 200, 'delete failed'
         assert not self.model_exists(job_id), 'model exists after delete'
 
+    def test_snapshot_interval_2(self):
+        """snapshot_interval 2"""
+        job_id = self.create_quick_model(self.dataset_id, train_epochs=1, snapshot_interval=0.5)
+        assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+        rv = self.app.get('/models/%s.json' % job_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']) > 1, 'should take >1 snapshot'
+
+    def test_snapshot_interval_0_5(self):
+        """snapshot_interval 0.5"""
+        job_id = self.create_quick_model(self.dataset_id, train_epochs=4, snapshot_interval=2)
+        assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+        rv = self.app.get('/models/%s.json' % job_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']) == 2, 'should take 2 snapshots'
+
 class TestCreatedModel(WebappBaseTest):
     """
     Tests on a model that has already been created

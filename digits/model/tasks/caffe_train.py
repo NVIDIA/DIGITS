@@ -309,16 +309,23 @@ class CaffeTrainTask(TrainTask):
         # Epochs -> Iterations
         train_iter = int(math.ceil(float(self.dataset.train_db_task().entries_count) / train_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
-        solver.snapshot = int(math.ceil(float(self.dataset.train_db_task().entries_count) / train_data_layer.data_param.batch_size * self.snapshot_epochs)) 
-        # Snapshot Validation
-        if solver.snapshot <= 0:
-            solver.snapshot = 1
-        elif solver.snapshot > solver.max_iter:
-            solver.snapshot = solver.max_iter
+        snapshot_interval = self.snapshot_interval * train_iter
+        if 0 < snapshot_interval <= 1:
+            solver.snapshot = 1 # don't round down
+        elif 1 < snapshot_interval < solver.max_iter:
+            solver.snapshot = int(snapshot_interval)
+        else:
+            solver.snapshot = 0 # only take one snapshot at the end
 
         if self.dataset.val_db_task() and self.val_interval:
             solver.test_iter.append(int(math.ceil(float(self.dataset.val_db_task().entries_count) / val_data_layer.data_param.batch_size)))
-            solver.test_interval = train_iter * self.val_interval
+            val_interval = self.val_interval * train_iter
+            if 0 < val_interval <= 1:
+                solver.test_interval = 1 # don't round down
+            elif 1 < val_interval < solver.max_iter:
+                solver.test_interval = int(val_interval)
+            else:
+                solver.test_interval = solver.max_iter # only test once at the end
 
         # Learning rate
         solver.base_lr = self.learning_rate

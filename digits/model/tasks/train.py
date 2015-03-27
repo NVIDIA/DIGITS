@@ -12,18 +12,18 @@ class TrainTask(Task):
     Defines required methods for child classes
     """
 
-    def __init__(self, dataset, train_epochs, snapshot_epochs, learning_rate, lr_policy, **kwargs):
+    def __init__(self, dataset, train_epochs, snapshot_interval, learning_rate, lr_policy, **kwargs):
         """
         Arguments:
         dataset -- a DatasetJob containing the dataset for this model
         train_epochs -- how many epochs of training data to train on
-        snapshot_epochs -- how many epochs to take a snapshot
+        snapshot_interval -- how many epochs between taking a snapshot
         learning_rate -- the base learning rate
         lr_policy -- a hash of options to be used for the learning rate policy
 
         Keyword arguments:
         batch_size -- if set, override any network specific batch_size with this value
-        val_interval -- how many epochs in-between validating the model with an epoch of validation data
+        val_interval -- how many epochs between validating the model with an epoch of validation data
         pretrained_model -- filename for a model to use for fine-tuning
         crop_size -- crop each image down to a square of this size
         use_mean -- subtract the dataset's mean file
@@ -39,7 +39,7 @@ class TrainTask(Task):
 
         self.dataset = dataset
         self.train_epochs = train_epochs
-        self.snapshot_epochs = snapshot_epochs
+        self.snapshot_interval = snapshot_interval
         self.learning_rate = learning_rate
         self.lr_policy = lr_policy
 
@@ -79,7 +79,7 @@ class TrainTask(Task):
         """
         Returns an array of arrays for creating an HTML select field
         """
-        return [[s[1], 'Epoch#%s' % s[1]] for s in reversed(self.snapshots)]
+        return [[s[1], 'Epoch #%s' % s[1]] for s in reversed(self.snapshots)]
 
     def est_next_snapshot(self):
         """
