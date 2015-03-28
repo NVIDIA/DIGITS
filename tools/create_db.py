@@ -507,7 +507,7 @@ if __name__ == '__main__':
     db = DbCreator(args['db_name'],
             backend=args['backend'])
 
-    if db.create(args['input_file'], args['height'], args['width'],
+    if db.create(args['input_file'], args['width'], args['height'],
             channels        = args['channels'],
             resize_mode     = args['resize_mode'],
             image_folder    = args['image_folder'],
