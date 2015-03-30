@@ -10,8 +10,8 @@ import unittest
 from gevent import monkey
 monkey.patch_all()
 from bs4 import BeautifulSoup
-
 import numpy as np
+import PIL.Image
 from skimage import io
 from urlparse import urlparse
 from cStringIO import StringIO
@@ -449,6 +449,21 @@ class TestDatasetCreation(WebappBaseTest):
         status = self.dataset_wait_completion(job_id)
         assert status == 'Done', 'create failed "%s"' % status
 
+    def test_nonsquare_dimensions(self):
+        """nonsquare dimensions"""
+        job_id = self.create_quick_dataset(
+                resize_width = DUMMY_IMAGE_DIM,
+                resize_height = DUMMY_IMAGE_DIM*2,
+                )
+        status = self.dataset_wait_completion(job_id)
+        assert status == 'Done', 'create failed "%s"' % status
+        img_url = '/files/%s/mean.jpg' % job_id
+        rv = self.app.get(img_url)
+        assert rv.status_code == 200, 'GET on %s returned %s' % (img_url, rv.status_code)
+        buff = StringIO(rv.data)
+        buff.seek(0)
+        size = PIL.Image.open(buff).size
+        assert size == (DUMMY_IMAGE_DIM,DUMMY_IMAGE_DIM*2), 'image size is %s' % (size,)
 
 class TestCreatedDataset(WebappBaseTest):
     """
