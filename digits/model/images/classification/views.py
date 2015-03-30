@@ -283,6 +283,7 @@ def get_standard_networks():
             ('lenet', 'LeNet'),
             ('alexnet', 'AlexNet'),
             #('vgg-16', 'VGG (16-layer)'), #XXX model won't learn
+            ('googlenet', 'GoogLeNet'),
             ]
 
 def get_default_standard_network():

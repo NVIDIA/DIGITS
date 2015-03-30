@@ -60,8 +60,8 @@ socket.on('task update', function (msg) {
         else if (msg['update'] == 'distribution') {
             drawDistributionGraph(msg['task'], msg['data']);
         }
-        else if (msg['update'] == 'loss_graph') {
-            drawLossGraph(msg['data']);
+        else if (msg['update'] == 'combined_graph') {
+            drawCombinedGraph(msg['data']);
         }
         else if (msg['update'] == 'lr_graph') {
             drawLRGraph(msg['data']);

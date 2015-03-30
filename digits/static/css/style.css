@@ -15,3 +15,7 @@ div.progress div.progress-bar {
 .wide-bootbox > .modal-dialog {
     width: 70%!important;
 }
+
+path.c3-line {
+    stroke-width: 2px;
+}

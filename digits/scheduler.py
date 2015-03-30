@@ -91,10 +91,10 @@ class Scheduler:
                         failed += 1
                         if self.verbose:
                             if str(e):
-                                print 'Caught %s while loading job "%s":' % (type(e).__name__, job.id())
+                                print 'Caught %s while loading job "%s":' % (type(e).__name__, dir_name)
                                 print '\t%s' % e
                             else:
-                                print 'Caught %s while loading job "%s"' % (type(e).__name__, job.id())
+                                print 'Caught %s while loading job "%s"' % (type(e).__name__, dir_name)
 
         # add DatasetJobs
         for job in loaded_jobs:

@@ -104,7 +104,9 @@ class CaffeTrainTask(TrainTask):
 
         self.caffe_log = open(self.path(self.CAFFE_LOG), 'a')
         self.saving_snapshot = False
-        self.last_unimportant_update = None
+        self.receiving_train_output = False
+        self.receiving_val_output = False
+        self.last_train_update = None
         return True
 
     def save_prototxt_files(self):
@@ -121,8 +123,8 @@ class CaffeTrainTask(TrainTask):
         train_data_layer = None
         val_data_layer = None
         hidden_layers = caffe_pb2.NetParameter()
-        loss_layer = None
-        accuracy_layer = None
+        loss_layers = []
+        accuracy_layers = []
         for layer in self.network.layer:
             assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
             if layer.type == 'Data':
@@ -134,11 +136,15 @@ class CaffeTrainTask(TrainTask):
                         assert val_data_layer is None, 'cannot specify two test data layers'
                         val_data_layer = layer
             elif layer.type == 'SoftmaxWithLoss':
-                assert loss_layer is None, 'cannot specify two loss layers'
-                loss_layer = layer
+                loss_layers.append(layer)
             elif layer.type == 'Accuracy':
-                assert accuracy_layer is None, 'cannot specify two accuracy layers'
-                accuracy_layer = layer
+                addThis = True
+                if layer.accuracy_param.HasField('top_k'):
+                    if layer.accuracy_param.top_k >= len(self.labels):
+                        self.logger.warning('Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (layer.name, layer.accuracy_param.top_k, len(self.labels)))
+                        addThis = False
+                if addThis:
+                    accuracy_layers.append(layer)
             else:
                 hidden_layers.layer.add().CopyFrom(layer)
                 if len(layer.bottom) == 1 and len(layer.top) == 1 and layer.bottom[0] == layer.top[0]:
@@ -149,25 +155,24 @@ class CaffeTrainTask(TrainTask):
                     for bottom in layer.bottom:
                         bottoms[bottom] = True
 
-        assert loss_layer is not None, 'must specify a SoftmaxWithLoss layer'
-        assert accuracy_layer is not None, 'must specify an Accuracy layer'
-        if not has_val_set:
-            self.logger.warning('Discarding Data layer for validation')
-            val_data_layer = None
-
-        output_name = None
-        for name in tops:
-            if name not in bottoms:
-                assert output_name is None, 'network cannot have more than one output'
-                output_name = name
-        assert output_name is not None, 'network must have one output'
-        for layer in hidden_layers.layer:
-            if output_name in layer.top and layer.type == 'InnerProduct':
-                layer.inner_product_param.num_output = len(self.labels)
-                break
-
         if train_data_layer is None:
             assert val_data_layer is None, 'cannot specify a test data layer without a train data layer'
+
+        assert len(loss_layers) > 0, 'must specify a loss layer'
+
+        network_outputs = []
+        for name in tops:
+            if name not in bottoms:
+                network_outputs.append(name)
+        assert len(network_outputs), 'network must have an output'
+
+        # Update num_output for any output InnerProduct layers automatically
+        for layer in hidden_layers.layer:
+            if layer.type == 'InnerProduct':
+                for top in layer.top:
+                    if top in network_outputs:
+                        layer.inner_product_param.num_output = len(self.labels)
+                        break
 
         ### Write train_val file
 
@@ -239,28 +244,8 @@ class CaffeTrainTask(TrainTask):
         train_val_network.MergeFrom(hidden_layers)
 
         # output layers
-        if loss_layer is not None:
-            train_val_network.layer.add().CopyFrom(loss_layer)
-            loss_layer = train_val_network.layer[-1]
-        else:
-            loss_layer = train_val_network.layer.add(
-                type = 'SoftmaxWithLoss',
-                name = 'loss')
-            loss_layer.bottom.append(output_name)
-            loss_layer.bottom.append('label')
-            loss_layer.top.append('loss')
-
-        if accuracy_layer is not None:
-            train_val_network.layer.add().CopyFrom(accuracy_layer)
-            accuracy_layer = train_val_network.layer[-1]
-        elif self.dataset.val_db_task():
-            accuracy_layer = train_val_network.layer.add(
-                    type = 'Accuracy',
-                    name = 'accuracy')
-            accuracy_layer.bottom.append(output_name)
-            accuracy_layer.bottom.append('label')
-            accuracy_layer.top.append('accuracy')
-            accuracy_layer.include.add(phase = caffe_pb2.TEST)
+        train_val_network.layer.extend(loss_layers)
+        train_val_network.layer.extend(accuracy_layers)
 
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
@@ -284,11 +269,12 @@ class CaffeTrainTask(TrainTask):
         deploy_network.MergeFrom(hidden_layers)
 
         # output layers
-        prob_layer = deploy_network.layer.add(
-                type = 'Softmax',
-                name = 'prob')
-        prob_layer.bottom.append(output_name)
-        prob_layer.top.append('prob')
+        if loss_layers[-1].type == 'SoftmaxWithLoss':
+            prob_layer = deploy_network.layer.add(
+                    type = 'Softmax',
+                    name = 'prob')
+            prob_layer.bottom.append(network_outputs[-1])
+            prob_layer.top.append('prob')
 
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
@@ -363,10 +349,10 @@ class CaffeTrainTask(TrainTask):
         solver.weight_decay = 0.0005
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
-        solver.display = min(
+        solver.display = max(1, min(
                 int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
                 int(math.ceil(5000.0 / train_data_layer.data_param.batch_size))
-                )
+                ))
 
         with open(self.path(self.solver_file), 'w') as outfile:
             text_format.PrintMessage(solver, outfile)
@@ -402,77 +388,61 @@ class CaffeTrainTask(TrainTask):
     @override
     def process_output(self, line):
         from digits.webapp import socketio
+        float_exp = '(NaN|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         self.caffe_log.write('%s\n' % line)
         self.caffe_log.flush()
-
-        # parse caffe header
+        # parse caffe output
         timestamp, level, message = self.preprocess_output_caffe(line)
-
         if not message:
             return True
 
-        float_exp = '(NaN|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
-
-        # snapshot saved
-        if self.saving_snapshot:
-            self.logger.info('Snapshot saved.')
-            self.detect_snapshots()
-            self.send_snapshot_update()
-            self.saving_snapshot = False
-            return True
-
-        # loss updates
-        match = re.match(r'Iteration (\d+), \w*loss\w* = %s' % float_exp, message)
-        if match:
-            i = int(match.group(1))
-            l = match.group(2)
-            assert l.lower() != 'nan', 'Network reported NaN for training loss. Try decreasing your learning rate.'
-            l = float(l)
-            self.train_loss_updates.append((self.iteration_to_epoch(i), l))
-            self.logger.debug('Iteration %d/%d, loss=%s' % (i, self.solver.max_iter, l))
-            self.send_iteration_update(i)
-            self.send_data_update()
-            return True
-
-        # learning rate updates
-        match = re.match(r'Iteration (\d+), lr = %s' % float_exp, message)
-        if match:
-            i = int(match.group(1))
-            lr = match.group(2)
-            if lr.lower() != 'nan':
-                lr = float(lr)
-                self.lr_updates.append((self.iteration_to_epoch(i), lr))
-            self.send_iteration_update(i)
-            return True
-
-        # other iteration updates
+        # iteration updates
         match = re.match(r'Iteration (\d+)', message)
         if match:
             i = int(match.group(1))
-            self.send_iteration_update(i)
+            self.new_iteration(i)
+
+        # net output
+        match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
+        if match:
+            phase = match.group(1)
+            index = int(match.group(2))
+            name = match.group(3)
+            value = match.group(4)
+            assert value.lower() != 'nan', 'Network outputted NaN for "%s" (%s phase). Try decreasing your learning rate.' % (name, phase)
+            value = float(value)
+
+            # Find the layer type
+            kind = '?'
+            for layer in self.network.layer:
+                if name in layer.top:
+                    kind = layer.type
+                    break
+
+            if phase.lower() == 'train':
+                self.save_train_output(name, kind, value)
+            elif phase.lower() == 'test':
+                self.save_val_output(name, kind, value)
             return True
 
-        # testing loss updates
-        match = re.match(r'Test net output #\d+: \w*loss\w* = %s' % float_exp, message, flags=re.IGNORECASE)
+        # learning rate updates
+        match = re.match(r'Iteration (\d+), lr = %s' % float_exp, message, flags=re.IGNORECASE)
         if match:
-            l = match.group(1)
-            if l.lower() != 'nan':
-                l = float(l)
-                self.val_loss_updates.append( (self.iteration_to_epoch(self.current_iteration), l) )
-                self.send_data_update()
+            i = int(match.group(1))
+            lr = float(match.group(2))
+            self.save_train_output('learning_rate', 'LearningRate', lr)
             return True
 
-        # testing accuracy updates
-        match = re.match(r'Test net output #(\d+): \w*acc\w* = %s' % float_exp, message, flags=re.IGNORECASE)
-        if match:
-            index = int(match.group(1))
-            a = match.group(2)
-            if a.lower() != 'nan':
-                a = float(a) * 100
-                self.logger.debug('Network accuracy #%d: %s' % (index, a))
-                self.val_accuracy_updates.append( (self.iteration_to_epoch(self.current_iteration), a, index) )
-                self.send_data_update(important=True)
+        # snapshot saved
+        if self.saving_snapshot:
+            if not message.startswith('Snapshotting solver state'):
+                self.logger.warning('caffe output format seems to have changed. Expected "Snapshotting solver state..." after "Snapshotting to..."')
+            else:
+                self.logger.info('Snapshot saved.')
+            self.detect_snapshots()
+            self.send_snapshot_update()
+            self.saving_snapshot = False
             return True
 
         # snapshot starting
@@ -522,68 +492,15 @@ class CaffeTrainTask(TrainTask):
             #self.logger.warning('Unrecognized task output "%s"' % line)
             return (None, None, None)
 
-    def send_iteration_update(self, it):
+    def new_iteration(self, it):
         """
-        Sends socketio message about the current iteration
+        Update current_iteration
         """
-        from digits.webapp import socketio
-
         if self.current_iteration == it:
             return
 
         self.current_iteration = it
-        self.progress = float(it)/self.solver.max_iter
-
-        socketio.emit('task update',
-                {
-                    'task': self.html_id(),
-                    'update': 'progress',
-                    'percentage': int(round(100*self.progress)),
-                    'eta': utils.time_filters.print_time_diff(self.est_done()),
-                    },
-                namespace='/jobs',
-                room=self.job_id,
-                )
-
-    def send_data_update(self, important=False):
-        """
-        Send socketio updates with the latest graph data
-
-        Keyword arguments:
-        important -- if False, only send this update if the last unimportant update was sent more than 5 seconds ago
-        """
-        from digits.webapp import socketio
-
-        if not important:
-            if self.last_unimportant_update and (time.time() - self.last_unimportant_update) < 5:
-                return
-            self.last_unimportant_update = time.time()
-
-        # loss graph data
-        data = self.loss_graph_data()
-        if data:
-            socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'loss_graph',
-                        'data': data,
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
-
-        # lr graph data
-        data = self.lr_graph_data()
-        if data:
-            socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'lr_graph',
-                        'data': data,
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+        self.send_progress_update(self.iteration_to_epoch(it))
 
     def send_snapshot_update(self):
         """

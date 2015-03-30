@@ -41,103 +41,198 @@
     <div class="col-sm-12">
         <div class="well">
             <script>
-function drawLossGraph(loss_data) {
-    $(".loss-graph").show();
-    var data = google.visualization.arrayToDataTable(loss_data);
-    new google.visualization.LineChart($(".loss-graph")[0]).
-        draw(data, {
-                //curveType: "function",
-                interpolateNulls: true,
-                legend: {
-                    position: 'top',
-                    },
-                hAxis: {
-                    title: 'Epoch',
-                    viewWindow: { min:0 }
-                    },
-                vAxes: {
-                    0: {title: 'Loss', minValue:0},
-                    1: {title: 'Accuracy (%)', minValue:0},
-                    },
-                series: {
-                    0: {
-                        // Training loss
-                        targetAxisIndex:0,
-                        color: '#dc3912',
+                function drawLossGraph(data) {
+                    $(".loss-graph").show();
+                    c3.generate($.extend({
+                        bindto: '.loss-graph',
+                        size: {height: 500},
+                        axis: {
+                            x: {
+                                label: {
+                                    text: 'Epoch',
+                                    position: 'outer-center',
+                                },
+                                tick: {
+                                    // 3 sig-digs
+                                    format: function(x) { return Math.round(x*1000)/1000; },
+                                    fit: false,
+                                },
+                                min: 0,
+                                padding: {left: 0},
+                            },
+                            y: {
+                                label: {
+                                    text: 'Loss',
+                                    position: 'outer-middle',
+                                },
+                                min: 0,
+                                padding: {bottom: 0},
+                            },
                         },
-                    1: {
-                        // Validation loss
-                        targetAxisIndex:0,
-                        color: '#ff9900',
+                        grid: {x: {show: true} },
+                        legend: {position: 'bottom'},
+                    },
+                    {data: data}
+                    ));
+                }
+                function drawAccuracyGraph(data) {
+                    $(".accuracy-graph").show();
+                    c3.generate($.extend({
+                        bindto: '.accuracy-graph',
+                        size: {height: 500},
+                        axis: {
+                            x: {
+                                label: {
+                                    text: 'Epoch',
+                                    position: 'outer-center',
+                                },
+                                tick: {
+                                    // 3 sig-digs
+                                    format: function(x) { return Math.round(x*1000)/1000; },
+                                    fit: false,
+                                },
+                                min: 0,
+                                padding: {left: 0},
+                            },
+                            y: {
+                                show: true,
+                                label: {
+                                    text: 'Accuracy (%)',
+                                    position: 'outer-middle',
+                                },
+                                min: 0,
+                                max: 100,
+                                padding: {top: 0, bottom: 0},
+                            },
                         },
-                    2: {
-                        // Validation accuracy
-                        targetAxisIndex: 1,
-                        lineWidth: 6,
-                        pointSize: 10,
-                        color: '#3366cc',
+                        grid: {x: {show: true} },
+                        legend: {position: 'bottom'},
+                    },
+                    {data: data}
+                    ));
+                }
+                function drawCombinedGraph(data) {
+                    $(".combined-graph").show();
+                    c3.generate($.extend({
+                        bindto: '.combined-graph',
+                        size: {height: 500},
+                        axis: {
+                            x: {
+                                label: {
+                                    text: 'Epoch',
+                                    position: 'outer-center',
+                                },
+                                tick: {
+                                    // 3 sig-digs
+                                    format: function(x) { return Math.round(x*1000)/1000; },
+                                    fit: false,
+                                },
+                                min: 0,
+                                padding: {left: 0},
+                            },
+                            y: {
+                                label: {
+                                    text: 'Loss',
+                                    position: 'outer-middle',
+                                },
+                                min: 0,
+                                padding: {bottom: 0},
+                            },
+                            y2: {
+                                show: true,
+                                label: {
+                                    text: 'Accuracy (%)',
+                                    position: 'outer-middle',
+                                },
+                                min: 0,
+                                max: 100,
+                                padding: {top: 0, bottom: 0},
+                            },
                         },
+                        grid: {x: {show: true} },
+                        legend: {position: 'bottom'},
                     },
-                chartArea: {
-                    left: "50",
-                    top: "50",
-                    width: $(".loss-graph").width() - 100,
-                    height: $(".loss-graph").height() - 100,
+                    {data: data}
+                    ));
+                }
+                function drawLRGraph(data) {
+                    $(".lr-graph").show();
+                    c3.generate($.extend({
+                        bindto: '.lr-graph',
+                        size: {height: 300},
+                        axis: {
+                            x: {
+                                label: {
+                                    text: 'Epoch',
+                                    position: 'outer-center',
+                                },
+                                tick: {
+                                    // 3 sig-digs
+                                    format: function(x) { return Math.round(x*1000)/1000; },
+                                    fit: false,
+                                },
+                                min: 0,
+                                padding: {left: 0},
+                            },
+                            y: {
+                                label: {
+                                    text: 'Learning Rate',
+                                    position: 'outer-middle',
+                                },
+                                min: 0,
+                                padding: {bottom: 0},
+                            },
+                        },
+                        grid: {x: {show: true} },
+                        legend: {show: false},
                     },
-                });
-}
-function drawLRGraph(lr_data) {
-    $(".lr-graph").show();
-    var data = google.visualization.arrayToDataTable(lr_data);
-    new google.visualization.LineChart($(".lr-graph")[0]).
-        draw(data, {
-                //curveType: "function",
-                interpolateNulls: true,
-                hAxis: {
-                    title: 'Epoch',
-                    viewWindow: { min:0 }
-                    },
-                vAxis: {
-                    title: 'Learning Rate',
-//                    viewWindow: { min:0 }
-                    },
-                legend: {position: 'none'},
-                chartArea: {
-                    left: "100",
-                    top: "50",
-                    width: $(".lr-graph").width() - 150,
-                    height: $(".lr-graph").height() - 100,
-                    },
-                });
-}
+                    {data: data}
+                    ));
+                }
             </script>
-            <div class="loss-graph" style="height:500px;width:100%;display:none;"></div>
+            {# TODO: show these graphs if it makes more sense than just the combined
+
+            <div class="loss-graph" style="height:500px;width:100%;background:white;display:none;"></div>
             {% set loss_graph_data = job.train_task().loss_graph_data() %}
             {% if loss_graph_data %}
             <script>
-google.setOnLoadCallback(function() {
-        drawLossGraph(
-            {% autoescape false %}
-            {{loss_graph_data}}
-            {% endautoescape %}
-            );
-});
+                google.setOnLoadCallback(function() {
+                    drawLossGraph({% autoescape false %}{{loss_graph_data}}{% endautoescape %});
+                });
             </script>
+            <br>
+            <br>
             {% endif %}
-
+            <div class="accuracy-graph" style="height:500px;width:100%;background:white;display:none;"></div>
+            {% set accuracy_graph_data = job.train_task().accuracy_graph_data() %}
+            {% if accuracy_graph_data %}
+            <script>
+                google.setOnLoadCallback(function() {
+                    drawAccuracyGraph({% autoescape false %}{{accuracy_graph_data}}{% endautoescape %});
+                });
+            </script>
             <br>
             <br>
-            <div class="lr-graph" style="height:300px;width:100%;display:none;"></div>
+            {% endif %}
+            #}
+            <div class="combined-graph" style="height:500px;width:100%;background:white;display:none;"></div>
+            {% set combined_graph_data = job.train_task().combined_graph_data() %}
+            {% if combined_graph_data %}
+            <script>
+                google.setOnLoadCallback(function() {
+                    drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
+                });
+            </script>
+            <br>
+            <br>
+            {% endif %}
+            <div class="lr-graph" style="height:300px;width:100%;background:white;display:none;"></div>
             {% set lr_graph_data = job.train_task().lr_graph_data() %}
             {% if lr_graph_data %}
             <script>
-google.setOnLoadCallback(function() {
-        drawLRGraph(
-            {% autoescape false %}
-            {{lr_graph_data}}
-            {% endautoescape %}
-            );
-});
+                google.setOnLoadCallback(function() {
+                    drawLRGraph({% autoescape false %}{{lr_graph_data}}{% endautoescape %});
+                });
             </script>
             {% endif %}
 

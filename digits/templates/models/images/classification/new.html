@@ -374,7 +374,7 @@ function customizeNetwork(network, snapshot_list) {
                     <table class="table">
                         <tr>
                             <th>Network</th>
-                            <th>Description</th>
+                            <th>Details</th>
                             <th>Intended image size</th>
                             <th></th>
                         </tr>
@@ -383,29 +383,25 @@ function customizeNetwork(network, snapshot_list) {
                             <td>{{network}} {{network.label}}</td>
                             {% if network.data == 'lenet' %}
                             <td>
-                                Yan LeCunn's classic network.
-                                <br>
                                 <a href="http://yann.lecun.com/exdb/lenet/" target="_blank">Home page</a>
                             </td>
-                            <td>28x28</td>
+                            <td>28x28 (gray)</td>
                             {% elif network.data == 'alexnet' %}
                             <td>
-                                Alex Krizhevsky's network.
-                                <br>
                                 <a href="http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional" target="_blank">Original paper</a>
+                                [2012]
                             </td>
                             <td>256x256</td>
                             {% elif network.data == 'vgg-16' %}
                             <td>
-                                Visual Geometry Group's 16-layer network.
-                                <br>
-                                <a href="http://arxiv.org/pdf/1409.1556.pdf" target="_blank">Original paper</a>
+                                <a href="http://arxiv.org/abs/1409.1556" target="_blank">Original paper</a>
+                                [2014]
                             </td>
                             <td>256x256</td>
                             {% elif network.data == 'googlenet' %}
                             <td>
-                                Google's network.
                                 <a href="http://arxiv.org/abs/1409.4842" target="_blank">Original paper</a>
+                                [2014]
                             </td>
                             <td>256x256</td>
                             {% else %}
@@ -513,10 +509,25 @@ function visualizeNetwork() {
                         <div id="custom_network_explanation" style="display:none;">
                             <h1>Specifying a custom network</h1>
                             <p>
-                            In this mode, you must specify 1 (or 2) <b>Data</b> layers, an <b>Accuracy</b> layer, and a <b>SoftmaxWithLoss</b> layer. During deployment, the <b>SoftmaxWithLoss</b> layer will be replaced with a <b>Softmax</b> layer.
+                            You should enter a train_val network here. Some cleanup is done for you automatically:
+                            <ul>
+                                <li>
+                                The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
+                                </li>
+                                <li>
+                                Any <b>Accuracy</b> layers with <i>top_k</i> &gt;= num_labels is removed automatically.
+                                </li>
+                            </ul>
                             </p>
-                            <p>
-                            Once Caffe implements their "all-in-one nets" feature to consolidate train_val and deploy nets, this will become much more extensible.
+                            The deploy network will be created for you automatically. Once caffe implements their "all-in-one" nets feature, you will be able to specify which layers to include in the deploy file. Until then, these things are done automatically:
+                            <ul>
+                                <li>
+                                The last <b>SoftmaxWithLoss</b> layer is replaced with a <b>Softmax</b> layer.
+                                </li>
+                                <li>
+                                All other loss layers and accuracy layers are removed.
+                                </li>
+                            </ul>
                             </p>
                         </div>
                         <a href=# onClick="bootbox.alert($('#custom_network_explanation').html()); return false;"><span class="glyphicon glyphicon-question-sign"></span></a>

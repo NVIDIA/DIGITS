@@ -1,11 +1,17 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
+import time
 import os.path
+from collections import OrderedDict, namedtuple
 
+from digits import utils
 from digits.task import Task
 
 # NOTE: Increment this everytime the picked object changes
-PICKLE_VERSION = 1
+PICKLE_VERSION = 2
+
+# Used to store network outputs
+NetworkOutput = namedtuple('NetworkOutput', ['kind', 'data'])
 
 class TrainTask(Task):
     """
@@ -43,13 +49,12 @@ class TrainTask(Task):
         self.learning_rate = learning_rate
         self.lr_policy = lr_policy
 
+        self.current_epoch = 0
         self.snapshots = []
 
-        # graph data
-        self.train_loss_updates = []
-        self.val_loss_updates = []
-        self.val_accuracy_updates = []
-        self.lr_updates = []
+        # data gets stored as dicts of lists (for graphing)
+        self.train_outputs = OrderedDict()
+        self.val_outputs = OrderedDict()
 
     def __getstate__(self):
         state = super(TrainTask, self).__getstate__()
@@ -62,11 +67,164 @@ class TrainTask(Task):
         return state
 
     def __setstate__(self, state):
+        if state['pickver_task_train'] < 2:
+            print 'Upgrading TrainTask to version 2'
+            state['train_outputs'] = OrderedDict()
+            state['val_outputs'] = OrderedDict()
+
+            tl = state.pop('train_loss_updates', None)
+            vl = state.pop('val_loss_updates', None)
+            va = state.pop('val_accuracy_updates', None)
+            lr = state.pop('lr_updates', None)
+            if tl:
+                state['train_outputs']['epoch'] = NetworkOutput('Epoch', [x[0] for x  in tl])
+                state['train_outputs']['loss'] = NetworkOutput('SoftmaxWithLoss', [x[1] for x in tl])
+                state['train_outputs']['learning_rate'] = NetworkOutput('LearningRate', [x[1] for x in lr])
+            if vl:
+                state['val_outputs']['epoch'] = NetworkOutput('Epoch', [x[0] for x in vl])
+                if va:
+                    state['val_outputs']['accuracy'] = NetworkOutput('Accuracy', [x[1]/100 for x in va])
+                state['val_outputs']['loss'] = NetworkOutput('SoftmaxWithLoss', [x[1] for x in vl])
+        state['pickver_task_train'] = PICKLE_VERSION
         super(TrainTask, self).__setstate__(state)
 
         self.snapshots = []
         self.detect_snapshots()
         self.dataset = None
+
+    def send_progress_update(self, epoch):
+        """
+        Sends socketio message about the current progress
+        """
+        from digits.webapp import socketio
+
+        if self.current_epoch == epoch:
+            return
+
+        self.current_epoch = epoch
+        self.progress = epoch/self.train_epochs
+
+        socketio.emit('task update',
+                {
+                    'task': self.html_id(),
+                    'update': 'progress',
+                    'percentage': int(round(100*self.progress)),
+                    'eta': utils.time_filters.print_time_diff(self.est_done()),
+                    },
+                namespace='/jobs',
+                room=self.job_id,
+                )
+
+    def save_train_output(self, *args):
+        """
+        Save output to self.train_outputs
+        """
+        from digits.webapp import socketio
+
+        if not self.save_output(self.train_outputs, *args):
+            return
+
+        if self.last_train_update and (time.time() - self.last_train_update) < 5:
+            return
+        self.last_train_update = time.time()
+
+        self.logger.debug('Training %s%% complete.' % round(100 * self.current_epoch/self.train_epochs,2))
+
+        # loss graph data
+        data = self.combined_graph_data()
+        if data:
+            socketio.emit('task update',
+                    {
+                        'task': self.html_id(),
+                        'update': 'combined_graph',
+                        'data': data,
+                        },
+                    namespace='/jobs',
+                    room=self.job_id,
+                    )
+
+        # lr graph data
+        data = self.lr_graph_data()
+        if data:
+            socketio.emit('task update',
+                    {
+                        'task': self.html_id(),
+                        'update': 'lr_graph',
+                        'data': data,
+                        },
+                    namespace='/jobs',
+                    room=self.job_id,
+                    )
+
+    def save_val_output(self, *args):
+        """
+        Save output to self.val_outputs
+        """
+        from digits.webapp import socketio
+
+        if not self.save_output(self.val_outputs, *args):
+            return
+
+        # loss graph data
+        data = self.combined_graph_data()
+        if data:
+            socketio.emit('task update',
+                    {
+                        'task': self.html_id(),
+                        'update': 'combined_graph',
+                        'data': data,
+                        },
+                    namespace='/jobs',
+                    room=self.job_id,
+                    )
+
+    def save_output(self, d, name, kind, value):
+        """
+        Save output to self.train_outputs or self.val_outputs
+        Returns true if all outputs for this epoch have been added
+
+        Arguments:
+        d -- the dictionary where the output should be stored
+        name -- name of the output (e.g. "accuracy")
+        kind -- the type of outputs (e.g. "Accuracy")
+        value -- value for this output (e.g. 0.95)
+        """
+        # don't let them be unicode
+        name = str(name)
+        kind = str(kind)
+
+        # update d['epoch']
+        if 'epoch' not in d:
+            d['epoch'] = NetworkOutput('Epoch', [self.current_epoch])
+        elif d['epoch'].data[-1] != self.current_epoch:
+            d['epoch'].data.append(self.current_epoch)
+
+        if name not in d:
+            d[name] = NetworkOutput(kind, [])
+        epoch_len = len(d['epoch'].data)
+        name_len = len(d[name].data)
+
+        # save to back of d[name]
+        if name_len > epoch_len:
+            raise Exception('Received a new output without being told the new epoch')
+        elif name_len == epoch_len:
+            # already exists
+            if isinstance(d[name].data[-1], list):
+                d[name].data[-1].append(value)
+            else:
+                d[name].data[-1] = [d[name].data[-1], value]
+        elif name_len == epoch_len - 1:
+            # expected case
+            d[name].data.append(value)
+        else:
+            # we might have missed one
+            d[name].data += [None] * (epoch_len - name_len - 1) + [value]
+
+        for key in d:
+            if key not in ['epoch', 'learning_rate']:
+                if len(d[key].data) != epoch_len:
+                    return False
+        return True
 
     def detect_snapshots(self):
         """
@@ -156,81 +314,160 @@ class TrainTask(Task):
 
     def lr_graph_data(self):
         """
-        Returns learning rate data formatted for a Google Charts graph
+        Returns learning rate data formatted for a C3.js graph
         """
-        if not hasattr(self, 'lr_updates') or not self.lr_updates:
+        if not self.train_outputs or 'epoch' not in self.train_outputs or 'learning_rate' not in self.train_outputs:
             return None
 
-        data = [['Epoch', 'Learning Rate']]
-        lru = self.lr_updates
-        lru = lru[::max(len(lru)/100,1)] # return 100-200 values or fewer
-        for epoch, lr in lru:
-            data.append([epoch, lr])
-        return data
+        # return 100-200 values or fewer
+        stride = max(len(self.train_outputs['epoch'].data)/100,1)
+        e = ['epoch'] + self.train_outputs['epoch'].data[::stride]
+        lr = ['lr'] + self.train_outputs['learning_rate'].data[::stride]
+
+        return {
+                'columns': [e, lr],
+                'xs': {
+                    'lr': 'epoch'
+                    },
+                'names': {
+                    'lr': 'Learning Rate'
+                    },
+                }
 
     def loss_graph_data(self):
         """
-        Returns loss and/or accuracy data formatted for a Google Charts graph
+        Returns loss data formatted for a C3.js graph
         """
-        tl = self.train_loss_updates
-        vl = self.val_loss_updates
-        va = self.val_accuracy_updates
-        # return 100-200 values or fewer
-        tl = tl[::max(len(tl)/100,1)]
-        vl = vl[::max(len(vl)/100,1)]
-        va = va[::max(len(va)/100,1)]
+        data = {
+                'columns': [],
+                'xs': {},
+                'names': {},
+                }
 
-        use_tl = len(tl) > 0
-        use_vl = len(vl) > 0
-        use_va = len(va) > 0
+        if self.train_outputs and 'epoch' in self.train_outputs:
+            added_column = False
+            stride = max(len(self.train_outputs['epoch'].data)/100,1)
+            for name, output in self.train_outputs.iteritems():
+                if name not in ['epoch', 'learning_rate']:
+                    if 'loss' in output.kind.lower():
+                        col_id = '%s-train' % name
+                        data['columns'].append([col_id] + output.data[::stride])
+                        data['xs'][col_id] = 'train_epochs'
+                        data['names'][col_id] = '%s (train)' % name
+                        added_column = True
+            if added_column:
+                data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
 
-        if not (use_tl or use_vl or use_va):
+        if self.val_outputs and 'epoch' in self.val_outputs:
+            added_column = False
+            stride = max(len(self.val_outputs['epoch'].data)/100,1)
+            for name, output in self.val_outputs.iteritems():
+                if name not in ['epoch']:
+                    if 'loss' in output.kind.lower():
+                        col_id = '%s-val' % name
+                        data['columns'].append([col_id] + output.data[::stride])
+                        data['xs'][col_id] = 'val_epochs'
+                        data['names'][col_id] = '%s (val)' % name
+                        added_column = True
+            if added_column:
+                data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
+
+        if not len(data['columns']):
             return None
+        else:
+            return data
 
-        data = []
-        titles = ['Epoch']
-        if use_tl:  titles.append('Loss (train)')
-        if use_vl:  titles.append('Loss (val)')
-        if use_va:  titles.append('Accuracy (val)')
-        data.append(titles)
+    def accuracy_graph_data(self):
+        """
+        Returns accuracy data formatted for a C3.js graph
+        """
+        data = {
+                'columns': [],
+                'xs': {},
+                'names': {},
+                }
 
-        # Iterators
-        tli = 0
-        vli = 0
-        vai = 0
+        if self.train_outputs and 'epoch' in self.train_outputs:
+            added_column = False
+            stride = max(len(self.train_outputs['epoch'].data)/100,1)
+            for name, output in self.train_outputs.iteritems():
+                if name not in ['epoch', 'learning_rate']:
+                    if output.kind == 'Accuracy':
+                        col_id = '%s-train' % name
+                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                        data['xs'][col_id] = 'train_epochs'
+                        data['names'][col_id] = '%s (train)' % name
+                        added_column = True
+            if added_column:
+                data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
 
-        # decimal points for different data types
-        round_loss = 3
-        round_acc = 2
+        if self.val_outputs and 'epoch' in self.val_outputs:
+            added_column = False
+            stride = max(len(self.val_outputs['epoch'].data)/100,1)
+            for name, output in self.val_outputs.iteritems():
+                if name not in ['epoch']:
+                    if output.kind == 'Accuracy':
+                        col_id = '%s-val' % name
+                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                        data['xs'][col_id] = 'val_epochs'
+                        data['names'][col_id] = '%s (val)' % name
+                        added_column = True
+            if added_column:
+                data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
 
-        while tli < len(tl) or vli < len(vl) or vai < len(va):
-            next_it = []
-            if tli < len(tl):   next_it.append(tl[tli][0])
-            if vli < len(vl):   next_it.append(vl[vli][0])
-            if vai < len(va):   next_it.append(va[vai][0])
-            it = min(next_it)
+        if not len(data['columns']):
+            return None
+        else:
+            return data
 
-            ### Loss values
+    def combined_graph_data(self):
+        """
+        Returns all train/val outputs in data for one C3.js graph
+        """
+        data = {
+                'columns': [],
+                'xs': {},
+                'axes': {},
+                'names': {},
+                }
 
-            tl_value = 'null'
-            vl_value = 'null'
-            va_value = 'null'
+        if self.train_outputs and 'epoch' in self.train_outputs:
+            added_column = False
+            stride = max(len(self.train_outputs['epoch'].data)/100,1)
+            for name, output in self.train_outputs.iteritems():
+                if name not in ['epoch', 'learning_rate']:
+                    col_id = '%s-train' % name
+                    data['xs'][col_id] = 'train_epochs'
+                    data['names'][col_id] = '%s (train)' % name
+                    if 'accuracy' in output.kind.lower():
+                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                        data['axes'][col_id] = 'y2'
+                    else:
+                        data['columns'].append([col_id] + output.data[::stride])
+                    added_column = True
+            if added_column:
+                data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
 
-            if tli < len(tl) and tl[tli][0] == it:
-                tl_value = round(tl[tli][1], round_loss)
-                tli += 1
-            if vli < len(vl) and vl[vli][0] == it:
-                vl_value = round(vl[vli][1], round_loss)
-                vli += 1
-            if vai < len(va) and va[vai][0] == it:
-                va_value = round(va[vai][1], round_acc)
-                vai += 1
+        if self.val_outputs and 'epoch' in self.val_outputs:
+            added_column = False
+            stride = max(len(self.val_outputs['epoch'].data)/100,1)
+            for name, output in self.val_outputs.iteritems():
+                if name not in ['epoch']:
+                    col_id = '%s-val' % name
+                    data['columns'].append([col_id] + output.data[::stride])
+                    data['xs'][col_id] = 'val_epochs'
+                    data['names'][col_id] = '%s (val)' % name
+                    if 'accuracy' in output.kind.lower():
+                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                        data['axes'][col_id] = 'y2'
+                    else:
+                        data['columns'].append([col_id] + output.data[::stride])
+                    added_column = True
+            if added_column:
+                data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
 
-            entry = [it]
-            if use_tl:  entry.append(tl_value)
-            if use_vl:  entry.append(vl_value)
-            if use_va:  entry.append(va_value)
-            data.append(entry)
-
-        return data
+        if not len(data['columns']):
+            return None
+        else:
+            return data
 

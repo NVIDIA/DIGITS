@@ -147,7 +147,7 @@ class ModelForm(Form):
             default = 'standard',
             )
 
-    # The options for this get set in the view (since they are dependent on )
+    # The options for this get set in the view (since they are dependent on the data type)
     standard_networks = wtforms.RadioField('Standard Networks',
             validators = [
                 required_if_method('standard'),
