@@ -168,11 +168,11 @@ def models_download(job_id, extension='tar.gz'):
     epoch = -1
     # GET ?epoch=n
     if 'epoch' in request.args:
-        epoch = int(request.args['epoch'])
+        epoch = float(request.args['epoch'])
 
     # POST ?snapshot_epoch=n (from form)
     elif 'snapshot_epoch' in request.form:
-        epoch = int(request.form['snapshot_epoch'])
+        epoch = float(request.form['snapshot_epoch'])
 
     task = job.train_task()
 
