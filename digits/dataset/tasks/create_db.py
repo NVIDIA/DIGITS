@@ -166,31 +166,64 @@ class CreateDbTask(Task):
 
         return True
 
+    def get_labels(self):
+        """
+        Read labels from labels_file and return them in a list
+        """
+        # The labels might be set already
+        if hasattr(self, '_labels') and self._labels and len(self._labels) > 0:
+            return self._labels
+
+        assert hasattr(self, 'labels_file'), 'labels_file not set'
+        assert self.labels_file, 'labels_file not set'
+        assert os.path.exists(self.path(self.labels_file)), 'labels_file does not exist'
+
+        labels = []
+        with open(self.path(self.labels_file)) as infile:
+            for line in infile:
+                label = line.strip()
+                if label:
+                    labels.append(label)
+
+        assert len(labels) > 0, 'no labels in labels_file'
+
+        self._labels = labels
+        return self._labels
+
+
     def distribution_data(self):
         """
-        Used to create data for a distribution graph
-        Returns [[category, count], [category, count], ...]
-        Returns None if distribution not present or incomplete
+        Returns distribution data for a C3.js graph
         """
         if self.distribution is None:
             return None
-        if self.labels_file is None:
-            return None
-        if not hasattr(self, 'labels'):
-            self.labels = []
-            with open(self.path(self.labels_file), 'r') as infile:
-                for line in infile:
-                    line = line.strip()
-                    if line:
-                        self.labels.append(line)
-        if len(self.distribution.keys()) != len(self.labels):
+        try:
+            labels = self.get_labels()
+        except AssertionError:
             return None
 
-        data = [ ['Category', 'Count'] ]
+        if len(self.distribution.keys()) != len(labels):
+            return None
+
+        values = ['Count']
+        titles = []
         for key, value in sorted(
                 self.distribution.items(),
                 key=operator.itemgetter(1),
                 reverse=True):
-            data.append( [self.labels[int(key)], value] )
-        return data
+            values.append(value)
+            titles.append(labels[int(key)])
+
+        return {
+                'data': {
+                    'columns': [values],
+                    'type': 'bar'
+                    },
+                'axis': {
+                    'x': {
+                        'type': 'category',
+                        'categories': titles,
+                        }
+                    },
+                }
 

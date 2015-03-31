@@ -13,11 +13,6 @@ New Image Classification Model
 {% endblock %}
 
 {% block content %}
-<script src="{{ url_for('static', filename='js/google_api.js') }}"></script>
-<script>
-google.load("visualization", "1", {packages:["corechart"]});
-</script>
-
 <div class="page-header">
     <h1>New Image Classification Model</h1>
 </div>
@@ -144,8 +139,7 @@ $("#dataset").change(function() {
                             ></span>
                     </div>
                 </div>
-                (neat progress bar)
-
+                {# TODO: neat progress bar #}
                 <div class="form-group{{' has-error' if form.batch_size.errors}}">
                     {{form.batch_size.label}}
                     <div class="input-group">
@@ -198,7 +192,10 @@ showHideAdvancedLROptions();
 
                     <div class="form-group{{' has-error' if form.lr_step_size.errors}}">
                         {{form.lr_step_size.label}}
-                        {{form.lr_step_size(class='form-control learning-rate-option')}}
+                        <div class="input-group">
+                            {{form.lr_step_size(class='form-control learning-rate-option')}}
+                            <span class="input-group-addon">%</span>
+                        </div>
                     </div>
                     <div class="form-group{{' has-error' if form.lr_step_gamma.errors}}">
                         {{form.lr_step_gamma.label}}
@@ -206,7 +203,10 @@ showHideAdvancedLROptions();
                     </div>
                     <div class="form-group{{' has-error' if form.lr_multistep_values.errors}}">
                         {{form.lr_multistep_values.label}}
-                        {{form.lr_multistep_values(class='form-control learning-rate-option')}}
+                        <div class="input-group">
+                            {{form.lr_multistep_values(class='form-control learning-rate-option')}}
+                            <span class="input-group-addon">%</span>
+                        </div>
                     </div>
                     <div class="form-group{{' has-error' if form.lr_multistep_gamma.errors}}">
                         {{form.lr_multistep_gamma.label}}
@@ -230,7 +230,10 @@ showHideAdvancedLROptions();
                     </div>
                     <div class="form-group{{' has-error' if form.lr_sigmoid_step.errors}}">
                         {{form.lr_sigmoid_step.label}}
-                        {{form.lr_sigmoid_step(class='form-control learning-rate-option')}}
+                        <div class="input-group">
+                            {{form.lr_sigmoid_step(class='form-control learning-rate-option')}}
+                            <span class="input-group-addon">%</span>
+                        </div>
                     </div>
                     <div class="form-group{{' has-error' if form.lr_sigmoid_gamma.errors}}">
                         {{form.lr_sigmoid_gamma.label}}
@@ -240,86 +243,97 @@ showHideAdvancedLROptions();
                     <div id="visualize-lr" style="display:none;">
                         <a class="close" onClick="$('#visualize-lr').hide();return false;">&times;</a>
                         <br>
-                        <div id="visualize-lr-graph"></div>
+                        <div id="visualize-lr-graph" style="background:white;"></div>
                     </div>
 
                     <script>
-function showSelectedAdvancedLROptions() {
-    $("#advanced-lr-options input.learning-rate-option").parent().hide();
-
-    // Turn some back on
-    switch($("#lr_policy").val()) {
-        case 'step':
-            $("#lr_step_size").parent().show();
-            $("#lr_step_gamma").parent().show();
-            break;
-        case 'multistep':
-            $("#lr_multistep_values").parent().show();
-            $("#lr_multistep_gamma").parent().show();
-            break;
-        case 'exp':
-            $("#lr_exp_gamma").parent().show();
-            break;
-        case 'inv':
-            $("#lr_inv_gamma").parent().show();
-            $("#lr_inv_power").parent().show();
-            break;
-        case 'poly':
-            $("#lr_poly_power").parent().show();
-            break;
-        case 'sigmoid':
-            $("#lr_sigmoid_step").parent().show();
-            $("#lr_sigmoid_gamma").parent().show();
-            break;
-        default:
-            break;
-    }
-}
-function drawLRGraph(lr_data) {
-    var data = google.visualization.arrayToDataTable($.parseJSON(lr_data));
-    $("#visualize-lr").show();
-    new google.visualization.LineChart($("#visualize-lr-graph")[0]).
-        draw(data,
-                {
-                    height: 200,
-                    width: "100%",
-                    hAxis: {textPosition: 'none'},
-                    legend: {position: 'none'},
-                    chartArea: {
-                        left: "15%",
-                        top: "5%",
-                        width: "80%",
-                        height: "90%",
+                        function showHideAdvancedLROption(selector, show) {
+                            show = show || true;
+                            var element = $(selector);
+                            while (!element.hasClass('form-group')) {
+                                element = element.parent();
+                                if (element.attr('id') == 'advanced_lr_options')
+                                    // We've gone too far
+                                    return;
+                            }
+                            if (show)
+                                element.show();
+                            else
+                                element.hide();
                         }
-                    }
-            );
-}
+                        function showSelectedAdvancedLROptions() {
+                            $("#advanced-lr-options div.form-group").hide();
+                            showHideAdvancedLROption('#lr_policy');
 
-function getLRGraph() {
-    $.ajax("{{url_for('models_visualize_lr')}}",
-        {
-            type: "POST",
-            data: $(".learning-rate-option").serialize()
-            }
-        )
-    .done(function(data) {
-        drawLRGraph(data);
-        })
-    .fail(function(data) {
-            $("#visualize-lr-graph").html("");
-            errorAlert(data);
-        });
-    return false;
-}
+                            // Turn some back on
+                            switch($("#lr_policy").val()) {
+                                case 'step':
+                                showHideAdvancedLROption('#lr_step_size');
+                                showHideAdvancedLROption('#lr_step_gamma');
+                                break;
+                                case 'multistep':
+                                showHideAdvancedLROption('#lr_multistep_values');
+                                showHideAdvancedLROption('#lr_multistep_gamma');
+                                break;
+                                case 'exp':
+                                showHideAdvancedLROption('#lr_exp_gamma');
+                                break;
+                                case 'inv':
+                                showHideAdvancedLROption('#lr_inv_gamma');
+                                showHideAdvancedLROption('#lr_inv_power');
+                                break;
+                                case 'poly':
+                                showHideAdvancedLROption('#lr_poly_power');
+                                break;
+                                case 'sigmoid':
+                                showHideAdvancedLROption('#lr_sigmoid_step');
+                                showHideAdvancedLROption('#lr_sigmoid_gamma');
+                                break;
+                                default:
+                                break;
+                            }
+                        }
+                        function drawLRGraph(data) {
+                            $("#visualize-lr").show();
+                            c3.generate($.extend(true, data, {
+                                bindto: '#visualize-lr-graph',
+                                size: {height: 200},
+                                axis: {
+                                    x: {
+                                        label: {
+                                            text: 'Training (%)',
+                                            position: 'outer-center',
+                                        },
+                                    },
+                                },
+                                legend: {show: false},
+                            }));
+                        }
+                        function getLRGraph() {
+                            $.ajax("{{url_for('models_visualize_lr')}}",
+                            {
+                                type: "POST",
+                                data: $(".learning-rate-option").serialize()
+                            }
+                            )
+                            .done(function(data) {
+                                drawLRGraph($.parseJSON(data));
+                            })
+                            .fail(function(data) {
+                                $("#visualize-lr-graph").html("");
+                                errorAlert(data);
+                            });
+                            return false;
+                        }
 
-$("input.learning-rate-option").change(function() {
-        getLRGraph();
-        });
-$("select.learning-rate-option").change(function() {
-        showSelectedAdvancedLROptions();
-        getLRGraph();
-        });
-showSelectedAdvancedLROptions();
+                        $("input.learning-rate-option").change(function() {
+                            getLRGraph();
+                        });
+                        $("select.learning-rate-option").change(function() {
+                            showSelectedAdvancedLROptions();
+                            getLRGraph();
+                        });
+                        showSelectedAdvancedLROptions();
                     </script>
                 </div>
             </div>
@@ -411,7 +425,7 @@ function customizeNetwork(network, snapshot_list) {
                         </tr>
                         {% endfor %}
                     </table>
-                    
+
                 </div>
                 <div id="network-tab-previous" class="tab-pane">
                     <table class="table">
@@ -446,22 +460,24 @@ function customizeNetwork(network, snapshot_list) {
                         {% endfor %}
                     </table>
                 </div>
-		<script>
-                    $(".btn.btn-sm").css('visibility', 'hidden');   // hide all the buttons
-                    $("#network-tab-previous").find(".form-control").css('visibility', 'hidden'); //hide all the select elements in "Previous Networks" tab
+                <script>
+                    // hide some buttons and form elements
+                    $("#network-tab-standard .btn.btn-sm").css('visibility', 'hidden');
+                    $("#network-tab-previous .btn.btn-sm").css('visibility', 'hidden');
+                    $("#network-tab-previous select").css('visibility', 'hidden');
 
-                    var $stdtab_prev_clicked_tr = null;   
+                    var $stdtab_prev_clicked_tr = null;
                     $("input:radio[name=standard_networks]").click(function(){
-                       if ($stdtab_prev_clicked_tr != null) {
+                        if ($stdtab_prev_clicked_tr != null) {
                             $stdtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
-                       }
-                       $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
-                       $stdtab_prev_clicked_tr = $(this).parents('tr');
+                        }
+                        $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
+                        $stdtab_prev_clicked_tr = $(this).parents('tr');
                     });
 
-                    var $prevtab_prev_clicked_tr = null;   
+                    var $prevtab_prev_clicked_tr = null;
                     $("input:radio[name=previous_networks]").click(function(){
-                       if ($prevtab_prev_clicked_tr != null) {
+                        if ($prevtab_prev_clicked_tr != null) {
                             $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
                             $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
                         }
@@ -473,8 +489,8 @@ function customizeNetwork(network, snapshot_list) {
                     //fix to the following issue: when validation fails and the screen was re-displayed, the selected radio buttons in "previous networks" tab remains selected but the select input field and customize button beside the selected previous network is in hidden status, which is wrong. same issue exists in standard networks tab. The below code ensures that select field and customize button beside selected radio button will be visible even when validation fails.
 
                     if($("input:radio[name=standard_networks]").is(":checked")) {
-                       $stdtab_prev_clicked_tr = $("input:radio[name=standard_networks]:checked").parents('tr');
-                       $stdtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
+                        $stdtab_prev_clicked_tr = $("input:radio[name=standard_networks]:checked").parents('tr');
+                        $stdtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
                     }
                     if($("input:radio[name=previous_networks]").is(":checked")) {
                         $prevtab_prev_clicked_tr =  $("input:radio[name=previous_networks]:checked").parents('tr');
@@ -538,7 +554,7 @@ function visualizeNetwork() {
                     </div>
                     <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
                         {{form.custom_network_snapshot.label}}
-                        <div class="input-group"> 
+                        <div class="input-group">
                             {{form.custom_network_snapshot(class='form-control')}}
                             <span name="pretrained_model_explanation"
                                 class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
@@ -568,7 +584,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
         <div class="col-sm-6 col-sm-offset-3 well">
             <div class="form-group{{' has-error' if form.model_name.errors}}">
                 {{form.model_name.label}}
-                <div class="input-group"> 
+                <div class="input-group">
                     {{form.model_name(class='form-control')}}
                     <span name="model_name_explanation"
                         class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"

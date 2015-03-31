@@ -97,7 +97,6 @@ class CaffeTrainTask(TrainTask):
     @override
     def before_run(self):
         if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            assert self.read_labels(), 'could not read labels'
             self.save_prototxt_files()
         else:
             raise NotImplementedError()
@@ -140,8 +139,8 @@ class CaffeTrainTask(TrainTask):
             elif layer.type == 'Accuracy':
                 addThis = True
                 if layer.accuracy_param.HasField('top_k'):
-                    if layer.accuracy_param.top_k >= len(self.labels):
-                        self.logger.warning('Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (layer.name, layer.accuracy_param.top_k, len(self.labels)))
+                    if layer.accuracy_param.top_k >= len(self.get_labels()):
+                        self.logger.warning('Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (layer.name, layer.accuracy_param.top_k, len(self.get_labels())))
                         addThis = False
                 if addThis:
                     accuracy_layers.append(layer)
@@ -171,7 +170,7 @@ class CaffeTrainTask(TrainTask):
             if layer.type == 'InnerProduct':
                 for top in layer.top:
                     if top in network_outputs:
-                        layer.inner_product_param.num_output = len(self.labels)
+                        layer.inner_product_param.num_output = len(self.get_labels())
                         break
 
         ### Write train_val file
@@ -623,7 +622,7 @@ class CaffeTrainTask(TrainTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        self.read_labels()
+        labels = self.get_labels()
         net = self.get_net(snapshot_epoch)
 
         # process image
@@ -644,7 +643,7 @@ class CaffeTrainTask(TrainTask):
         indices = (-scores).argsort()
         predictions = []
         for i in indices:
-            predictions.append( (self.labels[i], scores[i]) )
+            predictions.append( (self.get_labels()[i], scores[i]) )
 
         # add visualizations
         visualizations = []
@@ -806,8 +805,7 @@ class CaffeTrainTask(TrainTask):
         Keyword arguments:
         snapshot_epoch -- which snapshot to use
         """
-        self.read_labels()
-
+        labels = self.get_labels()
         net = self.get_net(snapshot_epoch)
 
         for image in images:
@@ -842,7 +840,7 @@ class CaffeTrainTask(TrainTask):
                 scores = np.vstack((scores, output))
             print 'Processed %s/%s images' % (len(scores), len(images))
 
-        return (self.labels, scores)
+        return (labels, scores)
 
     def has_model(self):
         """

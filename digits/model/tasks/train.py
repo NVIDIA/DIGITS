@@ -62,8 +62,8 @@ class TrainTask(Task):
             del state['dataset']
         if 'snapshots' in state:
             del state['snapshots']
-        if 'labels' in state:
-            del state['labels']
+        if '_labels' in state:
+            del state['_labels']
         return state
 
     def __setstate__(self, state):
@@ -287,14 +287,13 @@ class TrainTask(Task):
         """
         return None
 
-    def read_labels(self):
+    def get_labels(self):
         """
-        Read labels from self.labels_file and store them at self.labels
-        Returns True if at least one label was read
+        Read labels from labels_file and return them in a list
         """
         # The labels might be set already
-        if hasattr(self, 'labels') and self.labels and len(self.labels) > 0:
-            return True
+        if hasattr(self, '_labels') and self._labels and len(self._labels) > 0:
+            return self._labels
 
         assert hasattr(self.dataset, 'labels_file'), 'labels_file not set'
         assert self.dataset.labels_file, 'labels_file not set'
@@ -309,8 +308,8 @@ class TrainTask(Task):
 
         assert len(labels) > 0, 'no labels in labels_file'
 
-        self.labels = labels
-        return True
+        self._labels = labels
+        return self._labels
 
     def lr_graph_data(self):
         """

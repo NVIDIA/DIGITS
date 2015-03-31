@@ -196,9 +196,7 @@
             {% set loss_graph_data = job.train_task().loss_graph_data() %}
             {% if loss_graph_data %}
             <script>
-                google.setOnLoadCallback(function() {
-                    drawLossGraph({% autoescape false %}{{loss_graph_data}}{% endautoescape %});
-                });
+                drawLossGraph({% autoescape false %}{{loss_graph_data}}{% endautoescape %});
             </script>
             <br>
             <br>
@@ -207,9 +205,7 @@
             {% set accuracy_graph_data = job.train_task().accuracy_graph_data() %}
             {% if accuracy_graph_data %}
             <script>
-                google.setOnLoadCallback(function() {
-                    drawAccuracyGraph({% autoescape false %}{{accuracy_graph_data}}{% endautoescape %});
-                });
+                drawAccuracyGraph({% autoescape false %}{{accuracy_graph_data}}{% endautoescape %});
             </script>
             <br>
             <br>
@@ -219,9 +215,7 @@
             {% set combined_graph_data = job.train_task().combined_graph_data() %}
             {% if combined_graph_data %}
             <script>
-                google.setOnLoadCallback(function() {
-                    drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
-                });
+                drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
             </script>
             <br>
             <br>
@@ -230,9 +224,7 @@
             {% set lr_graph_data = job.train_task().lr_graph_data() %}
             {% if lr_graph_data %}
             <script>
-                google.setOnLoadCallback(function() {
-                    drawLRGraph({% autoescape false %}{{lr_graph_data}}{% endautoescape %});
-                });
+                drawLRGraph({% autoescape false %}{{lr_graph_data}}{% endautoescape %});
             </script>
             {% endif %}
 

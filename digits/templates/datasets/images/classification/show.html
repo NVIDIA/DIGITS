@@ -77,13 +77,11 @@
     <div class="distribution-graph" style="display:none;"></div>
     {% if task.distribution_data() %}
     <script>
-google.setOnLoadCallback(function() {
         drawDistributionGraph("{{task.html_id()}}",
-            {% autoescape false %}
-            {{task.distribution_data()}}
-            {% endautoescape %}
-            );
-});
+        {% autoescape false %}
+        {{task.distribution_data()}}
+        {% endautoescape %}
+        );
     </script>
     {% if task.mean_file %}
     <b>Image mean:</b>
@@ -94,25 +92,38 @@ google.setOnLoadCallback(function() {
 {% endmacro %}
 
 {% block job_content %}
+<style>
+    .distribution-graph g.c3-axis-x g.tick {
+        display: none;
+    }
+</style>
 <script>
-function drawDistributionGraph(task_id, distribution) {
-    var data = google.visualization.arrayToDataTable(distribution);
-    new google.visualization.ColumnChart($("#"+task_id+" .distribution-graph")[0]).
-        draw(data, {
-                height:200,
-                title: "Images per category",
-                vAxis: {
-                    minValue: 0
+    function drawDistributionGraph(task_id, data) {
+        var selector = "#"+task_id+" .distribution-graph";
+        $(selector).show();
+        c3.generate($.extend(true, data, {
+            bindto: selector,
+            axis: {
+                x: {
+                    label: {
+                        text: 'Category',
+                        position: 'outer-center',
                     },
-                hAxis: {
-                    textPosition: "none",
+                    tick: {
+                        culling: true,
                     },
-                legend: {
-                    position: "none",
-                    },
-                });
-    $("#"+task_id+" .distribution-graph").show();
-}
+                },
+                y: {
+                    label: {
+                        text: 'Image Count',
+                        position: 'outer-middle',
+                        min: 0,
+                    }
+                }
+            },
+            legend: {show: false},
+        }));
+    }
 </script>
 
 {% if job.parse_folder_tasks()|length == 1 %}

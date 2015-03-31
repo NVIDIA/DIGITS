@@ -9,10 +9,6 @@
 {% endblock %}
 
 {% block head %}
-    <script src="{{ url_for('static', filename='js/google_api.js') }}"></script>
-    <script>
-google.load("visualization", "1", {packages:["corechart"]});
-    </script>
     {% if job.status.is_running() %}
         {% with namespace = "/jobs" %}
             {% set room = job.id() %}

@@ -113,7 +113,6 @@ def models_visualize_network():
 def models_visualize_lr():
     policy = request.form['lr_policy']
     lr = float(request.form['learning_rate'])
-    data = [('I', 'Learning Rate')]
     if policy == 'fixed':
         pass
     elif policy == 'step':
@@ -136,25 +135,26 @@ def models_visualize_lr():
     else:
         return 'Invalid policy', 404
 
-    for i in xrange(100):
+    data = ['Learning Rate']
+    for i in xrange(101):
         if policy == 'fixed':
-            data.append((i, lr))
+            data.append(lr)
         elif policy == 'step':
-            data.append((i, lr * math.pow(gamma, math.floor(float(i)/step))))
+            data.append(lr * math.pow(gamma, math.floor(float(i)/step)))
         elif policy == 'multistep':
             if current_step < len(steps) and i >= steps[current_step]:
                 current_step += 1
-            data.append((i, lr * math.pow(gamma, current_step)))
+            data.append(lr * math.pow(gamma, current_step))
         elif policy == 'exp':
-            data.append((i, lr * math.pow(gamma, i)))
+            data.append(lr * math.pow(gamma, i))
         elif policy == 'inv':
-            data.append((i, lr * math.pow(1.0 + gamma * i, -power)))
+            data.append(lr * math.pow(1.0 + gamma * i, -power))
         elif policy == 'poly':
-            data.append((i, lr * math.pow(1.0 - float(i)/100, power)))
+            data.append(lr * math.pow(1.0 - float(i)/100, power))
         elif policy == 'sigmoid':
-            data.append((i, lr / (1.0 + math.exp(gamma * (i - step)))))
+            data.append(lr / (1.0 + math.exp(gamma * (i - step))))
 
-    return json.dumps(data)
+    return json.dumps({'data': {'columns': [data]}})
 
 @app.route(NAMESPACE + '<job_id>/download', methods=['GET', 'POST'])
 @app.route(NAMESPACE + '<job_id>/download.<extension>', methods=['GET', 'POST'])
