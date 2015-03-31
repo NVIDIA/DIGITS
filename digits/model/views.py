@@ -81,14 +81,16 @@ def models_customize():
                 with open(path) as infile:
                     return json.dumps({'network': infile.read()})
     job = scheduler.get_job(network)
+    snapshot = None
     try:
         epoch = int(request.form['snapshot_epoch'])
         for filename, e in job.train_task().snapshots:
             if e == epoch:
                 snapshot = job.path(filename)
                 break
-    except Exception as e:
-        snapshot = None
+    except:
+        pass
+
     if job:
         return json.dumps({
             'network': text_format.MessageToString(job.train_task().network),
