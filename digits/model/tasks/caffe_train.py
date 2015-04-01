@@ -62,12 +62,12 @@ class CaffeTrainTask(TrainTask):
         state = super(CaffeTrainTask, self).__getstate__()
 
         # Don't pickle these things
-        if 'image_mean' in state:
-            del state['image_mean']
-        if 'classifier' in state:
-            del state['classifier']
         if 'caffe_log' in state:
             del state['caffe_log']
+        if '_transformer' in state:
+            del state['_transformer']
+        if '_caffe_net' in state:
+            del state['_caffe_net']
 
         return state
 
@@ -706,17 +706,19 @@ class CaffeTrainTask(TrainTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        if not self.load_model(snapshot_epoch):
-            return (None, None)
-        if not self.read_labels():
-            return (None, None)
+        self.read_labels()
 
-        # Convert to float32 in [0,1] range
-        caffe_image = np.array(image).astype('float32')/255.0
-        if caffe_image.ndim == 2:
-            caffe_image = caffe_image[:,:,np.newaxis]
+        net = self.get_net(snapshot_epoch)
 
-        scores = self.classifier.predict([caffe_image], oversample=False).flatten()
+        if image.ndim == 2:
+            image = image[:,:,np.newaxis]
+
+        net.blobs['data'].data[...] = self.get_transformer().preprocess(
+                'data', image)
+
+        output = net.forward()
+        scores = output[net.outputs[-1]].flatten()
+
         indices = (-scores).argsort()
         predictions = []
         for i in indices:
@@ -727,14 +729,14 @@ class CaffeTrainTask(TrainTask):
             if layers == 'all':
                 for layer in self.network.layer:
                     if not layer.type.endswith(('Data', 'Loss', 'Accuracy')):
-                        a, w = self.get_layer_visualization(layer)
+                        a, w = self.get_layer_visualization(net, layer)
                         if a is not None or w is not None:
                             visualizations.append( (layer.name, a, w) )
             else:
                 found = False
                 for layer in self.network.layer:
                     if layer.name == layers:
-                        a, w = self.get_layer_visualization(layer)
+                        a, w = self.get_layer_visualization(net, layer)
                         if a is not None or w is not None:
                             visualizations.append( (layer.name, a, w) )
                         found = True
@@ -744,7 +746,7 @@ class CaffeTrainTask(TrainTask):
 
         return (predictions, visualizations)
 
-    def get_layer_visualization(self, layer,
+    def get_layer_visualization(self, net, layer,
             max_width=500,
             ):
         """
@@ -753,17 +755,13 @@ class CaffeTrainTask(TrainTask):
             weights -- a vis_square for the learned weights (may be None for some layer types)
         Returns (None, None) if an error occurs
 
-        Note: This should only be called directly after the classifier has classified an image (so the blobs are valid)
-
         Arguments:
+        net -- the caffe.Net instance which has just completed a forward pass
         layer -- the layer to visualize
 
         Keyword arguments:
         max_width -- the maximum width for vis_squares
         """
-        if not self.loaded_model():
-            return None, None
-
         activations = None
         weights = None
 
@@ -772,63 +770,84 @@ class CaffeTrainTask(TrainTask):
         if layer.type == 'Softmax':
             normalize = False
 
-        if (not layer.bottom or layer.bottom[0] != layer.top[0]) and layer.top[0] in self.classifier.blobs:
-            blob = self.classifier.blobs[layer.top[0]]
-            assert blob.data.ndim == 4, 'expect blob.data.ndim == 4'
-            if blob.data.shape[0] == 10:
-                # 4 is the center crop (if oversampled)
-                data = blob.data[4]
-            else:
-                data = blob.data[0]
+        if (not layer.bottom or layer.bottom[0] != layer.top[0]) and layer.top[0] in net.blobs:
+            data = net.blobs[layer.top[0]].data[0]
+            #print 'activation.shape is %s for %s' % (data.shape, layer.top[0])
 
-            if data.shape[0] == 3:
-                # can display as color channels
-                # (1,height,width,channels)
-                data = data.transpose(1,2,0)
-                data = data[np.newaxis,...]
+            if data.ndim == 1:
+                # interpret as 1x1 grayscale images
+                # (N, 1, 1)
+                data = data[:, np.newaxis, np.newaxis]
+            elif data.ndim == 3:
+                if data.shape[0] == 3:
+                    # interpret as a color image
+                    # (1, H, W,3)
+                    data = data.transpose(1,2,0)
+                    data = data[np.newaxis,...]
+                else:
+                    # interpret as grayscale images
+                    # (N, H, W)
+                    pass
+            else:
+                raise Exception('unrecognized activation shape for %s: %s' % (layer.top[0], data.shape))
 
             # chop off data so that it will fit within max_width
+            padsize = 0
             width = data.shape[2]
             if width > max_width:
-                data = data[np.newaxis,0,:max_width,:max_width]
+                data = data[0,:max_width,:max_width]
             else:
                 if width > 1:
                     padsize = 1
                     width += 1
-                else:
-                    padsize = 0
                 n = max_width/width
                 n *= n
                 data = data[:n]
 
+            #print 'activation.shape now %s' % (data.shape,)
             activations = utils.image.vis_square(data,
                     padsize     = padsize,
                     normalize   = normalize,
                     )
-        if layer.name in self.classifier.params:
-            params = self.classifier.params[layer.name][0]
-            assert params.data.ndim == 4, 'expect params.ndim == 4'
-            data = params.data
-            if data.shape[1] == 3:
-                # can display as color channels
-                data = data.transpose(0,2,3,1)
+
+        if layer.name in net.params:
+            data = net.params[layer.name][0].data
+            #print 'weights.shape is %s for %s' % (data.shape, layer.name)
+
+            if data.ndim == 2:
+                # interpret as 1x1 grayscale images
+                # (N, 1, 1)
+                data = data.reshape((data.shape[0]*data.shape[1], 1, 1))
+            elif data.ndim == 4:
+                if data.shape[0] == 3:
+                    # interpret as HxW color images
+                    # (N, H, W, 3)
+                    data = data.transpose(1,2,3,0)
+                elif data.shape[1] == 3:
+                    # interpret as HxW color images
+                    # (N, H, W, 3)
+                    data = data.transpose(0,2,3,1)
+                else:
+                    # interpret as HxW grayscale images
+                    # (N, H, W)
+                    data = data.reshape((data.shape[0]*data.shape[1], data.shape[2], data.shape[3]))
             else:
-                data = data.reshape((data.shape[0]*data.shape[1],data.shape[2],data.shape[3]))
+                raise Exception('unrecognized weight shape for %s: %s' % (layer.name, data.shape))
 
             # chop off data so that it will fit within max_width
+            padsize = 0
             width = data.shape[2]
             if width >= max_width:
-                data = data[np.newaxis,0,:max_width,:max_width]
+                data = data[0,:max_width,:max_width, :]
             else:
                 if width > 1:
                     padsize = 1
                     width += 1
-                else:
-                    padsize = 0
                 n = max_width/width
                 n *= n
                 data = data[:n]
 
+            #print 'weight.shape now %s' % (data.shape,)
             weights = utils.image.vis_square(data,
                     padsize     = padsize,
                     normalize   = normalize,
@@ -859,43 +878,58 @@ class CaffeTrainTask(TrainTask):
             ]
 
         Arguments:
-        images -- an array of np.arrays
+        images -- a list of np.arrays
 
         Keyword arguments:
         snapshot_epoch -- which snapshot to use
         """
-        if not self.load_model(snapshot_epoch):
-            return (None, None)
-        if not self.read_labels():
-            return (None, None)
+        self.read_labels()
 
-        caffe_images = []
+        net = self.get_net(snapshot_epoch)
+
         for image in images:
-            # Convert to float32 in [0,1] range
-            image = image.astype('float32')/255.0
             if image.ndim == 2:
                 image = image[:,:,np.newaxis]
-            caffe_images.append(image)
 
-        scores = self.classifier.predict(caffe_images, oversample=False)
+        images = np.array(images)
+
+        if self.batch_size:
+            data_shape = (self.batch_size, self.dataset.image_dims[2])
+        # TODO: grab batch_size from the TEST phase in train_val network
+        else:
+            data_shape = (constants.DEFAULT_BATCH_SIZE, self.dataset.image_dims[2])
+
+        if self.crop_size:
+            data_shape += (self.crop_size, self.crop_size)
+        else:
+            data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
+
+        scores = None
+        for chunk in [images[x:x+data_shape[0]] for x in xrange(0, len(images), data_shape[0])]:
+            new_shape = (len(chunk),) + data_shape[1:]
+            if net.blobs['data'].data.shape != new_shape:
+                net.blobs['data'].reshape(*new_shape)
+            for index, image in enumerate(chunk):
+                net.blobs['data'].data[index] = self.get_transformer().preprocess(
+                        'data', image)
+            output = net.forward()[net.outputs[-1]]
+            if scores is None:
+                scores = output
+            else:
+                scores = np.vstack((scores, output))
+            print 'Processed %s/%s images' % (len(scores), len(images))
+
         return (self.labels, scores)
 
     def has_model(self):
         """
         Returns True if there is a model that can be used
         """
-        return len(self.snapshots) != 0
+        return len(self.snapshots) > 0
 
-    def loaded_model(self):
+    def get_net(self, epoch=None):
         """
-        Returns True if a model has been loaded
-        """
-        return self.loaded_snapshot_file is not None
-
-    def load_model(self, epoch=None):
-        """
-        Loads a .caffemodel
-        Returns True if the model is loaded (or if it was already loaded)
+        Returns an instance of caffe.Net
 
         Keyword Arguments:
         epoch -- which snapshot to load (default is -1 to load the most recently generated snapshot)
@@ -913,42 +947,62 @@ class CaffeTrainTask(TrainTask):
                 if snapshot_epoch == epoch:
                     file_to_load = snapshot_file
                     break
+        if file_to_load is None:
+            raise Exception('snapshot not found for epoch "%s"' % epoch)
 
-        assert file_to_load is not None
+        # check if already loaded
+        if self.loaded_snapshot_file and self.loaded_snapshot_file == file_to_load \
+                and hasattr(self, '_caffe_net') and self._caffe_net is not None:
+            return self._caffe_net
 
-        if self.loaded_snapshot_file and self.loaded_snapshot_file == file_to_load:
-            # Already loaded
-            return True
-
-        ### Do the load
-
-        if self.image_mean is None:
-            with open(self.dataset.path(self.dataset.train_db_task().mean_file), 'r') as f:
-                blob = caffe_pb2.BlobProto()
-                blob.MergeFromString(f.read())
-                self.image_mean = np.reshape(blob.data, (
-                        self.dataset.image_dims[2],
-                        self.dataset.image_dims[0],
-                        self.dataset.image_dims[1],
-                        )
-                        ).mean(1).mean(1) # 1 pixel
-
-        if self.dataset.image_dims[2] == 3:
-            channel_swap = (2,1,0)
-        else:
-            channel_swap = None
-
-        self.classifier = caffe.Classifier(self.path(self.deploy_file), self.path(file_to_load),
-                image_dims      = (
-                    self.dataset.image_dims[0],
-                    self.dataset.image_dims[1],
-                    ),
-                mean            = self.image_mean,
-                raw_scale       = 255,
-                channel_swap    = channel_swap,
-                )
+        # load a new model
+        self._caffe_net = caffe.Net(
+                self.path(self.deploy_file),
+                file_to_load,
+                caffe.TEST)
+        # TODO: once we can query CPU/GPU mode, turn this on
+        #caffe.set_mode_gpu()
 
         self.loaded_snapshot_epoch = epoch
         self.loaded_snapshot_file = file_to_load
-        return True
+
+        return self._caffe_net
+
+    def get_transformer(self):
+        """
+        Returns an instance of caffe.io.Transformer
+        """
+        # check if already loaded
+        if hasattr(self, '_transformer') and self._transformer is not None:
+            return self._transformer
+
+        data_shape = (1, self.dataset.image_dims[2])
+        if self.crop_size:
+            data_shape += (self.crop_size, self.crop_size)
+        else:
+            data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
+
+        t = caffe.io.Transformer(
+                inputs = {'data':  data_shape}
+                )
+        t.set_transpose('data', (2,0,1)) # transpose to (channels, height, width)
+
+        if self.use_mean:
+            # set mean
+            with open(self.dataset.path(self.dataset.train_db_task().mean_file)) as f:
+                blob = caffe_pb2.BlobProto()
+                blob.MergeFromString(f.read())
+                pixel = np.reshape(blob.data,
+                        (
+                            self.dataset.image_dims[2],
+                            self.dataset.image_dims[0],
+                            self.dataset.image_dims[1],
+                            )
+                        ).mean(1).mean(1)
+                t.set_mean('data', pixel)
+
+        t.set_raw_scale('data', 255) # [0,255] range instead of [0,1]
+
+        self._transformer = t
+        return self._transformer
 

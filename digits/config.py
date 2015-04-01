@@ -9,6 +9,7 @@ import argparse
 import imp
 import subprocess
 import tempfile
+import platform
 
 import ConfigParser
 
@@ -60,6 +61,9 @@ class ConfigOption(object):
         return value
 
 class CaffeRootOption(ConfigOption):
+    REQUIRED_SUFFIX = '-nv'
+    REQUIRED_VERSION = '0.11.0'
+
     @staticmethod
     def name():
         return 'caffe_root'
@@ -90,6 +94,7 @@ class CaffeRootOption(ConfigOption):
         if value == 'SYS':
             if not self.find_executable('caffe'):
                 raise ValueError('caffe binary not found')
+            self.validate_version('caffe')
             try:
                 imp.find_module('caffe')
             except ImportError:
@@ -103,9 +108,11 @@ class CaffeRootOption(ConfigOption):
                 raise ValueError('Directory does not exist')
             if not os.path.isdir(value):
                 raise ValueError('Must be a directory')
-#            if not os.path.exists(os.path.join(value, 'bin', 'caffe.bin')):
-            if not os.path.exists(os.path.join(value, 'build', 'tools', 'caffe.bin')):
+            #expected_path = os.path.join(value, 'bin', 'caffe.bin')
+            expected_path = os.path.join(value, 'build', 'tools', 'caffe.bin')
+            if not os.path.exists(expected_path):
                 raise ValueError('Does not contain the caffe binary')
+            self.validate_version(expected_path)
 
             #XXX remove other caffe/python paths from PATH
             sys.path = [os.path.join(value, 'python')] + [p for p in sys.path if os.path.join('caffe', 'python') not in p]
@@ -115,6 +122,38 @@ class CaffeRootOption(ConfigOption):
                 sys.path.pop(0)
                 raise ValueError('caffe python package not found')
             return value
+
+    def validate_version(self, executable):
+        """
+        Utility for checking the caffe version from within validate()
+
+        Arguments:
+        executable -- the caffe executable
+        """
+        # TODO: check `caffe --version` when it's implemented
+
+        if platform.system() == 'Linux':
+            p = subprocess.Popen(['ldd', executable],
+                    stdout = subprocess.PIPE,
+                    stderr = subprocess.PIPE)
+            if p.wait():
+                raise ValueError(p.stderr.read().strip())
+            else:
+                libname = 'libcaffe'
+                for line in p.stdout:
+                    if libname in line:
+                        symlink = line.split()[2]
+                        filename = os.path.basename(os.path.realpath(symlink))
+                        if self.REQUIRED_SUFFIX not in filename:
+                            raise ValueError('Expected caffe suffix "%s". %s does not match. Are you building from the NVIDIA/caffe fork?' % (self.REQUIRED_SUFFIX, filename))
+                        if not filename.endswith(self.REQUIRED_VERSION):
+                            raise ValueError('Caffe version %s required. %s does not match.' % (self.REQUIRED_VERSION, filename))
+                        return True
+            raise ValueError('%s not found in ldd output' % libname)
+        elif platform.system() == 'Darwin':
+            pass
+        else:
+            print 'WARNING: platform "%s" not supported' % platform.system()
 
     @staticmethod
     def find_executable(program):
