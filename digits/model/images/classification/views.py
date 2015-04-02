@@ -168,6 +168,7 @@ def image_classification_model_create():
                     job_dir         = job.dir(),
                     dataset         = datasetJob,
                     train_epochs    = form.train_epochs.data,
+                    snapshot_interval   = form.snapshot_interval.data,
                     learning_rate   = form.learning_rate.data,
                     lr_policy       = policy,
                     batch_size      = form.batch_size.data,

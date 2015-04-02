@@ -39,7 +39,8 @@ Usage details:
 --mean                  (default mean.jpg)       mean file. Mean file is used to preprocess images and it is also required to get the details of image channel, height and width.
 --subtractMean          (default yes)            If yes, subtracts the mean from images
 --labels                (default labels.txt)     file contains label definitions
---snapshotPrefix        (default '')             prefix of the weights/snapshots 
+--snapshotPrefix        (default '')             prefix of the weights/snapshots
+--snapshotInterval      (default 1)              specifies the training epochs to be completed before taking a snapshot
 
 -q,--policy             (default torch_sgd)      Learning Rate Policy. Valid policies : fixed, step, exp, inv, multistep, poly, sigmoid and torch_sgd. Note: when power value is -1, then "inv" policy with "gamma" is similar to "torch_sgd" with "learningRateDecay".              
 -h,--gamma              (default -1)             Required to calculate learning rate, when any of the following learning rate policies are used:  step, exp, inv, multistep & sigmoid                        
@@ -142,9 +143,24 @@ if opt.mirror == 'yes' then
     logmessage.display(0,'mirror option was selected, so during training for some of the random images, mirror view will be considered instead of original image view')
 end
 ----------------------------------------------------------------------
+------------- UTILITY FUNCTIONS ----------------------------
 
+-- round function
+function round(num, idp)
+  local mult = 10^(idp or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
+
+----------------------------------------------------------------------
 -- This matrix records the current confusion across classes
 local confusion = optim.ConfusionMatrix(classes)
+
+-- seperate validation matrix for validation data
+local validation_confusion = nil
+if opt.validation ~= '' then
+    validation_confusion = optim.ConfusionMatrix(classes)
+end
+
 
 if opt.type == 'float' then
     logmessage.display(0,'switching to floats')
@@ -220,7 +236,7 @@ if opt.policy ~= 'torch_sgd' then
 
     --converting stepsize percentages into values 
     for i=1,#stepvalues_list do
-      stepvalues_list[i] = math.floor((max_iterations*stepvalues_list[i]/100)+0.5)
+      stepvalues_list[i] = round(max_iterations*stepvalues_list[i]/100)
     end
 
     --initializing learning rate policy
@@ -267,7 +283,6 @@ local optimizer = Optimizer{
     lrPolicy = lrpolicy
 }
 
-
 -- During training, loss rate should be displayed at max 8 times or for every 5000 images, whichever lower.
 local logging_check = 0
 
@@ -278,114 +293,28 @@ else
 end  
 logmessage.display(0,'During training. details will be logged after every ' .. logging_check .. ' images')
 
-function round(num, idp)
-  local mult = 10^(idp or 0)
-  return math.floor(num * mult + 0.5) / mult
+
+-- This variable keeps track of next epoch, when to perform validation.
+local next_validation = opt.interval
+logmessage.display(0,'Training epochs to be completed for each validation :  ' .. opt.interval)
+local last_validation_epoch = 0
+
+-- This variable keeps track of next epoch, when to save model weights.
+local next_snapshot_save = opt.snapshotInterval
+logmessage.display(0,'Training epochs to be completed before taking a snapshot : ' .. opt.snapshotInterval)
+local last_snapshot_save_epoch = 0
+
+snapshot_prefix = ''
+
+if opt.snapshotPrefix ~= '' then
+    snapshot_prefix = opt.snapshotPrefix
+else
+    snapshot_prefix = opt.network
 end
 
--- Train function
-
-local function Train(epoch)
-
-    model:training()
-    local shuffle=nil;
-    if opt.shuffle == 'yes' then
-      --if opt.type =='cuda' then
-        --torch.setdefaulttensortype('torch.FloatTensor')
-        --shuffle = torch.randperm(trainSize):cuda()
-        --torch.setdefaulttensortype('torch.CudaTensor')
-      --else
-        --shuffle = torch.randperm(trainSize):cuda()
-      --end
-      shuffle = torch.randperm(trainSize):cuda()
-    end
-
-    
-    local NumBatches = 0
-    local curr_images_cnt = 0
-    local loss_sum = 0
-    local loss_batches_cnt = 0
-    local learningrate = 0
-    local inputs, targets
-
-    if opt.shuffle == 'yes' then
-      if opt.crop == 'yes' then
-        inputs = torch.Tensor(opt.batchSize, train.ImageChannels, opt.croplen, opt.croplen)
-      else
-        inputs = torch.Tensor(opt.batchSize, train.ImageChannels, train.ImageSizeX, train.ImageSizeY)
-      end
-
-      targets = torch.Tensor(opt.batchSize)      
-    end
-
-    for t = 1,trainSize,opt.batchSize do
+logmessage.display(0,'snapshots will be saved as ' .. snapshot_prefix .. '_<EPOCH>_Weights.t7')
 
 
-      if opt.shuffle == 'yes' and (trainSize-t+1<opt.batchSize) then
-        if opt.crop == 'yes' then
-          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, opt.croplen, opt.croplen)
-        else
-          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, train.ImageSizeX, train.ImageSizeY)
-        end
-        targets = torch.Tensor(trainSize-t+1)
-      end
-
-      -- log details when required number of images are processed
-      curr_images_cnt = curr_images_cnt + opt.batchSize   
-      if curr_images_cnt > logging_check then
-        logmessage.display(0, 'Training (epoch ' .. (epoch-1)+round((t-1)/trainSize,2) .. '): loss = ' .. (loss_sum/loss_batches_cnt) .. ', lr = ' .. learningrate)
-        curr_images_cnt = 0
-        loss_sum = 0
-        loss_batches_cnt = 0
-      end
-
-      --xlua.progress(t, trainSize)
-
-      -- create mini batch
-      NumBatches = NumBatches + 1
-      if opt.shuffle == 'yes' then
-        local ind =1
-        for i = t,math.min(t+opt.batchSize-1,trainSize) do
-          -- load new sample
-          local input, target = train:getImgUsingKey(trainKeys[shuffle[i]])
- 
-  	  inputs[ind] = input   -- this is similar to inputs[i%batchSize]
-          targets[ind] = target
-          ind=ind+1 
-        end
-
-      else
-          inputs,targets = train:nextBatch(math.min(trainSize-t+1,opt.batchSize))
-      end
-      
-      if opt.type =='cuda' then
-          inputs = inputs:cuda()
-          targets = targets:cuda()
-      else 
-          inputs = inputs:float() 
-      end
-
-      _,learningrate,_,trainerr = optimizer:optimize(inputs, targets)
-
-      -- adding the loss values of each mini batch and also maintaining the counter for number of batches, so that average loss value can be found at the time of logging details
-      loss_sum = loss_sum + trainerr[1]
-      loss_batches_cnt = loss_batches_cnt + 1
- 
-
-      if math.fmod(NumBatches,50)==0 then
-        collectgarbage()
-      end
-
-    end
-
-    -- display the progress at the end of epoch
-    if curr_images_cnt > 0 then
-      logmessage.display(0, 'Training (epoch = ' .. epoch .. '): loss = ' .. (loss_sum/loss_batches_cnt) .. ', lr = ' .. learningrate)
-    end
-
-    --xlua.progress(trainSize, trainSize)
-
-end
 
 -- Test function
 local function Test()
@@ -415,7 +344,7 @@ local function Test()
       end
       targets = torch.Tensor(opt.batchSize)      
     end
-     
+
     for t = 1,valSize,opt.batchSize do
       if  opt.shuffle == 'yes' and (valSize-t+1<opt.batchSize) then
         if opt.crop == 'yes' then
@@ -430,14 +359,14 @@ local function Test()
 
       -- create mini batch
       NumBatches = NumBatches + 1
-      
+
       if opt.shuffle == 'yes' then
         local ind =1
         for i = t,math.min(t+opt.batchSize-1,valSize) do
           -- load new sample
           local input, target = val:getImgUsingKey(valKeys[shuffle[i]])
- 
-  	  inputs[ind] = input
+
+	  inputs[ind] = input
           targets[ind] = target
           ind=ind+1
         end
@@ -450,13 +379,13 @@ local function Test()
           inputs=inputs:cuda()
           targets = targets:cuda()
       else 
-          inputs=inputs:float() 
+          inputs=inputs:float()
       end
-      
+
       local y = model:forward(inputs)
       local err = loss:forward(y,targets)
       loss_sum = loss_sum + err
-      updateConfusion(y,targets)
+      validation_confusion:batchAdd(y,targets)
 
       if math.fmod(NumBatches,50)==0 then
           collectgarbage()
@@ -467,51 +396,168 @@ local function Test()
 
     --xlua.progress(valSize, valSize)
 end
+
+-- Train function
+local function Train(epoch)
+
+    model:training()
+    local shuffle=nil;
+    if opt.shuffle == 'yes' then
+      --if opt.type =='cuda' then
+        --torch.setdefaulttensortype('torch.FloatTensor')
+        --shuffle = torch.randperm(trainSize):cuda()
+        --torch.setdefaulttensortype('torch.CudaTensor')
+      --else
+        --shuffle = torch.randperm(trainSize):cuda()
+      --end
+      shuffle = torch.randperm(trainSize):cuda()
+    end
+
+    local NumBatches = 0
+    local curr_images_cnt = 0
+    local loss_sum = 0
+    local loss_batches_cnt = 0
+    local learningrate = 0
+    local inputs, targets
+
+    if opt.shuffle == 'yes' then
+      if opt.crop == 'yes' then
+        inputs = torch.Tensor(opt.batchSize, train.ImageChannels, opt.croplen, opt.croplen)
+      else
+        inputs = torch.Tensor(opt.batchSize, train.ImageChannels, train.ImageSizeX, train.ImageSizeY)
+      end
+
+      targets = torch.Tensor(opt.batchSize)      
+    end
+
+    for t = 1,trainSize,opt.batchSize do
+
+
+      if opt.shuffle == 'yes' and (trainSize-t+1<opt.batchSize) then
+        if opt.crop == 'yes' then
+          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, opt.croplen, opt.croplen)
+        else
+          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, train.ImageSizeX, train.ImageSizeY)
+        end
+        targets = torch.Tensor(trainSize-t+1)
+      end
+
+      --xlua.progress(t, trainSize)
+
+      -- create mini batch
+      NumBatches = NumBatches + 1
+      if opt.shuffle == 'yes' then
+        local ind =1
+        for i = t,math.min(t+opt.batchSize-1,trainSize) do
+          -- load new sample
+          local input, target = train:getImgUsingKey(trainKeys[shuffle[i]])
+
+	  inputs[ind] = input   -- this is similar to inputs[i%batchSize]
+          targets[ind] = target
+          ind=ind+1
+        end
+
+      else
+          inputs,targets = train:nextBatch(math.min(trainSize-t+1,opt.batchSize))
+      end
+
+      if opt.type =='cuda' then
+          inputs = inputs:cuda()
+          targets = targets:cuda()
+      else 
+          inputs = inputs:float()
+      end
+
+      _,learningrate,_,trainerr = optimizer:optimize(inputs, targets)
+
+      -- adding the loss values of each mini batch and also maintaining the counter for number of batches, so that average loss value can be found at the time of logging details
+      loss_sum = loss_sum + trainerr[1]
+      loss_batches_cnt = loss_batches_cnt + 1
+
+      if math.fmod(NumBatches,50)==0 then
+        collectgarbage()
+      end
+
+      local current_epoch = (epoch-1)+round((t+opt.batchSize)/trainSize,2)
+
+      -- log details when required number of images are processed
+      curr_images_cnt = curr_images_cnt + opt.batchSize
+      if curr_images_cnt >= logging_check then
+        logmessage.display(0, 'Training (epoch ' .. current_epoch .. '): loss = ' .. (loss_sum/loss_batches_cnt) .. ', lr = ' .. learningrate)
+        curr_images_cnt = 0             -- For accurate values we may assign curr_images_cnt % logging_check to curr_images_cnt, instead of 0
+        loss_sum = 0
+        loss_batches_cnt = 0
+      end
+
+      if opt.validation ~= '' and current_epoch >= next_validation then
+          validation_confusion:zero()
+          val:reset()
+          local avg_loss=Test()
+          validation_confusion:updateValids()
+          -- log details at the end of validation
+          logmessage.display(0, 'Validation (epoch = ' .. current_epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+
+          next_validation = (round(current_epoch/opt.interval) + 1) * opt.interval            -- To find next nearest epoch value that exactly divisible by opt.interval
+          last_validation_epoch = current_epoch
+          model:training()    -- to reset model to training
+      end
+
+      if current_epoch >= next_snapshot_save then
+          local weights_filename = paths.concat(opt.save, snapshot_prefix .. '_' .. current_epoch .. '_Weights.t7')
+          logmessage.display(0,'Snapshotting to ' .. weights_filename)
+          torch.save(weights_filename, Weights)
+          logmessage.display(0,'Snapshot saved - ' .. weights_filename)
+
+          next_snapshot_save = (round(current_epoch/opt.snapshotInterval) + 1) * opt.snapshotInterval            -- To find next nearest epoch value that exactly divisible by opt.snapshotInterval
+          last_snapshot_save_epoch = current_epoch
+      end
+
+    end
+
+    -- display the progress at the end of epoch
+    if curr_images_cnt > 0 then
+      logmessage.display(0, 'Training (epoch = ' .. epoch .. '): loss = ' .. (loss_sum/loss_batches_cnt) .. ', lr = ' .. learningrate)
+    end
+
+    --xlua.progress(trainSize, trainSize)
+
+end
+
+
 ------------------------------
 
 local epoch = 1
-local cnt = 1
-local intervalcnt = 0
 
 logmessage.display(0,'started training the model')
 
-snapshot_prefix = ''
-
-if opt.snapshotPrefix ~= '' then
-    snapshot_prefix = opt.snapshotPrefix
-else
-    snapshot_prefix = opt.network 
+while epoch<=opt.epoch do
+    local ErrTrain = 0
+    train:reset()
+    confusion:zero()
+    Train(epoch)
+    print ("completed epoch" .. epoch)
+    confusion:updateValids()
+    ErrTrain = (1-confusion.totalValid)
+    epoch = epoch+1
 end
 
-logmessage.display(0,'snapshots will be saved as ' .. snapshot_prefix .. '_<EPOCH>_Weights.t7')
 
-while epoch<=opt.epoch do
+-- if required, perform validation at the end
+if opt.validation ~= '' and opt.epoch > last_validation_epoch then
+    validation_confusion:zero()
+    val:reset()
+    local avg_loss=Test()
+    validation_confusion:updateValids()
+    -- log details at the end of validation
+    logmessage.display(0, 'Validation (epoch = ' .. opt.epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+end
 
-    local ErrTrain, ErrTest = 0,0    
-    intervalcnt = 1
-    while intervalcnt <= opt.interval and epoch<=opt.epoch do
-      train:reset()
-      confusion:zero()
-      Train(epoch)
-      local weights_filename = paths.concat(opt.save, snapshot_prefix .. '_' .. epoch .. '_Weights.t7')
-      logmessage.display(0,'Snapshotting to ' .. weights_filename) 
-      torch.save(weights_filename, Weights)
-      confusion:updateValids()
-      ErrTrain = (1-confusion.totalValid)
-      intervalcnt = intervalcnt + 1
-      epoch = epoch+1
-    end
-
-    if opt.validation ~= '' then 
-      confusion:zero()
-      val:reset() 
-      local avg_loss=Test()
-      confusion:updateValids()
-      -- log details at the end of validation
-      logmessage.display(0, 'Validation (epoch = ' .. cnt .. '): loss = ' .. avg_loss .. ', accuracy = ' .. confusion.totalValid)
-    end
-
-    cnt = cnt+1
+-- if required, save snapshot at the end
+if opt.epoch > last_snapshot_save_epoch then
+    local weights_filename = paths.concat(opt.save, snapshot_prefix .. '_' .. opt.epoch .. '_Weights.t7')
+    logmessage.display(0,'Snapshotting to ' .. weights_filename)
+    torch.save(weights_filename, Weights)
+    logmessage.display(0,'Snapshot saved - ' .. weights_filename)
 end
 
 train:close()

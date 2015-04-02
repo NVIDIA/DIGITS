@@ -91,15 +91,14 @@ class TorchTrainTask(TrainTask):
     @override
     def before_run(self):
         # TODO
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            assert self.read_labels(), 'could not read labels'
-            #self.save_prototxt_files()
-        else:
+        if not isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             raise NotImplementedError()
 
         self.torch_log = open(self.path(self.TORCH_LOG), 'a')
         self.saving_snapshot = False
-        self.last_unimportant_update = None
+        self.receiving_train_output = False
+        self.receiving_val_output = False
+        self.last_train_update = None
         return True
 
     @override
@@ -124,6 +123,7 @@ class TorchTrainTask(TrainTask):
                 '--networkDirectory=%s' % self.job_dir,
                 '--save=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
+                '--snapshotInterval=%f' % self.snapshot_interval,
                 #'--shuffle=yes',
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file),
@@ -163,18 +163,18 @@ class TorchTrainTask(TrainTask):
 
         if os.path.exists(self.dataset.path(constants.VAL_DB)) and self.val_interval > 0:
             args.append('--validation=%s' % self.dataset.path(constants.VAL_DB))
-            args.append('--interval=%d' % self.val_interval)
+            args.append('--interval=%f' % self.val_interval)
 
         if gpu_id:
             args.append('--devid=%d' % (gpu_id+1))
 
         #if self.pretrained_model:
         #    args.append('--weights=%s' % self.path(self.pretrained_model))
+        print args
         return args
 
     @override
     def process_output(self, line):
-        # TODO
         from digits.webapp import socketio
         regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
         line=regex.sub('', line).strip()
@@ -189,14 +189,6 @@ class TorchTrainTask(TrainTask):
 
         float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
-        # snapshot saved
-        if self.saving_snapshot:
-            self.logger.info('Snapshot saved.')
-            self.detect_snapshots()
-            self.send_snapshot_update()
-            self.saving_snapshot = False
-            return True
-
         # loss and learning rate updates
         match = re.match(r'Training \(epoch (\d+\.?\d*)\): \w*loss\w* = %s, lr = %s'  % (float_exp, float_exp), message)
         if match:
@@ -209,11 +201,11 @@ class TorchTrainTask(TrainTask):
             assert lr.lower() != '-inf', 'Network reported -inf for learning rate. Try changing your learning rate.'
             assert lr.lower() != 'inf', 'Network reported inf for learning rate. Try decreasing your learning rate.'
             lr = float(lr)
-            self.train_loss_updates.append((i, l))
-            self.lr_updates.append((i, lr))
+            self.save_train_output('loss', 'SoftmaxWithLoss', l)
+            self.save_train_output('learning_rate', 'LearningRate', lr)
             self.logger.debug(message)
-            self.send_epoch_update(i)
-            self.send_data_update()
+            # epoch updates
+            self.send_progress_update(i)
             return True
 
         # testing loss updates
@@ -226,9 +218,19 @@ class TorchTrainTask(TrainTask):
                 l = float(l)
                 a = float(a) * 100
                 self.logger.debug('Network accuracy #%s: %s' % (index, a))
-                self.val_loss_updates.append( (self.current_epoch, l) )
-                self.val_accuracy_updates.append( (self.current_epoch, a, index) )
-                self.send_data_update(important=True)
+                self.save_val_output('loss', 'SoftmaxWithLoss', l)
+                self.save_val_output('accuracy', 'Accuracy', a)
+            return True
+
+        # snapshot saved
+        if self.saving_snapshot:
+            if not message.startswith('Snapshot saved'):
+                self.logger.warning('Torch output format seems to have changed. Expected "Snapshot saved..." after "Snapshotting to..."')
+            else:
+                self.logger.info('Snapshot saved.')  # to print file name here, you can use "message"
+            self.detect_snapshots()
+            self.send_snapshot_update()
+            self.saving_snapshot = False
             return True
 
         # snapshot starting
@@ -268,71 +270,6 @@ class TorchTrainTask(TrainTask):
             #self.logger.warning('Unrecognized task output "%s"' % line)
             return (None, None, None)
 
-    def send_epoch_update(self, ep):
-        """
-        Sends socketio message about the current iteration
-        """
-        # TODO: move to TrainTask
-        from digits.webapp import socketio
-
-        if self.current_epoch == ep:
-            return
-
-        self.current_epoch = ep
-        self.progress = float(ep)/self.train_epochs
-
-        socketio.emit('task update',
-                {
-                    'task': self.html_id(),
-                    'update': 'progress',
-                    'percentage': int(round(100*self.progress)),
-                    'eta': utils.time_filters.print_time_diff(self.est_done()),
-                    },
-                namespace='/jobs',
-                room=self.job_id,
-                )
-
-    def send_data_update(self, important=False):
-        """
-        Send socketio updates with the latest graph data
-
-        Keyword arguments:
-        important -- if False, only send this update if the last unimportant update was sent more than 5 seconds ago
-        """
-        # TODO: move to TrainTask
-        from digits.webapp import socketio
-
-        if not important:
-            if self.last_unimportant_update and (time.time() - self.last_unimportant_update) < 5:
-                return
-            self.last_unimportant_update = time.time()
-
-        # loss graph data
-        data = self.loss_graph_data()
-        if data:
-            socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'loss_graph',
-                        'data': data,
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
-
-        # lr graph data
-        data = self.lr_graph_data()
-        if data:
-            socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'lr_graph',
-                        'data': data,
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
-
     def send_snapshot_update(self):
         """
         Sends socketio message about the snapshot list
@@ -351,6 +288,23 @@ class TorchTrainTask(TrainTask):
                 )
 
     ### TrainTask overrides
+    @override
+    def after_run(self):
+        self.torch_log.close()
+
+    @override
+    def after_runtime_error(self):
+        if os.path.exists(self.path(self.TORCH_LOG)):
+            output = subprocess.check_output(['tail', '-n40', self.path(self.TORCH_LOG)])
+            lines = []
+            for line in output.split('\n'):
+                # parse torch header
+                timestamp, level, message = self.preprocess_output_torch(line)
+
+                if message:
+                    lines.append(message)
+            # return the last 20 lines
+            self.traceback = '\n'.join(lines[len(lines)-20:])
 
     @override
     def detect_snapshots(self):
