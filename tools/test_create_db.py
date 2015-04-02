@@ -8,7 +8,6 @@ from cStringIO import StringIO
 from nose.tools import raises, assert_raises
 import mock
 import unittest
-from skimage import data
 import PIL.Image
 import numpy as np
 
@@ -37,9 +36,9 @@ class TestPathToDatum():
         cls.tmpdir = tempfile.mkdtemp()
         cls.db_name = tempfile.mkdtemp(dir=cls.tmpdir)
         cls.db = _.DbCreator(cls.db_name, 'lmdb')
-        _handle, cls.lena_path = tempfile.mkstemp(dir=cls.tmpdir, suffix='.jpg')
-        with open(cls.lena_path, 'w') as outfile:
-            PIL.Image.fromarray(data.lena()).save(outfile, format='JPEG', quality=100)
+        _handle, cls.image_path = tempfile.mkstemp(dir=cls.tmpdir, suffix='.jpg')
+        with open(cls.image_path, 'w') as outfile:
+            PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8)).save(outfile, format='JPEG', quality=100)
 
     @classmethod
     def tearDownClass(cls):
@@ -65,7 +64,7 @@ class TestPathToDatum():
         self.db.channels = c
         self.db.compute_mean = m
         image_sum = self.db.initial_image_sum()
-        d = self.db.path_to_datum(self.lena_path, 0, image_sum)
+        d = self.db.path_to_datum(self.image_path, 0, image_sum)
         assert (d.channels, d.height, d.width) == (self.db.channels, self.db.height, self.db.width), 'wrong datum shape'
         assert d.encoded == self.db.encode, 'wrong encoding'
 

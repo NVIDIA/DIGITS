@@ -89,11 +89,11 @@ class CaffeRootOption(ConfigOption):
     def validate(self, value):
         if value == 'SYS':
             if not self.find_executable('caffe'):
-                raise ValueError('caffe binary cannot be found')
+                raise ValueError('caffe binary not found')
             try:
                 imp.find_module('caffe')
             except ImportError:
-                raise ValueError('caffe python package cannot be found')
+                raise ValueError('caffe python package not found')
             return value
         else:
             value = os.path.normpath(value)
@@ -113,7 +113,7 @@ class CaffeRootOption(ConfigOption):
                 imp.find_module('caffe')
             except ImportError:
                 sys.path.pop(0)
-                raise ValueError('caffe python package cannot be found')
+                raise ValueError('caffe python package not found')
             return value
 
     @staticmethod

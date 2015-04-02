@@ -1,11 +1,12 @@
+Pillow>=2.3.0
 numpy>=1.7
 protobuf>=2.5.0
+pydot>=1.0.2
 six>=1.5.2
 requests>=2.2.1
-Flask>=0.10.1
 gevent>=1.0
+Flask>=0.10.1
 Flask-WTF>=0.11
-pydot>=1.0.28
 Flask-SocketIO
 lmdb
 nose>=1.3.1
