@@ -7,7 +7,6 @@ from nose.tools import assert_raises
 import mock
 import PIL.Image
 import numpy as np
-from skimage import data
 
 from . import image as _
 
@@ -58,11 +57,11 @@ class TestLoadImage():
 
     def test_corrupted_file(self):
         """load_image with corrupted file"""
-        lena = PIL.Image.fromarray(data.lena())
+        image = PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8))
 
         # Save image to a JPEG buffer.
         buffer_io = StringIO.StringIO()
-        lena.save(buffer_io, format='jpeg')
+        image.save(buffer_io, format='jpeg')
         encoded = buffer_io.getvalue()
         buffer_io.close()
 
@@ -81,7 +80,7 @@ class TestResizeImage():
 
     @classmethod
     def setup_class(cls):
-        cls.image = PIL.Image.fromarray(data.lena())
+        cls.image = PIL.Image.fromarray(np.zeros((10,10,3), dtype=np.uint8))
 
     def test_configs(self):
         """Various resize_image configurations"""

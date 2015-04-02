@@ -12,7 +12,6 @@ monkey.patch_all()
 from bs4 import BeautifulSoup
 import numpy as np
 import PIL.Image
-from skimage import io
 from urlparse import urlparse
 from cStringIO import StringIO
 
@@ -45,9 +44,9 @@ def create_dummy_dataset(data_path):
             pixel = [0, 0, 0]
             pixel[idx] = colors[i]
             img = np.full((dim, dim, 3), pixel, dtype=np.uint8)
-
+            pil_img = PIL.Image.fromarray(img)
             img_path = os.path.join(label_path, str(i) + '.png')
-            io.imsave(os.path.join(data_path, img_path), img)
+            pil_img.save(os.path.join(data_path, img_path))
             images[label].append(img_path)
 
     return images

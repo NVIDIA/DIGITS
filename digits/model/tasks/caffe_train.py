@@ -8,7 +8,6 @@ import math
 import subprocess
 
 import numpy as np
-from scipy.ndimage.interpolation import zoom
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 

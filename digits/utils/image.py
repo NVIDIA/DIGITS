@@ -7,7 +7,6 @@ import requests
 import cStringIO
 import PIL.Image
 import numpy as np
-from scipy.ndimage.interpolation import zoom
 
 from . import is_url, HTTP_TIMEOUT
 
