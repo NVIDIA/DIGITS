@@ -14,7 +14,7 @@ If you are not using the web installer, you can start the server this way:
 
     % ./digits-devserver
 
-NOTE:  The first time DiGiTS is run, you will be asked for the location of some directories.  It should look something like the following:
+NOTE:  The first time DIGITS is run, you will be asked for the location of some directories.  It should look something like the following:
 <pre>
 ./runme.sh
   ___  _  ___ _ _____ ___
@@ -22,7 +22,7 @@ NOTE:  The first time DiGiTS is run, you will be asked for the location of some 
  | |) | | (_ | | | | \__ \
  |___/|_|\___|_| |_| |___/
 
-Welcome to the DiGiTS config module.
+Welcome to the DIGITS config module.
 
 Where is caffe installed? (enter "SYS" if installed system-wide)
     [default is /home/username/digits-1.0/caffe]
@@ -64,11 +64,11 @@ New config:
  * Running on http://0.0.0.0:5000/
 </pre>
 
-Included with the DiGiTS web installer is the a subset of the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as well as some validation images.  The data set is in `mist_10k` and the validation images are in `mnist_test`.
+Included with the DIGITS web installer is the a subset of the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as well as some validation images.  The data set is in `mist_10k` and the validation images are in `mnist_test`.
 
-## Using DiGiTS
+## Using DIGITS
 
-* Now that DIGITS is running on port 5000, open a browser and go to http://localhost:5000.  You should see the DiGiTS home screen:
+* Now that DIGITS is running on port 5000, open a browser and go to http://localhost:5000.  You should see the DIGITS home screen:
 
 ![Start page](images/start-page.png)
 
@@ -86,7 +86,7 @@ Included with the DiGiTS web installer is the a subset of the [MNIST handwritten
 
 ![Training dataset](images/training-dataset.png)
 
-* When the data set has completed training, go back to the home page, by clicking "DiGiTS" in the top left hand part of the page.  You should now see that there is a trained data set.
+* When the data set has completed training, go back to the home page, by clicking "DIGITS" in the top left hand part of the page.  You should now see that there is a trained data set.
 
 ![Trained dataset](images/trained-dataset.png)
 

@@ -23,7 +23,7 @@ from . import is_url, HTTP_TIMEOUT
 #       range -- [0-1]
 #       dtype -- float32
 #
-# Within DiGiTS:
+# Within DIGITS:
 #   When storing sizes, use (height, width, channels)
 
 def load_image(path):

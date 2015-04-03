@@ -271,7 +271,7 @@ class SecretKeyOption(ConfigOption):
 ### main class
 
 class DigitsConfig:
-    config_section = 'DiGiTS'
+    config_section = 'DIGITS'
 
     def __init__(self, level):
         config_file_name = 'digits.cfg'
@@ -474,7 +474,7 @@ class DigitsConfig:
         self.options = None
         self.valid = False
 
-        print 'Welcome to the DiGiTS config module.'
+        print 'Welcome to the DIGITS config module.'
         print
 
         old_config = self.read_from_file()
@@ -617,7 +617,7 @@ def config_option(name):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Config - DiGiTS')
+    parser = argparse.ArgumentParser(description='Config - DIGITS')
     parser.add_argument('level',
             help='system/user/test')
     parser.add_argument('-c', '--clear',

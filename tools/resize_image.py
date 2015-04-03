@@ -8,7 +8,7 @@ import logging
 
 import PIL.Image
 
-# Add path for DiGiTS package
+# Add path for DIGITS package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from digits import utils
 
@@ -63,7 +63,7 @@ def validate_range(number, min=None, max=None, allow_none=False):
     return True
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Resize-Image tool - DiGiTS')
+    parser = argparse.ArgumentParser(description='Resize-Image tool - DIGITS')
 
     ### Positional arguments
 
