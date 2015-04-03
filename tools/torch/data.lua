@@ -137,10 +137,11 @@ function DBSource:new (db_name, mirror, crop, croplen, mean_t, subtractMean, isT
   logmessage.display(0,'Loaded train image details from the mean file: Image channels are  ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeX .. ' and Image height is ' .. self.ImageSizeY)
 
   self.e = lightningmdb.env_create()
-  self.e:set_mapsize(524288000)
-  self.e:open(db_name,lightningmdb.MDB_FIXEDMAP,420) 
+  local LMDB_MAP_SIZE = 1099511627776  -- 1 TB
+  self.e:set_mapsize(LMDB_MAP_SIZE)
+  self.e:open(db_name,lightningmdb.MDB_RDONLY + lightningmdb.MDB_NOTLS,0664)
   self.total = self.e:stat().ms_entries
-  self.t = self.e:txn_begin(nil,0)
+  self.t = self.e:txn_begin(nil,lightningmdb.MDB_RDONLY)
   self.d = self.t:dbi_open(nil,0)
   self.c = self.t:cursor_open(self.d)
   self.mirror = mirror
@@ -277,7 +278,7 @@ function DBSource:reset ()
   self.c:close()
   self.e:dbi_close(self.d)
   self.t:abort()
-  self.t = self.e:txn_begin(nil,0)
+  self.t = self.e:txn_begin(nil,lightningmdb.MDB_RDONLY)
   self.d = self.t:dbi_open(nil,0)
   self.c = self.t:cursor_open(self.d)
 end

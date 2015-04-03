@@ -495,7 +495,7 @@ local function Train(epoch)
           local avg_loss=Test()
           validation_confusion:updateValids()
           -- log details at the end of validation
-          logmessage.display(0, 'Validation (epoch = ' .. current_epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+          logmessage.display(0, 'Validation (epoch ' .. current_epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
 
           next_validation = (round(current_epoch/opt.interval) + 1) * opt.interval            -- To find next nearest epoch value that exactly divisible by opt.interval
           last_validation_epoch = current_epoch
@@ -516,7 +516,7 @@ local function Train(epoch)
 
     -- display the progress at the end of epoch
     if curr_images_cnt > 0 then
-      logmessage.display(0, 'Training (epoch = ' .. epoch .. '): loss = ' .. (loss_sum/loss_batches_cnt) .. ', lr = ' .. learningrate)
+      logmessage.display(0, 'Training (epoch ' .. epoch .. '): loss = ' .. (loss_sum/loss_batches_cnt) .. ', lr = ' .. learningrate)
     end
 
     --xlua.progress(trainSize, trainSize)
@@ -535,7 +535,6 @@ while epoch<=opt.epoch do
     train:reset()
     confusion:zero()
     Train(epoch)
-    print ("completed epoch" .. epoch)
     confusion:updateValids()
     ErrTrain = (1-confusion.totalValid)
     epoch = epoch+1
@@ -549,7 +548,7 @@ if opt.validation ~= '' and opt.epoch > last_validation_epoch then
     local avg_loss=Test()
     validation_confusion:updateValids()
     -- log details at the end of validation
-    logmessage.display(0, 'Validation (epoch = ' .. opt.epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+    logmessage.display(0, 'Validation (epoch ' .. opt.epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
 end
 
 -- if required, save snapshot at the end

@@ -192,7 +192,7 @@ class TorchTrainTask(TrainTask):
         # loss and learning rate updates
         match = re.match(r'Training \(epoch (\d+\.?\d*)\): \w*loss\w* = %s, lr = %s'  % (float_exp, float_exp), message)
         if match:
-            i = float(match.group(1))
+            index = float(match.group(1))
             l = match.group(2)
             assert l.lower() != '-inf', 'Network reported -inf for training loss. Try changing your learning rate.'       #TODO: messages needs to be corrected
             assert l.lower() != 'inf', 'Network reported inf for training loss. Try decreasing your learning rate.'
@@ -201,25 +201,31 @@ class TorchTrainTask(TrainTask):
             assert lr.lower() != '-inf', 'Network reported -inf for learning rate. Try changing your learning rate.'
             assert lr.lower() != 'inf', 'Network reported inf for learning rate. Try decreasing your learning rate.'
             lr = float(lr)
+            # epoch updates
+            self.send_progress_update(index)
+
             self.save_train_output('loss', 'SoftmaxWithLoss', l)
             self.save_train_output('learning_rate', 'LearningRate', lr)
             self.logger.debug(message)
-            # epoch updates
-            self.send_progress_update(i)
+
             return True
 
-        # testing loss updates
-        match = re.match(r'Validation \(epoch (\d+\.?\d*)\): \w*loss\w* = %s, \w*accuracy\w* = %s' % (float_exp,float_exp), message, flags=re.IGNORECASE)
+        # testing loss and accuracy updates
+        match = re.match(r'Validation \(epoch (\d+\.?\d*)\): \w*loss\w* = %s, accuracy = %s' % (float_exp,float_exp), message, flags=re.IGNORECASE)
         if match:
             index = float(match.group(1))
             l = match.group(2)
             a = match.group(4)
             if l.lower() != 'inf' and l.lower() != '-inf' and a.lower() != 'inf' and a.lower() != '-inf':
                 l = float(l)
-                a = float(a) * 100
+                a = float(a)
                 self.logger.debug('Network accuracy #%s: %s' % (index, a))
+                # epoch updates
+                self.send_progress_update(index)
+
                 self.save_val_output('loss', 'SoftmaxWithLoss', l)
                 self.save_val_output('accuracy', 'Accuracy', a)
+
             return True
 
         # snapshot saved
