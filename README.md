@@ -11,7 +11,7 @@ DIGITS has several dependencies.
 
 * CUDA
 * cuDNN library
-* Caffe – NVIDIA branch (version 0.10.0 or higher)
+* Caffe – NVIDIA branch (version 0.11.0)
 * Python packages
 * Graphviz
 
@@ -23,7 +23,7 @@ DIGITS has several dependencies.
 
   * Download from the [cuDNN website](https://developer.nvidia.com/cuDNN) and follow the installation instructions.
 
-3. NVIDIA branch of Caffe (NVIDIA version 0.10.0)
+3. NVIDIA branch of Caffe (NVIDIA version 0.11.0)
 
 Full installation directions are at [Caffe](http://caffe.berkeleyvision.org/installation.html). Condensed version is as follows:
 
@@ -31,7 +31,7 @@ Install caffe:
 <pre>
 % sudo apt-get install git
 % cd $HOME
-% git clone --branch v0.10.0 https://github.com/NVIDIA/caffe.git
+% git clone --branch v0.11.0 https://github.com/NVIDIA/caffe.git
 % cd caffe
 % sudo apt-get install libatlas-base-dev libatlas-dev libboost-all-dev libopencv-dev
 % sudo apt-get install libprotobuf-dev libgoogle-glog-dev libgflags-dev protobuf-compiler
