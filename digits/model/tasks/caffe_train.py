@@ -707,23 +707,29 @@ class CaffeTrainTask(TrainTask):
         layers -- which layer activation[s] and weight[s] to visualize
         """
         self.read_labels()
-
         net = self.get_net(snapshot_epoch)
 
+        # process image
         if image.ndim == 2:
             image = image[:,:,np.newaxis]
-
-        net.blobs['data'].data[...] = self.get_transformer().preprocess(
+        preprocessed = self.get_transformer().preprocess(
                 'data', image)
 
+        # reshape net input (if necessary)
+        test_shape = (1,) + preprocessed.shape
+        if net.blobs['data'].data.shape != test_shape:
+            net.blobs['data'].reshape(*test_shape)
+
+        # run inference
+        net.blobs['data'].data[...] = preprocessed
         output = net.forward()
         scores = output[net.outputs[-1]].flatten()
-
         indices = (-scores).argsort()
         predictions = []
         for i in indices:
             predictions.append( (self.labels[i], scores[i]) )
 
+        # add visualizations
         visualizations = []
         if layers and layers != 'none':
             if layers == 'all':

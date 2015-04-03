@@ -585,6 +585,51 @@ class TestCreatedModel(WebappBaseTest):
         assert content['id'] == self.model_id, 'expected different job_id'
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
+    def test_test_one(self):
+        """test one image"""
+        image_path = self.images[self.images.keys()[0]][0]
+        image_path = os.path.join(self.data_path, image_path)
+        with open(image_path) as infile:
+            # StringIO wrapping is needed to simulate POST file upload.
+            image_upload = (StringIO(infile.read()), 'image.png')
+
+        rv = self.app.post(
+                '/models/images/classification/test_one?job_id=%s' % self.model_id,
+                data = {'image_file': image_upload}
+                )
+        s = BeautifulSoup(rv.data)
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        keys = self.images.keys()
+        if len(keys) < 5:
+            for key in keys:
+                assert key in rv.data, '"%s" not found in the response'
+
+    def test_test_many(self):
+        """test many images"""
+        textfile_images = ''
+        label_id = 0
+        for (label, images) in self.images.iteritems():
+            for image in images:
+                image_path = image
+                image_path = os.path.join(self.data_path, image_path)
+                textfile_images += '%s %d\n' % (image_path, label_id)
+            label_id += 1
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        rv = self.app.post(
+                '/models/images/classification/test_many?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload}
+                )
+        s = BeautifulSoup(rv.data)
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        keys = self.images.keys()
+        for key in keys:
+            assert key in rv.data, '"%s" not found in the response'
+
 class TestDatasetModelInteractions(WebappBaseTest):
     """
     Test the interactions between datasets and models

@@ -162,9 +162,9 @@ def image_classification_model_test_one():
         abort(404)
 
     image = None
-    if request.form['image_url']:
+    if 'image_url' in request.form and request.form['image_url']:
         image = utils.image.load_image(request.form['image_url'])
-    elif request.files['image_file']:
+    elif 'image_file' in request.files and request.files['image_file']:
         with tempfile.NamedTemporaryFile() as outfile:
             request.files['image_file'].save(outfile.name)
             image = utils.image.load_image(outfile.name)
@@ -175,7 +175,9 @@ def image_classification_model_test_one():
             channels = task.image_dims[2],
             resize_mode = task.resize_mode,
             )
-    epoch = int(request.form['snapshot_epoch'])
+    epoch = None
+    if 'snapshot_epoch' in request.form:
+        epoch = int(request.form['snapshot_epoch'])
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers='all')
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
@@ -202,15 +204,17 @@ def image_classification_model_test_many():
     if not image_list:
         return 'File upload not found', 400
 
-    epoch = int(request.form['snapshot_epoch'])
-    if not request.form['top_n'].strip():
-        top_n = 9
-    else:
+    epoch = None
+    if 'snapshot_epoch' in request.form:
+        epoch = int(request.form['snapshot_epoch'])
+    if 'top_n' in request.form and request.form['top_n'].strip():
         top_n = int(request.form['top_n'])
-    if not request.form['num_test_images'].strip():
-        num_images = None
     else:
+        top_n = 9
+    if 'num_test_images' in request.form and request.form['num_test_images'].strip():
         num_images = int(request.form['num_test_images'])
+    else:
+        num_images = None
 
     paths = []
     for line in image_list.readlines():
