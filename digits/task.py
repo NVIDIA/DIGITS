@@ -230,7 +230,7 @@ class Task(StatusCls):
 
     def preprocess_output_digits(self, line):
         """
-        Takes line of output and parses it according to DiGiTS's log format
+        Takes line of output and parses it according to DIGITS's log format
         Returns (timestamp, level, message) or (None, None, None)
         """
         # NOTE: This must change when the logging format changes

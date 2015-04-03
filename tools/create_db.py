@@ -12,7 +12,7 @@ import random
 import threading
 import Queue
 
-# Add path for DiGiTS package
+# Add path for DIGITS package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from digits import utils, config, log
 
@@ -461,7 +461,7 @@ class DbCreator:
         return range(i, i+num)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Create-Db tool - DiGiTS')
+    parser = argparse.ArgumentParser(description='Create-Db tool - DIGITS')
 
     ### Positional arguments
 

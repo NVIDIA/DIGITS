@@ -147,7 +147,7 @@ def create_model(driver, name, dataset_name, test_image):
 
 
 def main(argv):
-    parser = argparse.ArgumentParser(description='Run a Selenium demo of DiGiTS')
+    parser = argparse.ArgumentParser(description='Run a Selenium demo of DIGITS')
 
     ### Positional arguments
 

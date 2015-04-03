@@ -13,7 +13,7 @@ import urllib
 
 import requests
 
-# Add path for DiGiTS package
+# Add path for DIGITS package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from digits import utils
 import digits.log
@@ -454,7 +454,7 @@ def parse_folder(folder, labels_file,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Parse-Folder tool - DiGiTS')
+    parser = argparse.ArgumentParser(description='Parse-Folder tool - DIGITS')
 
     ### Positional arguments
 
