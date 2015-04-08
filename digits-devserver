@@ -8,10 +8,10 @@ import argparse
 from gevent import monkey; monkey.patch_all()
 
 if __name__ == '__main__':
-    print '  ___  _  ___ _ _____ ___'
-    print ' |   \(_)/ __(_)_   _/ __|'
-    print ' | |) | | (_ | | | | \__ \\'
-    print ' |___/|_|\___|_| |_| |___/'
+    print '  ___ ___ ___ ___ _____ ___'
+    print ' |   \_ _/ __|_ _|_   _/ __|'
+    print ' | |) | | (_ || |  | | \__ \\'
+    print ' |___/___\___|___| |_| |___/'
     print
 
     parser = argparse.ArgumentParser(description='Run DIGITS in debug mode')
