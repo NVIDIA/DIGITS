@@ -922,7 +922,7 @@ class CaffeTrainTask(TrainTask):
                         ).mean(1).mean(1)
                 t.set_mean('data', pixel)
 
-        t.set_raw_scale('data', 255) # [0,255] range instead of [0,1]
+        #t.set_raw_scale('data', 255) # [0,255] range instead of [0,1]
 
         self._transformer = t
         return self._transformer

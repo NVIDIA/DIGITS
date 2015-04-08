@@ -587,7 +587,7 @@ class TestCreatedModel(WebappBaseTest):
 
     def test_test_one(self):
         """test one image"""
-        image_path = self.images[self.images.keys()[0]][0]
+        image_path = self.images['green'][0]
         image_path = os.path.join(self.data_path, image_path)
         with open(image_path) as infile:
             # StringIO wrapping is needed to simulate POST file upload.
@@ -600,10 +600,9 @@ class TestCreatedModel(WebappBaseTest):
         s = BeautifulSoup(rv.data)
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-        keys = self.images.keys()
-        if len(keys) < 5:
-            for key in keys:
-                assert key in rv.data, '"%s" not found in the response'
+        # gets an array of arrays [[confidence, label],...]
+        predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
+        assert predictions[0][1] == 'green', 'image misclassified'
 
     def test_test_many(self):
         """test many images"""
