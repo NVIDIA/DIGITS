@@ -17,10 +17,10 @@ If you are not using the web installer, you can start the server this way:
 NOTE:  The first time DIGITS is run, you will be asked for the location of some directories.  It should look something like the following:
 <pre>
 ./runme.sh
-  ___  _  ___ _ _____ ___
- |   \(_)/ __(_)_   _/ __|
- | |) | | (_ | | | | \__ \
- |___/|_|\___|_| |_| |___/
+  ___ ___ ___ ___ _____ ___
+ |   \_ _/ __|_ _|_   _/ __|
+ | |) | | (_ || |  | | \__ \
+ |___/___\___|___| |_| |___/
 
 Welcome to the DIGITS config module.
 
