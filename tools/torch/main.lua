@@ -451,7 +451,6 @@ local function Train(epoch)
         for i = t,math.min(t+opt.batchSize-1,trainSize) do
           -- load new sample
           local input, target = train:getImgUsingKey(trainKeys[shuffle[i]])
-
 	  inputs[ind] = input   -- this is similar to inputs[i%batchSize]
           targets[ind] = target
           ind=ind+1

@@ -113,8 +113,9 @@ def image_classification_model_create():
             if form.framework.data == "caffe":
                 text_format.Merge(form.custom_network.data, network)
             elif form.framework.data == "torch":
-                with open(os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE)) as outfile:
-                    outfile.write(form.custom_network.data)
+                model_file = open(os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE), "w")
+                model_file.write(form.custom_network.data)
+                model_file.close()
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:
             raise Exception('Unrecognized method: "%s"' % form.method.data)
