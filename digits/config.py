@@ -370,7 +370,7 @@ class DigitsConfig:
     def get_log_file(cls, level):
         filename = 'digits.log'
         if level == 'system':
-            return os.path.join('/var/log', filename)
+            return os.path.join('/var/log/digits', filename)
         elif level == 'user':
             return os.path.join(cls.get_user_level_dir(), filename)
         elif level == 'test':
@@ -437,8 +437,12 @@ class DigitsConfig:
         else:
             parent_dir = os.path.dirname(self.log_file)
             if not os.path.exists(parent_dir):
-                allowed = False
-                print '%s does not exist' % parent_dir
+                try:
+                    os.makedirs(parent_dir, 0755)
+                except OSError:
+                    allowed = False
+                    print '%s does not exist and could not be created' % \
+                        parent_dir
             if not os.access(parent_dir, os.W_OK):
                 allowed = False
                 print 'cannot write to %s' % parent_dir
