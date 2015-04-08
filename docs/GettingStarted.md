@@ -8,7 +8,7 @@ For installation instructions:
 To start the server up on port 5000 (if you are using the web installer):
 
     % cd $HOME/digits-1.0
-    % ./run_me.sh
+    % ./runme.sh
 
 If you are not using the web installer, you can start the server this way:
 
