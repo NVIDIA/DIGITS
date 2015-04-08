@@ -34,7 +34,7 @@ def image_classification_model_new():
 
     prev_network_snapshots = get_previous_network_snapshots()
 
-    return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots, has_datasets=(len(get_datasets())==0))
+    return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots, previous_networks_fullinfo = get_previous_networks_fulldetails(), has_datasets=(len(get_datasets())==0))
 
 @app.route(NAMESPACE, methods=['POST'])
 def image_classification_model_create():
@@ -47,7 +47,7 @@ def image_classification_model_create():
     prev_network_snapshots = get_previous_network_snapshots()
 
     if not form.validate_on_submit():
-        return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots), 400
+        return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots, previous_networks_fullinfo = get_previous_networks_fulldetails()), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
@@ -64,16 +64,29 @@ def image_classification_model_create():
         pretrained_model = None
         if form.method.data == 'standard':
             found = False
-            networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks')
+            networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', form.framework.data)
             for filename in os.listdir(networks_dir):
                 path = os.path.join(networks_dir, filename)
                 if os.path.isfile(path):
-                    match = re.match(r'%s.prototxt' % form.standard_networks.data, filename)
-                    if match:
-                        with open(path) as infile:
-                            text_format.Merge(infile.read(), network)
-                        found = True
-                        break
+                    match = None
+                    if form.framework.data == "caffe":
+                        match = re.match(r'%s.prototxt' % form.standard_networks.data, filename)
+                        if match:
+                            with open(path) as infile:
+                                text_format.Merge(infile.read(), network)
+                            found = True
+                            break
+
+                    elif form.framework.data == "torch":
+                        match = re.match(r'%s.lua' % form.standard_networks.data, filename)
+                        if match:
+                            # copying the standard networks content to job directory created
+                            with open(path) as infile:
+                                with open(os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE), "w") as outfile:
+                                    for line in infile:
+                                        outfile.write(line)
+                            found = True
+                            break
             if not found:
                 raise Exception('Unknown standard model "%s"' % form.standard_networks.data)
         elif form.method.data == 'previous':
@@ -97,7 +110,11 @@ def image_classification_model_create():
                     break
 
         elif form.method.data == 'custom':
-            text_format.Merge(form.custom_network.data, network)
+            if form.framework.data == "caffe":
+                text_format.Merge(form.custom_network.data, network)
+            elif form.framework.data == "torch":
+                with open(os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE)) as outfile:
+                    outfile.write(form.custom_network.data)
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:
             raise Exception('Unrecognized method: "%s"' % form.method.data)
@@ -124,7 +141,9 @@ def image_classification_model_create():
         else:
             return 'Invalid policy', 404
 
-        job.tasks.append(
+        if form.framework.data == "caffe":
+
+            job.tasks.append(
                 tasks.CaffeTrainTask(
                     job_dir         = job.dir(),
                     dataset         = datasetJob,
@@ -139,6 +158,23 @@ def image_classification_model_create():
                     use_mean        = form.use_mean.data,
                     network         = network,
                     random_seed     = form.random_seed.data,
+                    )
+                )
+
+        elif form.framework.data == "torch":
+
+            job.tasks.append(
+                tasks.TorchTrainTask(
+                    job_dir         = job.dir(),
+                    dataset         = datasetJob,
+                    train_epochs    = form.train_epochs.data,
+                    learning_rate   = form.learning_rate.data,
+                    lr_policy       = policy,
+                    batch_size      = form.batch_size.data,
+                    val_interval    = form.val_interval.data,
+                    pretrained_model= pretrained_model,
+                    crop_size       = form.crop_size.data,
+                    use_mean        = form.use_mean.data,
                     )
                 )
 
@@ -387,6 +423,13 @@ def get_default_standard_network():
 
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
+        [j for j in scheduler.jobs if isinstance(j, ImageClassificationModelJob)],
+        cmp=lambda x,y: cmp(y.id(), x.id())
+        )
+        ]
+
+def get_previous_networks_fulldetails():
+    return [(j) for j in sorted(
         [j for j in scheduler.jobs if isinstance(j, ImageClassificationModelJob)],
         cmp=lambda x,y: cmp(y.id(), x.id())
         )

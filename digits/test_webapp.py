@@ -204,6 +204,7 @@ class WebappBaseTest(object):
                 'custom_network': get_dummy_network(),
                 'batch_size': DUMMY_IMAGE_COUNT,
                 'train_epochs': 1,
+                'framework' : 'caffe'
                 }
         defaults.update(kwargs)
         return cls.create_model(**defaults)

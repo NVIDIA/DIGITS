@@ -12,6 +12,7 @@ MEAN_FILE_IMAGE = 'mean.jpg'
 # Classification jobs
 LABELS_FILE = 'labels.txt'
 DEFAULT_BATCH_SIZE = 16
+DEFAULT_TORCH_BATCH_SIZE = 32
 
 # Caffe
 MEAN_FILE_CAFFE = 'mean.binaryproto'

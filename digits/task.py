@@ -74,6 +74,12 @@ class Task(StatusCls):
         """
         raise NotImplementedError('Please implement me')
 
+    def framework_name(self):
+        """
+        Returns a string
+        """
+        raise NotImplementedError('Please implement me')
+
     def html_id(self):
         """
         Returns a string
@@ -191,7 +197,6 @@ class Task(StatusCls):
                     if line is not None:
                         # Remove whitespace
                         line = line.strip()
-
                     if line:
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))

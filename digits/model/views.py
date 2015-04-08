@@ -69,14 +69,19 @@ def models_show_json(job_id):
 def models_customize():
     """Returns a customized file for the Model based on completed form fields"""
     network = request.args.get('network')
+    framework = request.args.get('framework')
     if not network:
         return 'args.network not found!', 400
 
-    networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks')
+    networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', framework)
     for filename in os.listdir(networks_dir):
         path = os.path.join(networks_dir, filename)
         if os.path.isfile(path):
-            match = re.match(r'%s.prototxt' % network, filename)
+            match = None
+            if framework == "caffe":
+                match = re.match(r'%s.prototxt' % network, filename)
+            elif framework == "torch":
+                match = re.match(r'%s.lua' % network, filename)
             if match:
                 with open(path) as infile:
                     return json.dumps({'network': infile.read()})

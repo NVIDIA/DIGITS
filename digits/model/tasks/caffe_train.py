@@ -55,7 +55,7 @@ class CaffeTrainTask(TrainTask):
         self.train_val_file = constants.CAFFE_TRAIN_VAL_FILE
         self.snapshot_prefix = constants.CAFFE_SNAPSHOT_PREFIX
         self.deploy_file = constants.CAFFE_DEPLOY_FILE
-        self.caffe_log_file = self.CAFFE_LOG
+        self.log_file = self.CAFFE_LOG
 
     def __getstate__(self):
         state = super(CaffeTrainTask, self).__getstate__()
@@ -76,7 +76,7 @@ class CaffeTrainTask(TrainTask):
         # Upgrade pickle file
         if state['pickver_task_caffe_train'] == 1:
             print 'upgrading %s' % self.job_id
-            self.caffe_log_file = self.CAFFE_LOG
+            self.log_file = self.CAFFE_LOG
         self.pickver_task_caffe_train = PICKLE_VERSION
 
         # Make changes to self
@@ -91,6 +91,10 @@ class CaffeTrainTask(TrainTask):
     @override
     def name(self):
         return 'Train Caffe Model'
+
+    @override
+    def framework_name(self):
+        return 'caffe'
 
     @override
     def before_run(self):

@@ -2,3 +2,4 @@
 
 from train import TrainTask
 from caffe_train import CaffeTrainTask
+from torch_train import TorchTrainTask

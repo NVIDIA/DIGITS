@@ -242,6 +242,61 @@ class GpusOption(ConfigOption):
             cls.device_list = device_query.get_devices()
         return cls.device_list
 
+class TorchRootOption(ConfigOption):
+    @staticmethod
+    def name():
+        return 'torch_root'
+
+    def prompt_message(self):
+        return 'Where is torch installed? (enter "SYS" if installed system-wide)'
+
+    def default_value(self):
+        if 'TORCH_HOME' in os.environ:
+            #d = os.path.join(os.environ['CAFFE_HOME'], 'distribute')
+            d = os.environ['TORCH_HOME']
+            try:
+                return self.validate(d)
+            except ValueError as e:
+                print 'Guessed "%s" from TORCH_HOME' % d
+                print 'ERROR: %s' % e
+        if 'TORCH_ROOT' in os.environ:
+            #d = os.path.join(os.environ['CAFFE_ROOT'], 'distribute')
+            d = os.environ['TORCH_ROOT']
+            try:
+                return self.validate(d)
+            except ValueError as e:
+                print 'Guessed "%s" from TORCH_ROOT' % d
+                print 'ERROR: %s' % e
+        return 'SYS'
+
+    def validate(self, value):
+        if value == 'SYS':
+            if not self.find_executable('th'):
+                raise ValueError('torch binary cannot be found')
+            return value
+        else:
+            value = os.path.normpath(value)
+            if not os.path.isabs(value):
+                raise ValueError('Must be an absolute path')
+            if not os.path.exists(value):
+                raise ValueError('Directory does not exist')
+            if not os.path.isdir(value):
+                raise ValueError('Must be a directory')
+#            if not os.path.exists(os.path.join(value, 'bin', 'caffe.bin')):
+            if not os.path.exists(os.path.join(value, 'th')):
+                raise ValueError('Does not contain the torch binary')
+
+            return value
+
+    @staticmethod
+    def find_executable(program):
+        for path in os.environ['PATH'].split(os.pathsep):
+            path = path.strip('"')
+            executable = os.path.join(path, program)
+            if os.path.isfile(executable) and os.access(executable, os.X_OK):
+                return True
+        return False
+
 class JobsDirOption(ConfigOption):
     @staticmethod
     def name():
@@ -327,6 +382,7 @@ class DigitsConfig:
         self.option_list = [
                 CaffeRootOption(level),
                 GpusOption(level),
+                TorchRootOption(level),
                 JobsDirOption(level),
                 LogLevelOption(level),
                 SecretKeyOption(level),

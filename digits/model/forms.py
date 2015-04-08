@@ -24,9 +24,10 @@ class ModelForm(Form):
         if found == False:
             raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
 
-    def required_if_method(value):
+    def required_if_method(value, framework_opt = None):
         def _required(form, field):
-            if form.method.data == value:
+            # second condition is to ensure that framework check will be done only when the framework parameter is provided to the required_if_method()
+            if form.method.data == value and (framework_opt is None or form.framework.data == framework_opt):
                 if not field.data or (isinstance(field.data, str) and field.data.strip() == ""):
                     raise validators.ValidationError('This field is required.')
             else:
@@ -154,6 +155,17 @@ class ModelForm(Form):
             default = 'standard',
             )
 
+    ## framework
+    framework = wtforms.HiddenField('framework',
+            validators = [
+                validators.AnyOf(
+                    ['caffe', 'torch', 'theano'],
+                    message='The framework you choose is not currently supported.'
+                    )
+                ],
+            default = 'caffe'
+            )
+
     # The options for this get set in the view (since they are dependent on the data type)
     standard_networks = wtforms.RadioField('Standard Networks',
             validators = [
@@ -168,10 +180,10 @@ class ModelForm(Form):
                 selection_exists_in_choices,
                 ],
             )
-
+    # custom network validation is required for the caffe framework, because of limited protobuf support for torch framework.
     custom_network = wtforms.TextAreaField('Custom Network',
             validators = [
-                required_if_method('custom'),
+                required_if_method('custom','caffe'),
                 validate_NetParameter,
                 ]
             )

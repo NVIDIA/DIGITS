@@ -83,6 +83,7 @@ class TestCreate(BaseTestCase):
             'crop_size': 12,
             'standard_networks': 'lenet',
             'model_name': 'test',
+            'framework' : 'caffe'
             })
 
         assert scheduler.jobs[-1].train_task().crop_size == 12
@@ -95,7 +96,7 @@ class TestCreate(BaseTestCase):
             'model_name': 'test',
             'dataset': 'dataset',
             'previous_networks': 'model',
-            'model-snapshot' : 1
+            'model-snapshot' : 1,
+            'framework' : 'caffe'
             })
-
         assert scheduler.jobs[-1].train_task().pretrained_model == self.temp_snapshot_path
