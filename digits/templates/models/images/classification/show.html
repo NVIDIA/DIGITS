@@ -290,6 +290,11 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <label for="image_file" class="control-label">Upload image</label>
                             <input type="file" id="image_file" name="image_file" class="form-control">
                         </div>
+                        <script type="text/javascript">
+                            // When you fill in one field, the other gets blanked out
+                            $("#image_url").change(function() { $("#image_file").val(""); });
+                            $("#image_file").change(function() { $("#image_url").val(""); });
+                        </script>
                         <button name="test-one" onClick="return testOne();" class="btn btn-primary">Test one image</button>
                     </div>
                     <div class="col-sm-6">
