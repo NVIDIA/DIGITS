@@ -80,23 +80,64 @@ class TestResizeImage():
 
     @classmethod
     def setup_class(cls):
-        cls.image = PIL.Image.fromarray(np.zeros((10,10,3), dtype=np.uint8))
+        cls.np_gray = np.random.randint(0, 255, (10,10)).astype('uint8')
+        cls.pil_gray = PIL.Image.fromarray(cls.np_gray)
+        cls.np_color = np.random.randint(0, 255, (10,10,3)).astype('uint8')
+        cls.pil_color = PIL.Image.fromarray(cls.np_color)
 
     def test_configs(self):
-        """Various resize_image configurations"""
-        for h in [20, 30]:
-            for w in [20]:
-                for c in [3, 1, None]:
-                    for m in [None, 'squash', 'crop', 'fill', 'half_crop']:
-                        if c == 1:
-                            s = (h, w)
-                        else:
-                            s = (h, w, 3)
-                        yield self.verify_dims, (h, w, c, m, s)
+        """resize_image"""
+        # lots of configs tested here
+        for h in [10, 15]:
+            for w in [10, 16]:
+                for t in ['gray', 'color']:
+                    # test channels=None (should autodetect channels)
+                    if t == 'color':
+                        s = (h, w, 3)
+                    else:
+                        s = (h, w)
+                    yield self.verify_pil, (h, w, None, None, t, s)
+                    yield self.verify_np, (h, w, None, None, t, s)
 
-    def verify_dims(self, args):
-        h, w, c, m, s = args
-        r = _.resize_image(self.image, h, w, c, m)
-        assert r.shape == s, '%s != %s' % (r.shape, s)
+                    # test channels={3,1}
+                    for c in [3, 1]:
+                        for m in ['squash', 'crop', 'fill', 'half_crop']:
+                            if c == 3:
+                                s = (h, w, 3)
+                            else:
+                                s = (h, w)
+                            yield self.verify_pil, (h, w, c, m, t, s)
+                            yield self.verify_np, (h, w, c, m, t, s)
+
+    def verify_pil(self, args):
+        """pass a PIL.Image to resize_image and check the returned dimensions"""
+        h, w, c, m, t, s = args
+        if t == 'gray':
+            i = self.pil_gray
+        else:
+            i = self.pil_color
+        r = _.resize_image(i, h, w, c, m)
+        assert r.shape == s, 'Resized PIL.Image (orig=%s) should have been %s, but was %s %s' % (i.size, s, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def verify_np(self, args):
+        """pass a numpy.ndarray to resize_image and check the returned dimensions"""
+        h, w, c, m, t, s = args
+        if t == 'gray':
+            i = self.np_gray
+        else:
+            i = self.np_color
+        r = _.resize_image(i, h, w, c, m)
+        assert r.shape == s, 'Resized np.ndarray (orig=%s) should have been %s, but was %s %s' % (i.shape, s, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def args_to_str(self, args):
+        return """
+        height=%s
+        width=%s
+        channels=%s
+        resize_mode=%s
+        image_type=%s
+        shape=%s""" % args
 
 

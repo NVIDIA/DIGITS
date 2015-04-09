@@ -7,6 +7,7 @@ import requests
 import cStringIO
 import PIL.Image
 import numpy as np
+import scipy.misc
 
 from . import is_url, HTTP_TIMEOUT
 
@@ -18,13 +19,12 @@ from . import is_url, HTTP_TIMEOUT
 #       range -- [0-255]
 #       dtype -- uint8
 #       channels -- RGB
-#   caffe:
-#       shape -- (height, width, channels)
-#       range -- [0-1]
-#       dtype -- float32
-#
-# Within DIGITS:
-#   When storing sizes, use (height, width, channels)
+#   caffe.datum:
+#       datum.data type -- bytes (uint8)
+#       datum.float_data type -- float32
+#       when decoding images, channels are BGR
+#   DIGITS:
+#       image_dims -- (height, width, channels)
 
 def load_image(path):
     """
@@ -58,7 +58,7 @@ def resize_image(image, height, width,
     Resizes an image and returns it as a np.array
 
     Arguments:
-    image -- a PIL.Image
+    image -- a PIL.Image or numpy.ndarray
     height -- height of new image
     width -- width of new image
 
@@ -66,49 +66,81 @@ def resize_image(image, height, width,
     channels -- channels of new image (stays unchanged if not specified)
     resize_mode -- can be crop, squash, fill or half_crop
     """
-    assert isinstance(image, PIL.Image.Image), 'resize_image expected a PIL.Image'
-
     if resize_mode is None:
         resize_mode = 'half_crop'
+    if resize_mode not in ['crop', 'squash', 'fill', 'half_crop']:
+        raise ValueError('resize_mode "%s" not supported' % resize_mode)
 
-    # Convert image mode (channels)
-    if channels is None:
-        image_mode = image.mode
-        assert image_mode in ['L', 'RGB'], 'unknown image mode "%s"' % image_mode
-        if image_mode == 'L':
-            channels = 1
-        elif image_mode == 'RGB':
-            channels = 3
-    elif channels == 1:
-        # 8-bit pixels, black and white
-        image_mode = 'L'
-    elif channels == 3:
-        # 3x8-bit pixels, true color
-        image_mode = 'RGB'
+    if channels not in [None, 1, 3]:
+        raise ValueError('unsupported number of channels: %s' % channels)
+
+    if isinstance(image, PIL.Image.Image):
+        # Convert image mode (channels)
+        if channels is None:
+            image_mode = image.mode
+            if image_mode not in ['L', 'RGB']:
+                raise ValueError('unknown image mode "%s"' % image_mode)
+            if image_mode == 'L':
+                channels = 1
+            elif image_mode == 'RGB':
+                channels = 3
+        elif channels == 1:
+            # 8-bit pixels, black and white
+            image_mode = 'L'
+        elif channels == 3:
+            # 3x8-bit pixels, true color
+            image_mode = 'RGB'
+        if image.mode != image_mode:
+            image = image.convert(image_mode)
+        image = np.array(image)
+    elif isinstance(image, np.ndarray):
+        if image.dtype != np.uint8:
+            image = image.astype(np.uint8)
+        if image.ndim == 3 and image.shape[2] == 1:
+            image = image.reshape(image.shape[:2])
+        if channels is None:
+            if image.ndim == 2:
+                channels = 1
+            elif image.ndim == 3 and image.shape[2] == 3:
+                channels = 3
+            else:
+                raise ValueError('invalid image shape: %s' % (image.shape,))
+        elif channels == 1:
+            if image.ndim != 2:
+                if image.ndim == 3 and image.shape[2] == 3:
+                    # color to grayscale
+                    image = np.dot(image, [0.299, 0.587, 0.114]).astype(np.uint8)
+                else:
+                    raise ValueError('invalid image shape: %s' % (image.shape,))
+        elif channels == 3:
+            if image.ndim == 2:
+                # grayscale to color
+                image = np.repeat(image,3).reshape(image.shape + (3,))
+            elif image.shape[2] != 3:
+                raise ValueError('invalid image shape: %s' % (image.shape,))
     else:
-        raise Exception('Unsupported number of channels: %s' % channels)
-    if image.mode != image_mode:
-        image = image.convert(image_mode)
+        raise ValueError('resize_image() expected a PIL.Image.Image or a numpy.ndarray')
 
     # No need to resize
-    if image.size[0] == width and image.size[1] == height:
-        return np.asarray(image)
+    if image.shape[0] == height and image.shape[1] == width:
+        return image
 
     ### Resize
+    interp = 'bilinear'
 
-    width_ratio = float(image.size[0]) / width
-    height_ratio = float(image.size[1]) / height
+    width_ratio = float(image.shape[1]) / width
+    height_ratio = float(image.shape[0]) / height
     if resize_mode == 'squash' or width_ratio == height_ratio:
-        return np.array(image.resize((width, height), PIL.Image.ANTIALIAS))
+        return scipy.misc.imresize(image, (height, width), interp=interp)
     elif resize_mode == 'crop':
         # resize to smallest of ratios (relatively larger image), keeping aspect ratio
         if width_ratio > height_ratio:
             resize_height = height
-            resize_width = int(round(image.size[0] / height_ratio))
+            resize_width = int(round(image.shape[1] / height_ratio))
         else:
             resize_width = width
-            resize_height = int(round(image.size[1] / width_ratio))
-        image = np.array(image.resize((resize_width, resize_height), PIL.Image.ANTIALIAS))
+            resize_height = int(round(image.shape[0] / width_ratio))
+        image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
 
         # chop off ends of dimension that is still too long
         if width_ratio > height_ratio:
@@ -122,25 +154,25 @@ def resize_image(image, height, width,
             # resize to biggest of ratios (relatively smaller image), keeping aspect ratio
             if width_ratio > height_ratio:
                 resize_width = width
-                resize_height = int(round(image.size[1] / width_ratio))
+                resize_height = int(round(image.shape[0] / width_ratio))
                 if (height - resize_height) % 2 == 1:
                     resize_height += 1
             else:
                 resize_height = height
-                resize_width = int(round(image.size[0] / height_ratio))
+                resize_width = int(round(image.shape[1] / height_ratio))
                 if (width - resize_width) % 2 == 1:
                     resize_width += 1
-            image = np.array(image.resize((resize_width, resize_height), PIL.Image.ANTIALIAS))
+            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
         elif resize_mode == 'half_crop':
             # resize to average ratio keeping aspect ratio
             new_ratio = (width_ratio + height_ratio) / 2.0
-            resize_width = int(round(image.size[0] / new_ratio))
-            resize_height = int(round(image.size[1] / new_ratio))
+            resize_width = int(round(image.shape[1] / new_ratio))
+            resize_height = int(round(image.shape[0] / new_ratio))
             if width_ratio > height_ratio and (height - resize_height) % 2 == 1:
                 resize_height += 1
             elif width_ratio < height_ratio and (width - resize_width) % 2 == 1:
                 resize_width += 1
-            image = np.array(image.resize((resize_width, resize_height), PIL.Image.ANTIALIAS))
+            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
             # chop off ends of dimension that is still too long
             if width_ratio > height_ratio:
                 start = int(round((resize_width-width)/2.0))

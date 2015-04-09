@@ -1,5 +1,6 @@
 Pillow>=2.3.0
 numpy>=1.7
+scipy>=0.13.3
 protobuf>=2.5.0
 pydot>=1.0.2
 six>=1.5.2
