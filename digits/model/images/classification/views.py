@@ -170,17 +170,27 @@ def image_classification_model_test_one():
             image = utils.image.load_image(outfile.name)
     if image is None:
         return 'There was a problem with the image.', 400
-    task = job.train_task().dataset.train_db_task()
-    image = utils.image.resize_image(image, task.image_dims[0], task.image_dims[1],
-            channels = task.image_dims[2],
-            resize_mode = task.resize_mode,
+
+    # resize image
+    db_task = job.train_task().dataset.train_db_task()
+    height = db_task.image_dims[0]
+    width = db_task.image_dims[1]
+    if job.train_task().crop_size:
+        height = job.train_task().crop_size
+        width = job.train_task().crop_size
+    image = utils.image.resize_image(image, height, width,
+            channels = db_task.image_dims[2],
+            resize_mode = db_task.resize_mode,
             )
+
     epoch = None
     if 'snapshot_epoch' in request.form:
         epoch = int(request.form['snapshot_epoch'])
+
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers='all')
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
+
     # embed as html
     visualizations = [(
         v[0],
