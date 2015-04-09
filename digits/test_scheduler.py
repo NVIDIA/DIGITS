@@ -6,6 +6,7 @@ import mock
 from . import scheduler as _
 from config import config_option
 from job import Job
+from digits.utils import errors
 
 class TestScheduler():
 
@@ -46,6 +47,9 @@ class TestSchedulerFlow():
         job = Job('tmp')
         assert self.s.add_job(job), 'failed to add job'
         assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
-        assert self.s.delete_job(job), 'failed to delete job'
+        try:
+            self.s.delete_job(job)
+        except errors.DeleteError as e:
+            raise AssertionError(e.__str__())
         assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
 
