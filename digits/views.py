@@ -13,6 +13,7 @@ from webapp import app, socketio, scheduler
 from status import Status
 import dataset.views
 import model.views
+from digits.utils import errors
 
 @app.route('/')
 def home():
@@ -119,10 +120,11 @@ def delete_job(job_id):
     job = scheduler.get_job(job_id)
     if not job:
         return 'Job not found!', 404
-    if scheduler.delete_job(job_id):
-        return 'Job deleted.'
-    else:
-        return 'Job could not deleted!', 403
+    try:
+        if scheduler.delete_job(job_id):
+            return 'Job deleted.'
+    except errors.DeleteError as e:
+        return e.__str__(), 403
 
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
