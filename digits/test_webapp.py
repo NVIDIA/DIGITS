@@ -506,6 +506,17 @@ class TestModelCreation(WebappBaseTest):
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         assert 'New Image Classification Model' in rv.data, 'unexpected page format'
 
+    def test_visualize_network(self):
+        """visualize network"""
+        rv = self.app.post('/models/visualize-network',
+                data = {'custom_network': get_dummy_network()}
+                )
+        s = BeautifulSoup(rv.data)
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        image = s.select('img')
+        assert image is not None, "didn't return an image"
+
     def test_create_delete(self):
         """create, delete"""
         job_id = self.create_quick_model(self.dataset_id)
