@@ -6,7 +6,6 @@ import mock
 from . import scheduler as _
 from config import config_option
 from job import Job
-from digits.utils import errors
 
 class TestScheduler():
 
