@@ -1,3 +1,4 @@
 # Ignore these file types
 *.pyc
 *.swp
+/venv/
