@@ -47,10 +47,11 @@ def create_dataset(driver, name, folder):
     wait()
 
     image_type = driver.find_element_by_name('resize_channels')
+    image_type.click()
+    wait()
     for option in image_type.find_elements_by_tag_name('option'):
         if option.text == 'Grayscale':
             image_type.click()
-            wait()
             option.click()
             break
     wait()
