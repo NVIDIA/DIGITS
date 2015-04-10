@@ -7,4 +7,6 @@ then
     DIGITS_LEVEL=system
 fi
 
-DIGITS_LEVEL=$DIGITS_LEVEL gunicorn --config gunicorn_config.py digits.webapp:app
+DIGITS_LEVEL=$DIGITS_LEVEL $(command -v python) $(command -v gunicorn) \
+    --config gunicorn_config.py \
+    digits.webapp:app

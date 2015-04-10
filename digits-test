@@ -2,15 +2,12 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 # Set level
-if [ -z "$1" ]
+if [ -z "$DIGITS_LEVEL" ]
 then
-    if [ -z "$DIGITS_LEVEL" ]
-    then
-        DIGITS_LEVEL=test
-    fi
-else
-    DIGITS_LEVEL=$1
-    shift
+    DIGITS_LEVEL=test
 fi
 
-DIGITS_LEVEL=$DIGITS_LEVEL $(command -v python) $(command -v nosetests) --no-path-adjustment -v tools/ digits/ $@
+DIGITS_LEVEL=$DIGITS_LEVEL $(command -v python) $(command -v nosetests) \
+    --no-path-adjustment -v \
+    tools/ digits/ \
+    $@
