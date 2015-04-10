@@ -12,7 +12,7 @@ from digits.status import Status
 from digits.task import Task
 
 # NOTE: Increment this everytime the pickled version changes
-PICKLE_VERSION = 1
+PICKLE_VERSION = 2
 
 @subclass
 class CreateDbTask(Task):
@@ -47,6 +47,10 @@ class CreateDbTask(Task):
         self.input_file = input_file
         self.db_name = db_name
         self.image_dims = image_dims
+        if image_dims[2] == 3:
+            self.image_channel_order = 'BGR'
+        else:
+            self.image_channel_order = None
 
         self.entries_count = None
         self.distribution = None
@@ -59,6 +63,17 @@ class CreateDbTask(Task):
 
     def __setstate__(self, state):
         super(CreateDbTask, self).__setstate__(state)
+
+        if self.pickver_task_createdb <= 1:
+            print 'Upgrading CreateDbTask to version 2'
+            if self.image_dims[2] == 1:
+                self.image_channel_order = None
+            elif self.encode:
+                self.image_channel_order = 'BGR'
+            else:
+                self.image_channel_order = 'RGB'
+
+        self.pickver_task_createdb = PICKLE_VERSION
 
     @override
     def name(self):

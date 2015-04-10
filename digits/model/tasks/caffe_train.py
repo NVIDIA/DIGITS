@@ -931,9 +931,10 @@ class CaffeTrainTask(TrainTask):
                 )
         t.set_transpose('data', (2,0,1)) # transpose to (channels, height, width)
 
-        if self.dataset.image_dims[2] == 3 and self.dataset.train_db_task().encode:
-            # Caffe uses OpenCV to decode images, which returns BGR
-            # Convert BGR -> RGB
+        if self.dataset.image_dims[2] == 3 and \
+                self.dataset.train_db_task().image_channel_order == 'BGR':
+            # channel swap
+            # XXX see issue #59
             t.set_channel_swap('data', (2,1,0))
 
         if self.use_mean:

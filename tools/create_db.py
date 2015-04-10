@@ -254,6 +254,10 @@ class DbCreator:
                     if data.ndim == 3:
                         # Transpose to (channels, height, width)
                         data = data.transpose((2,0,1))
+                        if data.shape[0] == 3:
+                            # channel swap
+                            # XXX see issue #59
+                            data = data[[2,1,0],...]
                     elif mean.ndim == 2:
                         # Add a channels axis
                         data = data[np.newaxis,:,:]
@@ -374,6 +378,10 @@ class DbCreator:
             if image.ndim == 3:
                 # Transpose to (channels, height, width)
                 image = image.transpose((2,0,1))
+                if image.shape[0] == 3:
+                    # channel swap
+                    # XXX see issue #59
+                    image = image[[2,1,0],...]
             elif image.ndim == 2:
                 # Add a channels axis
                 image = image[np.newaxis,:,:]
