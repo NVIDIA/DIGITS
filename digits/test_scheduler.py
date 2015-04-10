@@ -47,9 +47,6 @@ class TestSchedulerFlow():
         job = Job('tmp')
         assert self.s.add_job(job), 'failed to add job'
         assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
-        try:
-            self.s.delete_job(job)
-        except errors.DeleteError as e:
-            raise AssertionError(e.__str__())
+        assert self.s.delete_job(job), 'failed to delete job'
         assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
 
