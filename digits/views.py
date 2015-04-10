@@ -123,6 +123,8 @@ def delete_job(job_id):
     try:
         if scheduler.delete_job(job_id):
             return 'Job deleted.'
+        else:
+            return 'Job could not be deleted! Check log for more details', 403
     except errors.DeleteError as e:
         return e.__str__(), 403
 

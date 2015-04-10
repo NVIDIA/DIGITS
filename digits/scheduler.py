@@ -166,8 +166,7 @@ class Scheduler:
             job_id = job.id()
         else:
             raise ValueError('called delete_job with a %s' % type(job))
-        DependencyExists = False
-        ErrorDetails = ''
+        dependent_jobs = []
         # try to find the job
         for i, job in enumerate(self.jobs):
             if job.id() == job_id:
@@ -176,11 +175,10 @@ class Scheduler:
                     for j in self.jobs:
                         if isinstance(j, ModelJob) and j.dataset_id == job.id():
                             logger.error('Cannot delete %s (%s) because %s (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
-                            DependencyExists = True
-                            ErrorDetails += j.name() + ','
-                if DependencyExists:
-                    ErrorDetails = 'Cannot delete %s because jobs - %s depends on it' % (job.name(), ErrorDetails)
-                    raise errors.DeleteError(ErrorDetails)
+                            dependent_jobs.append(j.name())
+                if len(dependent_jobs)>0:
+                    error_message = 'Cannot delete %s because %d model%s depends on it: %s' % (job.name(), len(dependent_jobs), ('s' if len(dependent_jobs) > 1 else ''), ', '.join(dependent_jobs))
+                    raise errors.DeleteError(error_message)
                 self.jobs.pop(i)
                 job.abort()
                 if os.path.exists(job.dir()):
