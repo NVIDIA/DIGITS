@@ -185,7 +185,7 @@ def image_classification_model_test_one():
 
     epoch = None
     if 'snapshot_epoch' in request.form:
-        epoch = int(request.form['snapshot_epoch'])
+        epoch = float(request.form['snapshot_epoch'])
 
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers='all')
     # take top 5
@@ -216,7 +216,7 @@ def image_classification_model_test_many():
 
     epoch = None
     if 'snapshot_epoch' in request.form:
-        epoch = int(request.form['snapshot_epoch'])
+        epoch = float(request.form['snapshot_epoch'])
     if 'top_n' in request.form and request.form['top_n'].strip():
         top_n = int(request.form['top_n'])
     else:
