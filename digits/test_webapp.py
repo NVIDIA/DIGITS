@@ -596,8 +596,8 @@ class TestCreatedModel(WebappBaseTest):
         assert content['id'] == self.model_id, 'expected different job_id'
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
-    def test_test_one(self):
-        """test one image"""
+    def test_classify_one(self):
+        """classify one image"""
         image_path = self.images['green'][0]
         image_path = os.path.join(self.data_path, image_path)
         with open(image_path) as infile:
@@ -605,7 +605,7 @@ class TestCreatedModel(WebappBaseTest):
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-                '/models/images/classification/test_one?job_id=%s' % self.model_id,
+                '/models/images/classification/classify_one?job_id=%s' % self.model_id,
                 data = {'image_file': image_upload}
                 )
         s = BeautifulSoup(rv.data)
@@ -615,8 +615,8 @@ class TestCreatedModel(WebappBaseTest):
         predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
         assert predictions[0][1] == 'green', 'image misclassified'
 
-    def test_test_many(self):
-        """test many images"""
+    def test_classify_many(self):
+        """classify many images"""
         textfile_images = ''
         label_id = 0
         for (label, images) in self.images.iteritems():
@@ -630,7 +630,29 @@ class TestCreatedModel(WebappBaseTest):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/test_many?job_id=%s' % self.model_id,
+                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload}
+                )
+        s = BeautifulSoup(rv.data)
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
+    def test_top_n(self):
+        """top n predictions"""
+        textfile_images = ''
+        label_id = 0
+        for (label, images) in self.images.iteritems():
+            for image in images:
+                image_path = image
+                image_path = os.path.join(self.data_path, image_path)
+                textfile_images += '%s %d\n' % (image_path, label_id)
+            label_id += 1
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        rv = self.app.post(
+                '/models/images/classification/top_n?job_id=%s' % self.model_id,
                 data = {'image_list': file_upload}
                 )
         s = BeautifulSoup(rv.data)

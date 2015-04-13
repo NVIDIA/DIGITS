@@ -155,8 +155,11 @@ def show(job):
     """
     return render_template('models/images/classification/show.html', job=job)
 
-@app.route(NAMESPACE + '/test_one', methods=['POST'])
-def image_classification_model_test_one():
+@app.route(NAMESPACE + '/classify_one', methods=['POST'])
+def image_classification_model_classify_one():
+    """
+    Classify one image and return the predictions, weights and activations
+    """
     job = scheduler.get_job(request.args['job_id'])
     if not job:
         abort(404)
@@ -198,14 +201,84 @@ def image_classification_model_test_one():
         utils.image.embed_image_html(v[2]),
         )
         for v in visualizations]
-    return render_template('models/images/classification/infer_one.html',
+    return render_template('models/images/classification/classify_one.html',
             image_src       = utils.image.embed_image_html(image),
             predictions     = predictions,
             visualizations  = visualizations,
             )
 
-@app.route(NAMESPACE + '/test_many', methods=['POST'])
-def image_classification_model_test_many():
+@app.route(NAMESPACE + '/classify_many', methods=['POST'])
+def image_classification_model_classify_many():
+    """
+    Classify many images and return the top 5 classifications for each
+    """
+    job = scheduler.get_job(request.args['job_id'])
+    if not job:
+        abort(404)
+
+    image_list = request.files['image_list']
+    if not image_list:
+        return 'File upload not found', 400
+
+    epoch = None
+    if 'snapshot_epoch' in request.form:
+        epoch = float(request.form['snapshot_epoch'])
+
+    paths = []
+    images = []
+    dataset = job.train_task().dataset
+
+    for line in image_list.readlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        path = None
+        # might contain a numerical label at the end
+        match = re.match(r'(.*\S)\s+\d+$', line)
+        if match:
+            path = match.group(1)
+        else:
+            path = line
+
+        image = utils.image.load_image(path)
+        if image is not None:
+            image = utils.image.resize_image(image,
+                    dataset.image_dims[0], dataset.image_dims[1],
+                    channels    = dataset.image_dims[2],
+                    resize_mode = dataset.resize_mode,
+                    )
+            paths.append(path)
+            images.append(image)
+
+    if not len(images):
+        return 'Unable to load any images from the file', 400
+
+    labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
+    if scores is None:
+        return 'An error occured while processing the images', 500
+
+    # take top 5
+    indices = (-scores).argsort()[:, :5]
+
+    classifications = []
+    for image_index, index_list in enumerate(indices):
+        result = []
+        for i in index_list:
+            # `i` is a category in labels and also an index into scores
+            result.append((labels[i], round(100.0*scores[image_index, i],2)))
+        classifications.append(result)
+
+    return render_template('models/images/classification/classify_many.html',
+            paths=paths,
+            classifications=classifications,
+            )
+
+@app.route(NAMESPACE + '/top_n', methods=['POST'])
+def image_classification_model_top_n():
+    """
+    Classify many images and show the top N images per category by confidence
+    """
     job = scheduler.get_job(request.args['job_id'])
     if not job:
         abort(404)
@@ -276,7 +349,7 @@ def image_classification_model_test_many():
                     )
                 ))
 
-    return render_template('models/images/classification/infer_many.html',
+    return render_template('models/images/classification/top_n.html',
             job=job,
             results=results,
             )
