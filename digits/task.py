@@ -194,7 +194,7 @@ class Task(StatusCls):
 
                     if line:
                         if not self.process_output(line):
-                            self.logger.warning('%s unrecognized input: %s' % (self.name(), line.strip()))
+                            self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
