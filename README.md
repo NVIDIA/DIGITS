@@ -2,6 +2,19 @@
 
 DIGITS is is a webapp for training deep learning models.
 
+## Get help
+#### Installation issues
+* First, check out the instructions below
+* Then, ask questions on our [user group](https://groups.google.com/d/forum/digits-users)
+
+#### Usage questions
+* First, check out the [Getting Started](docs/GettingStarted.md) page
+* Then, ask questions on our [user group](https://groups.google.com/d/forum/digits-users)
+
+#### Bugs and feature requests
+* Please let us know by [filing a new issue](https://github.com/NVIDIA/DIGITS/issues/new)
+* Bonus points if you want to contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)!
+
 ## Installation
 
 DIGITS is supported on Ubuntu 14.04.  DIGITS has successfully run on other Linux variants as well as OSX but at this time, only Ubuntu 14.04 is supported.
