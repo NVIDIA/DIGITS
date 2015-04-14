@@ -21,22 +21,17 @@
 {% if visualizations %}
 <table class="table">
     <tr>
-        <th>Layer</th>
-        <th>Activations</th>
-        <th>Weights</th>
+        <th>Description</th>
+        <th>Visualization</th>
     </tr>
-    {% for layer_name, activations, weights in visualizations %}
+    {% for vis in visualizations %}
     <tr>
-        <td><h4>{{layer_name}}</h4></td>
         <td>
-            {% if activations %}
-            <img src="{{activations}}" />
-            {% endif %}
+            <h4>{{vis['name']}}</h4>
+            {{vis['type']}}
         </td>
         <td>
-            {% if weights %}
-            <img src="{{weights}}" />
-            {% endif %}
+            <img style="max-width:100%" src="{{vis['image_html']}}" />
         </td>
     </tr>
     {% endfor %}

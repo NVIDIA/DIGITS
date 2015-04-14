@@ -49,7 +49,6 @@ class CaffeTrainTask(TrainTask):
         self.loaded_snapshot_file = None
         self.loaded_snapshot_epoch = None
         self.image_mean = None
-        self.classifier = None
         self.solver = None
 
         self.solver_file = constants.CAFFE_SOLVER_FILE
@@ -86,7 +85,6 @@ class CaffeTrainTask(TrainTask):
 
         # These things don't get pickled
         self.image_mean = None
-        self.classifier = None
 
     ### Task overrides
 
@@ -612,7 +610,7 @@ class CaffeTrainTask(TrainTask):
         Classify an image
         Returns (predictions, visualizations)
             predictions -- an array of [ (label, confidence), ...] for each label, sorted by confidence
-            visualizations -- an array of (layer_name, activations, weights) for the specified layers
+            visualizations -- a list of dicts for the specified layers
         Returns (None, None) if something goes wrong
 
         Arguments:
@@ -649,132 +647,122 @@ class CaffeTrainTask(TrainTask):
         visualizations = []
         if layers and layers != 'none':
             if layers == 'all':
+                added_weights = []
+                added_activations = []
                 for layer in self.network.layer:
                     if not layer.type.endswith(('Data', 'Loss', 'Accuracy')):
-                        a, w = self.get_layer_visualization(net, layer)
-                        if a is not None or w is not None:
-                            visualizations.append( (layer.name, a, w) )
+                        for bottom in layer.bottom:
+                            if bottom in net.blobs and bottom not in added_activations:
+                                data = net.blobs[bottom].data[0]
+                                vis = self.get_layer_visualization(data)
+                                visualizations.append(
+                                        {
+                                            'name': str(bottom),
+                                            'type': 'Activations',
+                                            'image_html': utils.image.embed_image_html(vis),
+                                            }
+                                        )
+                                added_activations.append(bottom)
+                        if layer.name in net.params:
+                            data = net.params[layer.name][0].data
+                            vis = self.get_layer_visualization(data)
+                            visualizations.append(
+                                    {
+                                        'name': str(layer.name),
+                                        'type': 'Weights (%s layer)' % layer.type,
+                                        'image_html': utils.image.embed_image_html(vis),
+                                        }
+                                    )
+                        for top in layer.top:
+                            if top in net.blobs and top not in added_activations:
+                                data = net.blobs[top].data[0]
+                                normalize = True
+                                # don't normalize softmax layers
+                                if layer.type == 'Softmax':
+                                    normalize = False
+                                vis = self.get_layer_visualization(data, normalize=normalize)
+                                visualizations.append(
+                                        {
+                                            'name': str(top),
+                                            'type': 'Activation',
+                                            'image_html': utils.image.embed_image_html(vis),
+                                            }
+                                        )
+                                added_activations.append(top)
             else:
-                found = False
-                for layer in self.network.layer:
-                    if layer.name == layers:
-                        a, w = self.get_layer_visualization(net, layer)
-                        if a is not None or w is not None:
-                            visualizations.append( (layer.name, a, w) )
-                        found = True
-                        break
-                if not found:
-                    raise Exception('layer does not exist: "%s"' % layers)
+                raise NotImplementedError
 
         return (predictions, visualizations)
 
-    def get_layer_visualization(self, net, layer,
-            max_width=500,
+    def get_layer_visualization(self, data,
+            normalize = True,
+            max_width = 2000,
             ):
         """
-        Returns (activations, params) for the given layer:
-            activations -- a vis_square for the activation blobs
-            weights -- a vis_square for the learned weights (may be None for some layer types)
-        Returns (None, None) if an error occurs
+        Returns a vis_square for the given layer data:
+        Returns None if an error occurs
 
         Arguments:
-        net -- the caffe.Net instance which has just completed a forward pass
-        layer -- the layer to visualize
+        data -- a np.ndarray
 
         Keyword arguments:
-        max_width -- the maximum width for vis_squares
+        normalize -- whether to normalize the data when visualizing
+        max_width -- maximum width for the vis_square
         """
-        activations = None
-        weights = None
+        #print 'data.shape is %s' % (data.shape,)
 
-        normalize = True
-        # don't normalize softmax layers
-        if layer.type == 'Softmax':
-            normalize = False
-
-        if (not layer.bottom or layer.bottom[0] != layer.top[0]) and layer.top[0] in net.blobs:
-            data = net.blobs[layer.top[0]].data[0]
-            #print 'activation.shape is %s for %s' % (data.shape, layer.top[0])
-
-            if data.ndim == 1:
-                # interpret as 1x1 grayscale images
-                # (N, 1, 1)
-                data = data[:, np.newaxis, np.newaxis]
-            elif data.ndim == 3:
-                if data.shape[0] == 3:
-                    # interpret as a color image
-                    # (1, H, W,3)
-                    data = data.transpose(1,2,0)
-                    data = data[np.newaxis,...]
-                else:
-                    # interpret as grayscale images
-                    # (N, H, W)
-                    pass
+        if data.ndim == 1:
+            # interpret as 1x1 grayscale images
+            # (N, 1, 1)
+            data = data[:, np.newaxis, np.newaxis]
+        elif data.ndim == 2:
+            # interpret as 1x1 grayscale images
+            # (N, 1, 1)
+            data = data.reshape((data.shape[0]*data.shape[1], 1, 1))
+        elif data.ndim == 3:
+            if data.shape[0] == 3:
+                # interpret as a color image
+                # (1, H, W,3)
+                data = data.transpose(1,2,0)
+                data = data[np.newaxis,...]
             else:
-                raise Exception('unrecognized activation shape for %s: %s' % (layer.top[0], data.shape))
-
-            # chop off data so that it will fit within max_width
-            padsize = 0
-            width = data.shape[2]
-            if width > max_width:
-                data = data[0,:max_width,:max_width]
+                # interpret as grayscale images
+                # (N, H, W)
+                pass
+        elif data.ndim == 4:
+            if data.shape[0] == 3:
+                # interpret as HxW color images
+                # (N, H, W, 3)
+                data = data.transpose(1,2,3,0)
+            elif data.shape[1] == 3:
+                # interpret as HxW color images
+                # (N, H, W, 3)
+                data = data.transpose(0,2,3,1)
             else:
-                if width > 1:
-                    padsize = 1
-                    width += 1
-                n = max_width/width
-                n *= n
-                data = data[:n]
+                # interpret as HxW grayscale images
+                # (N, H, W)
+                data = data.reshape((data.shape[0]*data.shape[1], data.shape[2], data.shape[3]))
+        else:
+            raise RuntimeError('unrecognized data shape: %s' % (data.shape,))
 
-            #print 'activation.shape now %s' % (data.shape,)
-            activations = utils.image.vis_square(data,
-                    padsize     = padsize,
-                    normalize   = normalize,
-                    )
+        # chop off data so that it will fit within max_width
+        padsize = 0
+        width = data.shape[2]
+        if width > max_width:
+            data = data[0,:max_width,:max_width]
+        else:
+            if width > 1:
+                padsize = 1
+                width += 1
+            n = max_width/width
+            n *= n
+            data = data[:n]
 
-        if layer.name in net.params:
-            data = net.params[layer.name][0].data
-            #print 'weights.shape is %s for %s' % (data.shape, layer.name)
-
-            if data.ndim == 2:
-                # interpret as 1x1 grayscale images
-                # (N, 1, 1)
-                data = data.reshape((data.shape[0]*data.shape[1], 1, 1))
-            elif data.ndim == 4:
-                if data.shape[0] == 3:
-                    # interpret as HxW color images
-                    # (N, H, W, 3)
-                    data = data.transpose(1,2,3,0)
-                elif data.shape[1] == 3:
-                    # interpret as HxW color images
-                    # (N, H, W, 3)
-                    data = data.transpose(0,2,3,1)
-                else:
-                    # interpret as HxW grayscale images
-                    # (N, H, W)
-                    data = data.reshape((data.shape[0]*data.shape[1], data.shape[2], data.shape[3]))
-            else:
-                raise Exception('unrecognized weight shape for %s: %s' % (layer.name, data.shape))
-
-            # chop off data so that it will fit within max_width
-            padsize = 0
-            width = data.shape[2]
-            if width >= max_width:
-                data = data[0,:max_width,:max_width, :]
-            else:
-                if width > 1:
-                    padsize = 1
-                    width += 1
-                n = max_width/width
-                n *= n
-                data = data[:n]
-
-            #print 'weight.shape now %s' % (data.shape,)
-            weights = utils.image.vis_square(data,
-                    padsize     = padsize,
-                    normalize   = normalize,
-                    )
-        return activations, weights
+        #print 'data.shape now %s' % (data.shape,)
+        return utils.image.vis_square(data,
+                padsize     = padsize,
+                normalize   = normalize,
+                )
 
     @override
     def can_infer_many(self):

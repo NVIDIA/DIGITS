@@ -194,13 +194,6 @@ def image_classification_model_classify_one():
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
-    # embed as html
-    visualizations = [(
-        v[0],
-        utils.image.embed_image_html(v[1]),
-        utils.image.embed_image_html(v[2]),
-        )
-        for v in visualizations]
     return render_template('models/images/classification/classify_one.html',
             image_src       = utils.image.embed_image_html(image),
             predictions     = predictions,
