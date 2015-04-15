@@ -295,6 +295,17 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             $("#image_url").change(function() { $("#image_file").val(""); });
                             $("#image_file").change(function() { $("#image_url").val(""); });
                         </script>
+                        <div class="form-group">
+                            <label for="show_visualizations">
+                                <input id="show_visualizations" name="show_visualizations" type="checkbox" value="y">
+                                Show visualizations and statistics
+                            </label>
+                            <span name="show_visualizations_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="For each layer in the network, show statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
+                                ></span>
+                        </div>
                         <button name="classify-one-btn" onClick="return classifyOne();" class="btn btn-primary">Classify One Image</button>
                         <span name="classify-one-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"
@@ -346,22 +357,24 @@ function classifyOne() {
     var formData = new FormData($("#test-model-form")[0]);
 
     $.ajax("{{url_for('image_classification_model_classify_one', job_id=job.id())}}",
-            {
-                type: "POST",
-                data: formData,
-                // options to tell jQuery not to process data or worry about content-type
-                cache: false,
-                contentType: false,
-                processData: false,
-            })
+    {
+        type: "POST",
+        data: formData,
+        // options to tell jQuery not to process data or worry about content-type
+        cache: false,
+        contentType: false,
+        processData: false,
+    })
     .done(function(data) {
-            bootbox.alert({
-                message: data,
-                animate: false,
-                className: "wide-bootbox"
-                });
-            $(".wide-bootbox").animate({scrollTop: 0}, "");
-            })
+        bootbox.alert({
+            message: 'Loading...',
+            animate: false,
+            className: "wide-bootbox"
+        });
+        // Do this after the page loads so javascript works
+        $('div.bootbox-body').html(data);
+        $(".wide-bootbox").animate({scrollTop: 0}, "");
+    })
     .fail(function(data) { errorAlert(data); });
     return false;
 }

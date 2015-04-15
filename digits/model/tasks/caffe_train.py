@@ -643,6 +643,7 @@ class CaffeTrainTask(TrainTask):
         for i in indices:
             predictions.append( (self.get_labels()[i], scores[i]) )
 
+
         # add visualizations
         visualizations = []
         if layers and layers != 'none':
@@ -650,26 +651,38 @@ class CaffeTrainTask(TrainTask):
                 added_weights = []
                 added_activations = []
                 for layer in self.network.layer:
+                    print 'Computing visualizations for "%s"...' % layer.name
                     if not layer.type.endswith(('Data', 'Loss', 'Accuracy')):
                         for bottom in layer.bottom:
                             if bottom in net.blobs and bottom not in added_activations:
                                 data = net.blobs[bottom].data[0]
                                 vis = self.get_layer_visualization(data)
+                                mean, std, hist = self.get_layer_statistics(data)
                                 visualizations.append(
                                         {
                                             'name': str(bottom),
                                             'type': 'Activations',
+                                            'mean': mean,
+                                            'stddev': std,
+                                            'histogram': hist,
                                             'image_html': utils.image.embed_image_html(vis),
                                             }
                                         )
                                 added_activations.append(bottom)
                         if layer.name in net.params:
                             data = net.params[layer.name][0].data
-                            vis = self.get_layer_visualization(data)
+                            if layer.type not in ['InnerProduct']:
+                                vis = self.get_layer_visualization(data)
+                            else:
+                                vis = None
+                            mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
                                     {
                                         'name': str(layer.name),
                                         'type': 'Weights (%s layer)' % layer.type,
+                                        'mean': mean,
+                                        'stddev': std,
+                                        'histogram': hist,
                                         'image_html': utils.image.embed_image_html(vis),
                                         }
                                     )
@@ -681,10 +694,14 @@ class CaffeTrainTask(TrainTask):
                                 if layer.type == 'Softmax':
                                     normalize = False
                                 vis = self.get_layer_visualization(data, normalize=normalize)
+                                mean, std, hist = self.get_layer_statistics(data)
                                 visualizations.append(
                                         {
                                             'name': str(top),
                                             'type': 'Activation',
+                                            'mean': mean,
+                                            'stddev': std,
+                                            'histogram': hist,
                                             'image_html': utils.image.embed_image_html(vis),
                                             }
                                         )
@@ -696,11 +713,10 @@ class CaffeTrainTask(TrainTask):
 
     def get_layer_visualization(self, data,
             normalize = True,
-            max_width = 2000,
+            max_width = 600,
             ):
         """
-        Returns a vis_square for the given layer data:
-        Returns None if an error occurs
+        Returns a vis_square for the given layer data
 
         Arguments:
         data -- a np.ndarray
@@ -763,6 +779,25 @@ class CaffeTrainTask(TrainTask):
                 padsize     = padsize,
                 normalize   = normalize,
                 )
+
+    def get_layer_statistics(self, data):
+        """
+        Returns statistics for the given layer data:
+            (mean, standard deviation, histogram)
+                histogram -- [y, x, ticks]
+
+        Arguments:
+        data -- a np.ndarray
+        """
+        # XXX These calculations can be super slow
+        mean = np.mean(data)
+        std = np.std(data)
+        y, x = np.histogram(data, bins=20)
+        y = list(y)
+        ticks = x[[0,len(x)/2,-1]]
+        x = [(x[i]+x[i+1])/2.0 for i in xrange(len(x)-1)]
+        ticks = list(ticks)
+        return (mean, std, [y, x, ticks])
 
     @override
     def can_infer_many(self):

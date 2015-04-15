@@ -606,7 +606,10 @@ class TestCreatedModel(WebappBaseTest):
 
         rv = self.app.post(
                 '/models/images/classification/classify_one?job_id=%s' % self.model_id,
-                data = {'image_file': image_upload}
+                data = {
+                    'image_file': image_upload,
+                    'show_visualizations': 'y',
+                    }
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')

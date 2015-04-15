@@ -190,7 +190,11 @@ def image_classification_model_classify_one():
     if 'snapshot_epoch' in request.form:
         epoch = float(request.form['snapshot_epoch'])
 
-    predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers='all')
+    layers = 'none'
+    if 'show_visualizations' in request.form and request.form['show_visualizations']:
+        layers = 'all'
+
+    predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
