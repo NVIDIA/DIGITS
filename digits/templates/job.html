@@ -101,7 +101,7 @@ function updateJobName() {
 }
                 </script>
                 <input name="job-name" class="form-control" value="{{job.name()}}"/>
-                <a href=# class="btn btn-primary" onClick="updateJobName()">Update</a>
+                <a href=# class="btn btn-primary" onClick="return updateJobName();">Update</a>
                 <a href=# class="btn btn-info" onClick="$('#edit-job-name').hide(); $('#show-job-name').show(); return false;">Cancel</a>
             </div>
         </div>
