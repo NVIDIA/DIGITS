@@ -66,11 +66,11 @@ class DbCreator:
         self.key_index = 0
 
     def create(self, input_file, width, height,
-            channels=3,
-            resize_mode=None,
-            encode=False,
-            image_folder=None,
-            mean_files=None,
+            channels    = 3,
+            resize_mode = None,
+            encoding    = 'none',
+            image_folder= None,
+            mean_files  = None,
             ):
         """
         Read an input file and create a database from the specified image/label pairs
@@ -84,7 +84,7 @@ class DbCreator:
         Keyword arguments:
         channels -- channels of resized images
         resize_mode -- can be crop, squash, fill or half_crop
-        encode -- save encoded JPEGS
+        encoding -- 'none', 'png' or 'jpg'
         image_folder -- folder in which the images can be found
         mean_files -- an array of mean files to save (can be empty)
         """
@@ -125,7 +125,9 @@ class DbCreator:
                         logger.error('Cannot save mean file at "%s"' % mean_file)
                         return False
         self.compute_mean = (mean_files and len(mean_files) > 0)
-        self.encode = encode
+        if encoding not in ['none', 'png', 'jpg']:
+            raise ValueError('Unsupported encoding format "%s"' % encoding)
+        self.encoding = encoding
 
         ### Start working
 
@@ -359,21 +361,7 @@ class DbCreator:
         if self.compute_mean and image_sum is not None:
             image_sum += image
 
-        if self.encode:
-            datum = caffe_pb2.Datum()
-            if image.ndim == 3:
-                datum.channels = image.shape[2]
-            else:
-                datum.channels = 1
-            datum.height = image.shape[0]
-            datum.width = image.shape[1]
-            datum.label = label
-            datum.encoded = True
-
-            s = StringIO()
-            PIL.Image.fromarray(image).save(s, format='JPEG', quality=90)
-            datum.data = s.getvalue()
-        else:
+        if not self.encoding or self.encoding == 'none':
             # Transform to caffe's format requirements
             if image.ndim == 3:
                 # Transpose to (channels, height, width)
@@ -388,6 +376,23 @@ class DbCreator:
             else:
                 raise Exception('Image has unrecognized shape: "%s"' % image.shape)
             datum = caffe.io.array_to_datum(image, label)
+        else:
+            datum = caffe_pb2.Datum()
+            if image.ndim == 3:
+                datum.channels = image.shape[2]
+            else:
+                datum.channels = 1
+            datum.height = image.shape[0]
+            datum.width = image.shape[1]
+            datum.label = label
+
+            s = StringIO()
+            if self.encoding == 'png':
+                PIL.Image.fromarray(image).save(s, format='PNG')
+            elif self.encoding == 'jpg':
+                PIL.Image.fromarray(image).save(s, format='JPEG', quality=90)
+            datum.data = s.getvalue()
+            datum.encoded = True
         return datum
 
     def write_thread(self, batch_size, batch_extra):
@@ -491,11 +496,11 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--channels',
             type=int,
             default=3,
-            help='channels of resized images (1 for grayscale, 3 for color) [default=3]'
+            help='channels of resized images (1 for grayscale, 3 for color [default])'
             )
     parser.add_argument('-r', '--resize_mode',
             default='squash',
-            help='resize mode for images (must be "crop", "squash", "fill" or "half_crop") [default=squash]'
+            help='resize mode for images (must be "crop", "squash" [default], "fill" or "half_crop")'
             )
     parser.add_argument('-m', '--mean_file', action='append',
             help="location to output the image mean (doesn't save mean if not specified)")
@@ -505,9 +510,9 @@ if __name__ == '__main__':
             default='lmdb',
             help='db backend [default=lmdb]'
             )
-    parser.add_argument('-e', '--encode',
-            action='store_true',
-            help='Store encoded JPEGs'
+    parser.add_argument('-e', '--encoding',
+            default = 'none',
+            help = 'Choose encoding format ("jpg", "png" or "none" [default])'
             )
 
     args = vars(parser.parse_args())
@@ -520,7 +525,7 @@ if __name__ == '__main__':
             resize_mode     = args['resize_mode'],
             image_folder    = args['image_folder'],
             mean_files      = args['mean_file'],
-            encode          = args['encode'],
+            encoding        = args['encoding'],
             ):
         sys.exit(0)
     else:

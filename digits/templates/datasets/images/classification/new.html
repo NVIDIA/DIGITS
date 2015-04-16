@@ -50,16 +50,18 @@ New Image Classification Dataset
                 </div>
             </div>
             <div class="row">
-                <div class="form-group{{ ' has-error' if form.encode_images.errors else '' }}">
-                    <label for="{{form.encode_images.name}}">
-                        {{form.encode_images}}
-                        {{form.encode_images.label.text}}
-                    </label>
-                    <span name="encode_images_explanation"
-                        class="explanation-tooltip glyphicon glyphicon-question-sign"
-                        data-container="body"
-                        title="Saves disk space, but can require marginally more time for training."
-                        ></span>
+                <div class="form-group{{ ' has-error' if form.encoding.errors else '' }}">
+                    <div class="form-group{{' has-error' if form.encoding.errors}}">
+                        {{form.encoding.label}}
+                        <div class="input-group">
+                            {{form.encoding(class='form-control')}}
+                            <span name="encoding_explanation"
+                                class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Using either of these compression formats can save disk space, but can also require marginally more time for training."
+                                ></span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -108,6 +110,7 @@ function showResizeExample()
                 "width":    $("#resize_width").val(),
                 "height":   $("#resize_height").val(),
                 "resize_mode":   $("#resize_mode").val(),
+                "encoding": $("#encoding").val(),
             },
             function(response) {
                 $('#resize-example-image').html(response);

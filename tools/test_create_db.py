@@ -48,25 +48,28 @@ class TestPathToDatum():
             pass
 
     def test_configs(self):
-        """various path_to_datum configurations"""
+        """path_to_datum"""
         self.db.height = 10
         self.db.width = 10
         self.db.resize_mode = 'squash'
         self.db.image_folder = None
-        for e in [True, False]:
+        for e in ['none', 'png', 'jpg']:
             for c in [1, 3]:
                 for m in [True, False]:
                     yield self.check_configs, (e, c, m)
 
     def check_configs(self, args):
         e, c, m = args
-        self.db.encode = e
+        self.db.encoding = e
         self.db.channels = c
         self.db.compute_mean = m
         image_sum = self.db.initial_image_sum()
         d = self.db.path_to_datum(self.image_path, 0, image_sum)
         assert (d.channels, d.height, d.width) == (self.db.channels, self.db.height, self.db.width), 'wrong datum shape'
-        assert d.encoded == self.db.encode, 'wrong encoding'
+        if e == 'none':
+            assert not d.encoded, 'datum should not be encoded when encoding="%s"' % e
+        else:
+            assert d.encoded, 'datum should be encoded when encoding="%s"' % e
 
 class TestSaveMean():
     pass

@@ -12,7 +12,7 @@ from digits.status import Status
 from digits.task import Task
 
 # NOTE: Increment this everytime the pickled version changes
-PICKLE_VERSION = 2
+PICKLE_VERSION = 3
 
 @subclass
 class CreateDbTask(Task):
@@ -28,7 +28,7 @@ class CreateDbTask(Task):
         Keyword Arguments:
         image_folder -- prepend image paths with this folder
         resize_mode -- used in utils.image.resize_image()
-        encode -- save encoded JPEGs
+        encoding -- 'none', 'png' or 'jpg'
         mean_file -- save mean file to this location
         backend -- type of database to use
         labels_file -- used to print category distribution
@@ -36,7 +36,7 @@ class CreateDbTask(Task):
         # Take keyword arguments out of kwargs
         self.image_folder = kwargs.pop('image_folder', None)
         self.resize_mode = kwargs.pop('resize_mode' , None)
-        self.encode = kwargs.pop('encode', True)
+        self.encoding = kwargs.pop('encoding', None)
         self.mean_file = kwargs.pop('mean_file', None)
         self.backend = kwargs.pop('backend', None)
         self.labels_file = kwargs.pop('labels_file', None)
@@ -72,7 +72,16 @@ class CreateDbTask(Task):
                 self.image_channel_order = 'BGR'
             else:
                 self.image_channel_order = 'RGB'
-
+        if self.pickver_task_createdb <= 2:
+            print 'Upgrading CreateDbTask to version 3'
+            if hasattr(self, 'encode'):
+                if self.encode:
+                    self.encoding = 'jpg'
+                else:
+                    self.encoding = 'none'
+                delattr(self, 'encode')
+            else:
+                self.encoding = 'none'
         self.pickver_task_createdb = PICKLE_VERSION
 
     @override
@@ -114,8 +123,8 @@ class CreateDbTask(Task):
             args.append('--mean_file=%s' % self.path(utils.constants.MEAN_FILE_IMAGE))
         if self.image_folder:
             args.append('--image_folder=%s' % self.image_folder)
-        if self.encode:
-            args.append('--encode')
+        if self.encoding and self.encoding != 'none':
+            args.append('--encoding=%s' % self.encoding)
 
         return args
 

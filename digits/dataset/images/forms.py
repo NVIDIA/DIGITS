@@ -11,8 +11,13 @@ class ImageDatasetForm(DatasetForm):
     (abstract class)
     """
 
-    encode_images = wtforms.BooleanField('Save encoded JPEGs',
-            default=True
+    encoding = wtforms.SelectField('Image encoding',
+            default = 'png',
+            choices = [
+                ('none', 'None'),
+                ('png', 'PNG (lossless)'),
+                ('jpg', 'JPEG (lossy, 90% quality)'),
+                ],
             )
 
     ### Image resize

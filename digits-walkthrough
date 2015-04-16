@@ -56,14 +56,6 @@ def create_dataset(driver, name, folder):
             break
     wait()
 
-    encode_images_tooltip = driver.find_element_by_name('encode_images_explanation')
-    encode_images_tooltip.click()
-    wait()
-
-    encode_images = driver.find_element_by_name('encode_images')
-    encode_images.click()
-    wait()
-
     resize_width_tooltip = driver.find_element_by_name('resize_dims_explanation')
     resize_width_tooltip.click()
     wait()

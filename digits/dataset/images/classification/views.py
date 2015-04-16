@@ -70,7 +70,7 @@ def from_folders(job, form):
 
     ### Add CreateDbTasks
 
-    encode = form.encode_images.data
+    encoding = form.encoding.data
 
     job.tasks.append(
             tasks.CreateDbTask(
@@ -80,7 +80,7 @@ def from_folders(job, form):
                 db_name     = utils.constants.TRAIN_DB,
                 image_dims  = job.image_dims,
                 resize_mode = job.resize_mode,
-                encode      = encode,
+                encoding    = encoding,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
                 labels_file = job.labels_file,
                 )
@@ -95,7 +95,7 @@ def from_folders(job, form):
                     db_name     = utils.constants.VAL_DB,
                     image_dims  = job.image_dims,
                     resize_mode = job.resize_mode,
-                    encode      = encode,
+                    encoding    = encoding,
                     labels_file = job.labels_file,
                     )
                 )
@@ -109,7 +109,7 @@ def from_folders(job, form):
                     db_name     = utils.constants.TEST_DB,
                     image_dims  = job.image_dims,
                     resize_mode = job.resize_mode,
-                    encode      = encode,
+                    encoding    = encoding,
                     labels_file = job.labels_file,
                     )
                 )
@@ -125,6 +125,7 @@ def from_files(job, form):
             )
     job.labels_file = utils.constants.LABELS_FILE
 
+    encoding = form.encoding.data
 
     ### train
 
@@ -144,6 +145,7 @@ def from_files(job, form):
                 image_dims  = job.image_dims,
                 image_folder= image_folder,
                 resize_mode = job.resize_mode,
+                encoding    = encoding,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
                 labels_file = job.labels_file,
                 )
@@ -168,6 +170,7 @@ def from_files(job, form):
                     image_dims  = job.image_dims,
                     image_folder= image_folder,
                     resize_mode = job.resize_mode,
+                    encoding    = encoding,
                     labels_file = job.labels_file,
                     )
                 )
@@ -191,6 +194,7 @@ def from_files(job, form):
                     image_dims  = job.image_dims,
                     image_folder= image_folder,
                     resize_mode = job.resize_mode,
+                    encoding    = encoding,
                     labels_file = job.labels_file,
                     )
                 )
