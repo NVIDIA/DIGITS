@@ -174,10 +174,15 @@ class Scheduler:
                     # check for dependencies
                     for j in self.jobs:
                         if isinstance(j, ModelJob) and j.dataset_id == job.id():
-                            logger.error('Cannot delete %s (%s) because %s (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
+                            logger.error('Cannot delete "%s" (%s) because "%s" (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
                             dependent_jobs.append(j.name())
                 if len(dependent_jobs)>0:
-                    error_message = 'Cannot delete %s because %d model%s depends on it: %s' % (job.name(), len(dependent_jobs), ('s' if len(dependent_jobs) > 1 else ''), ', '.join(dependent_jobs))
+                    error_message = 'Cannot delete "%s" because %d model%s depend%s on it: %s' % (
+                            job.name(),
+                            len(dependent_jobs),
+                            ('s' if len(dependent_jobs) != 1 else ''),
+                            ('s' if len(dependent_jobs) == 1 else ''),
+                            ', '.join(['"%s"' % j for j in dependent_jobs]))
                     raise errors.DeleteError(error_message)
                 self.jobs.pop(i)
                 job.abort()
