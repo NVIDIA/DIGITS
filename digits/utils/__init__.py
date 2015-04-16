@@ -120,5 +120,5 @@ def sizeof_fmt(size, suffix='B'):
 
 ### Import the other utility functions
 
-from . import constants, image, time_filters
+from . import constants, image, time_filters, errors
 
