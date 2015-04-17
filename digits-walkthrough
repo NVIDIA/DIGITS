@@ -143,7 +143,7 @@ def create_model(driver, name, dataset_name, test_image):
     image_path.send_keys(test_image)
     wait()
 
-    test_button = driver.find_element_by_name('test-one')
+    test_button = driver.find_element_by_name('classify-one-btn')
     test_button.click()
 
 
@@ -196,7 +196,7 @@ def main(argv):
         create_model(driver, model_name, dataset_name, test_image)
 
         print 'Done.'
-        
+
         #display an alert message
         get_page(driver, "javascript:alert('Completed Walkthrough!');void(0);")
 
