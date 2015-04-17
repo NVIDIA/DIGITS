@@ -9,7 +9,7 @@ function errorAlert(data) {
         title = data.status + ': ' + data.statusText;
         msg = data.responseText;
     }
-    bootbox.dialog({
+    bootbox.alert({
         title: title,
         message: msg,
     });
