@@ -29,7 +29,8 @@ layer {
   top: "scale"
   type: "Power"
   power_param {
-    scale: 0.00390625
+    # 1/(standard deviation)
+    scale: 0.0125
   }
 }
 layer {
