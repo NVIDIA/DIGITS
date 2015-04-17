@@ -92,9 +92,10 @@ class CaffeRootOption(ConfigOption):
 
     def validate(self, value):
         if value == 'SYS':
-            if not self.find_executable('caffe'):
+            caffe = self.find_executable('caffe')
+            if not caffe:
                 raise ValueError('caffe binary not found')
-            self.validate_version('caffe')
+            self.validate_version(caffe)
             try:
                 imp.find_module('caffe')
             except ImportError:
@@ -161,8 +162,8 @@ class CaffeRootOption(ConfigOption):
             path = path.strip('"')
             executable = os.path.join(path, program)
             if os.path.isfile(executable) and os.access(executable, os.X_OK):
-                return True
-        return False
+                return executable
+        return None
 
 class GpusOption(ConfigOption):
     @staticmethod
