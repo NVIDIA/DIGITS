@@ -67,6 +67,13 @@ class ModelForm(Form):
                 ],
             )
 
+    random_seed = wtforms.IntegerField('Random seed',
+            validators = [
+                validators.NumberRange(min=0),
+                validators.Optional(),
+                ],
+            )
+
     batch_size = wtforms.IntegerField('Batch size',
             validators = [
                 validators.NumberRange(min=1),

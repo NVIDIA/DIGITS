@@ -140,6 +140,17 @@ $("#dataset").change(function() {
                     </div>
                 </div>
                 {# TODO: neat progress bar #}
+                <div class="form-group{{' has-error' if form.random_seed.errors}}">
+                    {{form.random_seed.label}}
+                    <div class="input-group">
+                        {{form.random_seed(class='form-control', placeholder='[none]')}}
+                        <span name="random_seed_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="If you provide a random seed, then back-to-back runs with the same model and dataset should give identical results."
+                            ></span>
+                    </div>
+                </div>
                 <div class="form-group{{' has-error' if form.batch_size.errors}}">
                     {{form.batch_size.label}}
                     <div class="input-group">

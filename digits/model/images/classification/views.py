@@ -134,10 +134,11 @@ def image_classification_model_create():
                     lr_policy       = policy,
                     batch_size      = form.batch_size.data,
                     val_interval    = form.val_interval.data,
-                    pretrained_model    = pretrained_model,
+                    pretrained_model= pretrained_model,
                     crop_size       = form.crop_size.data,
                     use_mean        = form.use_mean.data,
                     network         = network,
+                    random_seed     = form.random_seed.data,
                     )
                 )
 

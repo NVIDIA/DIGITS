@@ -33,12 +33,14 @@ class TrainTask(Task):
         pretrained_model -- filename for a model to use for fine-tuning
         crop_size -- crop each image down to a square of this size
         use_mean -- subtract the dataset's mean file
+        random_seed -- optional random seed
         """
         self.batch_size = kwargs.pop('batch_size', None)
         self.val_interval = kwargs.pop('val_interval', None)
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.crop_size = kwargs.pop('crop_size', None)
         self.use_mean = kwargs.pop('use_mean', None)
+        self.random_seed = kwargs.pop('random_seed', None)
 
         super(TrainTask, self).__init__(**kwargs)
         self.pickver_task_train = PICKLE_VERSION

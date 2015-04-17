@@ -351,6 +351,9 @@ class CaffeTrainTask(TrainTask):
                 int(math.ceil(5000.0 / train_data_layer.data_param.batch_size))
                 ))
 
+        if self.random_seed is not None:
+            solver.random_seed = self.random_seed
+
         with open(self.path(self.solver_file), 'w') as outfile:
             text_format.PrintMessage(solver, outfile)
         self.solver = solver # save for later
