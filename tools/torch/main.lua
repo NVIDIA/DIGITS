@@ -1,9 +1,12 @@
+-- Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
+
 require 'torch'
 require 'xlua'
 require 'optim'
 require 'pl'
 require 'trepl'
 require 'cutorch'
+require 'lfs'
 
 package.path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
 
@@ -33,7 +36,6 @@ Usage details:
 -t,--train              (string)                 location in which train db exists. 
 -v,--validation         (default '')             location in which validation db exists. 
 -w,--weightDecay        (default 1e-4)           L2 penalty on the weights 
--z,--visualize          (default no)             visualization 
 
 --networkDirectory      (default '')             directory in which network exists
 --mean                  (default mean.jpg)       mean file. Mean file is used to preprocess images and it is also required to get the details of image channel, height and width.
@@ -41,6 +43,7 @@ Usage details:
 --labels                (default labels.txt)     file contains label definitions
 --snapshotPrefix        (default '')             prefix of the weights/snapshots
 --snapshotInterval      (default 1)              specifies the training epochs to be completed before taking a snapshot
+--useMeanPixel          (default 'no')           by default pixel-wise subtraction is done using the full mean matrix. If this option is 'yes' then mean pixel will be used instead of mean matrix
 
 -q,--policy             (default torch_sgd)      Learning Rate Policy. Valid policies : fixed, step, exp, inv, multistep, poly, sigmoid and torch_sgd. Note: when power value is -1, then "inv" policy with "gamma" is similar to "torch_sgd" with "learningRateDecay".              
 -h,--gamma              (default -1)             Required to calculate learning rate, when any of the following learning rate policies are used:  step, exp, inv, multistep & sigmoid                        
@@ -97,6 +100,15 @@ elseif opt.policy ~= 'torch_sgd' then
   return 
 end
 
+if opt.useMeanPixel ~= 'yes' and opt.useMeanPixel ~= 'no' then
+  logmessage.display(2,'invalid --useMeanPixel parameter value - '.. opt.useMeanPixel .. '. Only "yes" or "no" is allowed')
+  return
+end
+
+if opt.useMeanPixel == 'yes' and opt.subtractMean ~= 'no' then
+  opt.useMeanPixel = 'no'
+  logmessage.display(0,'useMeanPixel parameter is not considered as subtractMean value is provided as "no"')
+end
 
 torch.setnumthreads(opt.threads)
 cutorch.setDevice(opt.devid)
@@ -110,7 +122,7 @@ local model = require (opt.network)
 
 local loss = nn.ClassNLLCriterion()
 
--- check whther ccn2 is used in network and then check whether given batchsize is valid or not 
+-- check whether ccn2 is used in network and then check whether given batchsize is valid or not
 if ccn2 ~= nil then
   if opt.batchSize % 32 ~= 0 then
     logmessage.display(2,'invalid batch size : ' .. opt.batchSize .. '. Batch size should be multiple of 32 when ccn2 is used in the network')
@@ -122,7 +134,7 @@ end
 local data = require 'data'
 
 logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
-local mean_t = data.loadMean(opt.mean)
+local mean_t = data.loadMean(opt.mean, opt.useMeanPixel)
 
 logmessage.display(0,'Loading label definitions from '.. opt.labels ..' file')
 -- classes
@@ -174,8 +186,11 @@ elseif opt.type =='cuda' then
     --torch.setdefaulttensortype('torch.CudaTensor')
 end
 
--- creating a directory to save all the snapshots
-os.execute('mkdir -p ' .. paths.concat(opt.save))
+-- create a directory, if not exists, to save all the snapshots
+-- os.execute('mkdir -p ' .. paths.concat(opt.save))  -- commented this line, as os.execute command is not portable
+if lfs.mkdir(paths.concat(opt.save)) then
+    logmessage.display(0,'created a directory ' .. paths.concat(opt.save) .. ' to save all the snapshots')
+end
 
 -- open train lmdb file
 logmessage.display(0,'opening train lmdb file: ' .. opt.train)
@@ -192,7 +207,8 @@ local val, valSize, valKeys
 
 if opt.validation ~= '' then
   logmessage.display(0,'opening validation lmdb file: ' .. opt.validation)
-  val = DBSource:new(opt.validation, opt.mirror, opt.crop, opt.croplen, mean_t, opt.subtractMean, false)
+  -- for the images in validation dataset, no need to do random mirrorring.
+  val = DBSource:new(opt.validation, 'no', opt.crop, opt.croplen, mean_t, opt.subtractMean, false)
   valSize = val:totalRecords()
   logmessage.display(0,'found ' .. valSize .. ' images in train db' .. opt.validation)
   if opt.shuffle == 'yes' then
@@ -304,7 +320,7 @@ local next_snapshot_save = opt.snapshotInterval
 logmessage.display(0,'Training epochs to be completed before taking a snapshot : ' .. opt.snapshotInterval)
 local last_snapshot_save_epoch = 0
 
-snapshot_prefix = ''
+local snapshot_prefix = ''
 
 if opt.snapshotPrefix ~= '' then
     snapshot_prefix = opt.snapshotPrefix
@@ -396,6 +412,7 @@ local function Test()
 
     --xlua.progress(valSize, valSize)
 end
+
 
 -- Train function
 local function Train(epoch)

@@ -74,6 +74,11 @@ def models_customize():
         return 'args.network not found!', 400
 
     networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', framework)
+
+    # Torch's GoogLeNet and AlexNet models are placed in sub folder
+    if framework == "torch" and (network == "alexnet" or network == "googlenet"):
+        networks_dir = os.path.join(networks_dir, 'ImageNet-Training')
+
     for filename in os.listdir(networks_dir):
         path = os.path.join(networks_dir, filename)
         if os.path.isfile(path):
@@ -97,10 +102,17 @@ def models_customize():
         pass
 
     if job:
-        return json.dumps({
-            'network': text_format.MessageToString(job.train_task().network),
-            'snapshot': snapshot
-            })
+        if framework == "caffe":
+            return json.dumps({
+                'network': text_format.MessageToString(job.train_task().network),
+                'snapshot': snapshot
+                })
+        elif framework == "torch":
+            with open (os.path.join(job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), "r") as infile:
+                return json.dumps({
+                    'network':infile.read(),
+                    'snapshot': snapshot
+                    })
 
     return 'ERROR: Network not found!', 400
 

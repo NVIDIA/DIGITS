@@ -1,3 +1,5 @@
+-- Copyright (c) 2015 Elad Hoffer
+
 require 'cudnn'
 require 'cunn'
 require 'ccn2'

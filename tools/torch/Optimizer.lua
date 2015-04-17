@@ -1,3 +1,15 @@
+--[[ 
+Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
+
+Copyright (c) 2004 Elad Hoffer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--]]
+
 local Optimizer = torch.class('Optimizer')
 
 function Optimizer:__init(...)
@@ -44,18 +56,10 @@ function Optimizer:optimize(x,yt)
         return err, self.Gradients
     end
 
-    -- there are some issues like 
-    -- f_eval is executed for one complete mini batch instead of each image. So, learning rate will be changed only once for complete mini batch.
-    -- have to find out what exactly is stepsize and iter
-    --print(self.OptState.evalCounter)
     if self.lrPolicy.policy ~= 'torch_sgd' then
-        self.OptState.learningRate = self.lrPolicy:GetLearningRate(self.OptState.evalCounter or 0)   --- FYI, self.OptState.evalCounter = iter/stepsize
+        self.OptState.learningRate = self.lrPolicy:GetLearningRate(self.OptState.evalCounter or 0)   --- here self.OptState.evalCounter = iter/stepsize
     end
 
     return value, self.OptState.learningRate, self.OptFunction(f_eval, self.Weights, self.OptState)
 end
-
-
-
-
 

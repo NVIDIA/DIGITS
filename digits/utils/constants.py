@@ -27,3 +27,4 @@ TORCH_MODEL_FILE = 'model.lua'
 TORCH_TRAIN_DB = 'train_db'
 TORCH_VAL_DB = 'val_db'
 TORCH_SNAPSHOT_PREFIX = 'snapshot'
+TORCH_USE_MEAN_PIXEL = True

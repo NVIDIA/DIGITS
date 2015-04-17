@@ -9,6 +9,8 @@ import subprocess
 
 import numpy as np
 
+import tempfile
+import PIL.Image
 import digits
 from train import TrainTask
 from digits.config import config_option
@@ -125,6 +127,7 @@ class TorchTrainTask(TrainTask):
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
                 '--snapshotInterval=%f' % self.snapshot_interval,
                 #'--shuffle=yes',
+                '--useMeanPixel=yes',
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file),
                 '--batchSize=%d' % self.batch_size,
@@ -170,7 +173,7 @@ class TorchTrainTask(TrainTask):
 
         #if self.pretrained_model:
         #    args.append('--weights=%s' % self.path(self.pretrained_model))
-        print args
+        #print args
         return args
 
     @override
@@ -351,7 +354,161 @@ class TorchTrainTask(TrainTask):
 
     @override
     def can_infer_one(self):
+        if isinstance(self.dataset, ImageClassificationDatasetJob):
+            return True
         return False
+
+    @override
+    def infer_one(self, data, snapshot_epoch=None, layers=None):
+        if isinstance(self.dataset, ImageClassificationDatasetJob):
+            return self.classify_one(data,
+                    snapshot_epoch=snapshot_epoch,
+                    layers=layers,
+                    )
+        raise NotImplementedError()
+
+    def classify_one(self, image, snapshot_epoch=None, layers=None):
+        """
+        Classify an image
+        Returns (predictions, visualizations)
+            predictions -- an array of [ (label, confidence), ...] for each label, sorted by confidence
+            visualizations -- an array of (layer_name, activations, weights) for the specified layers
+        Returns (None, None) if something goes wrong
+
+        Arguments:
+        image -- a np.array
+
+        Keyword arguments:
+        snapshot_epoch -- which snapshot to use
+        layers -- which layer activation[s] and weight[s] to visualize
+        """
+        _, temp_image_path = tempfile.mkstemp(suffix='.jpeg')
+        image = PIL.Image.fromarray(image)
+        try:
+            image.save(temp_image_path, format='jpeg')
+        except KeyError:
+            self.logger.error('Unable to save file to "%s"' % temp_image_path)
+            return (None,None)   # TODO fix this error message
+
+        if config_option('torch_root') == 'SYS':
+            torch_bin = 'th'
+        else:
+            torch_bin = os.path.join(config_option('torch_root'), 'th')
+
+        args = [torch_bin,
+                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
+		'--image=%s' % temp_image_path,
+                '--network=%s' % self.model_file.split(".")[0],
+                '--epoch=%d' % int(snapshot_epoch),
+                '--networkDirectory=%s' % self.job_dir,
+                '--load=%s' % self.job_dir,
+                '--snapshotPrefix=%s' % self.snapshot_prefix,
+                '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
+                '--labels=%s' % self.dataset.path(self.dataset.labels_file)
+                ]
+
+        if constants.TORCH_USE_MEAN_PIXEL:
+            args.append('--useMeanPixel=yes')
+
+        if self.crop_size:
+            args.append('--crop=yes')
+            args.append('--croplen=%d' % self.crop_size)
+
+        if self.use_mean:
+            args.append('--subtractMean=yes')
+        else:
+            args.append('--subtractMean=no')
+
+        #print args
+
+        # Convert them all to strings
+        args = [str(x) for x in args]
+
+        self.logger.info('%s test task started.' % self.name())
+        self.status = Status.RUN
+
+        unrecognized_output = []
+	predictions = []
+        p = subprocess.Popen(args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=self.job_dir,
+                close_fds=True,
+                )
+
+        try:
+            while p.poll() is None:
+                for line in utils.nonblocking_readlines(p.stdout):
+                    if self.aborted.is_set():
+                        p.terminate()
+                        self.status = Status.ABORT
+                        break
+
+                    if line is not None:
+                        # Remove whitespace
+                        line = line.strip()
+                    if line:
+                        if not self.process_test_output(line, predictions):
+                            self.logger.warning('%s unrecognized input: %s' % (self.name(), line.strip()))
+                            unrecognized_output.append(line)
+                    else:
+                        time.sleep(0.05)
+        except Exception as e:
+            p.terminate()
+            pass
+
+        if p.returncode != 0:
+            self.logger.error('%s task failed with error code %d' % (self.name(), p.returncode))
+            if self.exception is None:
+                self.exception = 'error code %d' % p.returncode
+                if unrecognized_output:
+                    self.traceback = '\n'.join(unrecognized_output)
+            #self.after_test_run(temp_image_path)
+            self.status = Status.ERROR
+            return (None,None)
+        else:
+            self.logger.info('%s test task completed.' % self.name())
+            #self.after_test_run(temp_image_path)
+            self.status = Status.DONE
+
+        #if gpu_id:
+        #    args.append('--devid=%d' % (gpu_id+1))
+	return (predictions,None)
+
+    def after_test_run(self, temp_image_path):
+        try:
+            os.remove(temp_image_path)
+        except OSError:
+            pass
+
+    def process_test_output(self, line, predictions):
+        #from digits.webapp import socketio
+        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+        line=regex.sub('', line).strip()
+
+        # parse caffe header
+        timestamp, level, message = self.preprocess_output_torch(line)
+
+        if not message:
+            return True
+
+        float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
+
+        # loss and learning rate updates
+        match = re.match(r'Predicted class \d+: (\d+) \(.*?\) %s'  % (float_exp), message)
+        if match:
+            label = int(match.group(1))
+            confidence = match.group(2)
+            assert confidence.lower() != 'nan', 'Network reported "nan" for confidence value. Please check image and network'
+            confidence = float(confidence)
+            predictions.append((label-1, confidence))   # In Torch, array index starts from 1 instead of 0. So, subtracted 1 from label value to refer correct label in labels file.
+            return True
+
+        if level in ['error', 'critical']:
+            self.logger.error('%s: %s' % (self.name(), message))
+            self.exception = message
+            return True
+        return True
 
     @override
     def can_infer_many(self):

@@ -1,3 +1,5 @@
+-- Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
+
 -- This file contains the logic of printing log messgages
 local logmessage = torch.class('logmessage')
 

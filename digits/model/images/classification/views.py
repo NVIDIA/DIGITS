@@ -63,8 +63,13 @@ def image_classification_model_create():
         network = caffe_pb2.NetParameter()
         pretrained_model = None
         if form.method.data == 'standard':
-            found = False
+            found = False 
             networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', form.framework.data)
+
+            # Torch's GoogLeNet and AlexNet models are placed in sub folder
+            if form.framework.data == "torch" and (form.standard_networks.data == "alexnet" or form.standard_networks.data == "googlenet"):
+                networks_dir = os.path.join(networks_dir, 'ImageNet-Training')
+
             for filename in os.listdir(networks_dir):
                 path = os.path.join(networks_dir, filename)
                 if os.path.isfile(path):
@@ -93,7 +98,10 @@ def image_classification_model_create():
             old_job = scheduler.get_job(form.previous_networks.data)
             if not old_job:
                 raise Exception('Job not found: %s' % form.previous_networks.data)
-            network.CopyFrom(old_job.train_task().network)
+            if form.framework.data == "caffe":
+                network.CopyFrom(old_job.train_task().network)
+            elif form.framework.data == "torch":
+                shutil.copy2(os.path.join(old_job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE))
             for i, choice in enumerate(form.previous_networks.choices):
                 if choice[0] == form.previous_networks.data:
                     epoch = int(request.form['%s-snapshot' % form.previous_networks.data])
@@ -231,10 +239,16 @@ def image_classification_model_classify_one():
     if job.train_task().crop_size:
         height = job.train_task().crop_size
         width = job.train_task().crop_size
-    image = utils.image.resize_image(image, height, width,
-            channels = db_task.image_dims[2],
-            resize_mode = db_task.resize_mode,
-            )
+    if job.train_task().framework_name() == 'torch' and (not utils.constants.TORCH_USE_MEAN_PIXEL) and job.train_task().use_mean:  # for torch, resizing the test image to match with db image sizes instead of matching with cropped images used to train the model. Further cropping will be take care in torch lua script after preprocessing the image.
+        image = utils.image.resize_image(image, job.dataset.image_dims[0], job.dataset.image_dims[1],
+                channels = db_task.image_dims[2],
+                resize_mode = db_task.resize_mode,
+                )
+    else:                                                       # if job.train_task().framework_name() == 'caffe' or utils.constants.TRAIN_DB or (not job.train_task().use_mean)
+        image = utils.image.resize_image(image, height, width,
+                channels = db_task.image_dims[2],
+                resize_mode = db_task.resize_mode,
+                )
 
     epoch = None
     if 'snapshot_epoch' in request.form:
@@ -274,12 +288,10 @@ def image_classification_model_classify_many():
     paths = []
     images = []
     dataset = job.train_task().dataset
-
     for line in image_list.readlines():
         line = line.strip()
         if not line:
             continue
-
         path = None
         # might contain a numerical label at the end
         match = re.match(r'(.*\S)\s+\d+$', line)
@@ -287,7 +299,6 @@ def image_classification_model_classify_many():
             path = match.group(1)
         else:
             path = line
-
         try:
             image = utils.image.load_image(path)
             image = utils.image.resize_image(image,
@@ -303,7 +314,22 @@ def image_classification_model_classify_many():
     if not len(images):
         return 'Unable to load any images from the file', 400
 
-    labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
+    labels, scores = None, None
+
+    if job.train_task().framework_name() == 'torch':
+        _, temp_imgfile_path = tempfile.mkstemp(suffix='.txt')
+        temp_imgfile = open(temp_imgfile_path, "w")
+        for eachurl in paths:
+            temp_imgfile.write("%s\n" % eachurl)
+        temp_imgfile.close()
+        labels, scores = job.train_task().infer_many(temp_imgfile_path, snapshot_epoch=epoch)
+        try:
+            os.remove(temp_imgfile_path)
+        except OSError:
+            pass
+    elif job.train_task().framework_name() == 'caffe':
+        labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
+
     if scores is None:
         return 'An error occured while processing the images', 500
 
@@ -317,7 +343,6 @@ def image_classification_model_classify_many():
             # `i` is a category in labels and also an index into scores
             result.append((labels[i], round(100.0*scores[image_index, i],2)))
         classifications.append(result)
-
     return render_template('models/images/classification/classify_many.html',
             paths=paths,
             classifications=classifications,

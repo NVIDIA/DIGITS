@@ -1,6 +1,6 @@
+-- Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
 require 'torch'   -- torch
 require 'image'   -- for color transforms
---require 'gfx.js'  -- to visualize the dataset
 require 'nn'      -- provides a normalization operator
 require "pb"
 
@@ -65,7 +65,6 @@ local PreProcess = function(y, mean, subtractMean, channels, mirror, crop, train
            y[{ i,{},{} }]:add(-mean[i])
         end
     end
-
     if mirror == 'yes' and torch.FloatTensor.torch.uniform() > 0.49 then
         y = image.hflip(y)
     end 
@@ -84,7 +83,6 @@ local PreProcess = function(y, mean, subtractMean, channels, mirror, crop, train
         y = image.crop(y, cropY-1, cropX-1, cropY+croplen-1, cropX+croplen-1)
       end
     end
-
     return y
 end
 
@@ -108,8 +106,22 @@ local loadLabels = function(labels_file)
 end
 
 --loading mean tensor
-local loadMean = function(mean_file)
-  return image.load(mean_file):type('torch.FloatTensor'):contiguous()
+local loadMean = function(mean_file, use_mean_pixel)
+  local mean_t = {}
+  local mean_im = image.load(mean_file):type('torch.FloatTensor'):contiguous()
+  mean_t["channels"] = mean_im:size(1)
+  mean_t["height"]   = mean_im:size(2)
+  mean_t["width"]    = mean_im:size(3)
+  if use_mean_pixel == 'yes' then
+    mean_of_mean = torch.FloatTensor(mean_im:size(1))
+    for i=1,mean_im:size(1) do
+      mean_of_mean[i] = mean_im[i]:mean()
+    end
+    mean_t["mean"] = mean_of_mean
+  else
+    mean_t["mean"] = mean_im
+  end
+  return mean_t
 end
   
 
@@ -128,11 +140,11 @@ function DBSource:new (db_name, mirror, crop, croplen, mean_t, subtractMean, isT
   --setmetatable(o, self)
   local self = copy(DBSource)
   --self.__index = self
-  self.mean = mean_t
+  self.mean = mean_t["mean"]
   -- image channel, height and width details are extracted from mean.jpeg file. If mean.jpeg file is not present then probably the below three lines of code needs to be changed to provide hard-coded values.
-  self.ImageChannels = mean_t:size(1)
-  self.ImageSizeX = mean_t:size(2)
-  self.ImageSizeY = mean_t:size(3)
+  self.ImageChannels = mean_t["channels"]
+  self.ImageSizeX = mean_t["height"]
+  self.ImageSizeY = mean_t["width"]
 
   logmessage.display(0,'Loaded train image details from the mean file: Image channels are  ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeX .. ' and Image height is ' .. self.ImageSizeY)
 
@@ -191,7 +203,7 @@ function DBSource:getImgUsingKey(key)
   ffi.copy(temp_ptr, msg.data)
   local y=nil
   if msg.encoded==true then
-    y = image.decompressJPG(x):float()
+    y = image.decompressJPG(x,msg.channels):float()
   else
     y=x:reshape(msg.channels,msg.height,msg.width):float()
   end
@@ -237,7 +249,7 @@ function DBSource:nextBatch (batchsize)
   local total = self.ImageChannels*self.ImageSizeX*self.ImageSizeY
   local x = torch.ByteTensor(total):contiguous()
   local temp_ptr = torch.data(x) -- raw C pointer using torchffi
-  local mean_ptr = torch.data(self.mean)
+  --local mean_ptr = torch.data(self.mean)
   local image_ind = 0  
 
   for k,v in cursor_pairs(self.c,batchsize,nil,lightningmdb.MDB_NEXT) do
@@ -251,7 +263,7 @@ function DBSource:nextBatch (batchsize)
 
     local y=nil
     if msg.encoded==true then
-      y = image.decompressJPG(x):float()
+      y = image.decompressJPG(x,msg.channels):float()
     else
       y=x:reshape(msg.channels,msg.height,msg.width):float()
     end
@@ -300,6 +312,7 @@ end
 
 return{
     loadLabels = loadLabels,
-    loadMean= loadMean
+    loadMean= loadMean,
+    PreProcess = PreProcess
 }
 
