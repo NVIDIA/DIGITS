@@ -834,9 +834,9 @@ class CaffeTrainTask(TrainTask):
         labels = self.get_labels()
         net = self.get_net(snapshot_epoch)
 
-        for image in images:
-            if image.ndim == 2:
-                image = image[:,:,np.newaxis]
+        for i in xrange(len(images)):
+            if images[i].ndim == 2:
+                images[i] = images[i][:,:,np.newaxis]
 
         images = np.array(images)
 
