@@ -171,8 +171,6 @@ def image_classification_model_classify_one():
         with tempfile.NamedTemporaryFile() as outfile:
             request.files['image_file'].save(outfile.name)
             image = utils.image.load_image(outfile.name)
-    if image is None:
-        return 'There was a problem with the image.', 400
 
     # resize image
     db_task = job.train_task().dataset.train_db_task()
@@ -238,8 +236,8 @@ def image_classification_model_classify_many():
         else:
             path = line
 
-        image = utils.image.load_image(path)
-        if image is not None:
+        try:
+            image = utils.image.load_image(path)
             image = utils.image.resize_image(image,
                     dataset.image_dims[0], dataset.image_dims[1],
                     channels    = dataset.image_dims[2],
@@ -247,6 +245,8 @@ def image_classification_model_classify_many():
                     )
             paths.append(path)
             images.append(image)
+        except utils.errors.LoadImageError as e:
+            print e
 
     if not len(images):
         return 'Unable to load any images from the file', 400
@@ -315,8 +315,8 @@ def image_classification_model_top_n():
     images = []
     dataset = job.train_task().dataset
     for path in paths:
-        image = utils.image.load_image(path)
-        if image is not None:
+        try:
+            image = utils.image.load_image(path)
             image = utils.image.resize_image(image,
                     dataset.image_dims[0], dataset.image_dims[1],
                     channels    = dataset.image_dims[2],
@@ -325,6 +325,8 @@ def image_classification_model_top_n():
             images.append(image)
             if num_images and len(images) >= num_images:
                 break
+        except utils.errors.LoadImageError as e:
+            print e
 
     if not len(images):
         return 'Unable to load any images from the file', 400

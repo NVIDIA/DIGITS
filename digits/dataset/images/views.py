@@ -19,8 +19,6 @@ def image_dataset_resize_example():
         import digits
         example_image_path = os.path.join(os.path.dirname(digits.__file__), 'static', 'images', 'mona_lisa.jpg')
         image = utils.image.load_image(example_image_path)
-        if image is None:
-            raise Exception('Could not load example image "%s"' % example_image_path)
 
         width = int(request.form['width'])
         height = int(request.form['height'])

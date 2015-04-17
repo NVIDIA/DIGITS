@@ -9,7 +9,7 @@ import PIL.Image
 import numpy as np
 import scipy.misc
 
-from . import is_url, HTTP_TIMEOUT
+from . import is_url, HTTP_TIMEOUT, errors
 
 # Library defaults:
 #   PIL.Image:
@@ -29,26 +29,32 @@ from . import is_url, HTTP_TIMEOUT
 def load_image(path):
     """
     Reads a file from `path` and returns a PIL.Image
+    Raises LoadImageError
 
     Arguments:
-    path -- path to the image, can be a filesystem path or a url
+    path -- path to the image, can be a filesystem path or a URL
     """
-    image = None
-    try:
-        if is_url(path):
+    if is_url(path):
+        try:
             r = requests.get(path,
                     allow_redirects=False,
                     timeout=HTTP_TIMEOUT)
-            if r.status_code == requests.codes.ok:
-                stream = cStringIO.StringIO(r.content)
-                image = PIL.Image.open(stream)
-        elif os.path.exists(path):
+            r.raise_for_status()
+            stream = cStringIO.StringIO(r.content)
+            return PIL.Image.open(stream)
+        except requests.exceptions.RequestException as e:
+            raise errors.LoadImageError, e.message
+        except IOError as e:
+            raise errors.LoadImageError, e.message
+    elif os.path.exists(path):
+        try:
             image = PIL.Image.open(path)
             image.load()
-    except Exception as e:
-        image = None
-
-    return image
+            return image
+        except IOError as e:
+            raise errors.LoadImageError, 'IOError: %s' % e.message
+    else:
+        raise errors.LoadImageError, '"%s" not found' % path
 
 def resize_image(image, height, width,
         channels=None,
@@ -207,13 +213,17 @@ def embed_image_html(image):
     (Based on Caffe's web_demo)
 
     Arguments:
-    image -- a PIL.Image or np.array
+    image -- a PIL.Image or np.ndarray
     """
     if image is None:
         return None
-    if not isinstance(image, PIL.Image.Image):
-        # assume it's a np.array
+    elif isinstance(image, PIL.Image.Image):
+        pass
+    elif isinstance(image, np.ndarray):
         image = PIL.Image.fromarray(image)
+    else:
+        raise ValueError('image must be a PIL.Image or a np.ndarray')
+
     string_buf = cStringIO.StringIO()
     image.save(string_buf, format='png')
     data = string_buf.getvalue().encode('base64').replace('\n', '')

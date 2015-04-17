@@ -105,9 +105,6 @@ if __name__ == '__main__':
 
     # load image
     image = utils.image.load_image(args['image'])
-    if image is None:
-        logger.error('Could not load image')
-        sys.exit(1)
 
     # resize image
     image = utils.image.resize_image(image, args['height'], args['width'],

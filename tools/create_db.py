@@ -314,6 +314,7 @@ class DbCreator:
             except Exception as e:
                 # This could be a ton of warnings
                 logger.warning('DbCreator.read_thread caught %s: %s' % (type(e).__name__, e) )
+                # TODO: count number of errors and abort if too many encountered
 
         self.read_thread_results.put( (images_added, image_sum) )
         return True
@@ -348,10 +349,6 @@ class DbCreator:
             path = os.path.join(self.image_folder, path)
 
         image = utils.image.load_image(path)
-        if image is None:
-            return None
-
-        # Resize
         image = utils.image.resize_image(image,
                 self.height, self.width,
                 channels    = self.channels,

@@ -8,7 +8,7 @@ import mock
 import PIL.Image
 import numpy as np
 
-from . import image as _
+from . import image as _, errors
 
 class TestLoadImage():
 
@@ -22,7 +22,11 @@ class TestLoadImage():
             yield self.check_none, path
 
     def check_none(self, path):
-        assert _.load_image(path) is None
+        assert_raises(
+                errors.LoadImageError,
+                _.load_image,
+                path,
+                )
 
     @mock.patch('digits.utils.image.PIL.Image')
     @mock.patch('digits.utils.image.os.path')
@@ -74,7 +78,11 @@ class TestLoadImage():
         f.write(corrupted)
         f.close()
 
-        assert _.load_image(f.name) is None
+        assert_raises(
+                errors.LoadImageError,
+                _.load_image,
+                f.name,
+                )
 
 class TestResizeImage():
 
