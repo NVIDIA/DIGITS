@@ -7,9 +7,6 @@ layer {
   include {
     phase: TRAIN
   }
-  transform_param {
-    scale: 0.00390625
-  }
   data_param {
     batch_size: 64
   }
@@ -22,17 +19,23 @@ layer {
   include {
     phase: TEST
   }
-  transform_param {
-    scale: 0.00390625
-  }
   data_param {
     batch_size: 100
   }
 }
 layer {
+  name: "scale"
+  bottom: "data"
+  top: "scale"
+  type: "Power"
+  power_param {
+    scale: 0.00390625
+  }
+}
+layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "scale"
   top: "conv1"
   param {
     lr_mult: 1
