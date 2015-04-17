@@ -71,6 +71,7 @@ def from_folders(job, form):
     ### Add CreateDbTasks
 
     encoding = form.encoding.data
+    shuffle = form.shuffle.data
 
     job.tasks.append(
             tasks.CreateDbTask(
@@ -83,6 +84,7 @@ def from_folders(job, form):
                 encoding    = encoding,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
                 labels_file = job.labels_file,
+                shuffle     = shuffle,
                 )
             )
 
@@ -97,6 +99,7 @@ def from_folders(job, form):
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
                     labels_file = job.labels_file,
+                    shuffle     = shuffle,
                     )
                 )
 
@@ -111,6 +114,7 @@ def from_folders(job, form):
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
                     labels_file = job.labels_file,
+                    shuffle     = shuffle,
                     )
                 )
 
@@ -126,6 +130,7 @@ def from_files(job, form):
     job.labels_file = utils.constants.LABELS_FILE
 
     encoding = form.encoding.data
+    shuffle = form.shuffle.data
 
     ### train
 
@@ -148,6 +153,7 @@ def from_files(job, form):
                 encoding    = encoding,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
                 labels_file = job.labels_file,
+                shuffle     = shuffle,
                 )
             )
 
@@ -172,6 +178,7 @@ def from_files(job, form):
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
                     labels_file = job.labels_file,
+                    shuffle     = shuffle,
                     )
                 )
 
@@ -196,6 +203,7 @@ def from_files(job, form):
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
                     labels_file = job.labels_file,
+                    shuffle     = shuffle,
                     )
                 )
 

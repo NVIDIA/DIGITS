@@ -7,7 +7,6 @@ import re
 import argparse
 import time
 import logging
-from random import shuffle
 from urlparse import urlparse
 import urllib
 
@@ -390,8 +389,6 @@ def parse_folder(folder, labels_file,
                 if max_per_category is not None and len(lines) >= max_per_category:
                     logger.warning('Reached maximum limit for this category')
                     break
-
-        shuffle(lines)
 
         ### Split up the lines
 

@@ -27,6 +27,7 @@ class CreateDbTask(Task):
 
         Keyword Arguments:
         image_folder -- prepend image paths with this folder
+        shuffle -- shuffle images before saving
         resize_mode -- used in utils.image.resize_image()
         encoding -- 'none', 'png' or 'jpg'
         mean_file -- save mean file to this location
@@ -35,6 +36,7 @@ class CreateDbTask(Task):
         """
         # Take keyword arguments out of kwargs
         self.image_folder = kwargs.pop('image_folder', None)
+        self.shuffle = kwargs.pop('shuffle', True)
         self.resize_mode = kwargs.pop('resize_mode' , None)
         self.encoding = kwargs.pop('encoding', None)
         self.mean_file = kwargs.pop('mean_file', None)
@@ -123,6 +125,8 @@ class CreateDbTask(Task):
             args.append('--mean_file=%s' % self.path(utils.constants.MEAN_FILE_IMAGE))
         if self.image_folder:
             args.append('--image_folder=%s' % self.image_folder)
+        if self.shuffle:
+            args.append('--shuffle')
         if self.encoding and self.encoding != 'none':
             args.append('--encoding=%s' % self.encoding)
 

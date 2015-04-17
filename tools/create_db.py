@@ -68,9 +68,10 @@ class DbCreator:
     def create(self, input_file, width, height,
             channels    = 3,
             resize_mode = None,
-            encoding    = 'none',
             image_folder= None,
+            shuffle     = True,
             mean_files  = None,
+            encoding    = 'none',
             ):
         """
         Read an input file and create a database from the specified image/label pairs
@@ -84,9 +85,10 @@ class DbCreator:
         Keyword arguments:
         channels -- channels of resized images
         resize_mode -- can be crop, squash, fill or half_crop
-        encoding -- 'none', 'png' or 'jpg'
         image_folder -- folder in which the images can be found
+        shuffle -- shuffle images before saving
         mean_files -- an array of mean files to save (can be empty)
+        encoding -- 'none', 'png' or 'jpg'
         """
         ### Validate input
 
@@ -133,9 +135,15 @@ class DbCreator:
 
         start = time.time()
 
-        # TODO: Optimize after reading input file (make a good decision)
-        read_threads = 10
-        write_threads = 10
+        # TODO: adjust these values in real-time based on system load
+        if not shuffle:
+            #XXX This is the only way to preserve order for now
+            # This obviously hurts performance considerably
+            read_threads = 1
+            write_threads = 1
+        else:
+            read_threads = 10
+            write_threads = 10
         batch_size = 100
 
         total_images_added = 0
@@ -158,8 +166,8 @@ class DbCreator:
         lines_per_category = {}
         with open(input_file, 'r') as f:
             lines = f.readlines()
-            # Always shuffle. It's not that expensive and makes for annoying issues if you don't.
-            random.shuffle(lines)
+            if shuffle:
+                random.shuffle(lines)
             for line in lines:
                 # Expect format - [/]path/to/file.jpg 123
                 match = re_match(r'(.+)\s+(\d+)\s*$', line)
@@ -503,6 +511,10 @@ if __name__ == '__main__':
             help="location to output the image mean (doesn't save mean if not specified)")
     parser.add_argument('-f', '--image_folder',
             help='folder containing the images (if the paths in input_file are not absolute)')
+    parser.add_argument('-s', '--shuffle',
+            action='store_true',
+            help='Shuffle images before saving'
+            )
     parser.add_argument('-b', '--backend',
             default='lmdb',
             help='db backend [default=lmdb]'
@@ -521,6 +533,7 @@ if __name__ == '__main__':
             channels        = args['channels'],
             resize_mode     = args['resize_mode'],
             image_folder    = args['image_folder'],
+            shuffle         = args['shuffle'],
             mean_files      = args['mean_file'],
             encoding        = args['encoding'],
             ):

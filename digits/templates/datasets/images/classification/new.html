@@ -337,6 +337,15 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
 
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
+            <div class="form-group{{ ' has-error' if form.shuffle.errors else '' }}">
+                {{ form.shuffle }}
+                {{ form.shuffle.label }}
+                <span name="shuffle_explanation"
+                    class="explanation-tooltip glyphicon glyphicon-question-sign"
+                    data-container="body"
+                    title="Shuffle the list of images before creating the database."
+                    ></span>
+            </div>
             <div class="form-group{{ ' has-error' if form.dataset_name.errors else '' }}">
                 {{ form.dataset_name.label }}
                 {{ form.dataset_name(class='form-control') }}
