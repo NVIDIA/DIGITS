@@ -84,12 +84,20 @@ def resize_image(image, height, width,
         # Convert image mode (channels)
         if channels is None:
             image_mode = image.mode
-            if image_mode not in ['L', 'RGB']:
-                raise ValueError('unknown image mode "%s"' % image_mode)
             if image_mode == 'L':
                 channels = 1
+            elif image_mode == '1':
+                channels = 1
+                # Convert from '1' to 'L'
+                image_mode = 'L'
             elif image_mode == 'RGB':
                 channels = 3
+            elif image_mode == 'P':
+                channels = 3
+                # convert from 'P' to 'RGB'
+                image_mode = 'RGB'
+            else:
+                raise ValueError('unknown image mode "%s"' % image_mode)
         elif channels == 1:
             # 8-bit pixels, black and white
             image_mode = 'L'
