@@ -2,7 +2,8 @@
 
 DIGITS is is a webapp for training deep learning models.
 
-## Get help
+# Get help
+
 #### Installation issues
 * First, check out the instructions below
 * Then, ask questions on our [user group](https://groups.google.com/d/forum/digits-users)
@@ -15,11 +16,11 @@ DIGITS is is a webapp for training deep learning models.
 * Please let us know by [filing a new issue](https://github.com/NVIDIA/DIGITS/issues/new)
 * Bonus points if you want to contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)!
 
-## Installation
+# Installation
 
-DIGITS is supported on Ubuntu 14.04.  DIGITS has successfully run on other Linux variants as well as OSX but at this time, only Ubuntu 14.04 is supported.
+DIGITS is only officially supported on Ubuntu 14.04. However, DIGITS has been successfully used on other Linux variants as well as on OSX.
 
-### Prerequisites
+## Prerequisites
 DIGITS has several dependencies.
 
 * CUDA
@@ -28,70 +29,63 @@ DIGITS has several dependencies.
 * Python packages
 * Graphviz
 
-1. CUDA (Either 6.5 or 7.0)
+### CUDA (>= 6.5)
 
-  * Download from the [CUDA website](https://developer.nvidia.com/cuda-downloads) and follow the installation instructions.
+Download from the [CUDA website](https://developer.nvidia.com/cuda-downloads) and follow the installation instructions.
 
-2. cuDNN (v2 Release Candidate 3 required)
+### cuDNN (>= v2)
 
-  * Download from the [cuDNN website](https://developer.nvidia.com/cuDNN) and follow the installation instructions.
+Download from the [cuDNN website](https://developer.nvidia.com/cuDNN) and follow the installation instructions.
 
-3. NVIDIA branch of Caffe (NVIDIA version 0.11.0)
+### NVIDIA's fork of Caffe (NVIDIA version 0.11.0)
 
-Full installation directions are at [Caffe](http://caffe.berkeleyvision.org/installation.html). Condensed version is as follows:
+Detailed installation instructions are available on [caffe's installation page](http://caffe.berkeleyvision.org/installation.html). Condensed version is as follows:
 
 Install caffe:
-<pre>
-% sudo apt-get install git
-% cd $HOME
-% git clone --branch v0.11.0 https://github.com/NVIDIA/caffe.git
-% cd caffe
-% sudo apt-get install libatlas-base-dev libatlas-dev libboost-all-dev libopencv-dev
-% sudo apt-get install libprotobuf-dev libgoogle-glog-dev libgflags-dev protobuf-compiler
-% sudo apt-get install libhdf5-dev libleveldb-dev liblmdb-dev libsnappy-dev
-% sudo apt-get install python-pip gfortran
-% cd python
-% for req in $(cat requirements.txt); do sudo pip install $req; done
-</pre>
+
+    % sudo apt-get install git
+    % cd $HOME
+    % git clone --branch v0.11.0 https://github.com/NVIDIA/caffe.git
+    % cd caffe
+    % sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libboost-all-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler libatlas-base-dev
+    % sudo apt-get install python-dev python-pip gfortran
+    % cd python
+    % for req in $(cat requirements.txt); do sudo pip install $req; done
 
 Build caffe:
-<pre>
-% cd $HOME/caffe
-% cp Makefile.config.example Makefile.config
-% make all
-% make py
-% make test
-% make runtest
-</pre>
+
+    % cd $HOME/caffe
+    % cp Makefile.config.example Makefile.config
+    % make all --jobs=4
+    % make py
 
 Set environment variables:
-<pre>
-% export CAFFE_HOME=${HOME}/caffe
-</pre>
 
-### Install DIGITS
+    % export CAFFE_HOME=${HOME}/caffe
 
-<pre>
-% cd $HOME
-% git clone https://github.com/NVIDIA/DIGITS.git digits
-% cd digits
-% sudo apt-get install graphviz gunicorn
-% for req in $(cat requirements.txt); do sudo pip install $req; done
-</pre>
+## Install DIGITS
 
-## Starting the server
+    % cd $HOME
+    % git clone https://github.com/NVIDIA/DIGITS.git digits
+    % cd digits
+    % sudo apt-get install graphviz gunicorn
+    % for req in $(cat requirements.txt); do sudo pip install $req; done
+
+# Starting the server
 
 You can run DIGITS in two ways:
 
-1.  digits-devserver
-        Starts a development server that listens on port 5000 (but you can
-        change the port if you like - try running it with the --help flag).
+### digits-devserver
 
-2.  digits-server
-        Starts a gunicorn app that listens on port 8080. If you have installed
-        the nginx.site to your nginx sites-enabled/ directory, then you can
-        view your app at http://localhost/.
+Starts a development server that listens on port 5000 (but you can
+change the port if you like - try running it with the --help flag).
 
+### digits-server
 
-Then, check out the [Getting Started](docs/GettingStarted.md) page.
+Starts a gunicorn app that listens on port 8080. If you have installed
+the nginx.site to your nginx sites-enabled/ directory, then you can
+view your app at http://localhost/.
 
+# Usage
+
+Check out the [Getting Started](docs/GettingStarted.md) page.
