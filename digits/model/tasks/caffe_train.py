@@ -220,21 +220,21 @@ class CaffeTrainTask(TrainTask):
                     val_data_layer.transform_param.crop_size = self.crop_size
         train_data_layer.data_param.source = self.dataset.path(self.dataset.train_db_task().db_name)
         train_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
-        if val_data_layer is not None:
+        if val_data_layer is not None and has_val_set:
             val_data_layer.data_param.source = self.dataset.path(self.dataset.val_db_task().db_name)
             val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
         if self.use_mean:
             train_data_layer.transform_param.mean_file = self.dataset.path(self.dataset.train_db_task().mean_file)
-            if val_data_layer is not None:
+            if val_data_layer is not None and has_val_set:
                 val_data_layer.transform_param.mean_file = self.dataset.path(self.dataset.train_db_task().mean_file)
         if self.batch_size:
             train_data_layer.data_param.batch_size = self.batch_size
-            if val_data_layer is not None:
+            if val_data_layer is not None and has_val_set:
                 val_data_layer.data_param.batch_size = self.batch_size
         else:
             if not train_data_layer.data_param.HasField('batch_size'):
                 train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
-            if val_data_layer is not None and not val_data_layer.data_param.HasField('batch_size'):
+            if val_data_layer is not None and has_val_set and not val_data_layer.data_param.HasField('batch_size'):
                 val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
         # hidden layers
@@ -299,7 +299,7 @@ class CaffeTrainTask(TrainTask):
         else:
             solver.snapshot = 0 # only take one snapshot at the end
 
-        if self.dataset.val_db_task() and self.val_interval:
+        if has_val_set and self.val_interval:
             solver.test_iter.append(int(math.ceil(float(self.dataset.val_db_task().entries_count) / val_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
