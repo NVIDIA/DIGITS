@@ -406,7 +406,7 @@ class TorchTrainTask(TrainTask):
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file)
                 ]
-
+        print 'self.dataset.resize_mode:',self.dataset.resize_mode
         if constants.TORCH_USE_MEAN_PIXEL:
             args.append('--useMeanPixel=yes')
 
@@ -495,7 +495,7 @@ class TorchTrainTask(TrainTask):
         float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         # loss and learning rate updates
-        match = re.match(r'Predicted class \d+: (\d+) \(.*?\) %s'  % (float_exp), message)
+        match = re.match(r'For image \d+, predicted class \d+: (\d+) \(.*?\) %s'  % (float_exp), message)
         if match:
             label = int(match.group(1))
             confidence = match.group(2)

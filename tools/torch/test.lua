@@ -1,4 +1,5 @@
 -- Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
+
 require 'torch'
 require 'xlua'
 require 'optim'
@@ -25,10 +26,12 @@ opt = lapp[[
 -o,--load               (string)                 directory that contains trained model weights
 -n,--network            (string)                 Pretrained Model to be loaded
 -e,--epoch              (default -1)             weight file of the epoch to be loaded
--i,--image              (string)                 image that needs to be classified. Provide full path, if the image is in different directory.
+-i,--image              (string)                 the value to this parameter depends on "testMany" parameter. If testMany is 'no' then this parameter specifies single image that needs to be classified or else this parameter specifies the location of file which contains paths of multiple images that needs to be classified. Provide full path, if the image (or) images file is in different directory.
 -s,--mean               (string)                 train images mean (saved as .jpg file)
 -y,--ccn2               (default no)             should be 'yes' if ccn2 is used in network. Default : false
 
+--testMany		(default no)             If this option is 'yes', then "image" input parameter should specify the file with all the images to be tested
+--testUntil             (default -1)             specifies how many images in the "image" file to be tested. This parameter is only valid when testMany is set to "yes"
 --crop                  (default no)             If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter
 --croplen               (default 0)              crop length. This is required parameter when crop option is provided
 --subtractMean          (default yes)            If yes, subtracts the mean from images
@@ -56,17 +59,31 @@ local data = require 'data'
 
 local class_labels = data.loadLabels(opt.labels)
 
+local img_mean=data.loadMean(opt.mean, opt.useMeanPixel)
 
--- if image doesn't exists in path, check whether provided path is an URL, if URL download it else display error message and return. This function is useful only when the test code was run from commandline.
-if not paths.filep(opt.image) then
-  if (opt.image:find("^http[.]") ~= nil) or (opt.image:find("^https[.]") ~= nil) or (opt.image:find("^www[.]") ~= nil) then
-    os.execute('wget '..opt.image)
-    opt.image = opt.image:match( "([^/]+)$" )
-  else
-    logmessage.display(2,'Image not found : ' .. opt.image)
-    return
-  end
+local crop = opt.crop
+
+local req_x = nil
+local req_y = nil
+
+-- if subtraction has to be done using the full mean matrix instead of mean pixel, then image cropping is possible only after subtracting the image from full mean matrix. In other cases, we can crop the image before subtracting mean.
+
+if (opt.useMeanPixel == 'yes' or opt.subtractMean == 'no') and crop == 'yes' then
+  req_x = opt.croplen
+  req_y = opt.croplen
+  crop = 'no'        -- as resize_image.py will take care of cropping as well
+else
+  req_x = img_mean["height"]
+  req_y = img_mean["width"]
 end
+
+local cropX = nil
+local cropY = nil
+if crop == 'yes' then
+  cropX = math.floor((img_mean["height"] - opt.croplen)/2) + 1
+  cropY = math.floor((img_mean["width"] - opt.croplen)/2) + 1
+end
+
 
 -- If epoch for the trained model is not provided then select the latest trained model.
 if opt.epoch == -1 then
@@ -86,42 +103,7 @@ if opt.epoch == -1 then
 end
 
 
-local im = image.load(opt.image)
-
-local img_mean=data.loadMean(opt.mean, opt.useMeanPixel)
-
-
-local req_x = nil
-local req_y = nil
-
-if (opt.useMeanPixel == 'yes' or opt.subtractMean == 'no') and opt.crop == 'yes' then
-  req_x = opt.croplen
-  req_y = opt.croplen
-  opt.crop = 'no'        -- as resize_image.py will take care of cropping as well
-else
-  req_x = img_mean["height"]
-  req_y = img_mean["width"]
-end
-
-
-if (img_mean["channels"] ~= im:size(1)) or (req_x ~= im:size(2)) or (req_y ~= im:size(3)) then
-   os.execute(opt.pythonPrefix .. ' ' .. paths.concat(debug.getinfo(1,"S").source:sub(2),"../../resize_image.py") .. ' ' .. opt.image .. ' ' .. opt.image .. ' ' .. req_x .. ' ' .. req_y .. ' -c ' .. img_mean["width"] .. ' -m ' .. opt.mode)
-   im = image.load(opt.image)
-end
-
-if opt.type == 'float' then
-    logmessage.display(0,'switching to floats')
-    torch.setdefaulttensortype('torch.FloatTensor')
-
-elseif opt.type =='cuda' then
-    require 'cunn'
-    logmessage.display(0,'switching to CUDA')
-    --model:cuda()
-    torch.setdefaulttensortype('torch.CudaTensor')
-end
-
-
-package.path =  paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
+package.path = paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
 
 local model_filename = paths.concat(opt.networkDirectory, opt.network)
 logmessage.display(0,'Loading Model: ' .. model_filename)
@@ -147,50 +129,123 @@ end
 -- as we want to classify, let's disable dropouts by enabling evaluation mode
 model:evaluate()
 
--- if the image size is same as required crop size image.
 
-local cropX = nil
-local cropY = nil
-if opt.crop == 'yes' then
-  cropX = math.floor((img_mean["height"] - opt.croplen)/2) + 1
-  cropY = math.floor((img_mean["width"] - opt.croplen)/2) + 1
+local function preprocess(img_path)
+
+    -- if image doesn't exists in path, check whether provided path is an URL, if URL download it else display error message and return. This function is useful only when the test code was run from commandline.
+    if not paths.filep(img_path) then
+        if (img_path:find("^http[.]") ~= nil) or (img_path:find("^https[.]") ~= nil) or (img_path:find("^www[.]") ~= nil) then
+            os.execute('wget '..img_path)
+            img_path = img_path:match( "([^/]+)$" )
+        else
+            logmessage.display(2,'Image not found : ' .. img_path)
+            return nil
+        end
+    end
+
+    local im = image.load(img_path)
+
+    -- resize image to match with the required size. Required size may be mean file size or crop size input
+    if (img_mean["channels"] ~= im:size(1)) or (req_x ~= im:size(2)) or (req_y ~= im:size(3)) then
+        local tempfile = os.tmpname() .. path.extension(img_path)
+        os.execute(opt.pythonPrefix .. ' ' .. paths.concat(debug.getinfo(1,"S").source:sub(2),"../../resize_image.py") .. ' ' .. img_path .. ' ' .. tempfile .. ' ' .. req_x .. ' ' .. req_y .. ' -c ' .. img_mean["width"] .. ' -m ' .. opt.mode)
+        im = image.load(tempfile)
+        os.remove(tempfile)
+    end
+
+    -- Torch image.load() always loads image with each pixel value between 0-1. As during training, images were taken from LMDB directly, their pixel values ranges from 0-255. As, model was trained with images whose pixel values are between 0-255, we may have to convert test image also to have 0-255 for each pixel.
+    im=im*255
+
+    -- Depending on the function arguments, image preprocess may include conversion from RGB to BGR and mean subtraction, image resize after mean subtraction
+    local image_preprocessed = data.PreProcess(im, img_mean["mean"], opt.subtractMean, img_mean["channels"], 'no', crop, false, cropX, cropY, opt.croplen)
+    return image_preprocessed
 end
 
--- Torch image.load() always loads image with each pixel value between 0-1. As during training, images were taken from LMDB directly, their pixel values ranges from 0-255. As, model was trained with images whose pixel values are between 0-255, we may have to convert test image also to have 0-255 for each pixel.
-im=im*255
 
--- Image preporcess including resize, conversion from RGB to BGR and mean subtraction, depending on input parameters
-local image_preprocessed = data.PreProcess(im, img_mean["mean"], opt.subtractMean, img_mean["channels"], 'no', opt.crop, false, cropX, cropY, opt.croplen)
+local inputs = nil
+local batch_size = 0
+local predictions = nil
+local topN = 5    -- displays top 5 predictions
+local val,classes = nil,nil
+local index = 0
+local counter = 0
 
-local inputs
-
- -- if ccn2 is used, then batch size of the input should be atleast 32
-if using_ccn2 == 'yes' then
-  inputs = torch.Tensor(32, image_preprocessed:size(1), image_preprocessed:size(2), image_preprocessed:size(3))
-
-  for i=1,32 do
-    inputs[i]=image_preprocessed
-  end
+-- if ccn2 is used, then batch size of the input should be atleast 32
+if using_ccn2 == 'yes' or testMany == 'yes' then
+  batch_size = 32
 else
-  inputs = torch.Tensor(1, image_preprocessed:size(1), image_preprocessed:size(2), image_preprocessed:size(3))
-  inputs[1]=image_preprocessed
+  batch_size = 1
 end
 
-if opt.type == 'float' then
-  inputs=inputs:float()
-elseif opt.type =='cuda' then
-  inputs=inputs:cuda()
+if opt.crop == 'yes' then   -- notice that here "opt.crop" is used, instead of "crop", as there are a chances that "crop" variable is getting overriden in the above instructions
+  inputs = torch.Tensor(batch_size, img_mean["channels"], opt.croplen, opt.croplen)
+else
+  inputs = torch.Tensor(batch_size, img_mean["channels"], img_mean["height"], img_mean["width"])
 end
 
-local y = model:forward(inputs)
-
--- for the outputs of SoftMax layer sort them in decreasing order
-val,classes = y[{1,{}}]:float():sort(true)
-
--- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
-for i=1,5 do
-  logmessage.display(0,'Predicted class '..tostring(i)..': ' .. classes[i] .. ' (' .. class_labels[classes[i]] .. ') ' .. math.exp(val[i]))
+-- predict batch and display the topN predictions for the images in batch
+local function predictBatch(inputs)
+  if opt.type == 'float' then
+    predictions = model:forward(inputs:float())
+  elseif opt.type =='cuda' then
+    predictions = model:forward(inputs:cuda())
+  end
+  -- sort the outputs of SoftMax layer in decreasing order
+  for i=1,counter do
+    val,classes = predictions[{i,{}}]:float():sort(true)
+    index = index + 1
+    for j=1,topN do
+      -- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
+      logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. math.exp(val[j]))
+    end
+  end
 end
 
+if testMany == 'yes' then
+  local file = io.open(opt.image)
+  if file then
 
+    for line in file:lines() do
+      counter = counter + 1
+      local image_path = line:match( "^%s*(.-)%s*$" )
+      inputs[counter] = preprocess(image_path)
+
+      if counter == batch_size then
+        predictBatch(inputs)
+        counter = 0
+      end
+      if (index+counter) == opt.testUntil then                   -- Here, index+counter represents total number of images read from file
+        break
+      end
+
+    end
+    -- still some images needs to be predicted.
+    if counter > 0 then
+      -- if ccn2 is used, then batch size of the input should be atleast 32. So, append additional images at the end to make the same as batch size (which is 32)
+      if using_ccn2 == 'yes' then
+        for j=counter+1,batch_size do
+          inputs[j] = inputs[counter]
+        end
+        predictBatch(inputs)
+
+      else
+        predictBatch(inputs:narrow(1,1,counter))
+      end
+    end
+  else
+    logmessage.display(2,'Image file not found : ' .. opt.image)
+  end
+
+else
+  -- only one image needs to be predicted
+  inputs[1]=preprocess(opt.image)
+
+  if using_ccn2 == 'yes' then
+    for j=2,batch_size do
+      inputs[j] = inputs[1]             -- replicate the first image in entire inputs tensor
+    end
+  end
+  counter = 1      -- here counter is set, so that predictBatch() method displays only the predictions of first image
+  predictBatch(inputs)
+end
 
