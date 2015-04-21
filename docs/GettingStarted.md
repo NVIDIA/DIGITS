@@ -5,13 +5,14 @@ For installation instructions:
 
 ## Starting DIGITS
 
-To start the server up on port 5000 (if you are using the web installer):
+If you are using the web installer use the `runme.sh` script:
 
     % cd $HOME/digits-1.0
     % ./runme.sh
 
-If you are not using the web installer, you can start the server this way:
+If you are not using the web installer, use the `digits-devserver` script:
 
+    % cd $HOME/digits
     % ./digits-devserver
 
 NOTE:  The first time DIGITS is run, you will be asked for the location of some directories.  It should look something like the following:
@@ -65,6 +66,8 @@ New config:
 </pre>
 
 Included with the DIGITS web installer is the a subset of the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as well as some validation images.  The data set is in `mist_10k` and the validation images are in `mnist_test`.
+
+If you are not using the web installer, you will have to prepare your dataset manually. See the [image folder format page](ImageFolderFormat.md) for tips on preparing your data folder.
 
 ## Using DIGITS
 
