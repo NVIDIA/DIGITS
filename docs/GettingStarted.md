@@ -1,7 +1,18 @@
 # Getting Started
 
-For installation instructions:
-* [Web Installer](WebInstall.md)
+Table of Contents
+=================
+* [Installation](#installation)
+* [Starting DIGITS](#starting-digits)
+* [Using DIGITS](#using-digits)
+    * [Creating a Dataset](#creating-a-dataset)
+    * [Training a Model](#training-a-model)
+
+## Installation
+
+If you are using the web installer, check out this [installation page](WebInstall.md).
+
+If you are installing from source, check out the [README](../README.md#installation).
 
 ## Starting DIGITS
 
@@ -15,9 +26,10 @@ If you are not using the web installer, use the `digits-devserver` script:
     % cd $HOME/digits
     % ./digits-devserver
 
-NOTE:  The first time DIGITS is run, you will be asked for the location of some directories.  It should look something like the following:
+The first time DIGITS is run, you will be asked to confirm some configuration options. In most cases, you should be able to accept the defaults by pressing `ENTER` repeatedly.
+
 <pre>
-./runme.sh
+% ./digits-devserver
   ___ ___ ___ ___ _____ ___
  |   \_ _/ __|_ _|_   _/ __|
  | |) | | (_ || |  | | \__ \
@@ -25,93 +37,106 @@ NOTE:  The first time DIGITS is run, you will be asked for the location of some 
 
 Welcome to the DIGITS config module.
 
-Where is caffe installed? (enter "SYS" if installed system-wide)
-    [default is /home/username/digits-1.0/caffe]
+Where is caffe installed?
+    (enter "SYS" if installed system-wide)
+    [default is /home/username/caffe]
 (q to quit) >>>
+Accepting default value of "/home/username/caffe"
 
 Attached devices:
 Device #0:
-    Name: GeForce GTX 980
-    Compute capability: 5.2
-    Memory: 4.0 GB
-    Multiprocessors: 16
+    Name                 GeForce GTX 980
+    Compute capability   5.2
+    Memory               4.0 GB
+    Multiprocessors      16
 
 Device #1:
-    Name: GeForce GTX 980
-    Compute capability: 5.2
-    Memory: 4.0 GB
-    Multiprocessors: 16
+    Name                 Tesla K20c
+    Compute capability   3.5
+    Memory               4.69 GB
+    Multiprocessors      13
 
 
 Input the IDs of the devices you would like to use, separated by commas, in order of preference.
+    (enter "NONE" if you want to run in CPU-only mode)
     [default is 0,1]
 (q to quit) >>>
+Accepting default value of "0,1"
 
 Where would you like to store jobs?
     [default is /home/username/.digits/jobs]
 (q to quit) >>>
+Accepting default value of "/home/username/.digits/jobs"
 
 What is the minimum log level that you want to save to your logfile? [error/warning/info/debug]
     [default is info]
 (q to quit) >>>
+Accepting default value of "info"
 
 New config:
             gpu_list - 0,1
-          secret_key - <secret key>
+          secret_key - acea8d2a9d9a3abaf930f235
            log_level - info
-            jobs_dir - /home/ubuntu/.digits/jobs
-          caffe_root - /home/ubuntu/digits-1.0/caffe
+            jobs_dir - /home/username/.digits/jobs
+          caffe_root - /home/username/caffe
 
  * Running on http://0.0.0.0:5000/
 </pre>
 
-Included with the DIGITS web installer is the a subset of the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as well as some validation images.  The data set is in `mist_10k` and the validation images are in `mnist_test`.
-
-If you are not using the web installer, you will have to prepare your dataset manually. See the [image folder format page](ImageFolderFormat.md) for tips on preparing your data folder.
-
 ## Using DIGITS
 
-* Now that DIGITS is running on port 5000, open a browser and go to http://localhost:5000.  You should see the DIGITS home screen:
+Now that DIGITS is running, open a browser and go to http://localhost:5000.  You should see the DIGITS home screen:
 
-![Start page](images/start-page.png)
+![Home page](images/home-page-1.jpg)
 
-* Create a dataset
-  * In the Datasets section on the left side of the page, click on the blue "Images" button and select "Classification" which will take you to the "New Image Classification Dataset" page.  For this example, do the following:
-  * Change the image type to Grayscale
-  * Change the image size to 28 x 28
-  * Type in the path to the MNIST training images.  For example: /home/ubuntu/digits-1.0/mnist_10k. If you are not using the web installer, follow the directions in the tooltip for structuring your data folders.
-  * Give the dataset a name
-  * Click on the "Create" button
+For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network. Both are made generously made available by Yann LeCun on his [website](http://yann.lecun.com/).
 
-![Creating dataset](images/creating-dataset.png)
+If you are not using the web installer, please refer to [this page](ImageFolderFormat.md) for preparing your own dataset. Some of the configuration options listed below may be different for your dataset.
 
-* While creating a model, you should see the expected completion time on the right side:
+### Creating a Dataset
 
-![Training dataset](images/training-dataset.png)
+In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Dataset" page.
 
-* When the data set has completed training, go back to the home page, by clicking "DIGITS" in the top left hand part of the page.  You should now see that there is a trained data set.
+* Change the image type to `Grayscale`
+* Change the image size to 28 x 28
+* Type in the path to the MNIST training images
+  * `/home/username/digits-1.0/mnist_10k` if you are using the web installer
+* Give the dataset a name
+* Click on the `Create` button
 
-![Trained dataset](images/trained-dataset.png)
+![New dataset](images/new-dataset.jpg)
 
-* In the Models section on the left side of the page, click on the blue "Images" button and select "Classification." which will take you to the "New Image Classification Model" page.  For this example, do the following:
-  * Choose the mist dataset in the "Select Dataset module"
-  * Choose the "LeNet" network in the "Standard networks" tab
-  * Give the model a name
-  * Click on the "Create" button
+While the model creation job is running, you should see the expected completion time on the right side:
 
-![Creating model](images/creating-model.png)
+![Creating dataset](images/creating-dataset.jpg)
 
-* While creating a model, you should see the expected completion time on the right side:
+When the data set has completed training, go back to the home page, by clicking `DIGITS` in the top left hand part of the page.  You should now see that there is a trained data set.
 
-![Training model](images/training-model.png)
+![Home page with dataset](images/home-page-2.jpg)
 
-* To test the model, scroll to the bottom of the page.  On the left side are tools for testing the model.
-  * Click on the "Browse" button which will bring up a local file browser.  Included with the distribution are some test images in a test_digits folder, /home/ubuntu/digits-1.0/test_digits
-  * In the file browser dialog, choose one of the images and then click on "Open"
-  * In the Model page, click on "Test one image."
+### Training a Model
 
-![Testing one image](images/testing-one-image.png)
+In the Models section on the left side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Model" page.  For this example, do the following:
+* Choose the MNIST dataset in the "Select Dataset" field
+* Choose the `LeNet` network in the "Standard Networks" tab
+* Give the model a name
+* Click on the `Create` button
 
-* DIGITS will display the top five classifications as well as the visualization of some of the layers.
+![New model](images/new-model.jpg)
 
-![Tested one image](images/tested-one-image.png)
+While training the model, you should see the expected completion time on the right side:
+
+![Training model](images/training-model.jpg)
+
+To test the model, scroll to the bottom of the page.  On the left side are tools for testing the model.
+* Click on the `Upload Image` field which will bring up a local file browser and choose a file
+  * If you've used the web installer, choose one in `/home/username/digits-1.0/test_digits`
+* Or, find an image on the web and paste the URL into the `Image URL` field
+* Click on `Classify One Image`
+
+![Classifying one image](images/classifying-one-image.jpg)
+
+DIGITS will display the top five classifications and corresponding confidence values.
+
+![Classified one image](images/classified-one-image.jpg)
+
