@@ -359,7 +359,7 @@ function customizeNetwork(network, snapshot_list, framework) {
     function fillCustomTab(network, snapshot_list, framework) {
         data = null;
         if (!framework)
-            var $tab = $('#stdnetRole'), $active = $tab.find('.active'), framework = $active.attr('framework');
+            var $tab = $('#stdnetRole'), $active = $tab.find('.active'), framework = $active.attr('id');
         if (snapshot_list)
             data = {'snapshot_epoch': $('#'+snapshot_list).val()};
         $.ajax("{{url_for('models_customize')}}?network=" + network+"&framework="+framework,
@@ -401,17 +401,18 @@ function customizeNetwork(network, snapshot_list, framework) {
                 <li><a href="#network-tab-custom" data-toggle="tab">Custom Network</a></li>
             </ul>
             <div class="tab-content well">
+                <div style="display:none;"><input type='hidden' id='framework' name='framework' value='caffe'></input></div>
                 <div id="network-tab-standard" class="tab-pane active">
-                    <div style="display:none;"><input type='hidden' id='framework' name='framework' value='caffe'></input></div>
                     <ul class="nav nav-tabs" id="stdnetRole">
-                        <li framework="caffe" class="active"><a href="#">Caffe</a></li>
-                        <li framework="torch"><a href="#">Torch</a></li>
+                        <li id="caffe" class="active"><a href="#">Caffe</a></li>
+                        <li id="torch"><a href="#">Torch</a></li>
                     </ul>
                     <script>
                         $('#stdnetRole li').on('click', function(e) {
                              $(this).addClass('active');
                              $(this).siblings().removeClass('active');
-                             $('#framework').val($(this).attr('framework'));
+                             $('#framework').val($(this).attr('id'));
+                             $('#customFramework li[id="'+$(this).attr('id')+'"]').tab('show');
                         });
                     </script>
                     <table class="table">
@@ -532,6 +533,19 @@ function customizeNetwork(network, snapshot_list, framework) {
 
                 </script>
                 <div id="network-tab-custom" class="tab-pane">
+                    <ul class="nav nav-tabs" id="customFramework">
+                        <li id="caffe" class="active"><a href="#">Caffe</a></li>
+                        <li id="torch"><a href="#">Torch</a></li>
+                    </ul>
+                    <br>
+                    <script>
+                        $('#customFramework li').on('click', function(e) {
+                             $(this).addClass('active');
+                             $(this).siblings().removeClass('active');
+                             $('#framework').val($(this).attr('id'));
+                        });
+                    </script>
+
                     <script>
 function visualizeNetwork() {
     $.ajax("{{url_for('models_visualize_network')}}",
