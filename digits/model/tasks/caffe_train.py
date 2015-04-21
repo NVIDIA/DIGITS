@@ -837,11 +837,14 @@ class CaffeTrainTask(TrainTask):
         labels = self.get_labels()
         net = self.get_net(snapshot_epoch)
 
-        for i in xrange(len(images)):
-            if images[i].ndim == 2:
-                images[i] = images[i][:,:,np.newaxis]
+        caffe_images = []
+        for image in images:
+            if image.ndim == 2:
+                caffe_images.append(image[:,:,np.newaxis])
+            else:
+                caffe_images.append(image)
 
-        images = np.array(images)
+        caffe_images = np.array(caffe_images)
 
         if self.batch_size:
             data_shape = (self.batch_size, self.dataset.image_dims[2])
@@ -855,7 +858,7 @@ class CaffeTrainTask(TrainTask):
             data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
 
         scores = None
-        for chunk in [images[x:x+data_shape[0]] for x in xrange(0, len(images), data_shape[0])]:
+        for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
             new_shape = (len(chunk),) + data_shape[1:]
             if net.blobs['data'].data.shape != new_shape:
                 net.blobs['data'].reshape(*new_shape)
@@ -867,7 +870,7 @@ class CaffeTrainTask(TrainTask):
                 scores = output
             else:
                 scores = np.vstack((scores, output))
-            print 'Processed %s/%s images' % (len(scores), len(images))
+            print 'Processed %s/%s images' % (len(scores), len(caffe_images))
 
         return (labels, scores)
 
