@@ -20,9 +20,6 @@ class ImageDatasetForm(DatasetForm):
                 ],
             )
 
-    shuffle = wtforms.BooleanField('Shuffle images',
-            default = True)
-
     ### Image resize
 
     resize_channels = wtforms.SelectField(u'Image type',

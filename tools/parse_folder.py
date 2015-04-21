@@ -7,6 +7,7 @@ import re
 import argparse
 import time
 import logging
+import random
 from urlparse import urlparse
 import urllib
 
@@ -408,6 +409,7 @@ def parse_folder(folder, labels_file,
             logger.warning('Not enough images for this category')
             labels.pop()
         else:
+            random.shuffle(lines)
             a, b = three_way_split_indices(len(lines), percent_val, percent_test)
             train_lines = lines[:a]
             val_lines = lines[a:b]

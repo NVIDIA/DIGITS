@@ -190,6 +190,9 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
             raise validators.ValidationError('folder does not exist')
         return True
 
+    textfile_shuffle = wtforms.BooleanField('Shuffle lines',
+            default = True)
+
     textfile_labels_file = wtforms.FileField(u'Labels',
             validators=[
                 required_if_method('textfile')
