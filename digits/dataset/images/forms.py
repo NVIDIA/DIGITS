@@ -35,7 +35,7 @@ class ImageDatasetForm(DatasetForm):
             validators=[validators.DataRequired()]
             )
     resize_mode = wtforms.SelectField(u'Resize transformation',
-            default='half_crop',
+            default='squash',
             choices=[
                 ('crop', 'Crop'),
                 ('squash', 'Squash'),

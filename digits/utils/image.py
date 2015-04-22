@@ -95,7 +95,7 @@ def resize_image(image, height, width,
     resize_mode -- can be crop, squash, fill or half_crop
     """
     if resize_mode is None:
-        resize_mode = 'half_crop'
+        resize_mode = 'squash'
     if resize_mode not in ['crop', 'squash', 'fill', 'half_crop']:
         raise ValueError('resize_mode "%s" not supported' % resize_mode)
 

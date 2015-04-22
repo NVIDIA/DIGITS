@@ -89,7 +89,8 @@ if __name__ == '__main__':
             help='The new number of channels [default is to remain unchanged]'
             )
     parser.add_argument('-m', '--mode',
-            help='Resize mode (squash/crop/fill/half_crop) [default is half_crop]'
+            default='squash',
+            help='Resize mode (squash/crop/fill/half_crop) [default is squash]'
             )
 
     args = vars(parser.parse_args())
