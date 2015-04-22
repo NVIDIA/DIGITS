@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
-import Cifar10
 from PIL import Image
 import os
 import cPickle
 import numpy as np
 
+from cifar10 import Cifar10Downloader
 
-class Cifar100FineDownloader(Cifar10.Cifar10Downloader):
+class Cifar100FineDownloader(Cifar10Downloader):
 
     def getUrls(self):
         return [

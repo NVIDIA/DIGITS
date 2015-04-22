@@ -7,8 +7,8 @@ from subprocess import call
 import urllib
 
 
-class Downloader:
-    """Base class for downloading and setting up a DiGiTS dataset"""
+class DataDownloader:
+    """Base class for downloading data and setting it up for DiGiTS"""
 
     def __init__(self, outdir):
         """

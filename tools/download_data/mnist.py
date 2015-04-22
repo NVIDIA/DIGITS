@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
-import DatasetDownloader
 from PIL import Image
 import os
 
+from downloader import DataDownloader
 
-class MnistDownloader(DatasetDownloader.Downloader):
+class MnistDownloader(DataDownloader):
 
     def getUrls(self):
         return [
