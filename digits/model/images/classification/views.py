@@ -172,6 +172,8 @@ def image_classification_model_classify_one():
         with tempfile.NamedTemporaryFile() as outfile:
             request.files['image_file'].save(outfile.name)
             image = utils.image.load_image(outfile.name)
+    else:
+        return 'You must select an image to classify', 400
 
     # resize image
     db_task = job.train_task().dataset.train_db_task()
