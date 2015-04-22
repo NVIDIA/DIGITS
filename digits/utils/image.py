@@ -28,12 +28,13 @@ from . import is_url, HTTP_TIMEOUT, errors
 
 def load_image(path):
     """
-    Reads a file from `path` and returns a PIL.Image
+    Reads a file from `path` and returns a PIL.Image with mode 'L' or 'RGB'
     Raises LoadImageError
 
     Arguments:
     path -- path to the image, can be a filesystem path or a URL
     """
+    image = None
     if is_url(path):
         try:
             r = requests.get(path,
@@ -41,7 +42,7 @@ def load_image(path):
                     timeout=HTTP_TIMEOUT)
             r.raise_for_status()
             stream = cStringIO.StringIO(r.content)
-            return PIL.Image.open(stream)
+            image = PIL.Image.open(stream)
         except requests.exceptions.RequestException as e:
             raise errors.LoadImageError, e.message
         except IOError as e:
@@ -50,11 +51,32 @@ def load_image(path):
         try:
             image = PIL.Image.open(path)
             image.load()
-            return image
         except IOError as e:
             raise errors.LoadImageError, 'IOError: %s' % e.message
     else:
         raise errors.LoadImageError, '"%s" not found' % path
+
+    if image.mode in ['L', 'RGB']:
+        # No conversion necessary
+        return image
+    elif image.mode in ['1']:
+        # Easy conversion to L
+        return image.convert('L')
+    elif image.mode in ['LA']:
+        # Deal with transparencies
+        new = PIL.Image.new('L', image.size, 255)
+        new.paste(image, mask=image.convert('RGBA'))
+        return new
+    elif image.mode in ['CMYK', 'YCbCr']:
+        # Easy conversion to RGB
+        return image.convert('RGB')
+    elif image.mode in ['P', 'RGBA']:
+        # Deal with transparencies
+        new = PIL.Image.new('RGB', image.size, (255, 255, 255))
+        new.paste(image, mask=image.convert('RGBA'))
+        return new
+    else:
+        raise errors.LoadImageError, 'Image mode "%s" not supported' % image.mode
 
 def resize_image(image, height, width,
         channels=None,
@@ -86,16 +108,8 @@ def resize_image(image, height, width,
             image_mode = image.mode
             if image_mode == 'L':
                 channels = 1
-            elif image_mode == '1':
-                channels = 1
-                # Convert from '1' to 'L'
-                image_mode = 'L'
             elif image_mode == 'RGB':
                 channels = 3
-            elif image_mode == 'P':
-                channels = 3
-                # convert from 'P' to 'RGB'
-                image_mode = 'RGB'
             else:
                 raise ValueError('unknown image mode "%s"' % image_mode)
         elif channels == 1:

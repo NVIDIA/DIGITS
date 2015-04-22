@@ -28,14 +28,34 @@ class TestLoadImage():
                 path,
                 )
 
-    @mock.patch('digits.utils.image.PIL.Image')
-    @mock.patch('digits.utils.image.os.path')
-    def test_good_file(self, mock_path, mock_Image):
-        """load_image with good file"""
-        mock_path.exists.return_value = True
-        mock_Image.open = mock.Mock()
-        assert _.load_image('/a/file') is not None
-        mock_Image.open.assert_called_with('/a/file')
+    def test_good_file(self):
+        """load_image file"""
+        for args in [
+                # Grayscale
+                ('1', 1, 'L'),
+                ('L', 127, 'L'),
+                ('LA', (127, 255), 'L'),
+                # Color
+                ('RGB', (127, 127, 127), 'RGB'),
+                ('RGBA', (127, 127, 127, 255), 'RGB'),
+                ('P', 127, 'RGB'),
+                ('CMYK', (127, 127, 127, 127), 'RGB', '.jpg'),
+                ('YCbCr', (127, 127, 127), 'RGB', '.jpg'),
+                ]:
+            yield self.check_good_file, args
+
+    def check_good_file(self, args):
+        if len(args) == 3:
+            args += ('.png',)
+        orig_mode, pixel, new_mode, suffix = args
+        print args
+
+        orig = PIL.Image.new(orig_mode, (10,10), pixel)
+        with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
+            orig.save(tmp.name)
+            new = _.load_image(tmp.name)
+        assert new is not None, 'load_image should never return None'
+        assert new.mode == new_mode, 'Image mode should be "%s", not "%s\nargs - %s' % (new_mode, new.mode, args)
 
     @mock.patch('digits.utils.image.PIL.Image')
     @mock.patch('digits.utils.image.cStringIO')
@@ -54,6 +74,7 @@ class TestLoadImage():
 
         # Image
         mock_Image.open = mock.Mock()
+        mock_Image.open.return_value.mode = 'RGB'
 
         assert _.load_image('http://some-url') is not None
         mock_cStringIO.StringIO.assert_called_with('some content')
