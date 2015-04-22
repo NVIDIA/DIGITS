@@ -381,7 +381,7 @@ def parse_folder(folder, labels_file,
             for url in urls:
                 lines.append('%s %d' % (url, label_index))
         else:
-            for dirpath, dirnames, filenames in os.walk(os.path.join(folder, subdir)):
+            for dirpath, dirnames, filenames in os.walk(os.path.join(folder, subdir), followlinks=True):
                 for filename in filenames:
                     if filename.lower().endswith(('.jpg','.jpeg','.png', '.bmp')):
                         lines.append('%s %d' % (os.path.join(folder, subdir, dirpath, filename), label_index))

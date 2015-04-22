@@ -1,109 +1,83 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
-import sys
 import os
-import gzip
-from subprocess import call
+import sys
+import shutil
 import urllib
+import tarfile
 
 
-class DataDownloader:
-    """Base class for downloading data and setting it up for DiGiTS"""
+class DataDownloader(object):
+    """Base class for downloading data and setting it up for DIGITS"""
 
-    def __init__(self, outdir):
+    def __init__(self, outdir, clean=False, file_extension='png'):
         """
         Arguments:
         outdir -- directory where to download and create the dataset
         if this directory doesn't exist, it will be created
+
+        Keyword arguments:
+        clean -- delete outdir first if it exists
+        file_extension -- image format for output images
         """
         self.outdir = outdir
-        self.mkdir(self.outdir)
+        self.mkdir(self.outdir, clean=clean)
+        self.file_extension = file_extension.lower()
 
-    def prepareDataset(self):
+    def getData(self):
         """
         This is the main function that should be called by the users!
-        Downloads the dataset and prepares it for DiGiTS consumption
+        Downloads the dataset and prepares it for DIGITS consumption
         """
-        urls = self.getUrls()
-        files = self.__downloadFiles(urls)
-        self.__uncompressFiles(files)
-        unzippedFiles = self.getUncompressedFileNames()
-        datasetDir = self.convertDataset(unzippedFiles)
-        print "Dataset directory is created successfully at '%s'" % datasetDir
-        return datasetDir
+        for url in self.urlList():
+            self.__downloadFile(url)
 
-    def getUrls(self):
-        """
-        return a list of all urls to be downloaded
-        """
-        raise NotImplementedError()
+        self.uncompressData()
 
-    def convertDataset(self, unzippedFiles):
-        """
-        Arguments:
-        unzippedFiles -- list of all uncompressed files and prepare the dataset
-        returns the outdir containing the training dataset as expected by DiGiTS
-        """
-        raise NotImplementedError()
+        self.processData()
+        print "Dataset directory is created successfully at '%s'" % self.outdir
 
-    def getUncompressedFileNames(self):
+    def urlList(self):
         """
-        In some datasets, there is no relation between the uncompressed file names
-        and their compressed counter parts. Thus, it is better to ask each dataset
-        class to explicitly create the filepaths for the uncompressed files!
+        return a list of (url, output_file) tuples
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def __downloadFiles(self, urls):
-        files = []
-        for url in urls:
+    def uncompressData(self):
+        """
+        uncompress the downloaded files
+        """
+        raise NotImplementedError
+
+    def processData(self):
+        """
+        Process the downloaded files and prepare the data for DIGITS
+        """
+        raise NotImplementedError
+
+    def __downloadFile(self, url):
+        """
+        Downloads the url
+        """
+        download_path = os.path.join(self.outdir, os.path.basename(url))
+        if not os.path.exists(download_path):
             print "Downloading url=%s ..." % url
-            tmp = os.path.join(self.outdir, os.path.basename(url))
-            files.append(tmp)
-            if not os.path.exists(tmp):
-                urllib.urlretrieve(url, tmp)
-        return files
+            urllib.urlretrieve(url, download_path)
 
-    def __uncompressFiles(self, files):
-        for file in files:
-            print "Uncompressing file=%s ..." % file
-            if self.__tarGzipped(file):
-                self.__untar(file, '-xzf')
-            elif self.__gzipped(file):
-                self.__gunzip(file)
-            else:
-                raise Exception('Unsupported compression format!')
+    def mkdir(self, d, clean=False):
+        """
+        Safely create a directory
 
-    def __tarGzipped(self, f):
-        if len(f) < 7:
-            return 0
-        if f[-7:] == '.tar.gz':
-            return True
-        return False
+        Arguments:
+        d -- the directory name
 
-    def __untar(self, f, option):
-        dir = os.path.dirname(f)
-        call(['tar', option, f, '-C', dir])
-        out = f.replace('.tar.gz', '')
-        return out
-
-    def __gzipped(self, f):
-        if len(f) < 3:
-            return 0
-        if f[-3:] == '.gz':
-            return True
-        return False
-
-    def __gunzip(self, f):
-        outFile = f.replace('.gz', '')
-        fp = gzip.open(f, 'rb')
-        outFp = open(outFile, 'wb')
-        outFp.write(fp.read())
-        outFp.close()
-        fp.close()
-        return outFile
-
-    def mkdir(self, d):
+        Keyword arguments:
+        clean -- if True and the directory already exists, it will be deleted and recreated
+        """
         if os.path.exists(d):
-            return
+            if clean:
+                shutil.rmtree(d)
+            else:
+                return
         os.mkdir(d)
+
