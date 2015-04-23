@@ -1,8 +1,9 @@
-#!/usr/bin/env python
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
 import gzip
+import struct
+import numpy as np
 import PIL.Image
 
 from downloader import DataDownloader
@@ -40,42 +41,59 @@ class MnistDownloader(DataDownloader):
         self.__extract_images('train-images.bin', 'train-labels.bin', 'train')
         self.__extract_images('test-images.bin', 'test-labels.bin', 'test')
 
-    def __extract_images(self, images_file, labels_file, output_dir):
+    def __extract_images(self, images_file, labels_file, phase):
         """
         Extract information from binary files and store them as images
         """
-        with open(os.path.join(self.outdir, images_file), 'rb') as imfp, \
-                open(os.path.join(self.outdir, labels_file), 'rb') as lafp:
-            imfp.read(4)
-            lafp.read(8)
-            numData = self.__readInt(imfp)
-            height = self.__readInt(imfp)
-            width = self.__readInt(imfp)
-            print "Extracting MNIST data from %s ..." % images_file
-            print "NumData=%d image=%dx%d" % (numData, height, width)
-            for idx in range(0,numData):
-                label = str(ord(lafp.read(1)))
-                self.__storeImage(imfp, height, width,
-                        os.path.join(self.outdir, output_dir, label,
-                            '%s.%s' % (idx, self.file_extension)
-                            )
-                        )
+        labels = self.__readLabels(os.path.join(self.outdir, labels_file))
+        images = self.__readImages(os.path.join(self.outdir, images_file))
+        assert len(labels) == len(images), '%d != %d' % (len(labels), len(images))
 
-    def __storeImage(self, imfp, height, width, filename):
-        dirname = os.path.dirname(filename)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        imStr = imfp.read(height*width)
-        im = PIL.Image.frombytes('L', (height, width), imStr)
-        im.save(filename)
+        output_dir = os.path.join(self.outdir, phase)
+        self.mkdir(output_dir, clean=True)
+        with open(os.path.join(output_dir, 'labels.txt'), 'w') as outfile:
+            for label in xrange(10):
+                outfile.write('%s\n' % label)
+        with open(os.path.join(output_dir, '%s.txt' % phase), 'w') as outfile:
+            for index, image in enumerate(images):
+                dirname = os.path.join(output_dir, labels[index])
+                self.mkdir(dirname)
+                filename = os.path.join(dirname, '%05d.%s' % (index, self.file_extension))
+                image.save(filename)
+                outfile.write('%s %s\n' % (filename, labels[index]))
 
-    def __readInt(self, fp):
-        val = [ord(x) for x in fp.read(4)]
-        out = (val[0] << 24) | (val[1] << 16) | (val[2] << 8) | val[3]
-        return out
+    def __readLabels(self, filename):
+        """
+        Returns a list of ints
+        """
+        print 'Reading labels from %s ...' % filename
+        labels = []
+        with open(filename, 'rb') as infile:
+            infile.read(4) # ignore magic number
+            count = struct.unpack('>i', infile.read(4))[0]
+            data = infile.read(count)
+            for byte in data:
+                label = struct.unpack('>B', byte)[0]
+                labels.append(str(label))
+        return labels
 
+    def __readImages(self, filename):
+        """
+        Returns a list of PIL.Image objects
+        """
+        print 'Reading images from %s ...' % filename
+        images = []
+        with open(filename, 'rb') as infile:
+            infile.read(4) # ignore magic number
+            count   = struct.unpack('>i', infile.read(4))[0]
+            rows    = struct.unpack('>i', infile.read(4))[0]
+            columns = struct.unpack('>i', infile.read(4))[0]
 
-# This section demonstrates the usage of the above class
-if __name__ == '__main__':
-    mnist = MnistDownloader('/tmp/mnist')
-    mnist.getData()
+            for i in xrange(count):
+                data = infile.read(rows*columns)
+                image = np.fromstring(data, dtype=np.uint8)
+                image = image.reshape((rows, columns))
+                image = 255 - image # now black digit on white background
+                images.append(PIL.Image.fromarray(image))
+        return images
+

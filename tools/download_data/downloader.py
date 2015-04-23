@@ -1,11 +1,8 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
-import sys
 import shutil
 import urllib
-import tarfile
-
 
 class DataDownloader(object):
     """Base class for downloading data and setting it up for DIGITS"""

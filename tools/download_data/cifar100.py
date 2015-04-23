@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
@@ -38,25 +37,32 @@ class Cifar100Downloader(DataDownloader):
             fine_label_names = pickleObj['fine_label_names']
             coarse_label_names = pickleObj['coarse_label_names']
 
-        for filename, dirname in [
+        for level, label_names in [
+                ('fine', fine_label_names),
+                ('coarse', coarse_label_names),
+                ]:
+            dirname = os.path.join(self.outdir, level)
+            self.mkdir(dirname, clean=True)
+            with open(os.path.join(dirname, 'labels.txt'), 'w') as outfile:
+                for name in label_names:
+                    outfile.write('%s\n' % name)
+
+        for filename, phase in [
                 ('train', 'train'),
                 ('test', 'test'),
                 ]:
             filepath = os.path.join(self.outdir, 'cifar-100-python', filename)
             assert os.path.exists(filepath), 'Expected "%s" to exist' % filename
-            finepath = os.path.join(self.outdir, 'fine', dirname)
-            coarsepath = os.path.join(self.outdir, 'coarse', dirname)
 
-            self.__extractData(filepath, finepath, coarsepath, fine_label_names, coarse_label_names)
+            self.__extractData(filepath, phase, fine_label_names, coarse_label_names)
 
-    def __extractData(self, input_file, fine_dir, coarse_dir, fine_label_names, coarse_label_names):
+    def __extractData(self, input_file, phase, fine_label_names, coarse_label_names):
         """
         Read a pickle file at input_file and output as images
 
         Arguments:
         input_file -- a pickle file
-        fine_dir -- output directory for finely differentiated images
-        coarse_dir -- output directory for coarsely differentiated images
+        phase -- train or test
         fine_label_names -- mapping from fine_labels to strings
         coarse_label_names -- mapping from coarse_labels to strings
         """
@@ -81,39 +87,38 @@ class Cifar100Downloader(DataDownloader):
 
         fine_to_coarse = {} # mapping of fine labels to coarse labels
 
-        self.mkdir(os.path.dirname(fine_dir))
-        self.mkdir(fine_dir, clean=True)
-        for index, image in enumerate(data):
-            # Create the directory
-            fine_label = fine_label_names[fine_labels[index]]
-            dirname = os.path.join(fine_dir, fine_label)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+        fine_dirname = os.path.join(self.outdir, 'fine', phase)
+        os.makedirs(fine_dirname)
+        coarse_dirname = os.path.join(self.outdir, 'coarse', phase)
+        os.makedirs(coarse_dirname)
+        with open(os.path.join(self.outdir, 'fine', '%s.txt' % phase), 'w') as fine_textfile, \
+                open(os.path.join(self.outdir, 'coarse', '%s.txt' % phase), 'w') as coarse_textfile:
+            for index, image in enumerate(data):
+                # Create the directory
+                fine_label = fine_label_names[fine_labels[index]]
+                dirname = os.path.join(fine_dirname, fine_label)
+                self.mkdir(dirname)
 
-            # Get the filename
-            filename = filenames[index]
-            ext = os.path.splitext(filename)[1][1:].lower()
-            if ext != self.file_extension:
-                filename = '%s.%s' % (os.path.splitext(filename)[0], self.file_extension)
-            filename = os.path.join(dirname, filename)
+                # Get the filename
+                filename = filenames[index]
+                ext = os.path.splitext(filename)[1][1:].lower()
+                if ext != self.file_extension:
+                    filename = '%s.%s' % (os.path.splitext(filename)[0], self.file_extension)
+                filename = os.path.join(dirname, filename)
 
-            # Save the image
-            PIL.Image.fromarray(image).save(filename)
+                # Save the image
+                PIL.Image.fromarray(image).save(filename)
+                fine_textfile.write('%s %s\n' % (filename, fine_labels[index]))
+                coarse_textfile.write('%s %s\n' % (filename, coarse_labels[index]))
 
-            if fine_label not in fine_to_coarse:
-                fine_to_coarse[fine_label] = coarse_label_names[coarse_labels[index]]
+                if fine_label not in fine_to_coarse:
+                    fine_to_coarse[fine_label] = coarse_label_names[coarse_labels[index]]
 
         # Create the coarse dataset with symlinks
-        self.mkdir(os.path.dirname(coarse_dir))
-        self.mkdir(coarse_dir, clean=True)
         for fine, coarse in fine_to_coarse.iteritems():
-            self.mkdir(os.path.join(coarse_dir, coarse))
+            self.mkdir(os.path.join(coarse_dirname, coarse))
             os.symlink(
-                    os.path.join(fine_dir, fine),
-                    os.path.join(coarse_dir, coarse, fine)
+                    os.path.join(fine_dirname, fine),
+                    os.path.join(coarse_dirname, coarse, fine)
                     )
 
-# This section demonstrates the usage of the above class
-if __name__ == '__main__':
-    cifar = Cifar100Downloader('/tmp/cifar-100')
-    cifar.getData()

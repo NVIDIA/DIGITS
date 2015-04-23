@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
@@ -37,7 +36,14 @@ class Cifar10Downloader(DataDownloader):
             pickleObj = cPickle.load(infile)
             label_names = pickleObj['label_names']
 
-        for filename, dirname in [
+        for phase in 'train', 'test':
+            dirname = os.path.join(self.outdir, phase)
+            self.mkdir(dirname, clean=True)
+            with open(os.path.join(dirname, 'labels.txt'), 'w') as outfile:
+                for name in label_names:
+                    outfile.write('%s\n' % name)
+
+        for filename, phase in [
                 ('data_batch_1', 'train'),
                 ('data_batch_2', 'train'),
                 ('data_batch_3', 'train'),
@@ -47,13 +53,17 @@ class Cifar10Downloader(DataDownloader):
                 ]:
             filepath = os.path.join(self.outdir, 'cifar-10-batches-py', filename)
             assert os.path.exists(filepath), 'Expected "%s" to exist' % filename
-            dirpath = os.path.join(self.outdir, dirname)
 
-            self.__extractData(filepath, dirpath, label_names)
+            self.__extractData(filepath, phase, label_names)
 
-    def __extractData(self, input_file, output_dir, label_names):
+    def __extractData(self, input_file, phase, label_names):
         """
-        Read a pickle file at input_file, and output images to output_dir
+        Read a pickle file at input_file and output images
+
+        Arguments:
+        input_file -- the input pickle file
+        phase -- train or test
+        label_names -- a list of strings
         """
         print 'Extracting images file=%s ...' % input_file
 
@@ -72,25 +82,23 @@ class Cifar10Downloader(DataDownloader):
         data = data.reshape((10000, 3, 32, 32))
         data = data.transpose((0, 2, 3, 1))
 
+        output_dir = os.path.join(self.outdir, phase)
         self.mkdir(output_dir)
-        for index, image in enumerate(data):
-            # Create the directory
-            dirname = os.path.join(output_dir, label_names[labels[index]])
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+        with open(os.path.join(output_dir, '%s.txt' % phase), 'a') as outfile:
+            for index, image in enumerate(data):
+                # Create the directory
+                dirname = os.path.join(output_dir, label_names[labels[index]])
+                if not os.path.exists(dirname):
+                    os.makedirs(dirname)
 
-            # Get the filename
-            filename = filenames[index]
-            ext = os.path.splitext(filename)[1][1:].lower()
-            if ext != self.file_extension:
-                filename = '%s.%s' % (os.path.splitext(filename)[0], self.file_extension)
-            filename = os.path.join(dirname, filename)
+                # Get the filename
+                filename = filenames[index]
+                ext = os.path.splitext(filename)[1][1:].lower()
+                if ext != self.file_extension:
+                    filename = '%s.%s' % (os.path.splitext(filename)[0], self.file_extension)
+                filename = os.path.join(dirname, filename)
 
-            # Save the image
-            PIL.Image.fromarray(image).save(filename)
+                # Save the image
+                PIL.Image.fromarray(image).save(filename)
+                outfile.write('%s %s\n' % (filename, labels[index]))
 
-
-# This section demonstrates the usage of the above class
-if __name__ == '__main__':
-    cifar = Cifar10Downloader('/tmp/cifar-10')
-    cifar.getData()
