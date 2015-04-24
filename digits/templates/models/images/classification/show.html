@@ -44,6 +44,12 @@
         <div class="well">
             <div id="combined-graph" class="combined-graph"
                 style="height:500px;width:100%;background:white;display:none;"></div>
+            <div class="pull-right combined-graph" style="display:none;">
+                <a class="btn btn-primary btn-sm" target="_blank"
+                    href="{{url_for('image_classification_model_large_graph', job_id=job.id())}}">
+                    View Large
+                </a>
+            </div>
             <br>
             <br>
             {% set combined_graph_data = job.train_task().combined_graph_data() %}

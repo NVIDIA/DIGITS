@@ -156,6 +156,17 @@ def show(job):
     """
     return render_template('models/images/classification/show.html', job=job)
 
+@app.route(NAMESPACE + '/large_graph', methods=['GET'])
+def image_classification_model_large_graph():
+    """
+    Show the loss/accuracy graph, but bigger
+    """
+    job = scheduler.get_job(request.args['job_id'])
+    if not job:
+        abort(404)
+
+    return render_template('models/images/classification/large_graph.html', job=job)
+
 @app.route(NAMESPACE + '/classify_one', methods=['POST'])
 def image_classification_model_classify_one():
     """

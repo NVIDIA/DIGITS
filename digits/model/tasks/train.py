@@ -316,6 +316,9 @@ class TrainTask(Task):
     def lr_graph_data(self):
         """
         Returns learning rate data formatted for a C3.js graph
+
+        Keyword arguments:
+
         """
         if not self.train_outputs or 'epoch' not in self.train_outputs or 'learning_rate' not in self.train_outputs:
             return None
@@ -421,9 +424,12 @@ class TrainTask(Task):
         else:
             return data
 
-    def combined_graph_data(self):
+    def combined_graph_data(self, cull=True):
         """
         Returns all train/val outputs in data for one C3.js graph
+
+        Keyword arguments:
+        cull -- if True, cut down the number of data points returned to a reasonable size
         """
         data = {
                 'columns': [],
@@ -434,7 +440,10 @@ class TrainTask(Task):
 
         if self.train_outputs and 'epoch' in self.train_outputs:
             added_column = False
-            stride = max(len(self.train_outputs['epoch'].data)/100,1)
+            if cull:
+                stride = max(len(self.train_outputs['epoch'].data)/100,1)
+            else:
+                stride = 1
             for name, output in self.train_outputs.iteritems():
                 if name not in ['epoch', 'learning_rate']:
                     col_id = '%s-train' % name
@@ -451,7 +460,10 @@ class TrainTask(Task):
 
         if self.val_outputs and 'epoch' in self.val_outputs:
             added_column = False
-            stride = max(len(self.val_outputs['epoch'].data)/100,1)
+            if cull:
+                stride = max(len(self.val_outputs['epoch'].data)/100,1)
+            else:
+                stride = 1
             for name, output in self.val_outputs.iteritems():
                 if name not in ['epoch']:
                     col_id = '%s-val' % name
