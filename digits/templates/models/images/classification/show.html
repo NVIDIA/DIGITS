@@ -4,6 +4,8 @@
 
 {% block job_content %}
 
+<script src="{{ url_for('static', filename='js/model-graphs.js') }}"></script>
+
 {% set task = job.train_task() %}
 
 <div class="row">
@@ -40,187 +42,19 @@
 <div class="row">
     <div class="col-sm-12">
         <div class="well">
-            <script>
-                function drawLossGraph(data) {
-                    $(".loss-graph").show();
-                    c3.generate($.extend({
-                        bindto: '.loss-graph',
-                        size: {height: 500},
-                        axis: {
-                            x: {
-                                label: {
-                                    text: 'Epoch',
-                                    position: 'outer-center',
-                                },
-                                tick: {
-                                    // 3 sig-digs
-                                    format: function(x) { return Math.round(x*1000)/1000; },
-                                    fit: false,
-                                },
-                                min: 0,
-                                padding: {left: 0},
-                            },
-                            y: {
-                                label: {
-                                    text: 'Loss',
-                                    position: 'outer-middle',
-                                },
-                                min: 0,
-                                padding: {bottom: 0},
-                            },
-                        },
-                        grid: {x: {show: true} },
-                        legend: {position: 'bottom'},
-                    },
-                    {data: data}
-                    ));
-                }
-                function drawAccuracyGraph(data) {
-                    $(".accuracy-graph").show();
-                    c3.generate($.extend({
-                        bindto: '.accuracy-graph',
-                        size: {height: 500},
-                        axis: {
-                            x: {
-                                label: {
-                                    text: 'Epoch',
-                                    position: 'outer-center',
-                                },
-                                tick: {
-                                    // 3 sig-digs
-                                    format: function(x) { return Math.round(x*1000)/1000; },
-                                    fit: false,
-                                },
-                                min: 0,
-                                padding: {left: 0},
-                            },
-                            y: {
-                                show: true,
-                                label: {
-                                    text: 'Accuracy (%)',
-                                    position: 'outer-middle',
-                                },
-                                min: 0,
-                                max: 100,
-                                padding: {top: 0, bottom: 0},
-                            },
-                        },
-                        grid: {x: {show: true} },
-                        legend: {position: 'bottom'},
-                    },
-                    {data: data}
-                    ));
-                }
-                function drawCombinedGraph(data) {
-                    $(".combined-graph").show();
-                    c3.generate($.extend({
-                        bindto: '.combined-graph',
-                        size: {height: 500},
-                        axis: {
-                            x: {
-                                label: {
-                                    text: 'Epoch',
-                                    position: 'outer-center',
-                                },
-                                tick: {
-                                    // 3 sig-digs
-                                    format: function(x) { return Math.round(x*1000)/1000; },
-                                    fit: false,
-                                },
-                                min: 0,
-                                padding: {left: 0},
-                            },
-                            y: {
-                                label: {
-                                    text: 'Loss',
-                                    position: 'outer-middle',
-                                },
-                                min: 0,
-                                padding: {bottom: 0},
-                            },
-                            y2: {
-                                show: true,
-                                label: {
-                                    text: 'Accuracy (%)',
-                                    position: 'outer-middle',
-                                },
-                                min: 0,
-                                max: 100,
-                                padding: {top: 0, bottom: 0},
-                            },
-                        },
-                        grid: {x: {show: true} },
-                        legend: {position: 'bottom'},
-                    },
-                    {data: data}
-                    ));
-                }
-                function drawLRGraph(data) {
-                    $(".lr-graph").show();
-                    c3.generate($.extend({
-                        bindto: '.lr-graph',
-                        size: {height: 300},
-                        axis: {
-                            x: {
-                                label: {
-                                    text: 'Epoch',
-                                    position: 'outer-center',
-                                },
-                                tick: {
-                                    // 3 sig-digs
-                                    format: function(x) { return Math.round(x*1000)/1000; },
-                                    fit: false,
-                                },
-                                min: 0,
-                                padding: {left: 0},
-                            },
-                            y: {
-                                label: {
-                                    text: 'Learning Rate',
-                                    position: 'outer-middle',
-                                },
-                                min: 0,
-                                padding: {bottom: 0},
-                            },
-                        },
-                        grid: {x: {show: true} },
-                        legend: {show: false},
-                    },
-                    {data: data}
-                    ));
-                }
-            </script>
-            {# TODO: show these graphs if it makes more sense than just the combined
-
-            <div class="loss-graph" style="height:500px;width:100%;background:white;display:none;"></div>
-            {% set loss_graph_data = job.train_task().loss_graph_data() %}
-            {% if loss_graph_data %}
-            <script>
-                drawLossGraph({% autoescape false %}{{loss_graph_data}}{% endautoescape %});
-            </script>
+            <div id="combined-graph" class="combined-graph"
+                style="height:500px;width:100%;background:white;display:none;"></div>
             <br>
             <br>
-            {% endif %}
-            <div class="accuracy-graph" style="height:500px;width:100%;background:white;display:none;"></div>
-            {% set accuracy_graph_data = job.train_task().accuracy_graph_data() %}
-            {% if accuracy_graph_data %}
-            <script>
-                drawAccuracyGraph({% autoescape false %}{{accuracy_graph_data}}{% endautoescape %});
-            </script>
-            <br>
-            <br>
-            {% endif %}
-            #}
-            <div class="combined-graph" style="height:500px;width:100%;background:white;display:none;"></div>
             {% set combined_graph_data = job.train_task().combined_graph_data() %}
             {% if combined_graph_data %}
             <script>
                 drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
             </script>
-            <br>
-            <br>
             {% endif %}
-            <div class="lr-graph" style="height:300px;width:100%;background:white;display:none;"></div>
+
+            <div id="lr-graph" class="lr-graph"
+                style="height:300px;width:100%;background:white;display:none;"></div>
             {% set lr_graph_data = job.train_task().lr_graph_data() %}
             {% if lr_graph_data %}
             <script>
