@@ -6,6 +6,7 @@ import caffe
 import time
 import math
 import subprocess
+import sys
 
 import numpy as np
 
@@ -92,7 +93,6 @@ class TorchTrainTask(TrainTask):
 
     @override
     def before_run(self):
-        # TODO
         if not isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             raise NotImplementedError()
 
@@ -105,7 +105,6 @@ class TorchTrainTask(TrainTask):
 
     @override
     def task_arguments(self, **kwargs):
-        # TODO
         gpu_id = kwargs.pop('gpu_id', None)
 
         #args = [os.path.join(config_option('caffe_root'), 'bin', 'caffe.bin'),
@@ -406,7 +405,7 @@ class TorchTrainTask(TrainTask):
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file)
                 ]
-        print 'self.dataset.resize_mode:',self.dataset.resize_mode
+
         if constants.TORCH_USE_MEAN_PIXEL:
             args.append('--useMeanPixel=yes')
 
@@ -494,7 +493,7 @@ class TorchTrainTask(TrainTask):
 
         float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
-        # loss and learning rate updates
+        # format of output while testing single image
         match = re.match(r'For image \d+, predicted class \d+: (\d+) \(.*?\) %s'  % (float_exp), message)
         if match:
             label = int(match.group(1))
@@ -502,6 +501,13 @@ class TorchTrainTask(TrainTask):
             assert confidence.lower() != 'nan', 'Network reported "nan" for confidence value. Please check image and network'
             confidence = float(confidence)
             predictions.append((label-1, confidence))   # In Torch, array index starts from 1 instead of 0. So, subtracted 1 from label value to refer correct label in labels file.
+            return True
+
+        # format of output while testing multiple images
+        match = re.match(r'Predictions for image \d+: (.*)', message)
+        if match:
+            values = match.group(1).strip().split(" ")
+	    predictions.append(map(float, values))
             return True
 
         if level in ['error', 'critical']:
@@ -512,7 +518,120 @@ class TorchTrainTask(TrainTask):
 
     @override
     def can_infer_many(self):
-        return False
+        if isinstance(self.dataset, ImageClassificationDatasetJob):
+            return True
+        raise NotImplementedError()
+
+    @override
+    def infer_many(self, data, snapshot_epoch=None):
+        if isinstance(self.dataset, ImageClassificationDatasetJob):
+            return self.classify_many(data, snapshot_epoch=snapshot_epoch)
+        raise NotImplementedError()
+
+    def classify_many(self, image_file, snapshot_epoch=None):
+        """
+        Returns (labels, results):
+        labels -- an array of strings
+        results -- a 2D np array:
+            [
+                [image0_label0_confidence, image0_label1_confidence, ...],
+                [image1_label0_confidence, image1_label1_confidence, ...],
+                ...
+            ]
+
+        Arguments:
+        images -- a list of np.arrays
+
+        Keyword arguments:
+        snapshot_epoch -- which snapshot to use
+        """
+	labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
+
+        if config_option('torch_root') == 'SYS':
+            torch_bin = 'th'
+        else:
+            torch_bin = os.path.join(config_option('torch_root'), 'th')
+
+        args = [torch_bin,
+                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
+		'--testMany=yes',
+		'--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
+		'--image=%s' % str(image_file),
+                '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
+                '--network=%s' % self.model_file.split(".")[0],
+                '--epoch=%d' % int(snapshot_epoch),
+                '--networkDirectory=%s' % self.job_dir,
+                '--load=%s' % self.job_dir,
+                '--snapshotPrefix=%s' % self.snapshot_prefix,
+                '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
+		'--pythonPrefix=%s' % sys.executable,
+                '--labels=%s' % self.dataset.path(self.dataset.labels_file)
+                ]
+        if constants.TORCH_USE_MEAN_PIXEL:
+            args.append('--useMeanPixel=yes')
+
+        if self.crop_size:
+            args.append('--crop=yes')
+            args.append('--croplen=%d' % self.crop_size)
+
+        if self.use_mean:
+            args.append('--subtractMean=yes')
+        else:
+            args.append('--subtractMean=no')
+
+        #print args
+
+        # Convert them all to strings
+        args = [str(x) for x in args]
+
+        self.logger.info('%s test task started.' % self.name())
+        self.status = Status.RUN
+
+        unrecognized_output = []
+	predictions = []
+        p = subprocess.Popen(args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=self.job_dir,
+                close_fds=True,
+                )
+
+        try:
+            while p.poll() is None:
+                for line in utils.nonblocking_readlines(p.stdout):
+                    if self.aborted.is_set():
+                        p.terminate()
+                        self.status = Status.ABORT
+                        break
+
+                    if line is not None:
+                        # Remove whitespace
+                        line = line.strip()
+                    if line:
+                        if not self.process_test_output(line, predictions):
+                            self.logger.warning('%s unrecognized input: %s' % (self.name(), line.strip()))
+                            unrecognized_output.append(line)
+                    else:
+                        time.sleep(0.05)
+        except Exception as e:
+            p.terminate()
+            pass
+
+        if p.returncode != 0:  #TODO: test jobs should be run in different way. Because of the below code, if the test job fails it is overriding the errors of Train task. Need to correct this.
+            self.logger.error('%s task failed with error code %d' % (self.name(), p.returncode))
+            if self.exception is None:
+                self.exception = 'error code %d' % p.returncode
+                if unrecognized_output:
+                    self.traceback = '\n'.join(unrecognized_output)
+            self.status = Status.ERROR
+            return (None,None)
+        else:
+            self.logger.info('%s test task completed.' % self.name())
+            self.status = Status.DONE
+        #if gpu_id:
+        #    args.append('--devid=%d' % (gpu_id+1))
+	return (labels,np.array(predictions))
+
 
     def has_model(self):
         """

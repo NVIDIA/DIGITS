@@ -59,7 +59,7 @@ local function all_keys(cursor_,key_,op_)
 end
 
 
-local PreProcess = function(y, mean, subtractMean, channels, mirror, crop, train, cropX, cropY, croplen)
+local PreProcess = function(y, mean, subtractMean, channels, mirror, crop, train, cropY, cropX, croplen)
     if subtractMean == 'yes' then
         for i=1,channels  do
            y[{ i,{},{} }]:add(-mean[i])
@@ -72,15 +72,15 @@ local PreProcess = function(y, mean, subtractMean, channels, mirror, crop, train
 
       if train == true then
         --During training we will crop randomly
-        local valueX =  math.ceil(torch.FloatTensor.torch.uniform()*cropX)
         local valueY =  math.ceil(torch.FloatTensor.torch.uniform()*cropY)
-        --y = image.crop(y, valueX, valueY, valueX+ImageSizeX-1, valueY+ImageSizeY-1)
-        y = image.crop(y, valueY-1, valueX-1, valueY+croplen-1, valueX+croplen-1)
+        local valueX =  math.ceil(torch.FloatTensor.torch.uniform()*cropX)
+        --y = image.crop(y, valueY, valueX, valueY+ImageSizeY-1, valueX+ImageSizeX-1)
+        y = image.crop(y, valueX-1, valueY-1, valueX+croplen-1, valueY+croplen-1)
 
       else   
         --for validation we will crop at center
-        --y = image.crop(y, cropX, cropY, cropX+ImageSizeX-1, cropY+ImageSizeY-1)
-        y = image.crop(y, cropY-1, cropX-1, cropY+croplen-1, cropX+croplen-1)
+        --y = image.crop(y, cropY, cropX, cropY+ImageSizeY-1, cropX+ImageSizeX-1)
+        y = image.crop(y, cropX-1, cropY-1, cropX+croplen-1, cropY+croplen-1)
       end
     end
     return y
@@ -132,7 +132,7 @@ local function pt(t)
 end
 
 -- Meta class
-DBSource = {e=nil, t=nil, d=nil, c=nil, mean = nil, ImageChannels = 0, ImageSizeX = 0, ImageSizeY = 0, total=0, datum_t=datum, mirror='no', crop='no', croplen=0, cropX=0, cropY=0, subtractMean='yes', train=false}
+DBSource = {e=nil, t=nil, d=nil, c=nil, mean = nil, ImageChannels = 0, ImageSizeY = 0, ImageSizeX = 0, total=0, datum_t=datum, mirror='no', crop='no', croplen=0, cropY=0, cropX=0, subtractMean='yes', train=false}
 
 -- Derived class method new
 function DBSource:new (db_name, mirror, crop, croplen, mean_t, subtractMean, isTrain)
@@ -143,10 +143,10 @@ function DBSource:new (db_name, mirror, crop, croplen, mean_t, subtractMean, isT
   self.mean = mean_t["mean"]
   -- image channel, height and width details are extracted from mean.jpeg file. If mean.jpeg file is not present then probably the below three lines of code needs to be changed to provide hard-coded values.
   self.ImageChannels = mean_t["channels"]
-  self.ImageSizeX = mean_t["height"]
-  self.ImageSizeY = mean_t["width"]
+  self.ImageSizeY = mean_t["height"]
+  self.ImageSizeX = mean_t["width"]
 
-  logmessage.display(0,'Loaded train image details from the mean file: Image channels are  ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeX .. ' and Image height is ' .. self.ImageSizeY)
+  logmessage.display(0,'Loaded train image details from the mean file: Image channels are  ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeY .. ' and Image height is ' .. self.ImageSizeX)
 
   self.e = lightningmdb.env_create()
   local LMDB_MAP_SIZE = 1099511627776  -- 1 TB
@@ -164,11 +164,11 @@ function DBSource:new (db_name, mirror, crop, croplen, mean_t, subtractMean, isT
 
   if crop == 'yes' then
     if self.train == true then
-      self.cropX = self.ImageSizeX - croplen + 1
       self.cropY = self.ImageSizeY - croplen + 1
+      self.cropX = self.ImageSizeX - croplen + 1
     else
-      self.cropX = math.floor((self.ImageSizeX - croplen)/2) + 1
       self.cropY = math.floor((self.ImageSizeY - croplen)/2) + 1
+      self.cropX = math.floor((self.ImageSizeX - croplen)/2) + 1
     end
   end
 
@@ -208,7 +208,7 @@ function DBSource:getImgUsingKey(key)
     y=x:reshape(msg.channels,msg.height,msg.width):float()
   end
   
-  local image_s = PreProcess(y, self.mean, self.subtractMean, msg.channels, self.mirror, self.crop, self.train, self.cropX, self.cropY, self.croplen)
+  local image_s = PreProcess(y, self.mean, self.subtractMean, msg.channels, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
  
   local label = msg.label
   return image_s,label
@@ -222,8 +222,8 @@ function DBSource:nextBatch (batchsize)
   if self.crop == 'yes' then
     Images = torch.Tensor(batchsize, self.ImageChannels, self.croplen, self.croplen)
   else
-    --Images = torch.FloatTensor(batchsize, self.ImageChannels, self.ImageSizeX, self.ImageSizeY):contiguous()   -- This needs to be checked later. Is contiguous is necessary?
-    Images = torch.Tensor(batchsize, self.ImageChannels, self.ImageSizeX, self.ImageSizeY)
+    --Images = torch.FloatTensor(batchsize, self.ImageChannels, self.ImageSizeY, self.ImageSizeX):contiguous()   -- This needs to be checked later. Is contiguous is necessary?
+    Images = torch.Tensor(batchsize, self.ImageChannels, self.ImageSizeY, self.ImageSizeX)
   end
   local Labels = torch.Tensor(batchsize)
 
@@ -246,7 +246,7 @@ function DBSource:nextBatch (batchsize)
     Labels[i] = tonumber(msg.label) + 1
   end
 ]]--
-  local total = self.ImageChannels*self.ImageSizeX*self.ImageSizeY
+  local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
   local x = torch.ByteTensor(total):contiguous()
   local temp_ptr = torch.data(x) -- raw C pointer using torchffi
   --local mean_ptr = torch.data(self.mean)
@@ -272,7 +272,7 @@ function DBSource:nextBatch (batchsize)
       data[image_ind+ind] = temp_ptr[ind]-mean_ptr[ind]
     end]]--
 
-    Images[i] = PreProcess(y, self.mean, self.subtractMean, msg.channels, self.mirror, self.crop, self.train, self.cropX, self.cropY, self.croplen)
+    Images[i] = PreProcess(y, self.mean, self.subtractMean, msg.channels, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
 
     --print(string.format("elapsed time2: %.6f\n", a:time().real  - m))
 

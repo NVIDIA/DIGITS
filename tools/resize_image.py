@@ -94,7 +94,7 @@ if __name__ == '__main__':
             )
 
     args = vars(parser.parse_args())
-
+    print args
     for valid in [
             validate_range(args['width'], min=1),
             validate_range(args['height'], min=1),

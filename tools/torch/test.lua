@@ -19,7 +19,7 @@ require 'Optimizer'
 --print 'processing options'
 
 opt = lapp[[
--m,--mode               (default half_crop)      Resize mode (squash/crop/fill/half_crop) for the input test image, if it's dimensions differs from those of Train DB images.
+-m,--resizeMode         (default squash)      	 Resize mode (squash/crop/fill/half_crop) for the input test image, if it's dimensions differs from those of Train DB images.
 -t,--threads            (default 8)              number of threads
 -p,--type               (default cuda)           float or cuda
 -d,--devid              (default 1)              device ID (if using CUDA)
@@ -40,6 +40,7 @@ opt = lapp[[
 --snapshotPrefix        (default '')             prefix of the weights/snapshots
 --networkDirectory      (default '')             directory in which network exists
 --pythonPrefix        	(default 'python')       python version
+--allPredictions        (default no)       	 If 'yes', displays all the predictions of an image instead of formatted topN results
 ]]
 
 
@@ -54,6 +55,8 @@ if opt.snapshotPrefix ~= '' then
 else
     snapshot_prefix = opt.network
 end
+
+local utils = require 'utils'
 
 local data = require 'data'
 
@@ -73,8 +76,8 @@ if (opt.useMeanPixel == 'yes' or opt.subtractMean == 'no') and crop == 'yes' the
   req_y = opt.croplen
   crop = 'no'        -- as resize_image.py will take care of cropping as well
 else
-  req_x = img_mean["height"]
-  req_y = img_mean["width"]
+  req_x = img_mean["width"]
+  req_y = img_mean["height"]
 end
 
 local cropX = nil
@@ -129,7 +132,6 @@ end
 -- as we want to classify, let's disable dropouts by enabling evaluation mode
 model:evaluate()
 
-
 local function preprocess(img_path)
 
     -- if image doesn't exists in path, check whether provided path is an URL, if URL download it else display error message and return. This function is useful only when the test code was run from commandline.
@@ -146,13 +148,9 @@ local function preprocess(img_path)
     local im = image.load(img_path)
 
     -- resize image to match with the required size. Required size may be mean file size or crop size input
-    if (img_mean["channels"] ~= im:size(1)) or (req_x ~= im:size(2)) or (req_y ~= im:size(3)) then
-        local tempfile = os.tmpname() .. path.extension(img_path)
-        os.execute(opt.pythonPrefix .. ' ' .. paths.concat(debug.getinfo(1,"S").source:sub(2),"../../resize_image.py") .. ' ' .. img_path .. ' ' .. tempfile .. ' ' .. req_x .. ' ' .. req_y .. ' -c ' .. img_mean["width"] .. ' -m ' .. opt.mode)
-        im = image.load(tempfile)
-        os.remove(tempfile)
+    if (img_mean["channels"] ~= im:size(1)) or (req_y ~= im:size(2)) or (req_x ~= im:size(3)) then
+        im = utils.resizeImage(im, req_y, req_x, img_mean["channels"],opt.resizeMode)
     end
-
     -- Torch image.load() always loads image with each pixel value between 0-1. As during training, images were taken from LMDB directly, their pixel values ranges from 0-255. As, model was trained with images whose pixel values are between 0-255, we may have to convert test image also to have 0-255 for each pixel.
     im=im*255
 
@@ -167,11 +165,11 @@ local batch_size = 0
 local predictions = nil
 local topN = 5    -- displays top 5 predictions
 local val,classes = nil,nil
-local index = 0
 local counter = 0
+local index = 0
 
 -- if ccn2 is used, then batch size of the input should be atleast 32
-if using_ccn2 == 'yes' or testMany == 'yes' then
+if using_ccn2 == 'yes' or opt.testMany == 'yes' then
   batch_size = 32
 else
   batch_size = 1
@@ -192,16 +190,26 @@ local function predictBatch(inputs)
   end
   -- sort the outputs of SoftMax layer in decreasing order
   for i=1,counter do
-    val,classes = predictions[{i,{}}]:float():sort(true)
     index = index + 1
-    for j=1,topN do
-      -- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
-      logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. math.exp(val[j]))
+    if opt.allPredictions == 'no' then
+      --display topN predictions of each image
+      val,classes = predictions[{i,{}}]:float():sort(true)
+      for j=1,topN do
+        -- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
+        logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. math.exp(val[j]))
+      end
+    else
+      val = predictions[{i,{}}]:float()
+      allPredictions = ''
+      for j=1,val:size(1) do
+        allPredictions = allPredictions .. ' ' .. math.exp(val[j])
+      end
+      logmessage.display(0,'Predictions for image ' .. index ..': '..allPredictions)
     end
   end
 end
 
-if testMany == 'yes' then
+if opt.testMany == 'yes' then
   local file = io.open(opt.image)
   if file then
 
@@ -239,7 +247,6 @@ if testMany == 'yes' then
 else
   -- only one image needs to be predicted
   inputs[1]=preprocess(opt.image)
-
   if using_ccn2 == 'yes' then
     for j=2,batch_size do
       inputs[j] = inputs[1]             -- replicate the first image in entire inputs tensor

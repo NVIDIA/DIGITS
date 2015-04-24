@@ -28,7 +28,7 @@ Usage details:
 -k,--crop               (default no)             If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter 
 -l,--croplen            (default 0)              crop length. This is required parameter when crop option is provided
 -m,--momentum           (default 0.9)            momentum
--n,--network	        (string)                 Model - must return valid network. Available - {CaffeRef_Model, AlexNet_Model, NiN_Model, OverFeat_Model}
+-n,--network	        (string)                 Model - must return valid network. Available - {lenet, googlenet, alexnet}
 -o,--optimization       (default sgd)            optimization method
 -p,--type               (default cuda)           float or cuda
 -r,--learningRate       (default 0.001)          learning rate
@@ -219,11 +219,11 @@ end
 
 -- validate "crop length" input parameter 
 if opt.crop == 'yes' then
-  if opt.croplen > train.ImageSizeX then
-    logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image width ' .. train.ImageSizeX)
+  if opt.croplen > train.ImageSizeY then
+    logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image width ' .. train.ImageSizeY)
     return
-  elseif opt.croplen > train.ImageSizeY then
-    logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image height ' .. train.ImageSizeY)
+  elseif opt.croplen > train.ImageSizeX then
+    logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image height ' .. train.ImageSizeX)
     return
   end
 end
@@ -356,7 +356,7 @@ local function Test()
       if opt.crop == 'yes' then
         inputs = torch.Tensor(opt.batchSize, val.ImageChannels, opt.croplen, opt.croplen)
       else
-        inputs = torch.Tensor(opt.batchSize, val.ImageChannels, val.ImageSizeX, val.ImageSizeY)
+        inputs = torch.Tensor(opt.batchSize, val.ImageChannels, val.ImageSizeY, val.ImageSizeX)
       end
       targets = torch.Tensor(opt.batchSize)      
     end
@@ -366,7 +366,7 @@ local function Test()
         if opt.crop == 'yes' then
           inputs = torch.Tensor(valSize-t+1, val.ImageChannels, opt.croplen, opt.croplen)
         else
-          inputs = torch.Tensor(valSize-t+1, val.ImageChannels, val.ImageSizeX, val.ImageSizeY)
+          inputs = torch.Tensor(valSize-t+1, val.ImageChannels, val.ImageSizeY, val.ImageSizeX)
         end
         targets = torch.Tensor(valSize-t+1)
       end
@@ -441,7 +441,7 @@ local function Train(epoch)
       if opt.crop == 'yes' then
         inputs = torch.Tensor(opt.batchSize, train.ImageChannels, opt.croplen, opt.croplen)
       else
-        inputs = torch.Tensor(opt.batchSize, train.ImageChannels, train.ImageSizeX, train.ImageSizeY)
+        inputs = torch.Tensor(opt.batchSize, train.ImageChannels, train.ImageSizeY, train.ImageSizeX)
       end
 
       targets = torch.Tensor(opt.batchSize)      
@@ -454,7 +454,7 @@ local function Train(epoch)
         if opt.crop == 'yes' then
           inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, opt.croplen, opt.croplen)
         else
-          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, train.ImageSizeX, train.ImageSizeY)
+          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, train.ImageSizeY, train.ImageSizeX)
         end
         targets = torch.Tensor(trainSize-t+1)
       end
