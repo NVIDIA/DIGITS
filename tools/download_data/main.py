@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-c', '--clean',
             action = 'store_true',
-            help='Clean out the directory first (if necessary)'
+            help='clean out the directory first (if it exists)'
             )
 
     args = vars(parser.parse_args())
