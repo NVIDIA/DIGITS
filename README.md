@@ -54,7 +54,7 @@ Detailed installation instructions are available on [caffe's installation page](
 
 #### Installing caffe prerequisites on Mac OS
 
-If you have [homebrew][http://brew.sh/] installed, you can install Caffe pre-requisites using it:
+If you have [homebrew](http://brew.sh/) installed, you can install Caffe pre-requisites using it:
 
     % brew install git
     % cd $HOME
