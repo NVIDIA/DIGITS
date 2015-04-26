@@ -41,7 +41,7 @@ Download from the [cuDNN website](https://developer.nvidia.com/cuDNN) and follow
 
 Detailed installation instructions are available on [caffe's installation page](http://caffe.berkeleyvision.org/installation.html). Condensed version is as follows:
 
-Install caffe:
+#### Installing caffe prerequisites on Linux
 
     % sudo apt-get install git
     % cd $HOME
@@ -52,7 +52,11 @@ Install caffe:
     % cd python
     % for req in $(cat requirements.txt); do sudo pip install $req; done
 
-Build caffe:
+#### Installing caffe prerequisites on Mac OS
+
+If you have [homebrew](http://brew.sh/) installed, you can follow the instructions from  [caffe's installation page](http://caffe.berkeleyvision.org/install_osx.html)
+
+#### Build caffe:
 
     % cd $HOME/caffe
     % cp Makefile.config.example Makefile.config
