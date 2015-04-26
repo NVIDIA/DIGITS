@@ -56,8 +56,6 @@ Detailed installation instructions are available on [caffe's installation page](
 
 If you have [homebrew](http://brew.sh/) installed, you can follow the instructions from [caffe's page](http://caffe.berkeleyvision.org/install_osx.html)
 
-Before you build caffe you may need to specify the include directory for cudnn in Makefile.config. Also remember to select the correct option for BLAS (atlas, mkl or open). We installed openblas using the commands above.
-
 #### Build caffe:
 
     % cd $HOME/caffe
