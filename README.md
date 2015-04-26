@@ -54,7 +54,7 @@ Detailed installation instructions are available on [caffe's installation page](
 
 #### Installing caffe prerequisites on Mac OS
 
-If you have [homebrew](http://brew.sh/) installed, you can follow the instructions from [caffe's page](http://caffe.berkeleyvision.org/install_osx.html)
+If you have [homebrew](http://brew.sh/) installed, you can follow the instructions from  [caffe's installation page](http://caffe.berkeleyvision.org/install_osx.html)
 
 #### Build caffe:
 
