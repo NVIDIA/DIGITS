@@ -41,7 +41,7 @@ Download from the [cuDNN website](https://developer.nvidia.com/cuDNN) and follow
 
 Detailed installation instructions are available on [caffe's installation page](http://caffe.berkeleyvision.org/installation.html). Condensed version is as follows:
 
-Install caffe:
+#### Installing caffe prerequisites on Linux
 
     % sudo apt-get install git
     % cd $HOME
@@ -52,7 +52,23 @@ Install caffe:
     % cd python
     % for req in $(cat requirements.txt); do sudo pip install $req; done
 
-Build caffe:
+#### Installing caffe prerequisites on Mac OS
+
+If you have [homebrew][http://brew.sh/] installed, you can install Caffe pre-requisites using it:
+
+    % brew install git
+    % cd $HOME
+    $ brew install gcc
+    $ brew install protobuf gflags glog hd5 leveldb boost 
+    $ brew tap homebrew/science
+    $ brew install homebrew/science/openblas
+    $ brew install opencv
+    $ brew install python
+    $ for req in $(cat requirements.txt); do pip install $req; done
+
+Before you build caffe you may need to specify the include directory for cudnn in Makefile.config. Also remember to select the correct option for BLAS (atlas, mkl or open). We installed openblas using the commands above.
+
+#### Build caffe:
 
     % cd $HOME/caffe
     % cp Makefile.config.example Makefile.config
