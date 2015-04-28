@@ -72,13 +72,12 @@ Set environment variables:
     % cd $HOME
     % git clone https://github.com/NVIDIA/DIGITS.git digits
     % cd digits
-    % sudo apt-get install graphviz gunicorn
+    % sudo apt-get install graphviz
     % for req in $(cat requirements.txt); do sudo pip install $req; done
 
 Again if on MacOS with homebrew, replace the last two lines as follows:
     
     $ brew install graphviz
-    $ pip install gunicorn
     $ for req in $(cat requirements.txt); do pip install $req; done
 
 # Starting the server
