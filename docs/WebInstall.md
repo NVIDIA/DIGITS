@@ -12,12 +12,12 @@ From http://developer.nvidia.com/digits
 
 #### Unpack the archive
 
-    % tar xvf digits-1.0.tgz
+    % tar xvf digits-1.1.tar.gz
 
-#### Run the one time script to install requirements.  Don't run this script again.
+#### Run the install one time script to install requirements. You only need to run this once.
 
-    % cd digits-1.0
-    % ./one_time.sh
+    % cd digits-1.1
+    % ./install.sh
 
 #### Start DIGITS
 
