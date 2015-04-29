@@ -256,6 +256,7 @@ function DBSource:nextBatch (batchsize)
     i=i+1
 --local a = torch.Timer()
 --local m = a:time().real 
+    print 'key' .. k
     local msg = datum.Datum():Parse(v)
     ffi.copy(temp_ptr, msg.data)
 --print(string.format("elapsed time1: %.6f\n", a:time().real  - m))

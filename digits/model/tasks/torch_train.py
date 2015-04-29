@@ -172,7 +172,7 @@ class TorchTrainTask(TrainTask):
 
         #if self.pretrained_model:
         #    args.append('--weights=%s' % self.path(self.pretrained_model))
-        #print args
+        print args
         return args
 
     @override

@@ -107,7 +107,7 @@ end
 
 if opt.useMeanPixel == 'yes' and opt.subtractMean ~= 'no' then
   opt.useMeanPixel = 'no'
-  logmessage.display(0,'useMeanPixel parameter is not considered as subtractMean value is provided as "no"')
+  logmessage.display(0,'useMeanPixel parameter is not considered as subtractMean value is provided as "yes"')
 end
 
 torch.setnumthreads(opt.threads)
