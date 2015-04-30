@@ -204,6 +204,7 @@ function DBSource:getImgUsingKey(key)
   local y=nil
   if msg.encoded==true then
     y = image.decompressJPG(x,msg.channels):float()
+    y = y*255  -- image functions returns the image data with values between 0 to 1. To convert those values to 0 to 255, multiplication operation is performed
   else
     y=x:reshape(msg.channels,msg.height,msg.width):float()
   end
@@ -227,7 +228,7 @@ function DBSource:nextBatch (batchsize)
   end
   local Labels = torch.Tensor(batchsize)
 
-  local data=torch.data(Images)
+  --local data=torch.data(Images)
   
   local i=0
 
@@ -247,7 +248,7 @@ function DBSource:nextBatch (batchsize)
   end
 ]]--
   local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
-  local x = torch.ByteTensor(total):contiguous()
+  local x = torch.ByteTensor(total*5):contiguous()  -- some times length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
   local temp_ptr = torch.data(x) -- raw C pointer using torchffi
   --local mean_ptr = torch.data(self.mean)
   local image_ind = 0  
@@ -256,7 +257,6 @@ function DBSource:nextBatch (batchsize)
     i=i+1
 --local a = torch.Timer()
 --local m = a:time().real 
-    print 'key' .. k
     local msg = datum.Datum():Parse(v)
     ffi.copy(temp_ptr, msg.data)
 --print(string.format("elapsed time1: %.6f\n", a:time().real  - m))
@@ -265,8 +265,9 @@ function DBSource:nextBatch (batchsize)
     local y=nil
     if msg.encoded==true then
       y = image.decompressJPG(x,msg.channels):float()
+      y = y*255  -- image functions returns the image data with values between 0 to 1. To convert those values to 0 to 255, multiplication operation is performed
     else
-      y=x:reshape(msg.channels,msg.height,msg.width):float()
+      y=x:narrow(1,1,total):reshape(msg.channels,msg.height,msg.width):float()   -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that reshape() works fine without issues  
     end
 
     --[[for ind=1,total do
