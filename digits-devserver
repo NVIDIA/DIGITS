@@ -22,7 +22,7 @@ if __name__ == '__main__':
             )
     parser.add_argument('-c', '--config',
             action='store_true',
-            help='Reconfigure the application'
+            help='Edit the application configuration manually'
             )
     parser.add_argument('-d', '--debug',
             action='store_true',
@@ -33,9 +33,10 @@ if __name__ == '__main__':
 
     from digits import config
 
-    if not config.valid_config() or args['config']:
-        if not config.prompt_config():
-            sys.exit(1)
+    if args['config']:
+        config.load_config('verbose')
+    else:
+        config.load_config('quiet')
 
     from digits.webapp import app, socketio, scheduler
 

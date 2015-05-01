@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os.path
+import os
 import json
 import traceback
 
@@ -142,7 +142,7 @@ def abort_job(job_id):
 
 @app.errorhandler(Exception)
 def handle_exception(e, status_code=500):
-    if config_option('level') == 'test':
+    if 'DIGITS_MODE_TEST' in os.environ:
         raise e
     title = type(e).__name__
     message = str(e)

@@ -290,7 +290,7 @@ class Scheduler:
                                     job.status = Status.WAIT
                             else:
                                 job.status = Status.RUN
-                        if config_option('level') == 'test':
+                        if 'DIGITS_MODE_TEST' in os.environ:
                             start_this_job(job)
                         else:
                             # Delay start by one second for initial page load

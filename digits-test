@@ -1,13 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-# Set level
-if [ -z "$DIGITS_LEVEL" ]
-then
-    DIGITS_LEVEL=test
-fi
-
-DIGITS_LEVEL=$DIGITS_LEVEL $(command -v python) $(command -v nosetests) \
+DIGITS_MODE_TEST=1 $(command -v python) $(command -v nosetests) \
     --no-path-adjustment -v \
     tools/ digits/ \
     $@
