@@ -22,6 +22,8 @@
                 {% elif task.framework_name() == 'torch' %}
                 <dt>Network</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.model_file, relative=True))}}">{{task.model_file}}</a></dd>
+                <dt>Shuffle</dt>
+                <dd>{{task.shuffle}}</dd>
                 {% endif %}
 
                 <dt>Raw {{task.framework_name()}} output</dt>

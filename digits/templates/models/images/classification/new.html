@@ -104,7 +104,19 @@ $("#dataset").change(function() {
             <div class="well">
                 <h4>Solver Options</h4>
 
+                </br>
                 <!-- Length -->
+                <div class="form-group{{' has-error' if form.shuffle.errors}}" id="shuffle-data" style="display:none;">
+                    <label for={{form.shuffle.name}}>
+                        {{form.shuffle}}
+                        {{form.shuffle.label.text}}
+                    </label>
+                    <span name="shuffle_explanation"
+                        class="explanation-tooltip glyphicon glyphicon-question-sign"
+                        data-container="body"
+                        title="For every epoch, shuffle the data before training."
+                        ></span>
+                </div>
 
                 <div class="form-group{{' has-error' if form.train_epochs.errors}}">
                     {{form.train_epochs.label}}
@@ -413,6 +425,10 @@ function customizeNetwork(network, snapshot_list, framework) {
                              $(this).siblings().removeClass('active');
                              $('#framework').val($(this).attr('id'));
                              $('#customFramework li[id="'+$(this).attr('id')+'"]').tab('show');
+                             if ($(this).attr('id') == "torch")
+                                 $("#shuffle-data").show();
+                             else
+                                 $("#shuffle-data").hide();
                         });
                     </script>
                     <table class="table">
@@ -514,6 +530,10 @@ function customizeNetwork(network, snapshot_list, framework) {
                             $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
                             $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
                         }
+                        if($(this).parents('td').find(".badge").text()=="torch")
+                            $("#shuffle-data").show();
+                        else
+                            $("#shuffle-data").hide();
                         $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
                         $(this).parents('tr').find(".form-control").css('visibility', 'visible');
                         $prevtab_prev_clicked_tr = $(this).parents('tr');
@@ -543,6 +563,10 @@ function customizeNetwork(network, snapshot_list, framework) {
                              $(this).addClass('active');
                              $(this).siblings().removeClass('active');
                              $('#framework').val($(this).attr('id'));
+                             if ($(this).attr('id') == "torch")
+                                 $("#shuffle-data").show();
+                             else
+                                 $("#shuffle-data").hide();
                         });
                     </script>
 
@@ -620,6 +644,15 @@ function updateNetworkTab(method) {
 $('#network-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         parts = e.target.href.split('-');
         updateNetworkTab( parts[parts.length-1] );
+        if (parts[parts.length-1] == "previous" || $('#framework').val() != "torch")
+        {
+            if(parts[parts.length-1] == "previous" && $("input:radio[name=previous_networks]").is(":checked") && $("input:radio[name=previous_networks]:checked").parents('td').find(".badge").text()=="torch")
+                $("#shuffle-data").show();
+            else
+                $("#shuffle-data").hide();
+        }
+        else
+            $("#shuffle-data").show();
         });
 $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </script>
@@ -645,5 +678,13 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
     </div>
 
 </form>
+<script>
+if($("input:radio[name=previous_networks]").is(":checked")) {
+    if($prevtab_prev_clicked_tr.find(".badge").text()=="torch")
+        $("#shuffle-data").show();
+    else
+        $("#shuffle-data").hide();
+}
+</script>
 
 {% endblock %}

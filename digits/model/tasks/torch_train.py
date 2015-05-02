@@ -31,7 +31,7 @@ class TorchTrainTask(TrainTask):
 
     TORCH_LOG = 'torch_output.log'
 
-    def __init__(self, **kwargs):
+    def __init__(self, shuffle, **kwargs):
         """
         Arguments:
         network -- a NetParameter defining the network
@@ -39,7 +39,7 @@ class TorchTrainTask(TrainTask):
         super(TorchTrainTask, self).__init__(**kwargs)
         self.pickver_task_torch_train = PICKLE_VERSION
 
-        #self.network = network
+        self.shuffle = shuffle
 
         self.current_epoch = 0
 
@@ -125,7 +125,6 @@ class TorchTrainTask(TrainTask):
                 '--save=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
                 '--snapshotInterval=%f' % self.snapshot_interval,
-                #'--shuffle=yes',
                 '--useMeanPixel=yes',
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file),
@@ -153,6 +152,9 @@ class TorchTrainTask(TrainTask):
         elif self.lr_policy['policy'] == 'sigmoid':
             args.append('--stepvalues=%f' % self.lr_policy['stepsize'])
             args.append('--gamma=%f' % self.lr_policy['gamma'])
+
+        if self.shuffle:
+            args.append('--shuffle=yes')
 
         if self.crop_size:
             args.append('--crop=yes')

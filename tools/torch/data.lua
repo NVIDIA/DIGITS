@@ -198,7 +198,7 @@ end
 function DBSource:getImgUsingKey(key)
   v = self.t:get(self.d,key,lightningmdb.MDB_FIRST)
   local msg = datum.Datum():Parse(v)
-  local x=torch.ByteTensor(#msg.data):contiguous()
+  local x=torch.ByteTensor(#msg.data+1):contiguous()
   local temp_ptr=torch.data(x)
   ffi.copy(temp_ptr, msg.data)
   local y=nil
@@ -248,8 +248,11 @@ function DBSource:nextBatch (batchsize)
   end
 ]]--
   local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
-  local x = torch.ByteTensor(total*5):contiguous()  -- some times length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
+  -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outiside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
+  local x = torch.ByteTensor(total*2):contiguous()  -- some times length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
+  local x_size = total * 2            -- This variable is just to avoid the calls to tensor's size() i.e., x:size(1)
   local temp_ptr = torch.data(x) -- raw C pointer using torchffi
+
   --local mean_ptr = torch.data(self.mean)
   local image_ind = 0  
 
@@ -258,6 +261,12 @@ function DBSource:nextBatch (batchsize)
 --local a = torch.Timer()
 --local m = a:time().real 
     local msg = datum.Datum():Parse(v)
+
+    if #msg.data > x_size then
+      x:resize(#msg.data+1)   -- 1 extra byte is required to copy zero terminator i.e., '\0', by ffi.copy()
+      x_size = #msg.data
+    end
+
     ffi.copy(temp_ptr, msg.data)
 --print(string.format("elapsed time1: %.6f\n", a:time().real  - m))
 --m = a:time().real

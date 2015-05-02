@@ -203,5 +203,7 @@ class ModelForm(Form):
                 ]
             )
 
-
+    shuffle = wtforms.BooleanField('Shuffle Train Data',
+                        default = True
+            )
 

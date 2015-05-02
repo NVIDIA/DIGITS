@@ -98,9 +98,9 @@ def image_classification_model_create():
             old_job = scheduler.get_job(form.previous_networks.data)
             if not old_job:
                 raise Exception('Job not found: %s' % form.previous_networks.data)
-            if form.framework.data == "caffe":
+            if old_job.train_task().framework_name() == "caffe":
                 network.CopyFrom(old_job.train_task().network)
-            elif form.framework.data == "torch":
+            elif old_job.train_task().framework_name() == "torch":
                 shutil.copy2(os.path.join(old_job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE))
             for i, choice in enumerate(form.previous_networks.choices):
                 if choice[0] == form.previous_networks.data:
@@ -185,6 +185,7 @@ def image_classification_model_create():
                     pretrained_model= pretrained_model,
                     crop_size       = form.crop_size.data,
                     use_mean        = form.use_mean.data,
+                    shuffle         = form.shuffle.data,
                     )
                 )
 
