@@ -15,7 +15,7 @@ DIGITS is is a webapp for training deep learning models.
 #### Bugs and feature requests
 * Please let us know by [filing a new issue](https://github.com/NVIDIA/DIGITS/issues/new)
 * Bonus points if you want to contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)!
-  * You will need to send a signed copy of the [Contributor License Agreement](CLA) to digits@nvidia.com before your change can be accepted.
+  * You will need to send a signed copy of the [Contributor License Agreement](CLA) to digits [at] nvidia [dot] com before your change can be accepted.
 
 # Installation
 
