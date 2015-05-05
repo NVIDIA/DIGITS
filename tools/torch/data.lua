@@ -203,10 +203,9 @@ function DBSource:getImgUsingKey(key)
   ffi.copy(temp_ptr, msg.data)
   local y=nil
   if msg.encoded==true then
-    y = image.decompressJPG(x,msg.channels):float()
-    y = y*255  -- image functions returns the image data with values between 0 to 1. To convert those values to 0 to 255, multiplication operation is performed
+    y = image.decompressJPG(x,msg.channels,'byte'):float()
   else
-    y=x:reshape(msg.channels,msg.height,msg.width):float()
+    y = x:narrow(1,1,msg.channels*msg.height*msg.width):view(msg.channels,msg.height,msg.width):float()
   end
   
   local image_s = PreProcess(y, self.mean, self.subtractMean, msg.channels, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
@@ -273,10 +272,9 @@ function DBSource:nextBatch (batchsize)
 
     local y=nil
     if msg.encoded==true then
-      y = image.decompressJPG(x,msg.channels):float()
-      y = y*255  -- image functions returns the image data with values between 0 to 1. To convert those values to 0 to 255, multiplication operation is performed
+      y = image.decompressJPG(x,msg.channels,'byte'):float()
     else
-      y=x:narrow(1,1,total):reshape(msg.channels,msg.height,msg.width):float()   -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that reshape() works fine without issues  
+      y = x:narrow(1,1,total):view(msg.channels,msg.height,msg.width):float()   -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that view() works fine without issues
     end
 
     --[[for ind=1,total do

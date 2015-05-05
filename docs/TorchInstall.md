@@ -2,11 +2,9 @@ This page contains installation instructions for all the required modules to inc
 
 ## Torch installation
 
-Use the below link to install torch on any machine:
+Use the below link to install Torch on Mac OS X and Ubuntu 12+:
 
-    % curl -s https://raw.githubusercontent.com/torch/ezinstall/master/install-all | bash
-
-For more information, please check: `https://github.com/torch/ezinstall`
+    % http://torch.ch/docs/getting-started.html
 
 After installation, enter the following command:  
 
