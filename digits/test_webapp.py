@@ -201,7 +201,7 @@ class WebappBaseTest(object):
         defaults = {
                 'dataset': dataset_id,
                 'method': 'custom',
-                'custom_network': get_dummy_network(),
+                'caffe_custom_network': get_dummy_network(),
                 'batch_size': DUMMY_IMAGE_COUNT,
                 'train_epochs': 1,
                 'framework' : 'caffe'
@@ -510,7 +510,7 @@ class TestModelCreation(WebappBaseTest):
     def test_visualize_network(self):
         """visualize network"""
         rv = self.app.post('/models/visualize-network',
-                data = {'custom_network': get_dummy_network()}
+                data = {'caffe_custom_network': get_dummy_network()}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')

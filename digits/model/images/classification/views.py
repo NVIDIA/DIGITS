@@ -119,10 +119,10 @@ def image_classification_model_create():
 
         elif form.method.data == 'custom':
             if form.framework.data == "caffe":
-                text_format.Merge(form.custom_network.data, network)
+                text_format.Merge(form.caffe_custom_network.data, network)
             elif form.framework.data == "torch":
                 model_file = open(os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE), "w")
-                model_file.write(form.custom_network.data)
+                model_file.write(form.torch_custom_network.data)
                 model_file.close()
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:

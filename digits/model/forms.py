@@ -180,11 +180,18 @@ class ModelForm(Form):
                 selection_exists_in_choices,
                 ],
             )
+
     # custom network validation is required for the caffe framework, because of limited protobuf support for torch framework.
-    custom_network = wtforms.TextAreaField('Custom Network',
+    caffe_custom_network = wtforms.TextAreaField('Caffe Custom Network',
             validators = [
                 required_if_method('custom','caffe'),
                 validate_NetParameter,
+                ]
+            )
+
+    torch_custom_network = wtforms.TextAreaField('Torch Custom Network',
+            validators = [
+                required_if_method('custom','torch')
                 ]
             )
 

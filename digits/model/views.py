@@ -120,7 +120,7 @@ def models_customize():
 def models_visualize_network():
     """Returns a string of png data"""
     net = caffe_pb2.NetParameter()
-    text_format.Merge(request.form['custom_network'], net)
+    text_format.Merge(request.form['caffe_custom_network'], net)
     # Throws an error if name is None
     if not net.name:
         net.name = 'Network'
