@@ -86,7 +86,7 @@ class ModelForm(Form):
     learning_rate = wtforms.FloatField('Base Learning Rate',
             default = 0.01,
             validators = [
-                validators.DataRequired(),
+                validators.InputRequired(),
                 validators.NumberRange(min=0),
                 ]
             )
