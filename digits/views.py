@@ -142,6 +142,8 @@ def abort_job(job_id):
 
 @app.errorhandler(Exception)
 def handle_exception(e, status_code=500):
+    if config_option('level') == 'test':
+        raise e
     title = type(e).__name__
     message = str(e)
     trace = None
