@@ -16,8 +16,6 @@ to find the Torch installation directory.
 
 #### LMDB installation
 
-If LMDB was already installed, make sure that the paths to liblmdb.so*, liblmdb.a and lmdb.h is properly set. If LMDB wasn't already installed, follow the below steps to install,
-
 Get LMDB by `git clone https://gitorious.org/mdb/mdb.git`.
 
 <pre>
@@ -57,28 +55,28 @@ total 140K
 -rw-rw-r-- 1 ubuntu ubuntu  71K Jan 30 16:40 lmdb.h
 </pre>
 
-If LMDB was already installed, make sure that the paths to liblmdb.so*, liblmdb.a and lmdb.h is properly set.
-
 #### Lua Wrapper for LMDB installation
 Get Lua Wrapper for LMDB by `git clone https://github.com/shmul/lightningdbm.git`
 
-Below changes are required in 'make' file to set the paths:
+Below changes are required in 'Makefile' to set the paths:
 
 <pre>
-LUAINC = <TORCH_INSTALLATION_DIR>/include
-LUALIB = <TORCH_INSTALLATION_DIR>/lib
-LUABIN = <TORCH_INSTALLATION_DIR>/bin
-LMDBINC = <TORCH_INSTALLATION_DIR>/include
-LMDBLIB = <TORCH_INSTALLATION_DIR>/lib
+LUAINC = &lt;TORCH_INSTALLATION_DIR&gt;/include
+LUALIB = &lt;TORCH_INSTALLATION_DIR&gt;/lib
+LUABIN = &lt;TORCH_INSTALLATION_DIR&gt;/bin
+LMDBINC = &lt;TORCH_INSTALLATION_DIR&gt;/include
+LMDBLIB = &lt;TORCH_INSTALLATION_DIR&gt;/lib
 </pre>
 
-Also change `$(LUABIN)/lua` to `$(LUABIN)/luajit`, to refer luajit instead of lua.
+By default, Torch installs luaJIT instead of lua. So, in 'Makefile' change `$(LUABIN)/lua` to `$(LUABIN)/luajit`, to call luajit instead of lua while testing the LMDB installation.
 
-Finally set the below paths in `~/.profile` file, to resolve the following error :  `module 'lightningmdb' not found:No LuaRocks module found for lightningmdb`
+After doing these changes, run `make` to generate the library (or '.so' file).
+
+Finally set the LUA_PATH and LUA_CPATH environment variables in `~/.profile` file to point to where LMDB is located. If these paths are not properly set, then you may face the following error :  `module 'lightningmdb' not found:No LuaRocks module found for lightningmdb`
 
 <pre>
-export LUA_PATH="<LIGHTININGMDB_INSTALLATION_DIR>//?.lua;;"
-export LUA_CPATH="<LIGHTININGMDB_INSTALLATION_DIR>//?.so;;"
+export LUA_PATH="&lt;LIGHTININGMDB_INSTALLATION_DIR&gt;//?.lua;;"
+export LUA_CPATH="&lt;LIGHTININGMDB_INSTALLATION_DIR&gt;//?.so;;"
 
 For example: 
 export LUA_PATH="/home/ubuntu/Downloads/lightningdbm//?.lua;;"
@@ -98,13 +96,6 @@ luarocks install "https://raw.github.com/Neopallium/lua-pb/master/lua-pb-scm-0.r
 </pre>
 
 Please check this link for more information: `https://github.com/Neopallium/lua-pb`
-
-set the path (in `~/.bashrc` or `~/.profile`) for all the `.proto`, `.lua` and `.so` files in pb
-
-<pre>
-export LUA_PATH="/home/ubuntu/Downloads/lightningdbmForLuaJit//?.lua;/home/ubuntu/Downloads/lua-pb-master//?.proto;/home/ubuntu/Downloads/lua-pb-master//?.lua;;"
-export LUA_CPATH="/home/ubuntu/Downloads/lightningdbmForLuaJit//?.so;/home/ubuntu/Downloads/lua-pb-master//?.so;;"
-</pre>
 
 ## Installation of ccn2 (Torch7 bindings for cuda-convnet2 kernels)
 

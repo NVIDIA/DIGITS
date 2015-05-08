@@ -420,7 +420,7 @@ class TorchTrainTask(TrainTask):
         else:
             args.append('--subtractMean=no')
 
-        #print args
+        print args
 
         # Convert them all to strings
         args = [str(x) for x in args]
@@ -581,7 +581,7 @@ class TorchTrainTask(TrainTask):
         else:
             args.append('--subtractMean=no')
 
-        #print args
+        print args
 
         # Convert them all to strings
         args = [str(x) for x in args]

@@ -8,7 +8,10 @@ require 'trepl'
 require 'cutorch'
 require 'lfs'
 
-package.path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
+local dir_path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]]
+if dir_path ~= nil then
+  package.path = dir_path .."?.lua;".. package.path
+end
 
 require 'Optimizer'
 require 'LRPolicy'
@@ -338,13 +341,6 @@ local function Test()
     model:evaluate()
     local shuffle
     if opt.shuffle == 'yes' then
-      --if opt.type =='cuda' then
-        --torch.setdefaulttensortype('torch.FloatTensor')
-        --shuffle = torch.randperm(valSize):cuda()
-        --torch.setdefaulttensortype('torch.CudaTensor')
-      --else
-        --shuffle = torch.randperm(valSize):cuda()
-      --end
       shuffle = torch.randperm(valSize):cuda()
     end
 
@@ -362,29 +358,22 @@ local function Test()
     end
 
     for t = 1,valSize,opt.batchSize do
-      if  opt.shuffle == 'yes' and (valSize-t+1<opt.batchSize) then
-        if opt.crop == 'yes' then
-          inputs = torch.Tensor(valSize-t+1, val.ImageChannels, opt.croplen, opt.croplen)
-        else
-          inputs = torch.Tensor(valSize-t+1, val.ImageChannels, val.ImageSizeY, val.ImageSizeX)
-        end
-        targets = torch.Tensor(valSize-t+1)
-      end
-
-      --xlua.progress(t, valSize)
 
       -- create mini batch
       NumBatches = NumBatches + 1
 
       if opt.shuffle == 'yes' then
-        local ind =1
+        local ind = 0
         for i = t,math.min(t+opt.batchSize-1,valSize) do
           -- load new sample
           local input, target = val:getImgUsingKey(valKeys[shuffle[i]])
-
-	  inputs[ind] = input
+          ind = ind+1
+          inputs[ind] = input
           targets[ind] = target
-          ind=ind+1
+        end
+        if ind < opt.batchSize then
+          inputs = inputs:narrow(1,1,ind)
+          targets = targets:narrow(1,1,ind)
         end
 
       else
@@ -420,13 +409,6 @@ local function Train(epoch)
     model:training()
     local shuffle=nil;
     if opt.shuffle == 'yes' then
-      --if opt.type =='cuda' then
-        --torch.setdefaulttensortype('torch.FloatTensor')
-        --shuffle = torch.randperm(trainSize):cuda()
-        --torch.setdefaulttensortype('torch.CudaTensor')
-      --else
-        --shuffle = torch.randperm(trainSize):cuda()
-      --end
       shuffle = torch.randperm(trainSize):cuda()
     end
 
@@ -449,30 +431,22 @@ local function Train(epoch)
 
     for t = 1,trainSize,opt.batchSize do
 
-
-      if opt.shuffle == 'yes' and (trainSize-t+1<opt.batchSize) then
-        if opt.crop == 'yes' then
-          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, opt.croplen, opt.croplen)
-        else
-          inputs = torch.Tensor(trainSize-t+1, train.ImageChannels, train.ImageSizeY, train.ImageSizeX)
-        end
-        targets = torch.Tensor(trainSize-t+1)
-      end
-
-      --xlua.progress(t, trainSize)
-
       -- create mini batch
       NumBatches = NumBatches + 1
       if opt.shuffle == 'yes' then
-        local ind =1
+        local ind = 0
         for i = t,math.min(t+opt.batchSize-1,trainSize) do
           -- load new sample
           local input, target = train:getImgUsingKey(trainKeys[shuffle[i]])
-	  inputs[ind] = input   -- this is similar to inputs[i%batchSize]
+          ind = ind+1
+          inputs[ind] = input   -- this is similar to inputs[i%batchSize]
           targets[ind] = target
-          ind=ind+1
         end
-
+        -- if the final set of images are less than batch size, then resize inputs and targets tensors
+        if ind < opt.batchSize then
+          inputs = inputs:narrow(1,1,ind)
+          targets = targets:narrow(1,1,ind)
+        end
       else
           inputs,targets = train:nextBatch(math.min(trainSize-t+1,opt.batchSize))
       end

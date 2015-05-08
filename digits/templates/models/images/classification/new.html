@@ -531,7 +531,9 @@ function customizeNetwork(network, snapshot_list, framework) {
                             $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
                             $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
                         }
-                        if($(this).parents('td').find(".badge").text()=="torch")
+			var framework_badge = $(this).parents('td').find(".badge").text();
+                        $('#framework').val(framework_badge);  //sets the framework value based on the job selected in previous networks tab.
+                        if(framework_badge == "torch")
                             $("#shuffle-data").show();
                         else
                             $("#shuffle-data").hide();

@@ -9,15 +9,16 @@ require 'logmessage'
 
 ------------- UTILITY FUNCTIONS ----------------------------
 
+local utilsClass={}
+
 -- round function
-function round(num, idp)
+local function round(num, idp)
+  print ('entered')
   local mult = 10^(idp or 0)
   return math.floor(num * mult + 0.5) / mult
 end
 
-
-
-local utilsClass={}
+utilsClass.round = round
 
 --[[
 Resizes an image and returns it as a np.array

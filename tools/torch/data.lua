@@ -37,7 +37,6 @@ local function cursor_pairs(cursor_,batch_size,key_,op_)
         if k then
           coroutine.yield(k,v)
         --[[else
-          print('hi')
           k,v = cursor_:get(k,op_ or MDB.FIRST)
           coroutine.yield(k,v)]]-- 
         end
@@ -74,12 +73,10 @@ local PreProcess = function(y, mean, subtractMean, channels, mirror, crop, train
         --During training we will crop randomly
         local valueY =  math.ceil(torch.FloatTensor.torch.uniform()*cropY)
         local valueX =  math.ceil(torch.FloatTensor.torch.uniform()*cropX)
-        --y = image.crop(y, valueY, valueX, valueY+ImageSizeY-1, valueX+ImageSizeX-1)
         y = image.crop(y, valueX-1, valueY-1, valueX+croplen-1, valueY+croplen-1)
 
       else   
         --for validation we will crop at center
-        --y = image.crop(y, cropY, cropX, cropY+ImageSizeY-1, cropX+ImageSizeX-1)
         y = image.crop(y, cropX-1, cropY-1, cropX+croplen-1, cropY+croplen-1)
       end
     end
@@ -136,10 +133,7 @@ DBSource = {e=nil, t=nil, d=nil, c=nil, mean = nil, ImageChannels = 0, ImageSize
 
 -- Derived class method new
 function DBSource:new (db_name, mirror, crop, croplen, mean_t, subtractMean, isTrain)
-  --o = o or {}
-  --setmetatable(o, self)
   local self = copy(DBSource)
-  --self.__index = self
   self.mean = mean_t["mean"]
   -- image channel, height and width details are extracted from mean.jpeg file. If mean.jpeg file is not present then probably the below three lines of code needs to be changed to provide hard-coded values.
   self.ImageChannels = mean_t["channels"]
@@ -185,7 +179,6 @@ function DBSource:getKeys ()
     i=i+1
     Keys[i] = k
     key = k
-    -- xlua.progress(i,self.total)  
   end
   return Keys
 end
@@ -210,8 +203,7 @@ function DBSource:getImgUsingKey(key)
   
   local image_s = PreProcess(y, self.mean, self.subtractMean, msg.channels, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
  
-  local label = msg.label
-  return image_s,label
+  return image_s,tonumber(msg.label) + 1
   
 end
 
