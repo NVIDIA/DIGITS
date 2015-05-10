@@ -81,6 +81,17 @@ class ModelForm(Form):
                 ],
             )
 
+    ### Solver types
+
+    solver_type = wtforms.SelectField('Solver type',
+        choices = [
+                ('SGD', 'Stochastic gradient descent'),
+                ('ADAGRAD', 'Adaptive gradient'),
+                ('NESTEROV', 'Nesterov`s accelerated gradient'),
+                ],
+            default = 'SGD'
+            )
+
     ### Learning rate
 
     learning_rate = wtforms.FloatField('Base Learning Rate',
