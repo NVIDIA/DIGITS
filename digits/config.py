@@ -101,17 +101,19 @@ def get_input(
     for s in suggestions:
         if s.desc is not None and len(s.desc) > max_width:
             max_width = len(s.desc)
-    format_str = '%%-4s %%-%ds %%s' % (max_width+2,)
-    default_found = False
-    for s in suggestions:
-        c = s.char
-        if s.default and not default_found:
-            default_found = True
-            c += '*'
-        desc = ''
-        if s.desc is not None:
-            desc = '[%s]' % s.desc
-        print format_str % (('(%s)' % c), desc, value_to_str(s.value))
+    if max_width > 0:
+        print 'Suggested values:'
+        format_str = '%%-4s %%-%ds %%s' % (max_width+2,)
+        default_found = False
+        for s in suggestions:
+            c = s.char
+            if s.default and not default_found:
+                default_found = True
+                c += '*'
+            desc = ''
+            if s.desc is not None:
+                desc = '[%s]' % s.desc
+            print format_str % (('(%s)' % c), desc, value_to_str(s.value))
 
     if is_path:
         # turn on filename autocompletion
@@ -145,30 +147,31 @@ def get_input(
                         value = s.value
                         valid = True
                         break
-        elif len(user_input) == 1:
-            for s in suggestions:
-                if s.char.lower() == user_input.lower():
-                    print 'Using "%s"' % s.value
-                    if s.value is not None and validator is not None:
-                        try:
-                            value = validator(s.value)
+        else:
+            if len(user_input) == 1:
+                for s in suggestions:
+                    if s.char.lower() == user_input.lower():
+                        print 'Using "%s"' % s.value
+                        if s.value is not None and validator is not None:
+                            try:
+                                value = validator(s.value)
+                                valid = True
+                                break
+                            except ValueError as e:
+                                print 'ERROR:', e
+                        else:
+                            value = s.value
                             valid = True
                             break
-                        except ValueError as e:
-                            print 'ERROR:', e
-                    else:
-                        value = s.value
-                        valid = True
-                        break
-        if not valid and validator is not None:
-            if is_path:
-                user_input = os.path.expanduser(user_input)
-            try:
-                value = validator(user_input)
-                valid = True
-                print 'Using "%s"' % value
-            except ValueError as e:
-                print 'ERROR:', e
+            if not valid and validator is not None:
+                if is_path:
+                    user_input = os.path.expanduser(user_input)
+                try:
+                    value = validator(user_input)
+                    valid = True
+                    print 'Using "%s"' % value
+                except ValueError as e:
+                    print 'ERROR:', e
 
         if not valid:
             print 'Invalid input'
@@ -319,7 +322,7 @@ class CaffeRootOption(FrameworkOption):
             except ValueError as e:
                 print 'CAFFE_HOME "%s" is invalid:' % d
                 print '\t%s' % e
-        suggestions.append(Suggestion('<PATHS>', 'P', desc='PATH/PYTHONPATH'))
+        suggestions.append(Suggestion('<PATHS>', 'P', desc='PATH/PYTHONPATH', default=True))
         return suggestions
 
     def is_path(self):
