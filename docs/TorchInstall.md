@@ -92,7 +92,7 @@ Please check this link for more information regarding lightningdbm: `https://git
 Use the below command to install Lua Protocol Buffers,
 
 <pre>
-luarocks install "https://raw.github.com/Neopallium/lua-pb/master/lua-pb-scm-0.rockspec"
+luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
 </pre>
 
 Please check this link for more information: `https://github.com/Neopallium/lua-pb`
@@ -106,4 +106,16 @@ luarocks install ccn2
 </pre>
 
 Please check this link for more information: `https://github.com/soumith/cuda-convnet2.torch`
+
+## Installation of inn (imagine-nn)
+
+Functionality of torch neural network routines in imagine-nn is slightly differ from torch nn module.
+
+Please check this link for more information regarding inn: `https://github.com/szagoruyko/imagine-nn`
+
+Currently `inn` module being used in `LeNet standard network`. Use the below command to install inn:
+
+<pre>
+luarocks install inn
+</pre>
 
