@@ -279,6 +279,8 @@ class CaffeTrainTask(TrainTask):
         ### Write solver file
 
         solver = caffe_pb2.SolverParameter()
+        # get enum value for solver type
+        solver.solver_type = getattr(solver, self.solver_type)
         solver.net = self.train_val_file
         # TODO: detect if caffe is built with CPU_ONLY
         gpu_list = config_option('gpu_list')
@@ -342,7 +344,8 @@ class CaffeTrainTask(TrainTask):
             raise Exception('Unknown lr_policy: "%s"' % solver.lr_policy)
 
         # go with the suggested defaults
-        solver.momentum = 0.9
+        if solver.solver_type != solver.ADAGRAD:
+            solver.momentum = 0.9
         solver.weight_decay = 0.0005
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent

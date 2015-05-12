@@ -139,6 +139,7 @@ def image_classification_model_create():
                     use_mean        = form.use_mean.data,
                     network         = network,
                     random_seed     = form.random_seed.data,
+                    solver_type     = form.solver_type.data,
                     )
                 )
 
