@@ -1154,10 +1154,6 @@ if __name__ == '__main__':
     print_config(args['verbose'])
     edit_config_file(args['verbose'])
 
-else:
-    try:
-        load_config()
-    except RuntimeError as e:
-        #print 'ERROR:', e
-        pass
+elif 'DIGITS_MODE_TEST' in os.environ:
+    load_config()
 
