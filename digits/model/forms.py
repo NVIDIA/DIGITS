@@ -159,7 +159,7 @@ class ModelForm(Form):
     framework = wtforms.HiddenField('framework',
             validators = [
                 validators.AnyOf(
-                    ['caffe', 'torch', 'theano'],
+                    ['caffe', 'torch'],
                     message='The framework you choose is not currently supported.'
                     )
                 ],

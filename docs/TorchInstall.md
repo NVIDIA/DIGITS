@@ -109,7 +109,7 @@ Please check this link for more information: `https://github.com/soumith/cuda-co
 
 ## Installation of inn (imagine-nn)
 
-Functionality of torch neural network routines in imagine-nn is slightly differ from torch nn module.
+Functionality of torch neural network routines in imagine-nn slightly differ from torch nn module.
 
 Please check this link for more information regarding inn: `https://github.com/szagoruyko/imagine-nn`
 

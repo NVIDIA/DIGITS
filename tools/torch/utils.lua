@@ -13,12 +13,57 @@ local utilsClass={}
 
 -- round function
 local function round(num, idp)
-  print ('entered')
   local mult = 10^(idp or 0)
   return math.floor(num * mult + 0.5) / mult
 end
 
+-- Currently zeroDataSize() and cleanupModel() routines aren't used but in future while implementing "recovery from crash" feature we may need to use these routines to clean the model before saving. This decreases the size of model by 80%.
+function zeroDataSize(data)
+  if type(data) == 'table' then
+    for i = 1, #data do
+      data[i] = zeroDataSize(data[i])
+    end
+  elseif type(data) == 'userdata' then
+    data = torch.Tensor():typeAs(data)
+  end
+  return data
+end
+
+-- Resize the output, gradInput, etc temporary tensors to zero (so that the on disk size is smaller)
+function cleanupModel(node)
+  if node.output ~= nil then
+    node.output = zeroDataSize(node.output)
+  end
+  if node.gradInput ~= nil then
+    node.gradInput = zeroDataSize(node.gradInput)
+  end
+  if node.finput ~= nil then
+    node.finput = zeroDataSize(node.finput)
+  end
+  -- Recurse on nodes with 'modules'
+  if (node.modules ~= nil) then
+    if (type(node.modules) == 'table') then
+      for i = 1, #node.modules do
+        local child = node.modules[i]
+        cleanupModel(child)
+      end
+    end
+  end
+
+  -- Clear the references to the spatial convolution outputs as well
+  if _spatial_convolution_mm_out ~= nil then
+    _spatial_convolution_mm_out = {}
+  end
+
+  if _spatial_convolution_mm_gradout ~= nil then
+    _spatial_convolution_mm_gradout = {}
+  end
+
+  collectgarbage()
+end
+
 utilsClass.round = round
+utilsClass.cleanupModel = cleanupModel
 
 --[[
 Resizes an image and returns it as a np.array

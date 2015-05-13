@@ -172,8 +172,8 @@ class TorchTrainTask(TrainTask):
         if gpu_id:
             args.append('--devid=%d' % (gpu_id+1))
 
-        #if self.pretrained_model:
-        #    args.append('--weights=%s' % self.path(self.pretrained_model))
+        if self.pretrained_model:
+            args.append('--weights=%s' % self.path(self.pretrained_model))
         #print args
         return args
 

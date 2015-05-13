@@ -40,6 +40,11 @@ Usage details:
 -v,--validation         (default '')             location in which validation db exists. 
 -w,--weightDecay        (default 1e-4)           L2 penalty on the weights 
 
+--weights               (default '')             filename for weights of a model to use for fine-tuning
+--retrain               (default '')             Specifies path to model to retrain with
+--optimState            (default '')             Specifies path to an optimState to reload from
+--randomState           (default '')             Specifies path to a random number state to reload from
+--lrpolicyState         (default '')             Specifies path to a lrpolicy state to reload from
 --networkDirectory      (default '')             directory in which network exists
 --mean                  (default mean.jpg)       mean file. Mean file is used to preprocess images and it is also required to get the details of image channel, height and width.
 --subtractMean          (default yes)            If yes, subtracts the mean from images
@@ -54,11 +59,34 @@ Usage details:
 -x,--stepvalues         (default '')             Required to calculate stepsize for the following learning rate policies:  step, multistep & sigmoid. Note: if it is 'step' or 'sigmoid' policy, then this parameter expects single value, if it is 'multistep' policy, then this parameter expects a string which has all the step values delimited by comma (ex: "10,25,45,80") 
 ]]
 
+-----------------------------------------------------------------------------------------------------------------------------
+--Note: At present DIGITS supports only fine tuning, which means copying only the weights from pretrained model.
+--
+--To include "crash recovery feature", we may need to save the below torch elements for every fixed duration (or) for every fixed epochs (for instance 30 minutes or 10 epochs).
+--
+-- trained model
+-- SGD optim state
+-- LRPolicy - this module helps in implementing caffe learning policies in Torch
+-- Random number state
+--
+--And if the job was crashed, provide the saved backups using the command options (--retrain, --optimState, --randomState, --lrpolicyState) while restarting the job.
+--
+--Please refer to below links for more information about "carsh recovery feature":
+-- 1) https://groups.google.com/forum/#!searchin/torch7/optimstate/torch7/uNxnrH-7C-4/pgIBdAFVaOYJ
+-- 2) https://groups.google.com/forum/#!topic/torch7/fcy0-5v6M08
+-- 3) https://groups.google.com/forum/#!searchin/torch7/optimstate/torch7/Gv1BiQoaIVA/HRnjRoegR38J
+--
+--Almost all the required routines are already implemented. Below are some remaining tasks,
+-- 1) while recovering from crash, we should only consider the below options and discard all other inputs like epoch
+--      --retrain, --optimState, --randomState, --lrpolicyState, --networkDirectory, --network, --save, --train, --validation, --mean, --labels, --snapshotPrefix
+-- 2) We should also save and restore some information like epoch, batch size, snapshot interval, subtractMean and useMeanPizel option, shuffle, mirror, crop, croplen
+--      Precautions should be taken while restoring these options.
+-----------------------------------------------------------------------------------------------------------------------------
 
 -- validate options
 if opt.crop == 'yes' and opt.croplen == 0 then
     logmessage.display(2,'crop length is missing')
-  return 
+  return
 end
 
 local stepvalues_list = {}
@@ -113,14 +141,18 @@ if opt.useMeanPixel == 'yes' and opt.subtractMean ~= 'no' then
   logmessage.display(0,'useMeanPixel parameter is not considered as subtractMean value is provided as "yes"')
 end
 
+if opt.retrain ~= '' and opt.weights ~= '' then
+    logmessage.display(2,"Both '--retrain' and '--weights' options cannot be used at the same time.")
+    return
+end
+
 torch.setnumthreads(opt.threads)
 cutorch.setDevice(opt.devid)
 ----------------------------------------------------------------------
 -- Model + Loss:
 
 package.path =  paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
-local model_filename = paths.concat(opt.networkDirectory, opt.network)
-logmessage.display(0,'Loading Model: ' .. model_filename)
+logmessage.display(0,'Loading Model: ' .. paths.concat(opt.networkDirectory, opt.network))
 local model = require (opt.network)
 
 local loss = nn.ClassNLLCriterion()
@@ -130,7 +162,7 @@ if ccn2 ~= nil then
   if opt.batchSize % 32 ~= 0 then
     logmessage.display(2,'invalid batch size : ' .. opt.batchSize .. '. Batch size should be multiple of 32 when ccn2 is used in the network')
     return
-  end 
+  end
 end
 
 -- load  
@@ -152,21 +184,25 @@ logmessage.display(0,'found ' .. #classes .. ' categories')
 
 
 -- Set the seed of the random number generator to the current time in seconds.
-
 if opt.mirror == 'yes' then
     torch.manualSeed(os.time())
     logmessage.display(0,'mirror option was selected, so during training for some of the random images, mirror view will be considered instead of original image view')
 end
-----------------------------------------------------------------------
-------------- UTILITY FUNCTIONS ----------------------------
 
--- round function
-function round(num, idp)
-  local mult = 10^(idp or 0)
-  return math.floor(num * mult + 0.5) / mult
+-- NOTE: currently randomState option wasn't used in DIGITS. This option was provided to be used from command line, if required.
+-- load random number state from backup
+if opt.randomState ~= '' then
+   if paths.filep(opt.randomState) then
+       logmessage.display(0,'Loading random number state - ' .. opt.randomState)
+       torch.setRNGState(torch.load(opt.randomState))
+   else
+       logmessage.display(2,'random number state not found: ' .. opt.randomState)
+       return
+   end
 end
 
 ----------------------------------------------------------------------
+
 -- This matrix records the current confusion across classes
 local confusion = optim.ConfusionMatrix(classes)
 
@@ -176,6 +212,29 @@ if opt.validation ~= '' then
     validation_confusion = optim.ConfusionMatrix(classes)
 end
 
+-- NOTE: currently retrain option wasn't used in DIGITS. This option was provided to be used from command line, if required.
+-- If preloading option is set, preload existing models appropriately
+if opt.retrain ~= '' then
+   if paths.filep(opt.retrain) then
+       logmessage.display(0,'Loading pretrained model - ' .. opt.retrain)
+       model = torch.load(opt.retrain)
+   else
+       logmessage.display(2,'Pretrained model not found: ' .. opt.retrain)
+       return
+   end
+end
+
+local Weights,Gradients = model:getParameters()
+-- If weights option is set, preload weights from existing models appropriately
+if opt.weights ~= '' then
+   if paths.filep(opt.weights) then
+       logmessage.display(0,'Loading weights from pretrained model - ' .. opt.weights)
+       Weights:copy(torch.load(opt.weights))
+   else
+       logmessage.display(2,'Weight file for pretrained model not found: ' .. opt.weights)
+       return
+   end
+end
 
 if opt.type == 'float' then
     logmessage.display(0,'switching to floats')
@@ -243,23 +302,23 @@ if ccn2 ~= nil then
   end
 end
 
+-- load utils
+local utils = require 'utils'
+
+--initializing learning rate policy
+logmessage.display(0,'initializing the parameters for learning rate policy: ' .. opt.policy)
+
 local lrpolicy = {}
-
 if opt.policy ~= 'torch_sgd' then
-
-    --resetting "learningRateDecay = 0", so that sgd.lua won't recalculates the learning rate 
-    opt.learningRateDecay = 0
 
     local max_iterations = (math.ceil(trainSize/opt.batchSize))*opt.epoch
     --local stepsize = math.floor((max_iterations*opt.step/100)+0.5)    --adding 0.5 to round the value
 
     --converting stepsize percentages into values 
     for i=1,#stepvalues_list do
-      stepvalues_list[i] = round(max_iterations*stepvalues_list[i]/100)
+      stepvalues_list[i] = utils.round(max_iterations*stepvalues_list[i]/100)
     end
 
-    --initializing learning rate policy
-    logmessage.display(0,'initializing the parameters for learning rate policy: ' .. opt.policy)
     lrpolicy = LRPolicy{
            policy = opt.policy,
            baselr = opt.learningRate,
@@ -270,13 +329,30 @@ if opt.policy ~= 'torch_sgd' then
     }
 
 else 
-    logmessage.display(0,'initializing the parameters for learning rate policy: ' .. opt.policy)
     lrpolicy = LRPolicy{
            policy = opt.policy,
            baselr = opt.learningRate
     }
 
 end
+
+-- NOTE: currently lrpolicyState option wasn't used in DIGITS. This option was provided to be used from command line, if required.
+if opt.lrpolicyState ~= '' then
+    if paths.filep(opt.lrpolicyState) then
+        logmessage.display(0,'Loading lrpolicy state from file: ' .. opt.lrpolicyState)
+        lrpolicy = torch.load(opt.lrpolicyState)
+    else
+        logmessage.display(2,'lrpolicy state file not found: ' .. opt.lrpolicyState)
+        return
+    end
+end
+
+
+--resetting "learningRateDecay = 0", so that sgd.lua won't recalculates the learning rate
+if lrpolicy.policy ~= 'torch_sgd' then
+    opt.learningRateDecay = 0
+end
+
 
 local optimState = {
     learningRate = opt.learningRate,
@@ -285,13 +361,27 @@ local optimState = {
     learningRateDecay = opt.learningRateDecay
 }
 
+-- NOTE: currently optimState option wasn't used in DIGITS. This option was provided to be used from command line, if required.
+if opt.optimState ~= '' then
+    if paths.filep(opt.optimState) then
+        logmessage.display(0,'Loading optimState from file: ' .. opt.optimState)
+        optimState = torch.load(opt.optimState)
+
+        -- this makes sure that sgd.lua won't recalculates the learning rate while using learning rate policy
+        if lrpolicy.policy ~= 'torch_sgd' then
+            optimState.learningRateDecay = 0
+        end
+    else
+        logmessage.display(1,'Optim state file not found: ' .. opt.optimState)  -- if optim state file isn't found, notify user and continue training
+    end
+end
+
 local function updateConfusion(y,yt)
     confusion:batchAdd(y,yt)
 end
 
 -- Optimization configuration
 logmessage.display(0,'initializing the parameters for Optimizer')
-local Weights,Gradients = model:getParameters()
 local optimizer = Optimizer{
     Model = model,
     Loss = loss,
@@ -331,9 +421,46 @@ else
     snapshot_prefix = opt.network
 end
 
-logmessage.display(0,'snapshots will be saved as ' .. snapshot_prefix .. '_<EPOCH>_Weights.t7')
+logmessage.display(0,'Model weights will be saved as ' .. snapshot_prefix .. '_<EPOCH>_Weights.t7')
 
 
+--[[   -- NOTE: uncomment this block when "crash from recovery" feature was implemented
+logmessage.display(0,'model, lrpolicy, optim state and random number states will be saved for crash recovery')
+logmessage.display(0,'model will be saved as ' .. snapshot_prefix .. '_<EPOCH>_model.t7')
+logmessage.display(0,'optim state will be saved as optimState_<EPOCH>.t7')
+logmessage.display(0,'random number state will be saved as randomState_<EPOCH>.t7')
+logmessage.display(0,'LRPolicy state will be saved as lrpolicy_<EPOCH>.t7')
+--]]
+
+
+-- NOTE: currently this routine wasn't used in DIGITS.
+-- This routine takes backup of model, optim state, LRPolicy and random number state
+local function backupforrecovery(backup_epoch)
+    -- save model
+    local filename = paths.concat(opt.save, snapshot_prefix .. '_' .. backup_epoch .. '_model.t7')
+    logmessage.display(0,'Saving model to ' .. filename)
+    utils.cleanupModel(model)
+    torch.save(filename, model)
+    logmessage.display(0,'Model saved - ' .. filename)
+
+    --save optim state
+    filename = paths.concat(opt.save, 'optimState_' .. backup_epoch .. '.t7')
+    logmessage.display(0,'optim state saving to ' .. filename)
+    torch.save(filename, optimState)
+    logmessage.display(0,'optim state saved - ' .. filename)
+
+    --save random number state
+    filename = paths.concat(opt.save, 'randomState_' .. backup_epoch .. '.t7')
+    logmessage.display(0,'random number state saving to ' .. filename)
+    torch.save(filename, torch.getRNGState())
+    logmessage.display(0,'random number state saved - ' .. filename)
+
+    --save lrPolicy state
+    filename = paths.concat(opt.save, 'lrpolicy_' .. backup_epoch .. '.t7')
+    logmessage.display(0,'lrpolicy state saving to ' .. filename)
+    torch.save(filename, optimizer.lrPolicy)
+    logmessage.display(0,'lrpolicy state saved - ' .. filename)
+end
 
 -- Test function
 local function Test()
@@ -468,7 +595,7 @@ local function Train(epoch)
         collectgarbage()
       end
 
-      local current_epoch = (epoch-1)+round((t+opt.batchSize)/trainSize,2)
+      local current_epoch = (epoch-1)+utils.round((t+opt.batchSize)/trainSize,2)
 
       -- log details when required number of images are processed
       curr_images_cnt = curr_images_cnt + opt.batchSize
@@ -487,18 +614,19 @@ local function Train(epoch)
           -- log details at the end of validation
           logmessage.display(0, 'Validation (epoch ' .. current_epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
 
-          next_validation = (round(current_epoch/opt.interval) + 1) * opt.interval            -- To find next nearest epoch value that exactly divisible by opt.interval
+          next_validation = (utils.round(current_epoch/opt.interval) + 1) * opt.interval            -- To find next nearest epoch value that exactly divisible by opt.interval
           last_validation_epoch = current_epoch
           model:training()    -- to reset model to training
       end
 
       if current_epoch >= next_snapshot_save then
-          local weights_filename = paths.concat(opt.save, snapshot_prefix .. '_' .. current_epoch .. '_Weights.t7')
-          logmessage.display(0,'Snapshotting to ' .. weights_filename)
-          torch.save(weights_filename, Weights)
-          logmessage.display(0,'Snapshot saved - ' .. weights_filename)
+          -- save weights
+          local filename = paths.concat(opt.save, snapshot_prefix .. '_' .. current_epoch .. '_Weights.t7')
+          logmessage.display(0,'Snapshotting to ' .. filename)
+          torch.save(filename, Weights)
+          logmessage.display(0,'Snapshot saved - ' .. filename)
 
-          next_snapshot_save = (round(current_epoch/opt.snapshotInterval) + 1) * opt.snapshotInterval            -- To find next nearest epoch value that exactly divisible by opt.snapshotInterval
+          next_snapshot_save = (utils.round(current_epoch/opt.snapshotInterval) + 1) * opt.snapshotInterval            -- To find next nearest epoch value that exactly divisible by opt.snapshotInterval
           last_snapshot_save_epoch = current_epoch
       end
 
@@ -543,10 +671,10 @@ end
 
 -- if required, save snapshot at the end
 if opt.epoch > last_snapshot_save_epoch then
-    local weights_filename = paths.concat(opt.save, snapshot_prefix .. '_' .. opt.epoch .. '_Weights.t7')
-    logmessage.display(0,'Snapshotting to ' .. weights_filename)
-    torch.save(weights_filename, Weights)
-    logmessage.display(0,'Snapshot saved - ' .. weights_filename)
+    local filename = paths.concat(opt.save, snapshot_prefix .. '_' .. opt.epoch .. '_Weights.t7')
+    logmessage.display(0,'Snapshotting to ' .. filename)
+    torch.save(filename, Weights)
+    logmessage.display(0,'Snapshot saved - ' .. filename)
 end
 
 train:close()

@@ -12,11 +12,11 @@ main.lua code uses data.lua module to load the images for training and validatio
 --network=lenet                                                     => specifies that the network file is "lenet.lua"
 --networkDirectory=../../digits/standard-networks/torch/            => specifies that "lenet.lua" is present in "../../digits/standard-networks/torch/" directory
 --epoch=10                                                          => specifies the total number of epochs
---save=/home/ubuntu/.digits/jobs/20150416-150654-37ca               => specifies that directory where the weights file, named <SNAPSHOT_PREFIX>_<EPOCH_VALUE>_Weights.t7, are saved
+--save=/home/ubuntu/.digits/jobs/20150416-150654-37ca               => specifies the directory where weights file (named <SNAPSHOT_PREFIX>_<EPOCH_VALUE>_Weights.t7) and optimState (named optimState_<EPOCH_VALUE>.t7), are saved
 --snapshotPrefix=snapshot                                           => specifies the snapshot prefix of weights file of trained model
---snapshotInterval=1.000000                                         => specifies after every 1 training epoch, weights will be saved. 
-                                                                       For instance, if this value is 1.21, then weights file is saved for every 1.21 training epochs. 
-Note: Training will be done in batches, so some times saving weights for the given epoch value won't be possible. In this case the epoch value near to the given value will be considered.
+--snapshotInterval=1.000000                                         => specifies after every 1 training epoch, weights and optimState will be saved.
+                                                                       For instance, if this value is 1.21, then weights and optimState are saved for every 1.21 training epochs.
+Note: Training will be done in batches, so some times saving weights (and optimState) for the given epoch value won't be possible. In this case the epoch value near to the given value will be considered.
 
 --subtractMean=yes                                                  => subtract mean from the test image. Default is 'yes'
 --useMeanPixel=yes                                                  => specifies to use mean pixel instead of mean full matrix during image preprocessing. Default is using mean full matrix.

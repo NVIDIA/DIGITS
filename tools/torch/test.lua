@@ -94,7 +94,7 @@ if opt.epoch == -1 then
   for file in lfs.dir(dir_name) do
     file_name = paths.concat(dir_name,file)
     if lfs.attributes(file_name,"mode") == "file" then
-      if string.match(file,'_.*_Weights.t7') then
+      if string.match(file, snapshot_prefix .. '_.*_Weights[.]t7') then
         parts=string.split(file,"_")
         value = tonumber(parts[#parts-1])
         if (opt.epoch < value) then
@@ -105,11 +105,14 @@ if opt.epoch == -1 then
   end
 end
 
+if opt.epoch == -1 then
+    logmessage.display(2,'There are no pretrained model weights to test in this directory - ' .. paths.concat(opt.networkDirectory))
+    return
+end
 
 package.path = paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
 
-local model_filename = paths.concat(opt.networkDirectory, opt.network)
-logmessage.display(0,'Loading Model: ' .. model_filename)
+logmessage.display(0,'Loading Model: ' .. paths.concat(opt.networkDirectory, opt.network))
 local model = require (opt.network)
 local using_ccn2 = opt.ccn2
 
