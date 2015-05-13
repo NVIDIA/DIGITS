@@ -10,6 +10,7 @@ import PIL.Image
 
 # Add path for DIGITS package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import digits.config; digits.config.load_config()
 from digits import utils, log
 
 logger = logging.getLogger('digits.tools.resize_image')
