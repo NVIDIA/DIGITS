@@ -73,11 +73,17 @@ class CudaDeviceProp(ctypes.Structure):
             ('multiGpuBoardGroupID', ctypes.c_int),
             ]
 
+devices = None
+
 def get_devices():
     """
     Returns a list of CudaDeviceProp's
     Prints an error and returns None if something goes wrong
     """
+    global devices
+    if devices is not None:
+        # Only query CUDA once
+        return devices
     devices = []
 
     # Load library

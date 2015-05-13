@@ -418,7 +418,7 @@ class GpuListOption(ConfigOption):
 
     def prompt_message(self):
         s = 'Attached devices:\n'
-        for device_id, gpu in enumerate(self.query_gpus()):
+        for device_id, gpu in enumerate(device_query.get_devices()):
             s += 'Device #%s:\n' % device_id
             s += '\t%-20s %s\n' % ('Name', gpu.name)
             s += '\t%-20s %s.%s\n' % ('Compute capability', gpu.major, gpu.minor)
@@ -431,19 +431,19 @@ class GpuListOption(ConfigOption):
         return True
 
     def suggestions(self):
-        if len(self.query_gpus()) > 0:
+        if len(device_query.get_devices()) > 0:
             return [Suggestion(
-                ','.join([str(x) for x in xrange(len(self.query_gpus()))]),
+                ','.join([str(x) for x in xrange(len(device_query.get_devices()))]),
                 'D', desc='default', default=True)]
         else:
             return []
 
     @classmethod
     def visibility(self):
-        if len(self.query_gpus()) == 0:
+        if len(device_query.get_devices()) == 0:
             # Nothing to see here
             return -1
-        if len(self.query_gpus()) == 1:
+        if len(device_query.get_devices()) == 1:
             # Use just the one GPU by default
             return 0
         else:
@@ -455,7 +455,7 @@ class GpuListOption(ConfigOption):
             return value
 
         choices = []
-        gpus = cls.query_gpus()
+        gpus = device_query.get_devices()
 
         if not gpus:
             return ''
@@ -487,17 +487,6 @@ class GpuListOption(ConfigOption):
             return '%s %s' % (s,size_name[i])
         else:
             return '0B'
-
-    @classmethod
-    def query_gpus(cls):
-        """
-        Return a list of device_query.CudaDeviceProp objects which contain all
-        the available information on each device
-        Order is preserved in this list - item 0 is gpu #0
-        """
-        if not hasattr(cls, 'device_list'):
-            cls.device_list = device_query.get_devices()
-        return cls.device_list
 
 class JobsDirOption(ConfigOption):
     @staticmethod
