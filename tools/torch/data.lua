@@ -196,7 +196,7 @@ function DBSource:getImgUsingKey(key)
   ffi.copy(temp_ptr, msg.data)
   local y=nil
   if msg.encoded==true then
-    y = image.decompressJPG(x,msg.channels,'byte'):float()
+    y = image.decompress(x,msg.channels,'byte'):float()
   else
     y = x:narrow(1,1,msg.channels*msg.height*msg.width):view(msg.channels,msg.height,msg.width):float()
   end
@@ -264,7 +264,7 @@ function DBSource:nextBatch (batchsize)
 
     local y=nil
     if msg.encoded==true then
-      y = image.decompressJPG(x,msg.channels,'byte'):float()
+      y = image.decompress(x,msg.channels,'byte'):float()
     else
       y = x:narrow(1,1,total):view(msg.channels,msg.height,msg.width):float()   -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that view() works fine without issues
     end

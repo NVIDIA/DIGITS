@@ -62,7 +62,7 @@ Usage details:
 -----------------------------------------------------------------------------------------------------------------------------
 --Note: At present DIGITS supports only fine tuning, which means copying only the weights from pretrained model.
 --
---To include "crash recovery feature", we may need to save the below torch elements for every fixed duration (or) for every fixed epochs (for instance 30 minutes or 10 epochs).
+--To include "crash recovery" feature, we may need to save the below torch elements for every fixed duration (or) for every fixed epochs (for instance 30 minutes or 10 epochs).
 --
 -- trained model
 -- SGD optim state
@@ -71,7 +71,7 @@ Usage details:
 --
 --And if the job was crashed, provide the saved backups using the command options (--retrain, --optimState, --randomState, --lrpolicyState) while restarting the job.
 --
---Please refer to below links for more information about "carsh recovery feature":
+--Please refer to below links for more information about "crash recovery" feature:
 -- 1) https://groups.google.com/forum/#!searchin/torch7/optimstate/torch7/uNxnrH-7C-4/pgIBdAFVaOYJ
 -- 2) https://groups.google.com/forum/#!topic/torch7/fcy0-5v6M08
 -- 3) https://groups.google.com/forum/#!searchin/torch7/optimstate/torch7/Gv1BiQoaIVA/HRnjRoegR38J
@@ -424,8 +424,8 @@ end
 logmessage.display(0,'Model weights will be saved as ' .. snapshot_prefix .. '_<EPOCH>_Weights.t7')
 
 
---[[   -- NOTE: uncomment this block when "crash from recovery" feature was implemented
-logmessage.display(0,'model, lrpolicy, optim state and random number states will be saved for crash recovery')
+--[[   -- NOTE: uncomment this block when "crash recovery" feature was implemented
+logmessage.display(0,'model, lrpolicy, optim state and random number states will be saved for recovery from crash')
 logmessage.display(0,'model will be saved as ' .. snapshot_prefix .. '_<EPOCH>_model.t7')
 logmessage.display(0,'optim state will be saved as optimState_<EPOCH>.t7')
 logmessage.display(0,'random number state will be saved as randomState_<EPOCH>.t7')
