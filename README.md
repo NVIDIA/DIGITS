@@ -2,6 +2,14 @@
 
 DIGITS is is a webapp for training deep learning models.
 
+Table of Contents
+=================
+* [Get help](#get-help)
+* [Installation](#installation)
+  * [Prerequisites](#prerequisites)
+  * [Install DIGITS](#install-digits)
+* [Starting the server](#starting-the-server)
+
 # Get help
 
 #### Installation issues
@@ -22,79 +30,80 @@ DIGITS is is a webapp for training deep learning models.
 DIGITS is only officially supported on Ubuntu 14.04. However, DIGITS has been successfully used on other Linux variants as well as on OSX.
 
 ## Prerequisites
-DIGITS has several dependencies.
+DIGITS depends on several third-party libraries.
 
-* CUDA
-* cuDNN library
-* Caffe – NVIDIA branch (version 0.11.0)
-* Python packages
-* Graphviz
+### CUDA
 
-### CUDA (>= 6.5)
+The CUDA toolkit (>= CUDA 6.5) is highly recommended, though not technically required.
+* Download from the [CUDA website](https://developer.nvidia.com/cuda-downloads)
+* Follow the installation instructions
+* Don't forget to set your path. For example:
+  * `CUDA_HOME=/usr/local/cuda`
+  * `LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH`
 
-Download from the [CUDA website](https://developer.nvidia.com/cuda-downloads) and follow the installation instructions.
+For greater performance, you can also install cuDNN.
+* Download from the [cuDNN website](https://developer.nvidia.com/cuDNN)
+* Follow the installation instructions
+* You can copy the files directly into your CUDA installation
+    * `cp -a libcudnn* $CUDA_HOME/lib64/`
+    * `cp cudnn.h $CUDA_HOME/`
 
-### cuDNN (>= v2)
+### Deep learning frameworks
 
-Download from the [cuDNN website](https://developer.nvidia.com/cuDNN) and follow the installation instructions.
+At least one deep learning framework backend is required.
 
-### NVIDIA's fork of Caffe (NVIDIA version 0.11.0)
-
-Detailed installation instructions are available on [caffe's installation page](http://caffe.berkeleyvision.org/installation.html). Condensed version is as follows:
-
-#### Installing caffe prerequisites on Linux
-
-    % sudo apt-get install git
-    % cd $HOME
-    % git clone --branch v0.11.0 https://github.com/NVIDIA/caffe.git
-    % cd caffe
-    % sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libboost-all-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler libatlas-base-dev
-    % sudo apt-get install python-dev python-pip gfortran
-    % cd python
-    % for req in $(cat requirements.txt); do sudo pip install $req; done
-
-#### Installing caffe prerequisites on Mac OS
-
-If you have [homebrew](http://brew.sh/) installed, you can follow the instructions from  [caffe's installation page](http://caffe.berkeleyvision.org/install_osx.html)
-
-#### Build caffe:
-
-    % cd $HOME/caffe
-    % cp Makefile.config.example Makefile.config
-    % make all --jobs=4
-    % make py
-
-Set environment variables:
-
-    % export CAFFE_HOME=${HOME}/caffe
+* Caffe (NVIDIA's fork) - [installation instructions](docs/InstallCaffe.md)
+* Torch7 - *coming soon*
 
 ## Install DIGITS
 
+### Grab the source
+
     % cd $HOME
     % git clone https://github.com/NVIDIA/DIGITS.git digits
-    % cd digits
-    % sudo apt-get install graphviz
-    % for req in $(cat requirements.txt); do sudo pip install $req; done
 
-Again if on MacOS with homebrew, replace the last two lines as follows:
-    
-    $ brew install graphviz
-    $ for req in $(cat requirements.txt); do pip install $req; done
+Throughout the docs, we'll refer to your install location as `DIGITS_HOME` (`$HOME/digits` in this case), though you don't need to actually set that environment variable.
+
+### Python dependencies
+
+These packages need to be installed:
+
+    % cd $DIGITS_HOME
+    % cat requirements.txt
+
+The recommended installation method is using a **virtual environment** ([installation instructions](docs/VirtualEnvironment.md)).
+
+You may be tempted to install the requirements with `pip install -r requirements.txt`. Use the loop statement below to install the packages in order and avoid errors.
+
+    % for req in $(cat requirements.txt); do pip install $req; done
+
+If you want to install these packages *without* using a virtual environment, replace "pip install" with "**sudo** pip install".
+
+### Other dependencies
+
+DIGITS uses graphviz to visualize network architectures. You can safely skip this step if you don't want the feature.
+
+    % sudo apt-get install graphviz
 
 # Starting the server
 
 You can run DIGITS in two ways:
 
-### digits-devserver
+#### Development mode
 
-Starts a development server that listens on port 5000 (but you can
-change the port if you like - try running it with the --help flag).
+    % ./digits-devserver
 
-### digits-server
+Starts a development server that listens on port 5000 (but you can change the port if you like - try running it with the --help flag).
 
-Starts a gunicorn app that listens on port 8080. If you have installed
-the nginx.site to your nginx sites-enabled/ directory, then you can
-view your app at http://localhost/.
+Then, you can view your server at `http://localhost:5000/`.
+
+#### Production mode
+
+    % ./digits-server
+
+Starts a production server (gunicorn) that listens on port 8080 (`http://localhost:8080`). If you get any errors about an invalid configuration, use the development server first to set your configuration.
+
+If you have installed the nginx.site to your nginx sites-enabled/ directory, then you can view your app at `http://localhost/`.
 
 # Usage
 
