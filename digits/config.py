@@ -4,25 +4,194 @@
 import os
 import re
 import sys
+import shutil
 import math
 import argparse
 import imp
 import subprocess
 import tempfile
 import platform
-
+import readline
+from collections import OrderedDict
 import ConfigParser
 
 import device_query
 
-### ConfigOption classes
+################################################################################
+#   User input functions
+################################################################################
+
+def print_section_header(title):
+    """
+    Utility for printing a section header
+    """
+    print '{s:{c}^{n}}'.format(
+            s = ' %s ' % title,
+            # Extend to 80 characters
+            n = 80,
+            c = '=',
+            )
+
+def value_to_str(value):
+    if value is None:
+        return ''
+    elif not value.strip():
+        return '<NONE>'
+    else:
+        return value
+
+class Suggestion(object):
+    """
+    A simple class for ConfigOption suggested values (used in get_input())
+    """
+    def __init__(self, value, char,
+            desc = None,
+            default = False,
+            ):
+        """
+        Arguments:
+        value -- the suggested value
+        char -- a 1 character token representing this suggestion
+
+        Keyword arguments:
+        desc -- a short description of the source of this suggestion
+        default -- if True, this is the suggestion that will be accepted by default
+        """
+        self.value = value
+        if not isinstance(char, str):
+            raise ValueError('char must be a string')
+        if not len(char) == 1:
+            raise ValueError('char must be a single character')
+        self.char = char
+        self.desc = desc
+        self.default = default
+
+    def __str__(self):
+        s = '<Suggestion char="%s"' % self.char
+        if self.desc:
+            s += ' desc="%s"' % self.desc
+        s += ' value="%s"' % self.value
+        if self.default:
+            s += ' default'
+        s += '>'
+        return s
+
+def get_input(
+        message     = None,
+        validator   = None,
+        suggestions = [],
+        is_path     = False,
+        ):
+    """
+    Gets input from the user
+    Returns a valid value
+
+    Keyword arguments:
+    message -- printed first
+    validator -- a function that returns True for a valid input
+    suggestions -- a list of Suggestions
+    is_path -- if True, tab autocomplete will be turned on
+    """
+    if message is not None:
+        print message
+    print
+
+    # print list of suggestions
+    max_width = 0
+    for s in suggestions:
+        if s.desc is not None and len(s.desc) > max_width:
+            max_width = len(s.desc)
+    if max_width > 0:
+        print 'Suggested values:'
+        format_str = '%%-4s %%-%ds %%s' % (max_width+2,)
+        default_found = False
+        for s in suggestions:
+            c = s.char
+            if s.default and not default_found:
+                default_found = True
+                c += '*'
+            desc = ''
+            if s.desc is not None:
+                desc = '[%s]' % s.desc
+            print format_str % (('(%s)' % c), desc, value_to_str(s.value))
+
+    if is_path:
+        # turn on filename autocompletion
+        delims = readline.get_completer_delims()
+        readline.set_completer_delims(' \t\n;')
+        readline.parse_and_bind('TAB: complete')
+
+    user_input = None
+    value = None
+    valid = False
+    while not valid:
+        try:
+            # Get user input
+            user_input = raw_input('>> ').strip()
+        except (KeyboardInterrupt, EOFError):
+            print
+            sys.exit(0)
+
+        if user_input == '':
+            for s in suggestions:
+                if s.default:
+                    print 'Using "%s"' % s.value
+                    if s.value is not None and validator is not None:
+                        try:
+                            value = validator(s.value)
+                            valid = True
+                            break
+                        except ValueError as e:
+                            print 'ERROR:', e
+                    else:
+                        value = s.value
+                        valid = True
+                        break
+        else:
+            if len(user_input) == 1:
+                for s in suggestions:
+                    if s.char.lower() == user_input.lower():
+                        print 'Using "%s"' % s.value
+                        if s.value is not None and validator is not None:
+                            try:
+                                value = validator(s.value)
+                                valid = True
+                                break
+                            except ValueError as e:
+                                print 'ERROR:', e
+                        else:
+                            value = s.value
+                            valid = True
+                            break
+            if not valid and validator is not None:
+                if is_path:
+                    user_input = os.path.expanduser(user_input)
+                try:
+                    value = validator(user_input)
+                    valid = True
+                    print 'Using "%s"' % value
+                except ValueError as e:
+                    print 'ERROR:', e
+
+        if not valid:
+            print 'Invalid input'
+
+    if is_path:
+        # back to normal
+        readline.set_completer_delims(delims)
+        readline.parse_and_bind('TAB: ')
+
+    return value
+
+################################################################################
+#   ConfigOption classes
+################################################################################
 
 class ConfigOption(object):
     """
-    Base class for configuration options in this file
+    Base class for configuration options
     """
-    def __init__(self, level):
-        self.level = level
+    def __init__(self):
         self._val = None
 
     @staticmethod
@@ -32,6 +201,64 @@ class ConfigOption(object):
         """
         raise NotImplementedError()
 
+    def prompt_message(self):
+        """
+        Printed before prompting
+        """
+        return None
+
+    @classmethod
+    def visibility(self):
+        """
+        -1  - Use default and never prompt user
+        0   - Use default and only prompt user if -v is set
+        1   - Prompt user unless -y is set
+        2   - Prompt user even if -y is set
+        """
+        return 1
+
+    def optional(self):
+        """
+        If True, then this option can be set to None
+        """
+        return False
+
+    def suggestions(self):
+        """
+        Return a list of Suggestions
+        """
+        return []
+
+    def is_path(self):
+        """
+        If True, tab autocompletion will be turned on during prompt
+        """
+        return False
+
+    def default_value(self, suggestions=None):
+        """
+        Utility for retrieving the default value from the suggestion list
+        """
+        if suggestions is None:
+            suggestions = self.suggestions()
+        for s in suggestions:
+            if s.default:
+                return s.value
+        return None
+
+    def has_test_value(self):
+        """
+        If true, use test_value during testing
+        """
+        return False
+
+    def test_value(self):
+        """
+        Returns a special value to be used during testing
+        Ignores the current configuration
+        """
+        raise NotImplementedError
+
     @property
     def value(self):
         return self._val
@@ -40,19 +267,7 @@ class ConfigOption(object):
     def value(self, value):
         self._val = self.validate(value)
 
-    @staticmethod
-    def is_silent():
-        """
-        If True, set the value to the default without user input
-        """
-        return False
-
-    def prompt_message(self):
-        return 'Value for %s' % self.name()
-
-    def default_value(self):
-        return None
-
+    @classmethod
     def validate(self, value):
         """
         Returns the validated value
@@ -60,76 +275,97 @@ class ConfigOption(object):
         """
         return value
 
-class CaffeRootOption(ConfigOption):
-    REQUIRED_SUFFIX = '-nv'
-    REQUIRED_VERSION = '0.11.0'
+    def apply(self):
+        """
+        Apply this configuration
+        (may involve altering the PATH)
+        """
+        pass
 
+class FrameworkOption(ConfigOption):
+    """
+    Base class for DL framework backends
+    """
+    def optional(self):
+        return True
+
+class CaffeRootOption(FrameworkOption):
     @staticmethod
     def name():
         return 'caffe_root'
 
     def prompt_message(self):
-        return 'Where is caffe installed?\n\t(enter "SYS" if installed system-wide)'
+        return 'Where is caffe installed?'
 
-    def default_value(self):
-        if 'CAFFE_HOME' in os.environ:
-            #d = os.path.join(os.environ['CAFFE_HOME'], 'distribute')
-            d = os.environ['CAFFE_HOME']
-            try:
-                return self.validate(d)
-            except ValueError as e:
-                print 'Guessed "%s" from CAFFE_HOME' % d
-                print 'ERROR: %s' % e
+    def optional(self):
+        #TODO: make this optional
+        return False
+
+    def suggestions(self):
+        suggestions = []
         if 'CAFFE_ROOT' in os.environ:
-            #d = os.path.join(os.environ['CAFFE_ROOT'], 'distribute')
             d = os.environ['CAFFE_ROOT']
             try:
-                return self.validate(d)
+                self.validate(d)
+                suggestions.append(Suggestion(d, 'R', desc='CAFFE_ROOT', default=True))
             except ValueError as e:
-                print 'Guessed "%s" from CAFFE_ROOT' % d
-                print 'ERROR: %s' % e
-        return 'SYS'
+                print 'CAFFE_ROOT "%s" is invalid:' % d
+                print '\t%s' % e
+        if 'CAFFE_HOME' in os.environ:
+            d = os.environ['CAFFE_HOME']
+            try:
+                self.validate(d)
+                default = True
+                if len(suggestions) > 0:
+                    default = False
+                suggestions.append(Suggestion(d, 'H', desc='CAFFE_HOME', default=default))
+            except ValueError as e:
+                print 'CAFFE_HOME "%s" is invalid:' % d
+                print '\t%s' % e
+        suggestions.append(Suggestion('<PATHS>', 'P', desc='PATH/PYTHONPATH', default=True))
+        return suggestions
 
-    def validate(self, value):
-        if value == 'SYS':
-            caffe = self.find_executable('caffe')
+    def is_path(self):
+        return True
+
+    @classmethod
+    def validate(cls, value):
+        if not value:
+            return value
+
+        if value == '<PATHS>':
+            caffe = cls.find_executable('caffe')
             if not caffe:
-                raise ValueError('caffe binary not found')
-            self.validate_version(caffe)
+                raise ValueError('caffe binary not found in PATH')
+            cls.validate_version(caffe)
             try:
                 imp.find_module('caffe')
             except ImportError:
-                raise ValueError('caffe python package not found')
+                raise ValueError('caffe python package not found in PYTHONPATH')
             return value
         else:
-            value = os.path.normpath(value)
-            if not os.path.isabs(value):
-                raise ValueError('Must be an absolute path')
-            if not os.path.exists(value):
-                raise ValueError('Directory does not exist')
+            value = os.path.abspath(value)
             if not os.path.isdir(value):
-                raise ValueError('Must be a directory')
+                raise ValueError('"%s" is not a directory' % value)
             #expected_path = os.path.join(value, 'bin', 'caffe.bin')
             expected_path = os.path.join(value, 'build', 'tools', 'caffe.bin')
             if not os.path.exists(expected_path):
-                raise ValueError('Does not contain the caffe binary')
-            self.validate_version(expected_path)
+                raise ValueError('caffe binary not found at "%s"' % value)
+            cls.validate_version(expected_path)
 
-            #XXX remove other caffe/python paths from PATH
-            sys.path = [os.path.join(value, 'python')] + [p for p in sys.path if os.path.join('caffe', 'python') not in p]
-            try:
-                imp.find_module('caffe')
-            except ImportError:
-                sys.path.pop(0)
-                raise ValueError('caffe python package not found')
             return value
 
-    def validate_version(self, executable):
+    # Used to validate the version
+    REQUIRED_SUFFIX = '-nv'
+    REQUIRED_VERSION = '0.11.0'
+
+    @classmethod
+    def validate_version(cls, executable):
         """
         Utility for checking the caffe version from within validate()
 
         Arguments:
-        executable -- the caffe executable
+        executable -- path to a caffe executable
         """
         # TODO: check `caffe --version` when it's implemented
 
@@ -145,10 +381,10 @@ class CaffeRootOption(ConfigOption):
                     if libname in line:
                         symlink = line.split()[2]
                         filename = os.path.basename(os.path.realpath(symlink))
-                        if self.REQUIRED_SUFFIX not in filename:
-                            raise ValueError('Expected caffe suffix "%s". %s does not match. Are you building from the NVIDIA/caffe fork?' % (self.REQUIRED_SUFFIX, filename))
-                        if not filename.endswith(self.REQUIRED_VERSION):
-                            raise ValueError('Caffe version %s required. %s does not match.' % (self.REQUIRED_VERSION, filename))
+                        if cls.REQUIRED_SUFFIX not in filename:
+                            raise ValueError('Library at "%s" does not have expected suffix "%s". Are you building from the NVIDIA/caffe fork?' % (filename, cls.REQUIRED_SUFFIX))
+                        if not filename.endswith(cls.REQUIRED_VERSION):
+                            raise ValueError('Library at "%s" does not meet minimum library requirement "%s". Consider upgrading your NVIDIA/caffe installation.' % (filename, cls.REQUIRED_VERSION))
                         return True
             raise ValueError('%s not found in ldd output' % libname)
         elif platform.system() == 'Darwin':
@@ -165,7 +401,101 @@ class CaffeRootOption(ConfigOption):
                 return executable
         return None
 
-class GpusOption(ConfigOption):
+    def apply(self):
+        if self.value and self.value != '<PATHS>':
+            # Add caffe/python to PATH
+            sys.path.insert(0, os.path.join(self.value, 'python'))
+            try:
+                imp.find_module('caffe')
+            except ImportError:
+                print 'ERROR: python module not found at "%s"' % sys.path.pop(0)
+                raise
+
+class TorchRootOption(FrameworkOption):
+    @staticmethod
+    def name():
+        return 'torch_root'
+
+    def prompt_message(self):
+        return 'Where is torch installed?'
+
+    def optional(self):
+        #TODO: make this optional
+        return False
+
+    def suggestions(self):
+        suggestions = []
+        if 'TORCH_ROOT' in os.environ:
+            d = os.environ['TORCH_ROOT']
+            try:
+                self.validate(d)
+                suggestions.append(Suggestion(d, 'R', desc='TORCH_ROOT', default=True))
+            except ValueError as e:
+                print 'TORCH_ROOT "%s" is invalid:' % d
+                print '\t%s' % e
+        if 'TORCH_HOME' in os.environ:
+            d = os.environ['TORCH_HOME']
+            try:
+                self.validate(d)
+                default = True
+                if len(suggestions) > 0:
+                    default = False
+                suggestions.append(Suggestion(d, 'H', desc='TORCH_HOME', default=default))
+            except ValueError as e:
+                print 'TORCH_HOME "%s" is invalid:' % d
+                print '\t%s' % e
+        suggestions.append(Suggestion('<PATHS>', 'P', desc='PATH/TORCHPATH', default=True))
+        return suggestions
+
+    def is_path(self):
+        return True
+
+    @classmethod
+    def validate(cls, value):
+        if not value:
+            return value
+
+        if value == '<PATHS>':
+            torch_exec = cls.find_executable('th')
+            if not torch_exec:
+                raise ValueError('torch binary not found in PATH')
+            #cls.validate_version(torch_exec)
+            return value
+        else:
+            value = os.path.abspath(value)
+            if not os.path.isdir(value):
+                raise ValueError('"%s" is not a directory' % value)
+            expected_path = os.path.join(value, 'bin', 'th')
+            if not os.path.exists(expected_path):
+                raise ValueError('torch binary not found at "%s"' % value)
+            cls.validate_version(expected_path)
+
+            return value
+
+    @classmethod
+    def validate_version(cls, executable):
+        """
+        Utility for checking the torch version from within validate()
+
+        Arguments:
+        executable -- path to a torch executable
+        """
+        # Currently DIGITS don't have any restrictions on Torch version, so no need to implement this.
+        pass
+
+    @staticmethod
+    def find_executable(program):
+        for path in os.environ['PATH'].split(os.pathsep):
+            path = path.strip('"')
+            executable = os.path.join(path, program)
+            if os.path.isfile(executable) and os.access(executable, os.X_OK):
+                return executable
+        return None
+
+    def apply(self):
+        pass
+
+class GpuListOption(ConfigOption):
     @staticmethod
     def name():
         return 'gpu_list'
@@ -179,34 +509,45 @@ class GpusOption(ConfigOption):
             s += '\t%-20s %s\n' % ('Memory', self.convert_size(gpu.totalGlobalMem))
             s += '\t%-20s %s\n' % ('Multiprocessors', gpu.multiProcessorCount)
             s += '\n'
-        return s + '\nInput the IDs of the devices you would like to use, separated by commas, in order of preference.\n\t(enter "NONE" if you want to run in CPU-only mode)'
+        return s + '\nInput the IDs of the devices you would like to use, separated by commas, in order of preference.'
 
-    def default_value(self):
-        return ','.join([str(x) for x in xrange(len(self.query_gpus()))])
+    def optional(self):
+        return True
 
-    def is_silent(self):
-        try:
-            if len(self.query_gpus()) == 0:
-                print 'No GPUs found. Assuming CPU-only mode.'
-                print
-                return True
-            else:
-                return False
-        except ValueError:
-            return False
+    def suggestions(self):
+        if len(self.query_gpus()) > 0:
+            return [Suggestion(
+                ','.join([str(x) for x in xrange(len(self.query_gpus()))]),
+                'D', desc='default', default=True)]
+        else:
+            return []
 
-    def validate(self, value):
-        if value == 'NONE':
-            return 'NONE'
+    @classmethod
+    def visibility(self):
+        if len(self.query_gpus()) == 0:
+            # Nothing to see here
+            return -1
+        if len(self.query_gpus()) == 1:
+            # Use just the one GPU by default
+            return 0
+        else:
+            return 1
+
+    @classmethod
+    def validate(cls, value):
+        if value == '':
+            return value
 
         choices = []
-        gpus = self.query_gpus()
+        gpus = cls.query_gpus()
 
         if not gpus:
             return ''
         if len(gpus) and not value.strip():
             raise ValueError('Empty list')
         for word in value.split(','):
+            if not word:
+                continue
             num = int(word)
             found = False
             if not 0 <= num < len(gpus):
@@ -242,97 +583,116 @@ class GpusOption(ConfigOption):
             cls.device_list = device_query.get_devices()
         return cls.device_list
 
-class TorchRootOption(ConfigOption):
-    @staticmethod
-    def name():
-        return 'torch_root'
-
-    def prompt_message(self):
-        return 'Where is torch installed? (enter "SYS" if installed system-wide)'
-
-    def default_value(self):
-        if 'TORCH_HOME' in os.environ:
-            #d = os.path.join(os.environ['CAFFE_HOME'], 'distribute')
-            d = os.environ['TORCH_HOME']
-            try:
-                return self.validate(d)
-            except ValueError as e:
-                print 'Guessed "%s" from TORCH_HOME' % d
-                print 'ERROR: %s' % e
-        if 'TORCH_ROOT' in os.environ:
-            #d = os.path.join(os.environ['CAFFE_ROOT'], 'distribute')
-            d = os.environ['TORCH_ROOT']
-            try:
-                return self.validate(d)
-            except ValueError as e:
-                print 'Guessed "%s" from TORCH_ROOT' % d
-                print 'ERROR: %s' % e
-        return 'SYS'
-
-    def validate(self, value):
-        if value == 'SYS':
-            if not self.find_executable('th'):
-                raise ValueError('torch binary cannot be found')
-            return value
-        else:
-            value = os.path.normpath(value)
-            if not os.path.isabs(value):
-                raise ValueError('Must be an absolute path')
-            if not os.path.exists(value):
-                raise ValueError('Directory does not exist')
-            if not os.path.isdir(value):
-                raise ValueError('Must be a directory')
-#            if not os.path.exists(os.path.join(value, 'bin', 'caffe.bin')):
-            if not os.path.exists(os.path.join(value, 'th')):
-                raise ValueError('Does not contain the torch binary')
-
-            return value
-
-    @staticmethod
-    def find_executable(program):
-        for path in os.environ['PATH'].split(os.pathsep):
-            path = path.strip('"')
-            executable = os.path.join(path, program)
-            if os.path.isfile(executable) and os.access(executable, os.X_OK):
-                return True
-        return False
-
 class JobsDirOption(ConfigOption):
     @staticmethod
     def name():
         return 'jobs_dir'
 
     def prompt_message(self):
-        return 'Where would you like to store jobs?'
+        return 'Where would you like to store job data?'
 
-    def default_value(self):
-        if self.level == 'system':
-            return '/var/digits-jobs'
-        elif self.level == 'user':
-            return os.path.join(DigitsConfig.get_user_level_dir(), 'jobs')
-        elif self.level == 'test':
-            return tempfile.mkdtemp()
-        else:
-            raise ValueError('invalid level')
+    def suggestions(self):
+        d = os.path.join(
+                os.path.dirname(__file__),
+                'jobs')
+        return [Suggestion(d, 'D', desc='default', default=True)]
 
-    def validate(self, value):
-        value = os.path.normpath(value)
-        if not os.path.isabs(value):
-            raise ValueError('Must be an absolute path')
+    def is_path(self):
+        return True
+
+    def has_test_value(self):
+        return True
+
+    def test_value(self):
+        return tempfile.mkdtemp()
+
+    @classmethod
+    def validate(cls, value):
+        value = os.path.abspath(value)
         if os.path.exists(value):
             if not os.path.isdir(value):
                 raise ValueError('Is not a directory')
             if not os.access(value, os.W_OK):
-                raise ValueError('You do not have write permissions')
+                raise ValueError('You do not have write permission')
             return value
         if not os.path.exists(os.path.dirname(value)):
             raise ValueError('Parent directory does not exist')
         if not os.access(os.path.dirname(value), os.W_OK):
-            raise ValueError('You do not have write permissions')
+            raise ValueError('You do not have write permission')
         if not os.path.exists(value):
             # make the directory
             os.mkdir(value)
         return value
+
+class LogFileOption(ConfigOption):
+    @staticmethod
+    def name():
+        return 'log_file'
+
+    def prompt_message(self):
+        return 'Where do you want the log files to be stored?'
+
+    def optional(self):
+        # if not set, no log will be saved
+        return True
+
+    def suggestions(self):
+        suggested_dir = os.path.dirname(__file__)
+
+        if os.access(suggested_dir, os.W_OK):
+            return [Suggestion(
+                os.path.join(suggested_dir, 'digits.log'), 'D',
+                desc='default', default=True)
+                ]
+        else:
+            return []
+
+    def is_path(self):
+        return True
+
+    def has_test_value(self):
+        return True
+
+    def test_value(self):
+        return None
+
+    @classmethod
+    def validate(cls, value):
+        if not value:
+            return value
+        value = os.path.abspath(value)
+        dirname = os.path.dirname(value)
+
+        if os.path.isfile(value):
+            if not os.access(value, os.W_OK):
+                raise ValueError('You do not have write permissions')
+            if not os.access(dirname, os.W_OK):
+                raise ValueError('You do not have write permissions for "%s"' % dirname)
+            return value
+        elif os.path.isdir(value):
+            raise ValueError('"%s" is a directory' % value)
+        else:
+            if os.path.isdir(dirname):
+                if not os.access(dirname, os.W_OK):
+                    raise ValueError('You do not have write permissions for "%s"' % dirname)
+                # filename is in a valid directory
+                return value
+            previous_dir = os.path.dirname(dirname)
+            if not os.path.isdir(previous_dir):
+                raise ValueError('"%s" not found' % value)
+            if not os.access(previous_dir, os.W_OK):
+                raise ValueError('You do not have write permissions for "%s"' % previous_dir)
+            # the preceding directory can be created later (in apply())
+            return value
+
+    def apply(self):
+        if not self.value:
+            return
+
+        dirname = os.path.dirname(self.value)
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+
 
 class LogLevelOption(ConfigOption):
     @staticmethod
@@ -342,13 +702,23 @@ class LogLevelOption(ConfigOption):
     def prompt_message(self):
         return 'What is the minimum log level that you want to save to your logfile? [error/warning/info/debug]'
 
-    def default_value(self):
-        return 'info'
+    @classmethod
+    def visibility(self):
+        return 0
 
-    def validate(self, value):
+    def suggestions(self):
+        return [
+                Suggestion('debug', 'D'),
+                Suggestion('info', 'I', default=True),
+                Suggestion('warning', 'W'),
+                Suggestion('error', 'E'),
+                ]
+
+    @classmethod
+    def validate(cls, value):
         value = value.strip().lower()
         if value not in ['error', 'warning', 'info', 'debug']:
-            raise ValueError()
+            raise ValueError
         return value
 
 class SecretKeyOption(ConfigOption):
@@ -356,384 +726,519 @@ class SecretKeyOption(ConfigOption):
     def name():
         return 'secret_key'
 
-    @staticmethod
-    def is_silent():
-        return True
+    @classmethod
+    def visibility(self):
+        return -1
 
-    def default_value(self):
-        return os.urandom(12).encode('hex')
+    def suggestions(self):
+        key = os.urandom(12).encode('hex')
+        return [Suggestion(key, 'D', desc='default', default=True)]
 
-### main class
+def optionClasses():
+    """
+    Returns a list of ConfigOption classes
+    """
+    return [
+            JobsDirOption,
+            GpuListOption,
+            LogFileOption,
+            LogLevelOption,
+            SecretKeyOption,
+            CaffeRootOption,
+            TorchRootOption,
+            ]
 
-class DigitsConfig:
+################################################################################
+#   ConfigFile classes
+################################################################################
+
+class ConfigFile(object):
+    """
+    Handles IO on a config file
+    """
     config_section = 'DIGITS'
 
-    def __init__(self, level):
-        config_file_name = 'digits.cfg'
-        log_file_name = 'digits.log'
-
-        if level not in ['system', 'user', 'test']:
-            raise ValueError('level must be "system" or "user" or "test"')
-        self.level = level
-
-        self.config_file = self.get_config_file(level)
-        self.log_file = self.get_log_file(level)
-
-        self.option_list = [
-                CaffeRootOption(level),
-                GpusOption(level),
-                TorchRootOption(level),
-                JobsDirOption(level),
-                LogLevelOption(level),
-                SecretKeyOption(level),
-                ]
-
-        self.options = None
-        self.valid = False
-
-    def system_level(self):
-        return self.level == 'system'
-
-    def user_level(self):
-        return self.level == 'user'
-
-    def test_level(self):
-        return self.level == 'test'
-
-    @classmethod
-    def get_user_level_dir(cls):
+    def __init__(self, filename):
         """
-        If level == user, store things in this directory
+        Doesn't make a fuss if the file doesn't exist
+        Use exists() to check
         """
-        d = os.path.join(os.environ['HOME'], '.digits')
-        if not os.path.exists(d):
-            os.mkdir(d)
-        return d
+        self._filename = filename
+        self._options = OrderedDict()
+        self.load()
+        self._dirty = False
 
-    @classmethod
-    def get_config_file(cls, level):
-        filename = 'digits.cfg'
-        if level == 'system':
-            return os.path.join('/etc', filename)
-        elif level == 'user':
-            return os.path.join(cls.get_user_level_dir(), filename)
-        elif level == 'test':
-            _handle, _tempfilename = tempfile.mkstemp(suffix='.cfg')
-            return _tempfilename
+    def __str__(self):
+        s = ''
+        for item in self._options.iteritems():
+            s += '%15s = %s\n' % item
+        return s
+
+    def filename(self):
+        return self._filename
+
+    def exists(self):
+        """
+        Returns True if the file exists
+        """
+        return os.path.isfile(self._filename)
+
+    def can_read(self):
+        """
+        Returns True if the file can be read
+        """
+        return self.exists() and os.access(self._filename, os.R_OK)
+
+    def can_write(self):
+        """
+        Returns True if the file can be written
+        """
+        if os.path.isfile(self._filename):
+            return os.access(self._filename, os.W_OK)
         else:
-            raise ValueError('invalid level')
-
-    @classmethod
-    def get_log_file(cls, level):
-        filename = 'digits.log'
-        if level == 'system':
-            return os.path.join('/var/log/digits', filename)
-        elif level == 'user':
-            return os.path.join(cls.get_user_level_dir(), filename)
-        elif level == 'test':
-            _handle, _tempfilename = tempfile.mkstemp(suffix='.log')
-            return _tempfilename
-        else:
-            raise ValueError('invalid level')
-
-    def read_from_file(self):
-        """
-        Returns the current config in a dict or None
-        """
-        if not os.path.exists(self.config_file):
-            return None
-        cfg = ConfigParser.SafeConfigParser()
-        try:
-            cfg.read(self.config_file)
-        except Exception as e:
-            print '%s: %s' % (type(e).__name__, e)
-            return None
-
-        if not cfg.has_section(self.config_section):
-            return None
-
-        options = {}
-        for key, val in cfg.items(self.config_section):
-            options[key] = val
-        return options
-
-    def save_to_file(self):
-        """
-        Save options to file
-        """
-        cfg = ConfigParser.SafeConfigParser()
-        cfg.add_section(self.config_section)
-        for key, val in self.options.iteritems():
-            cfg.set(self.config_section, key, val)
-        with open(self.config_file, 'w') as outfile:
-            cfg.write(outfile)
+            return os.access(
+                    os.path.dirname(self._filename),
+                    os.W_OK)
 
     def load(self):
         """
-        Reads values from the config file
-        Returns True if a valid config has been loaded
+        Load options from the file
+        Overwrites any values in self._options
+        Returns True if the file loaded successfully
         """
-        # validate permissions for config_file and log_file
-        allowed = True
-        if os.path.exists(self.config_file):
-            if not os.access(self.config_file, os.R_OK):
-                allowed = False
-                print 'cannot write to %s' % self.config_file
-        else:
-            parent_dir = os.path.dirname(self.config_file)
-            if not os.path.exists(parent_dir):
-                allowed = False
-                print '%s does not exist' % parent_dir
-            if not os.access(parent_dir, os.W_OK):
-                allowed = False
-                print 'cannot write to %s' % parent_dir
-        if os.path.exists(self.log_file):
-            if not os.access(self.log_file, os.W_OK):
-                allowed = False
-                print 'cannot write to %s' % self.log_file
-        else:
-            parent_dir = os.path.dirname(self.log_file)
-            if not os.path.exists(parent_dir):
-                try:
-                    os.makedirs(parent_dir, 0755)
-                except OSError:
-                    allowed = False
-                    print '%s does not exist and could not be created' % \
-                        parent_dir
-            if not os.access(parent_dir, os.W_OK):
-                allowed = False
-                print 'cannot write to %s' % parent_dir
-        if not allowed:
-            print 'Did you mean to run this as root?'
+        if not self.exists():
             return False
+        cfg = ConfigParser.SafeConfigParser()
+        cfg.read(self._filename)
+        if not cfg.has_section(self.config_section):
+            raise ValueError('expected section "%s" in config file at "%s"' % (
+                self.config_section, self._filename))
 
-        self.options = None
-        self.valid = False
-
-        old_config = self.read_from_file()
-        if old_config is None:
-            if self.user_level():
-                return False
-            else:
-                old_config = {}
-
-        valid = True
-        dirty = False
-        for option in self.option_list:
-            if not option.name() in old_config:
-                if option.is_silent():
-                    option.value = option.default_value()
-                    dirty = True
-                else:
-                    if self.user_level():
-                        print 'config file missing option "%s"' % option.name()
-                        valid = False
-                    else:
-                        try:
-                            option.value = option.default_value()
-                        except ValueError as e:
-                            if self.test_level():
-                                raise
-                            print 'Cannot guess value for "%s": %s' % (option.name(), e)
-                            valid = False
-
-            else:
-                value = old_config[option.name()]
-                try:
-                    option.value = value
-                except ValueError as e:
-                    if self.user_level():
-                        print 'Invalid config option for "%s": %s' % (option.name(), e)
-                        valid = False
-                    else:
-                        option.value = option.default_value()
-
-        if not valid:
-            return False
-
-        self.options = {}
-        for option in self.option_list:
-            self.options[option.name()] = option.value
-
-        if dirty:
-            if not os.access(os.path.dirname(self.config_file), os.W_OK):
-                print 'cannot write to %s' % self.config_file
-                return False
-            self.save_to_file()
-
-        self.valid = True
+        for key, val in cfg.items(self.config_section):
+            self._options[key] = val
         return True
 
-
-    def prompt(self):
+    def get(self, name):
         """
-        Prompts the user to fill out the configuration
-        Returns True if a valid config was saved
-        Returns False if the user cancels the process
+        Get a config option by name
         """
-        self.options = None
-        self.valid = False
+        if name in self._options:
+            return self._options[name]
+        else:
+            return None
 
-        print 'Welcome to the DIGITS config module.'
-        print
+    def set(self, name, value):
+        """
+        Set a config option by name
+        """
+        if value is None:
+            if name in self._options:
+                del self._options[name]
+                self._dirty = True
+        else:
+            if not (name in self._options and self._options[name] == value):
+                self._dirty = True
+            self._options[name] = value
 
-        old_config = self.read_from_file()
-        if old_config is None:
-            old_config = {}
+    def dirty(self):
+        """
+        Returns True if there are changes to be written to disk
+        """
+        return self._dirty
 
-        for option in self.option_list:
-            default = option.default_value()
-            if option.name() in old_config:
-                previous = old_config[option.name()]
-            else:
-                previous = None
+    def save(self):
+        """
+        Save config file to disk
+        """
+        cfg = ConfigParser.SafeConfigParser()
+        cfg.add_section(self.config_section)
+        for name, value in self._options.iteritems():
+            cfg.set(self.config_section, name, value)
+        with open(self._filename, 'w') as outfile:
+            cfg.write(outfile)
 
-            if option.is_silent():
-                if previous is not None:
-                    try:
-                        option.value = previous
-                    except ValueError:
-                        option.value = default
-                else:
-                    option.value = default
-                continue
 
-            print option.prompt_message()
+class SystemConfigFile(ConfigFile):
+    def __init__(self):
+        if platform.system() == 'Linux':
+            filename = '/etc/digits.cfg'
+        else:
+            filename = None
+        super(SystemConfigFile, self).__init__(filename)
 
-            previous_valid = False
-            if option.name() in old_config:
+class UserConfigFile(ConfigFile):
+    def __init__(self, **kwargs):
+        if 'HOME' in os.environ:
+            filename = os.path.join(os.environ['HOME'], '.digits.cfg')
+            old_filename = os.path.join(os.environ['HOME'], '.digits', 'digits.cfg')
+            if not os.path.exists(filename) and os.path.exists(old_filename):
                 try:
-                    option.value = previous
-                    previous_valid = True
-                except ValueError:
+                    shutil.copyfile(old_filename, filename)
+                    print 'Copied file at "%s" to "%s".' % (old_filename, filename)
+                except (IOError, OSError):
                     pass
+        else:
+            filename = None
+        super(UserConfigFile, self).__init__(filename)
 
-            accept_previous = False
-            if previous_valid:
-                valid = False
-                while not valid:
-                    try:
-                        print 'Accept previous value? [%s]' % previous
-                        value = raw_input('(y/n/q) >>> ')
-                        value = value.strip().lower()
-                        if value.startswith('q'):
-                            return False
-                        if value.startswith('n'):
-                            valid = True
-                            accept_previous = False
-                            print
-                        elif value.startswith('y') or not value:
-                            valid = True
-                            accept_previous = True
-                        else:
-                            print 'Invalid input'
-                    except KeyboardInterrupt:
-                        return False
-            if accept_previous:
-                print
-                continue
+class InstanceConfigFile(ConfigFile):
+    def __init__(self):
+        filename = os.path.join(os.path.dirname(__file__), 'digits.cfg')
+        super(InstanceConfigFile, self).__init__(filename)
 
-            if default is not None:
-                print '\t[default is %s]' % default
+################################################################################
+#   main functions
+################################################################################
 
-            valid = False
-            while not valid:
-                try:
-                    value = raw_input('(q to quit) >>> ')
-                except KeyboardInterrupt:
-                    return False
-                value = value.strip()
-                if value.lower() in ['q', 'quit']:
-                    return False
-                if default is not None and not value:
-                    value = default
-                    print 'Accepting default value of "%s"' % value
-                try:
-                    option.value = value
-                    valid = True
-                except ValueError as e:
-                    print 'ERROR:', e
-                    print
-            print
+def print_config(verbose=False):
+    """
+    Prints out a matrix of config option values for each level
+    """
+    min_visibility = 1
+    if verbose:
+        min_visibility = 0
+    columns = [[''] + [cls.name() for cls in optionClasses() if cls.visibility() >= min_visibility]]
+    for header, cls in [
+            ('INSTANCE', InstanceConfigFile),
+            ('USER', UserConfigFile),
+            ('SYSTEM', SystemConfigFile)]:
+        cf = cls()
+        if cf.can_read():
+            column = [header]
+            for key in columns[0][1:]:
+                column.append(value_to_str(cf.get(key)))
+            columns.append(column)
 
-        self.options = {}
-        for option in self.option_list:
-            self.options[option.name()] = option.value
+    if len(columns) == 1:
+        # nothing to display
+        return
 
-        print 'New config:'
-        for option in self.options.iteritems():
-            print '%20s - %s' % option
-        print
+    widths = []
+    for column in columns:
+        max_width = 0
+        for item in column:
+            width = len(str(item))
+            if width > max_width:
+                max_width = width
+        widths.append(max_width)
 
-        self.save_to_file()
-        self.valid = True
-        return True
+    print_section_header('Current Config')
 
-    def clear(self):
+    for row_index in xrange(len(columns[0])):
+        row = []
+        for column_index in xrange(len(columns)):
+            row.append(columns[column_index][row_index])
+        format_str = ''
+        for width in widths:
+            format_str += '%%-%ds ' % width
+        print format_str % tuple(row)
+    print
+
+
+def edit_config_file(verbose=False):
+    """
+    Prompt the user for which file to edit,
+    then allow them to set options in that file
+    """
+    suggestions = []
+    instanceConfig = InstanceConfigFile()
+    if instanceConfig.can_write():
+        suggestions.append(Suggestion(
+            instanceConfig.filename(), 'I',
+            desc = 'Instance', default=True))
+    userConfig = UserConfigFile()
+    if userConfig.can_write():
+        suggestions.append(Suggestion(
+            userConfig.filename(), 'U',
+            desc = 'User', default=True))
+    systemConfig = SystemConfigFile()
+    if systemConfig.can_write():
+        suggestions.append(Suggestion(
+            systemConfig.filename(), 'S',
+            desc = 'System', default=True))
+
+    def filenameValidator(filename):
         """
-        Remove all user-set configuration options
+        Returns True if this is a valid file to edit
         """
-        self.options = None
-        self.valid = False
+        if os.path.isfile(filename):
+            if not os.access(filename, os.W_OK):
+                raise ValueError('You do not have write permission')
+            else:
+                return filename
 
-        try:
-            os.remove(self.config_file)
-        except OSError:
+        if os.path.isdir(filename):
+            raise ValueError('This is a directory')
+        dirname = os.path.dirname(os.path.realpath(filename))
+        if not os.path.isdir(dirname):
+            raise ValueError('Path not found: %s' % dirname)
+        elif not os.access(dirname, os.W_OK):
+            raise ValueError('You do not have write permission')
+        return filename
+
+    filename = get_input(
+            message     = 'Which file do you want to edit?',
+            suggestions = suggestions,
+            validator   = filenameValidator,
+            is_path     = True,
+            )
+
+    print 'Editing file at %s ...' % os.path.realpath(filename)
+    print
+
+    is_standard_location = False
+
+    if filename == instanceConfig.filename():
+        is_standard_location = True
+        instanceConfig = None
+    if filename == userConfig.filename():
+        is_standard_location = True
+        userConfig = None
+    if filename == systemConfig.filename():
+        is_standard_location = True
+        systemConfig = None
+
+    configFile = ConfigFile(filename)
+
+    for cls in optionClasses():
+        option = cls()
+        default = None
+        previous_value = configFile.get(option.name())
+        suggestions = [Suggestion(None, 'U',
+            desc='unset', default=(previous_value is None))]
+        if previous_value is not None:
+            suggestions.append(Suggestion(previous_value, 'P',
+                desc = 'Previous', default = True))
+            default = 'P'
+        if instanceConfig is not None:
+            instance_value = instanceConfig.get(option.name())
+            if instance_value is not None:
+                suggestions.append(Suggestion(instance_value, 'I',
+                    desc = 'Instance', default = is_standard_location))
+        if userConfig is not None:
+            user_value = userConfig.get(option.name())
+            if user_value is not None:
+                suggestions.append(Suggestion(user_value, 'U',
+                    desc = 'User', default = is_standard_location))
+        if systemConfig is not None:
+            system_value = systemConfig.get(option.name())
+            if system_value is not None:
+                suggestions.append(Suggestion(system_value, 'S',
+                    desc = 'System', default = is_standard_location))
+        suggestions += option.suggestions()
+        if option.optional():
+            suggestions.append(Suggestion('', 'N',
+                desc = 'none', default = True))
+
+        invisible = False
+        if verbose and option.visibility() < 0:
+            invisible = True
+        elif not verbose and option.visibility() < 1:
+            invisible = True
+
+        if invisible:
+            # Just don't set it
             pass
+        else:
+            print_section_header(option.name())
+            value = get_input(
+                    message     = option.prompt_message(),
+                    validator   = option.validate,
+                    suggestions = suggestions,
+                    is_path     = option.is_path(),
+                    )
+            print
+            configFile.set(option.name(), value)
 
+    configFile.save()
+    print 'New config saved at %s' % configFile.filename()
+    print
+    print configFile
 
 current_config = None
 
-def load_config():
-    global current_config
-    assert current_config is None, 'config already loaded'
-    level = 'user'
-    if 'DIGITS_LEVEL' in os.environ:
-        level = os.environ['DIGITS_LEVEL']
-    current_config = DigitsConfig(level)
-    return current_config.load()
+def load_option(option, mode, newConfig,
+        instanceConfig  =None,
+        userConfig      = None,
+        systemConfig    = None,
+        ):
+    """
+    Called from load_config() [below]
+    Returns the loaded value
 
-def valid_config():
-    if current_config is None:
-        return False
-    else:
-        return current_config.valid
+    Arguments:
+    option -- an instance of ConfigOption
+    mode -- see docstring for load_config()
+    newConfig -- an instance of ConfigFile
+    instanceConfig -- the current InstanceConfigFile
+    userConfig -- the current UserConfigFile
+    systemConfig -- the current SystemConfigFile
+    """
+    if 'DIGITS_MODE_TEST' in os.environ and option.has_test_value():
+        print 'Setting %s to test value ...' % option.name()
+        option.value = option.test_value()
+        return option.value
 
-def prompt_config():
+    suggestions = []
+    instance_value = instanceConfig.get(option.name())
+    if instance_value is not None:
+        suggestions.append(Suggestion(instance_value, 'P',
+            desc = 'Previous', default = True))
+    user_value = userConfig.get(option.name())
+    if user_value is not None:
+        suggestions.append(Suggestion(user_value, 'U',
+            desc = 'User', default = True))
+    system_value = systemConfig.get(option.name())
+    if system_value is not None:
+        suggestions.append(Suggestion(system_value, 'S',
+            desc = 'System', default = True))
+    suggestions += option.suggestions()
+    if option.optional():
+        suggestions.append(Suggestion('', 'N',
+            desc = 'none', default = True))
+
+    require_prompt = False
+    if mode == 'verbose':
+        if option.visibility() == -1:
+            # check the default value
+            default_value = option.default_value(suggestions)
+            try:
+                option.value = default_value
+            except ValueError as e:
+                print 'Default value for %s "%s" invalid:' % (option.name(), default_value)
+                print '\t%s' % e
+                require_prompt = True
+        else:
+            require_prompt = True
+
+    if mode == 'quiet':
+        # check the default value
+        default_value = option.default_value(suggestions)
+        try:
+            option.value = default_value
+        except ValueError as e:
+            print 'Default value for %s "%s" invalid:' % (option.name(), default_value)
+            print '\t%s' % e
+            require_prompt = True
+
+    if mode == 'force':
+        # check for any valid default values
+        valid = False
+        for s in [s for s in suggestions if s.default]:
+            try:
+                option.value = s.value
+                valid = True
+                break
+            except ValueError as e:
+                print 'Default value for %s "%s" invalid:' % (option.name(), s.value)
+                print '\t%s' % e
+        if not valid:
+            raise RuntimeError('No valid default value found for configuration option "%s"' % option.name())
+
+    if require_prompt:
+        print_section_header(option.name())
+        value = get_input(
+                message     = option.prompt_message(),
+                validator   = option.validate,
+                suggestions = suggestions,
+                is_path     = option.is_path(),
+                )
+        print
+        option.value = value
+        newConfig.set(option.name(), option.value)
+
+    return option.value
+
+def load_config(mode='force'):
+    """
+    Load the current config
+    By default, the user is prompted for values which have not been set already
+
+    Keyword arguments:
+    mode -- 3 options:
+        verbose -- prompt for all options
+        quiet -- prompt only for nonexistent or invalid options
+        force -- throw errors for invalid options
+    """
     global current_config
-    assert current_config is not None, 'config must be loaded first'
-    return current_config.prompt()
+    current_config = {}
+
+    instanceConfig = InstanceConfigFile()
+    userConfig = UserConfigFile()
+    systemConfig = SystemConfigFile()
+    newConfig = InstanceConfigFile()
+
+    non_framework_options = [cls() for cls in optionClasses()
+            if not issubclass(cls, FrameworkOption)]
+    framework_options = [cls() for cls in optionClasses()
+            if issubclass(cls, FrameworkOption)]
+
+    # Load non-framework config options
+    for option in non_framework_options:
+        load_option(option, mode, newConfig,
+                instanceConfig, userConfig, systemConfig)
+
+    has_one_framework = False
+    verbose_for_frameworks = False
+    while not has_one_framework:
+        # Load framework config options
+        if verbose_for_frameworks and mode == 'quiet':
+            framework_mode = 'verbose'
+        else:
+            framework_mode = mode
+        for option in framework_options:
+            if load_option(option, framework_mode, newConfig,
+                    instanceConfig, userConfig, systemConfig):
+                has_one_framework = True
+
+        if not has_one_framework:
+            errstr = 'DIGITS requires at least one DL backend to run.'
+            if mode == 'force':
+                raise RuntimeError(errstr)
+            else:
+                print errstr
+                # try again prompting all
+                verbose_for_frameworks = True
+
+    current_config = {}
+    for option in non_framework_options + framework_options:
+        option.apply()
+        current_config[option.name()] = option.value
+
+    if newConfig.dirty() and newConfig.can_write():
+        newConfig.save()
+        print 'Saved config to %s' % newConfig.filename()
+
 
 def config_option(name):
+    """
+    Return the current configuration value for the given option
+
+    Arguments:
+    name -- the name of the configuration option
+    """
     global current_config
-    assert current_config is not None, 'config must be loaded first'
-    assert current_config.valid, 'loaded config is invalid'
-    if name == 'log_file':
-        return current_config.log_file
-    elif name == 'level':
-        return current_config.level
+
+    if current_config is None:
+        raise RuntimeError('config must be loaded first')
+
+    if name in current_config:
+        return current_config[name]
     else:
-        return current_config.options[name]
+        return None
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Config - DIGITS')
-    parser.add_argument('level',
-            help='system/user/test')
-    parser.add_argument('-c', '--clear',
-            action='store_true',
-            help='Clear the stored config before setting')
+    parser.add_argument('-v', '--verbose',
+            action="store_true",
+            help='view more options')
+
     args = vars(parser.parse_args())
 
-    current_config = DigitsConfig(args['level'])
+    print_config(args['verbose'])
+    edit_config_file(args['verbose'])
 
-    if args['clear']:
-        current_config.clear()
-        print 'Config cleared.'
-
-    if not current_config.prompt():
-        sys.exit(1)
-
-else:
+elif 'DIGITS_MODE_TEST' in os.environ:
     load_config()
 

@@ -14,14 +14,15 @@ import Queue
 
 # Add path for DIGITS package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from digits import utils, config, log
+import digits.config; digits.config.load_config()
+from digits import utils, log
 
 import numpy as np
 import PIL.Image
 import leveldb
 import lmdb
 from cStringIO import StringIO
-# must import digits.config before caffe to set the path
+# must call digits.config.load_config() before caffe to set the path
 import caffe.io
 from caffe.proto import caffe_pb2
 

@@ -99,6 +99,7 @@ def setup_logging():
 
         return JobIdLoggerAdapter(webapp_logger, {})
     else:
+        print 'WARNING: log_file config option not found - no log file is being saved'
         return JobIdLoggerAdapter(main_logger, {})
 
 # Do it when this module is loaded

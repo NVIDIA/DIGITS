@@ -1,5 +1,12 @@
 # Ignore these file types
+*.cfg
+*.log
 *.pyc
 *.swp
-/venv/
+
+# Ignore these files
 .coverage
+
+# Ignore these directories
+/venv/
+/digits/jobs/

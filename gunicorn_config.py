@@ -8,8 +8,7 @@ loglevel = 'debug'
 
 def on_starting(server):
     from digits import config
-    if not config.valid_config():
-        sys.exit(1)
+    config.load_config()
 
 def post_fork(server, worker):
     from digits.webapp import scheduler

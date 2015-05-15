@@ -86,7 +86,15 @@ class TestCreate(BaseTestCase):
             'framework' : 'caffe'
             })
 
-        assert scheduler.jobs[-1].train_task().crop_size == 12
+        if not (300 <= rv.status_code <= 310):
+            msg = self.get_error_msg(rv.data)
+            if msg is not None:
+                raise RuntimeError(msg)
+            else:
+                raise RuntimeError('Failed to create model')
+
+        assert scheduler.jobs[-1].train_task().crop_size == 12, \
+                'crop size not saved properly'
 
     def test_previous_network_pretrained_model(self):
         """previous network, pretrained model"""
@@ -99,4 +107,14 @@ class TestCreate(BaseTestCase):
             'model-snapshot' : 1,
             'framework' : 'caffe'
             })
-        assert scheduler.jobs[-1].train_task().pretrained_model == self.temp_snapshot_path
+
+        if not (300 <= rv.status_code <= 310):
+            msg = self.get_error_msg(rv.data)
+            if msg is not None:
+                raise RuntimeError(msg)
+            else:
+                raise RuntimeError('Failed to create model')
+
+        assert scheduler.jobs[-1].train_task().pretrained_model == self.temp_snapshot_path, \
+                'pretrained model not saved properly'
+
