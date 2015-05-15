@@ -8,7 +8,8 @@ import wtforms
 from wtforms import validators
 from caffe.proto import caffe_pb2
 
-from digits import utils
+from digits import utils, config
+from digits.device_query import get_devices
 
 class ModelForm(Form):
 
@@ -195,11 +196,42 @@ class ModelForm(Form):
                 if not os.path.exists(snapshot):
                     raise validators.ValidationError('File does not exist')
 
+    # Select one of several GPUs
+    select_gpu = wtforms.RadioField('Select which GPU you would like to use',
+            choices = [('next', 'Next available')] + [(
+                index,
+                '#%s - %s' % (index, get_devices()[int(index)].name),
+                ) for index in config.config_option('gpu_list').split(',') if index],
+            default = 'next',
+            )
+
+    # Select N of several GPUs
+    select_gpus = wtforms.SelectMultipleField('Select which GPU[s] you would like to use',
+            choices = [(
+                index,
+                '#%s - %s' % (index, get_devices()[int(index)].name),
+                ) for index in config.config_option('gpu_list').split(',') if index]
+            )
+
+    # Use next available N GPUs
+    select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
+            validators = [
+                validators.NumberRange(min=1, max=len(config.config_option('gpu_list').split(',')))
+                ],
+            default = 1,
+            )
+
+    def validate_select_gpu_count(form, field):
+        if field.data is None:
+            if form.select_gpus.data:
+                # Make this field optional
+                field.errors[:] = []
+                raise validators.StopValidation()
+
     model_name = wtforms.StringField('Model Name',
             validators = [
                 validators.DataRequired()
                 ]
             )
-
 
 

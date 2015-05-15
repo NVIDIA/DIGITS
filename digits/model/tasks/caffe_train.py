@@ -368,9 +368,7 @@ class CaffeTrainTask(TrainTask):
         return float(it * self.train_epochs) / self.solver.max_iter
 
     @override
-    def task_arguments(self, **kwargs):
-        gpu_id = kwargs.pop('gpu_id', None)
-
+    def task_arguments(self, resources):
         if config_option('caffe_root') == '<PATHS>':
             caffe_bin = 'caffe'
         else:
@@ -381,8 +379,14 @@ class CaffeTrainTask(TrainTask):
                 '--solver=%s' % self.path(self.solver_file),
                 ]
 
-        if gpu_id:
-            args.append('--gpu=%d' % gpu_id)
+        if 'gpus' in resources:
+            identifiers = []
+            for identifier, value in resources['gpus']:
+                identifiers.append(identifier)
+            if len(identifiers) == 1:
+                args.append('--gpu=%s' % identifiers[0])
+            elif len(identifiers) > 1:
+                args.append('--gpus=%s' % ','.join(identifiers))
         if self.pretrained_model:
             args.append('--weights=%s' % self.path(self.pretrained_model))
 

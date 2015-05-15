@@ -22,7 +22,8 @@ from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
 
-NAMESPACE = '/models/images/classification'
+NAMESPACE   = '/models/images/classification'
+MULTI_GPU   = False
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
 def image_classification_model_new():
@@ -34,7 +35,11 @@ def image_classification_model_new():
 
     prev_network_snapshots = get_previous_network_snapshots()
 
-    return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots, has_datasets=(len(get_datasets())==0))
+    return render_template('models/images/classification/new.html',
+            form        = form,
+            previous_network_snapshots  = prev_network_snapshots,
+            multi_gpu   = MULTI_GPU,
+            )
 
 @app.route(NAMESPACE, methods=['POST'])
 def image_classification_model_create():
@@ -47,7 +52,11 @@ def image_classification_model_create():
     prev_network_snapshots = get_previous_network_snapshots()
 
     if not form.validate_on_submit():
-        return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots), 400
+        return render_template('models/images/classification/new.html',
+                form        = form,
+                previous_network_snapshots=prev_network_snapshots,
+                multi_gpu   = MULTI_GPU,
+                ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
@@ -131,6 +140,21 @@ def image_classification_model_create():
         else:
             return 'Invalid policy', 404
 
+        if MULTI_GPU:
+            if form.select_gpu_count.data:
+                gpu_count = form.select_gpu_count.data
+                selected_gpus = None
+            else:
+                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
+                gpu_count = None
+        else:
+            if form.select_gpu.data == 'next':
+                gpu_count = 1
+                selected_gpus = None
+            else:
+                selected_gpus = [str(form.select_gpu.data)]
+                gpu_count = None
+
         job.tasks.append(
                 tasks.CaffeTrainTask(
                     job_dir         = job.dir(),
@@ -139,6 +163,8 @@ def image_classification_model_create():
                     snapshot_interval   = form.snapshot_interval.data,
                     learning_rate   = form.learning_rate.data,
                     lr_policy       = policy,
+                    gpu_count       = gpu_count,
+                    selected_gpus   = selected_gpus,
                     batch_size      = form.batch_size.data,
                     val_interval    = form.val_interval.data,
                     pretrained_model= pretrained_model,

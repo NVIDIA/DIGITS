@@ -353,6 +353,16 @@ class CaffeRootOption(FrameworkOption):
                 raise ValueError('caffe binary not found at "%s"' % value)
             cls.validate_version(expected_path)
 
+            pythonpath = os.path.join(value, 'python')
+            sys.path.insert(0, pythonpath)
+            try:
+                imp.find_module('caffe')
+            except ImportError as e:
+                raise ValueError('Error while importing caffe from "%s": %s' % (pythonpath, e.message))
+            finally:
+                # Don't actually add this until apply() is called
+                sys.path.pop(0)
+
             return value
 
     # Used to validate the version
@@ -406,9 +416,9 @@ class CaffeRootOption(FrameworkOption):
             # Add caffe/python to PATH
             sys.path.insert(0, os.path.join(self.value, 'python'))
             try:
-                imp.find_module('caffe')
-            except ImportError:
-                print 'ERROR: python module not found at "%s"' % sys.path.pop(0)
+                import caffe
+            except ImportError as e:
+                print 'Did you forget to "make pycaffe"?'
                 raise
 
 class GpuListOption(ConfigOption):
@@ -977,7 +987,6 @@ def load_option(option, mode, newConfig,
     systemConfig -- the current SystemConfigFile
     """
     if 'DIGITS_MODE_TEST' in os.environ and option.has_test_value():
-        print 'Setting %s to test value ...' % option.name()
         option.value = option.test_value()
         return option.value
 

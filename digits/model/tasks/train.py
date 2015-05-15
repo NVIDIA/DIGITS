@@ -6,6 +6,7 @@ from collections import OrderedDict, namedtuple
 
 from digits import utils
 from digits.task import Task
+from digits.utils import override
 
 # NOTE: Increment this everytime the picked object changes
 PICKLE_VERSION = 2
@@ -28,6 +29,8 @@ class TrainTask(Task):
         lr_policy -- a hash of options to be used for the learning rate policy
 
         Keyword arguments:
+        gpu_count -- how many GPUs to use for training (integer)
+        selected_gpus -- a list of GPU indexes to be used for training
         batch_size -- if set, override any network specific batch_size with this value
         val_interval -- how many epochs between validating the model with an epoch of validation data
         pretrained_model -- filename for a model to use for fine-tuning
@@ -35,6 +38,8 @@ class TrainTask(Task):
         use_mean -- subtract the dataset's mean file
         random_seed -- optional random seed
         """
+        self.gpu_count = kwargs.pop('gpu_count', None)
+        self.selected_gpus = kwargs.pop('selected_gpus', None)
         self.batch_size = kwargs.pop('batch_size', None)
         self.val_interval = kwargs.pop('val_interval', None)
         self.pretrained_model = kwargs.pop('pretrained_model', None)
@@ -93,6 +98,40 @@ class TrainTask(Task):
 
         self.snapshots = []
         self.dataset = None
+
+    @override
+    def offer_resources(self, resources):
+        if 'gpus' not in resources:
+            return None
+        if not resources['gpus']:
+            return {} # don't use a GPU at all
+        if self.gpu_count is not None:
+            identifiers = []
+            for resource in resources['gpus']:
+                if resource.remaining() >= 1:
+                    identifiers.append(resource.identifier)
+                    if len(identifiers) == self.gpu_count:
+                        break
+            if len(identifiers) == self.gpu_count:
+                return {'gpus': [(i, 1) for i in identifiers]}
+            else:
+                return None
+        elif self.selected_gpus is not None:
+            found_all = True
+            for i in self.selected_gpus:
+                found = False
+                for gpu in resources['gpus']:
+                    if i == gpu.identifier:
+                        found = True
+                        break
+                if not found:
+                    found_all = False
+                    break
+            if found_all:
+                return {'gpus': [(i, 1) for i in self.selected_gpus]}
+            else:
+                return None
+        return None
 
     def send_progress_update(self, epoch):
         """

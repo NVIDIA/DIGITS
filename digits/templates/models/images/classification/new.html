@@ -608,6 +608,40 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
 
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
+            {% if form.select_gpu.choices|length > 2 and not multi_gpu %}
+            <div class="form-group{{' has-error' if form.select_gpu.errors}}">
+                <b>{{form.select_gpu.label.text}}</b><br>
+                {% for choice in form.select_gpu %}
+                <div class="radio">
+                    <label>
+                        {{choice}}
+                        {{choice.label.text}}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if form.select_gpus.choices| length > 1 and multi_gpu %}
+            <div class="form-group{{' has-error' if form.select_gpu_count.errors}}">
+                {{form.select_gpu_count.label}}
+                {{form.select_gpu_count(class='form-control')}}
+            </div>
+            <p class="text-center"><i>or</i></p>
+            <div class="form-group{{' has-error' if form.select_gpus.errors}}">
+                {{form.select_gpus.label}}
+                <span name="select_gpus_explanation"
+                    class="explanation-tooltip glyphicon glyphicon-question-sign"
+                    data-container="body"
+                    title="The job won't start until all of the chosen GPUs are available."
+                    ></span>
+                {{form.select_gpus(class='form-control', size=4)}}
+            </div>
+            <script type="text/javascript">
+                // Only allow one of these to be selected
+                $("#select_gpus").change(function(){ $("#select_gpu_count").val(null);});
+                $("#select_gpu_count").change(function(){ $("#select_gpus").val(null);});
+            </script>
+            {% endif %}
             <div class="form-group{{' has-error' if form.model_name.errors}}">
                 {{form.model_name.label}}
                 <div class="input-group">
