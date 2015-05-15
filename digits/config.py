@@ -420,15 +420,14 @@ class TorchRootOption(FrameworkOption):
         return 'Where is torch installed?'
 
     def optional(self):
-        #TODO: make this optional
-        return False
+        return True
 
     def suggestions(self):
         suggestions = []
         if 'TORCH_ROOT' in os.environ:
             d = os.environ['TORCH_ROOT']
             try:
-                self.validate(d)
+                d = self.validate(d)
                 suggestions.append(Suggestion(d, 'R', desc='TORCH_ROOT', default=True))
             except ValueError as e:
                 print 'TORCH_ROOT "%s" is invalid:' % d
@@ -436,7 +435,7 @@ class TorchRootOption(FrameworkOption):
         if 'TORCH_HOME' in os.environ:
             d = os.environ['TORCH_HOME']
             try:
-                self.validate(d)
+                d = self.validate(d)
                 default = True
                 if len(suggestions) > 0:
                     default = False
@@ -468,8 +467,7 @@ class TorchRootOption(FrameworkOption):
             expected_path = os.path.join(value, 'bin', 'th')
             if not os.path.exists(expected_path):
                 raise ValueError('torch binary not found at "%s"' % value)
-            cls.validate_version(expected_path)
-
+            #cls.validate_version(expected_path)
             return value
 
     @classmethod

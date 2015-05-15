@@ -107,11 +107,10 @@ class TorchTrainTask(TrainTask):
     def task_arguments(self, **kwargs):
         gpu_id = kwargs.pop('gpu_id', None)
 
-        #args = [os.path.join(config_option('caffe_root'), 'bin', 'caffe.bin'),
-        if config_option('torch_root') == 'SYS':
+        if config_option('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
-            torch_bin = os.path.join(config_option('torch_root'), 'th')
+            torch_bin = os.path.join(config_option('torch_root'), 'bin', 'th')
 
         if self.batch_size is None:
             self.batch_size = constants.DEFAULT_TORCH_BATCH_SIZE
@@ -391,10 +390,10 @@ class TorchTrainTask(TrainTask):
             self.logger.error('Unable to save file to "%s"' % temp_image_path)
             return (None,None)   # TODO fix this error message
 
-        if config_option('torch_root') == 'SYS':
+        if config_option('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
-            torch_bin = os.path.join(config_option('torch_root'), 'th')
+            torch_bin = os.path.join(config_option('torch_root'), 'bin', 'th')
 
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
@@ -549,10 +548,10 @@ class TorchTrainTask(TrainTask):
         """
 	labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
 
-        if config_option('torch_root') == 'SYS':
+        if config_option('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
-            torch_bin = os.path.join(config_option('torch_root'), 'th')
+            torch_bin = os.path.join(config_option('torch_root'), 'bin', 'th')
 
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
