@@ -26,15 +26,22 @@ class Job(StatusCls):
     def load(cls, job_id):
         """
         Loads a Job in the given job_id
-        Returns the Job or None if an error occurred
+        Returns the Job or throws an exception
         """
+        from digits.model.tasks import TrainTask
+
         job_dir = os.path.join(config_option('jobs_dir'), job_id)
         filename = os.path.join(job_dir, cls.SAVE_FILE)
         with open(filename, 'rb') as savefile:
-            o = pickle.load(savefile)
+            job = pickle.load(savefile)
             # Reset this on load
-            o._dir = job_dir
-            return o
+            job._dir = job_dir
+            for task in job.tasks:
+                task.job_dir = job_dir
+                if isinstance(task, TrainTask):
+                    # can't call this until the job_dir is set
+                    task.detect_snapshots()
+            return job
 
     def __init__(self, name):
         """

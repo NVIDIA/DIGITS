@@ -92,7 +92,6 @@ class TrainTask(Task):
         super(TrainTask, self).__setstate__(state)
 
         self.snapshots = []
-        self.detect_snapshots()
         self.dataset = None
 
     def send_progress_update(self, epoch):
