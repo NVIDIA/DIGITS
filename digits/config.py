@@ -60,7 +60,7 @@ class Suggestion(object):
         self.value = value
         if not isinstance(char, str):
             raise ValueError('char must be a string')
-        if not len(char) == 1:
+        if not (char == '' or len(char) == 1):
             raise ValueError('char must be a single character')
         self.char = char
         self.desc = desc
@@ -102,8 +102,8 @@ def get_input(
         if s.desc is not None and len(s.desc) > max_width:
             max_width = len(s.desc)
     if max_width > 0:
-        print 'Suggested values:'
-        format_str = '%%-4s %%-%ds %%s' % (max_width+2,)
+        print '\tSuggested values:'
+        format_str = '\t%%-4s %%-%ds %%s' % (max_width+2,)
         default_found = False
         for s in suggestions:
             c = s.char
@@ -1000,14 +1000,12 @@ def edit_config_file(verbose=False):
 
     for cls in optionClasses():
         option = cls()
-        default = None
         previous_value = configFile.get(option.name())
         suggestions = [Suggestion(None, 'U',
             desc='unset', default=(previous_value is None))]
         if previous_value is not None:
-            suggestions.append(Suggestion(previous_value, 'P',
+            suggestions.append(Suggestion(previous_value, '',
                 desc = 'Previous', default = True))
-            default = 'P'
         if instanceConfig is not None:
             instance_value = instanceConfig.get(option.name())
             if instance_value is not None:
@@ -1080,7 +1078,7 @@ def load_option(option, mode, newConfig,
     suggestions = []
     instance_value = instanceConfig.get(option.name())
     if instance_value is not None:
-        suggestions.append(Suggestion(instance_value, 'P',
+        suggestions.append(Suggestion(instance_value, '',
             desc = 'Previous', default = True))
     user_value = userConfig.get(option.name())
     if user_value is not None:

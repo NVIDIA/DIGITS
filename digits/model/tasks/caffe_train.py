@@ -375,7 +375,7 @@ class CaffeTrainTask(TrainTask):
     def task_arguments(self, **kwargs):
         gpu_id = kwargs.pop('gpu_id', None)
 
-        if config_option('caffe_root') == 'SYS':
+        if config_option('caffe_root') == '<PATHS>':
             caffe_bin = 'caffe'
         else:
             #caffe_bin = os.path.join(config_option('caffe_root'), 'bin', 'caffe.bin')
