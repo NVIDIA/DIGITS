@@ -427,7 +427,7 @@ class TorchRootOption(FrameworkOption):
         if 'TORCH_ROOT' in os.environ:
             d = os.environ['TORCH_ROOT']
             try:
-                d = self.validate(d)
+                self.validate(d)
                 suggestions.append(Suggestion(d, 'R', desc='TORCH_ROOT', default=True))
             except ValueError as e:
                 print 'TORCH_ROOT "%s" is invalid:' % d
@@ -435,7 +435,7 @@ class TorchRootOption(FrameworkOption):
         if 'TORCH_HOME' in os.environ:
             d = os.environ['TORCH_HOME']
             try:
-                d = self.validate(d)
+                self.validate(d)
                 default = True
                 if len(suggestions) > 0:
                     default = False
