@@ -117,17 +117,18 @@ class TrainTask(Task):
             else:
                 return None
         elif self.selected_gpus is not None:
-            found_all = True
+            all_available = True
             for i in self.selected_gpus:
-                found = False
+                available = False
                 for gpu in resources['gpus']:
                     if i == gpu.identifier:
-                        found = True
+                        if gpu.remaining() >= 1:
+                            available = True
                         break
-                if not found:
-                    found_all = False
+                if not available:
+                    all_available = False
                     break
-            if found_all:
+            if all_available:
                 return {'gpus': [(i, 1) for i in self.selected_gpus]}
             else:
                 return None

@@ -398,8 +398,8 @@ class Scheduler:
         """
         Handle an error while executing a task
         """
-        logger.error('%s: %s' % (type(e).__name__, e), task.job_id)
-        task.exception = e
+        logger.error('%s: %s' % (type(error).__name__, error), job_id=task.job_id)
+        task.exception = error
         task.traceback = traceback.format_exc()
         task.status = Status.ERROR
 
