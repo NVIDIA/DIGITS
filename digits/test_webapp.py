@@ -665,6 +665,15 @@ class TestCreatedModel(WebappBaseTest):
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'
 
+    def test_retrain(self):
+        """retrain model"""
+        options = {}
+        options['previous_networks'] = self.model_id
+        options['%s-snapshot' % self.model_id] = 1
+        job_id = self.create_quick_model(self.dataset_id,
+                method='previous', **options)
+        self.abort_model(job_id)
+
 class TestDatasetModelInteractions(WebappBaseTest):
     """
     Test the interactions between datasets and models
