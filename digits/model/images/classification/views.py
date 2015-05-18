@@ -80,7 +80,14 @@ def image_classification_model_create():
             old_job = scheduler.get_job(form.previous_networks.data)
             if not old_job:
                 raise Exception('Job not found: %s' % form.previous_networks.data)
+
             network.CopyFrom(old_job.train_task().network)
+            # Rename the final layer
+            # XXX making some assumptions about network architecture here
+            ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
+            if len(ip_layers) > 0:
+                ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
+
             for i, choice in enumerate(form.previous_networks.choices):
                 if choice[0] == form.previous_networks.data:
                     epoch = int(request.form['%s-snapshot' % form.previous_networks.data])
