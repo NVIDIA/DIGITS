@@ -636,6 +636,23 @@ class LogLevelOption(ConfigOption):
             raise ValueError
         return value
 
+class ServerNameOption(ConfigOption):
+    @staticmethod
+    def name():
+        return 'server_name'
+
+    @classmethod
+    def visibility(self):
+        return 0
+
+    def optional(self):
+        return True
+
+    def suggestions(self):
+        hostname = platform.node()
+        return [Suggestion(hostname, 'H', desc='HOSTNAME')]
+
+
 class SecretKeyOption(ConfigOption):
     @staticmethod
     def name():
@@ -658,6 +675,7 @@ def optionClasses():
             GpuListOption,
             LogFileOption,
             LogLevelOption,
+            ServerNameOption,
             SecretKeyOption,
             CaffeRootOption,
             ]

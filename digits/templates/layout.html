@@ -25,12 +25,17 @@
         <div class="navbar-header">
             <a class="navbar-brand" href="/">DIGITS</a>
         </div>
-        <div class="collapse navbar-collapse">
+        <ul class="nav navbar-nav">
+            {% block nav %}
+            {% endblock %}
+        </ul>
+        {% if server_name %}
+        <div class="navbar-right">
             <ul class="nav navbar-nav">
-                {% block nav %}
-                {% endblock %}
+                <li><a>{{server_name}}</a></li>
             </ul>
         </div>
+        {% endif %}
     </div>
 </div>
 

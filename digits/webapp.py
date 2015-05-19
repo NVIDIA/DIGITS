@@ -20,6 +20,8 @@ scheduler = digits.scheduler.Scheduler(config_option('gpu_list'))
 
 ### Register filters and views
 
+
+app.jinja_env.globals['server_name'] = config_option('server_name')
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time
 app.jinja_env.filters['print_time_diff'] = utils.time_filters.print_time_diff
 app.jinja_env.filters['print_time_since'] = utils.time_filters.print_time_since
