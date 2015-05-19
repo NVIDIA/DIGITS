@@ -1,61 +1,47 @@
-This page contains installation instructions for all the required modules to include the Torch framework in DIGITS
+# Torch Installation
 
-## Torch installation
+Follow these instructions to install Torch on Mac OS X and Ubuntu 12+:
 
-Use the below link to install Torch on Mac OS X and Ubuntu 12+:
+http://torch.ch/docs/getting-started.html
 
-    % http://torch.ch/docs/getting-started.html
+Set an environment variable so DIGITS knows where Torch is installed (optional):
 
-After installation, enter the following command:  
+    % export TORCH_INSTALL=${HOME}/torch/install
 
-    %  which luarocks
+## Luarocks dependencies
 
-to find the Torch installation directory. 
+To use Torch in DIGITS, you need to install a few extra dependencies.
 
-## LMDB and Lua Wrapper for LMDB (lightningdbm) installation
+    % luarocks install ccn2
+    % luarocks install inn
+    % luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
 
-#### LMDB installation
+## LMDB and lightningdm
 
-Get LMDB by `git clone https://gitorious.org/mdb/mdb.git`.
+For now, Torch reads datasets that were created for Caffe. This requires installation of LMDB for Torch, which as you can see below is a bit of a hassle. In the future, we plan to remove this dependency and go with a different data storage format.
 
-<pre>
-% cd mdb/libraries/liblmdb/
-% vi Makefile
-</pre>
+#### LMDB
 
-edit the `Makefile` to set the "prefix" parameter to `<TORCH_INSTALLATION_DIR>` as shown below,
-<pre>
-prefix = TORCH_INSTALLATION_DIR    #For instance, /home/ubuntu/torch/install
+Get the source:
 
-% make
-% make install
-</pre>
+    % git clone https://gitorious.org/mdb/mdb.git
+    % cd mdb/libraries/liblmdb/
+    
+Open the Makefile with your favorite editor and change the "prefix" parameter:
 
-Note: In case if you face any errors during `make install` regarding `man` directory, then just create a `man` directory inside `<TORCH_INSTALLATION_DIR>` and execute `make install` command again.
+```Makefile
+prefix = $(TORCH_INSTALL)
+```
 
-After successful installation, some of the lmdb files will be included in torch installation directory as shown below,
+Build and install LMDB:
 
-<pre>
-% ls ~/torch/install/lib -halt
-total 6.2M
--rwxrwxr-x 1 ubuntu ubuntu 300K Jan 30 16:40 liblmdb.so*
--rw-rw-r-- 1 ubuntu ubuntu 634K Jan 30 16:40 liblmdb.a
+    % make
+    % mkdir $TORCH_INSTALL/man
+    % make install
 
 
-% ls ~/torch/install/bin -halt
-total 2.0M
--rwxrwxr-x 1 ubuntu ubuntu 318K Jan 30 16:40 mdb_dump
--rwxrwxr-x 1 ubuntu ubuntu 318K Jan 30 16:40 mdb_load
--rwxrwxr-x 1 ubuntu ubuntu 303K Jan 30 16:40 mdb_copy
--rwxrwxr-x 1 ubuntu ubuntu 317K Jan 30 16:40 mdb_stat
+#### Lua Wrapper for LMDB (lighningdm)
 
-
-% ls ~/torch/install/include -halt
-total 140K
--rw-rw-r-- 1 ubuntu ubuntu  71K Jan 30 16:40 lmdb.h
-</pre>
-
-#### Lua Wrapper for LMDB installation
 Get Lua Wrapper for LMDB by `git clone https://github.com/shmul/lightningdbm.git`
 
 Below changes are required in 'Makefile' to set the paths:
@@ -85,37 +71,4 @@ export LUA_CPATH="/home/ubuntu/Downloads/lightningdbm//?.so;;"
 
 Instead of setting the paths in `~/.profile` file, we can also place the `lightningmdb.so` file in `<TORCH_INSTALLATION_DIR>/lib` directory
 
-Please check this link for more information regarding lightningdbm: `https://github.com/shmul/lightningdbm`
-
-## Installation of Lua Protocol Buffers
-
-Use the below command to install Lua Protocol Buffers,
-
-<pre>
-luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
-</pre>
-
-Please check this link for more information: `https://github.com/Neopallium/lua-pb`
-
-## Installation of ccn2 (Torch7 bindings for cuda-convnet2 kernels)
-
-Some networks make use of ccn2 to achieve good run-time performance. Use the below command to install ccn2, 
-
-<pre>
-luarocks install ccn2
-</pre>
-
-Please check this link for more information: `https://github.com/soumith/cuda-convnet2.torch`
-
-## Installation of inn (imagine-nn)
-
-Functionality of torch neural network routines in imagine-nn slightly differ from torch nn module.
-
-Please check this link for more information regarding inn: `https://github.com/szagoruyko/imagine-nn`
-
-Currently `inn` module being used in `LeNet standard network`. Use the below command to install inn:
-
-<pre>
-luarocks install inn
-</pre>
-
+See this link for more information: `https://github.com/shmul/lightningdbm`
