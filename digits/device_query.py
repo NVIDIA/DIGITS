@@ -4,9 +4,9 @@
 import ctypes
 import platform
 
-class CudaDeviceProp(ctypes.Structure):
+class c_cudaDeviceProp(ctypes.Structure):
     """
-    This C struct is passed to cudaGetDeviceProperties()
+    Passed to cudart.cudaGetDeviceProperties()
     """
     _fields_ = [
             ('name', ctypes.c_char * 256),
@@ -71,13 +71,46 @@ class CudaDeviceProp(ctypes.Structure):
             ('managedMemSupported', ctypes.c_int),
             ('isMultiGpuBoard', ctypes.c_int),
             ('multiGpuBoardGroupID', ctypes.c_int),
+            # added later with cudart.cudaDeviceGetPCIBusId
+            # (needed by NVML)
+            ('pciBusID_str', ctypes.c_char * 13),
             ]
+
+class struct_c_nvmlDevice_t(ctypes.Structure):
+    """
+    Handle to a device in NVML
+    """
+    pass # opaque handle
+c_nvmlDevice_t = ctypes.POINTER(struct_c_nvmlDevice_t)
+
+class c_nvmlUtilization_t(ctypes.Structure):
+    """
+    Passed to nvml.nvmlDeviceGetUtilizationRates()
+    """
+    _fields_ = [
+            ('gpu', ctypes.c_uint),
+            ('memory', ctypes.c_uint),
+            ]
+
+def get_library(name):
+    """
+    Returns a ctypes.CDLL or None
+    """
+    try:
+        if platform.system() == 'Linux':
+            return ctypes.cdll.LoadLibrary('%s.so' % name)
+        elif platform.system() == 'Darwin':
+            return ctypes.cdll.LoadLibrary('%s.dylib' % name)
+    except OSError as e:
+        #print 'ERROR in device_query.get_library("%s"): %s' % (name, e.message)
+        pass
+    return None
 
 devices = None
 
 def get_devices():
     """
-    Returns a list of CudaDeviceProp's
+    Returns a list of c_cudaDeviceProp's
     Prints an error and returns None if something goes wrong
     """
     global devices
@@ -86,33 +119,19 @@ def get_devices():
         return devices
     devices = []
 
-    # Load library
-    try:
-        if platform.system() == 'Linux':
-            cudart = ctypes.cdll.LoadLibrary('libcudart.so')
-        elif platform.system() == 'Darwin':
-            cudart = ctypes.cdll.LoadLibrary('libcudart.dylib')
-        else:
-            print 'Platform "%s" not supported' % platform.system()
-            return []
-    except OSError as e:
-        print 'OSError:', e
-        print '\tTry setting your LD_LIBRARY_PATH'
+    cudart = get_library('libcudart')
+    if cudart is None:
         return []
 
     # check CUDA version
     cuda_version = ctypes.c_int()
     rc = cudart.cudaRuntimeGetVersion(ctypes.byref(cuda_version))
     if rc != 0:
-        print 'Something went wrong when loading libcudart.so'
+        print 'cudaRuntimeGetVersion() failed with error #%s' % rc
         return []
     if cuda_version.value < 6050:
-        print 'ERROR: Cuda version must be >= 6.5'
+        print 'ERROR: Cuda version must be >= 6.5, not "%s"' % cuda_version.value
         return []
-    elif cuda_version.value > 7000:
-        # The API might change...
-        pass
-    #print 'CUDA version:', cuda_version.value
 
     # get number of devices
     num_devices = ctypes.c_int()
@@ -120,11 +139,57 @@ def get_devices():
 
     # query devices
     for x in xrange(num_devices.value):
-        properties = CudaDeviceProp()
+        properties = c_cudaDeviceProp()
         rc = cudart.cudaGetDeviceProperties(ctypes.byref(properties), x)
         if rc == 0:
+            pciBusID_str = ' ' * 13
+            # also save the string representation of the PCI bus ID
+            rc = cudart.cudaDeviceGetPCIBusId(ctypes.c_char_p(pciBusID_str), 13, x)
+            if rc == 0:
+                properties.pciBusID_str = pciBusID_str
             devices.append(properties)
+        del properties
     return devices
+
+def get_device(device_id):
+    """
+    Returns a c_cudaDeviceProp
+    """
+    return get_devices()[int(device_id)]
+
+def get_utilization(device_id):
+    """
+    Returns a c_nvmlUtilization_t for the given device
+    """
+    device = get_device(device_id)
+    if device is None:
+        return None
+
+    nvml = get_library('libnvidia-ml')
+    if nvml is None:
+        return None
+
+    rc = nvml.nvmlInit()
+    if rc != 0:
+        raise RuntimeError('nvmlInit() failed with error #%s' % rc)
+
+    try:
+        # get device handle
+        handle = c_nvmlDevice_t()
+        rc = nvml.nvmlDeviceGetHandleByPciBusId(ctypes.c_char_p(device.pciBusID_str), ctypes.byref(handle))
+        if rc != 0:
+            raise RuntimeError('nvmlDeviceGetHandleByIndex() failed with error #%s' % rc)
+
+        utilization = c_nvmlUtilization_t()
+        rc = nvml.nvmlDeviceGetUtilizationRates(handle, ctypes.byref(utilization))
+        if rc != 0:
+            if rc == 3:
+                # not supported for this device
+                return None
+            raise RuntimeError('nvmlDeviceGetUtilizationRates() failed with error #%s' % rc)
+        return utilization
+    finally:
+        rc = nvml.nvmlShutdown()
 
 
 if __name__ == '__main__':
@@ -134,5 +199,11 @@ if __name__ == '__main__':
             # Don't print int arrays
             if t in [ctypes.c_char, ctypes.c_int, ctypes.c_size_t]:
                 print '%30s %s' % (name, getattr(device, name))
+        u = get_utilization(i)
+        if u is not None:
+            print '%30s %s%% (NVML)' % ('GPU utilization', u.gpu)
+            print '%30s %s%% (NVML)' % ('Memory utilization', u.memory)
         print
+    else:
+        print 'No devices found.'
 

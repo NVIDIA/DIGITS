@@ -9,7 +9,7 @@ from wtforms import validators
 from caffe.proto import caffe_pb2
 
 from digits import utils, config
-from digits.device_query import get_devices
+from digits.device_query import get_device
 
 class ModelForm(Form):
 
@@ -200,7 +200,7 @@ class ModelForm(Form):
     select_gpu = wtforms.RadioField('Select which GPU you would like to use',
             choices = [('next', 'Next available')] + [(
                 index,
-                '#%s - %s' % (index, get_devices()[int(index)].name),
+                '#%s - %s' % (index, get_device(index).name),
                 ) for index in config.config_option('gpu_list').split(',') if index],
             default = 'next',
             )
@@ -209,7 +209,7 @@ class ModelForm(Form):
     select_gpus = wtforms.SelectMultipleField('Select which GPU[s] you would like to use',
             choices = [(
                 index,
-                '#%s - %s' % (index, get_devices()[int(index)].name),
+                '#%s - %s' % (index, get_device(index).name),
                 ) for index in config.config_option('gpu_list').split(',') if index]
             )
 
