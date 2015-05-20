@@ -193,6 +193,8 @@ def get_utilization(device_id):
 
 
 if __name__ == '__main__':
+    if not len(get_devices()):
+        print 'No devices found.'
     for i, device in enumerate(get_devices()):
         print 'Device #%d: %s' % (i, device.name)
         for name, t in device._fields_:
@@ -204,6 +206,4 @@ if __name__ == '__main__':
             print '%30s %s%% (NVML)' % ('GPU utilization', u.gpu)
             print '%30s %s%% (NVML)' % ('Memory utilization', u.memory)
         print
-    else:
-        print 'No devices found.'
 
