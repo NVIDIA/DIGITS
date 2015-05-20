@@ -29,7 +29,7 @@ If LMDB wasn’t already installed, install it using the command below:
 * On Mac OS X:
     ```brew install lmdb```
     
-#### Lua Wrapper for LMDB (lightningdbm)
+#### Lua Wrapper for LMDB (lightningmdb)
 
 During installation Lua wrapper requires LMDB headers and libraries, so set the following environment variables:
 
@@ -44,6 +44,6 @@ export LMDB_INCDIR=/usr/include
 export LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
 </pre>
 
-Install lightningdbm:
+Install lightningmdb:
 
     % luarocks install lightningmdb LMDB_INCDIR=$LMDB_INCDIR LMDB_LIBDIR=$LMDB_LIBDIR
