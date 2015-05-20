@@ -16,7 +16,7 @@ To use Torch in DIGITS, you need to install a few extra dependencies.
     % luarocks install inn
     % luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
 
-## LMDB and lightningdm
+## LMDB and lightningmdb
 
 For now, Torch reads datasets that were created for Caffe. This requires installation of LMDB for Torch, which as you can see below is a bit of a hassle. In the future, we plan to remove this dependency and go with a different data storage format.
 
