@@ -17,7 +17,7 @@ from train import TrainTask
 from digits.config import config_option
 from digits.status import Status
 from digits import utils, dataset
-from digits.utils import subclass, override, constants
+from digits.utils import subclass, override, constants, errors
 from digits.dataset import ImageClassificationDatasetJob
 
 # NOTE: Increment this everytime the pickled object changes
@@ -184,8 +184,12 @@ class TorchTrainTask(TrainTask):
         self.torch_log.write('%s\n' % line)
         self.torch_log.flush()
 
-        # parse caffe header
+        # parse torch output
         timestamp, level, message = self.preprocess_output_torch(line)
+
+        # return false when unrecognized output is encountered
+        if not (level or message):
+            return False
 
         if not message:
             return True
@@ -387,8 +391,9 @@ class TorchTrainTask(TrainTask):
         try:
             image.save(temp_image_path, format='jpeg')
         except KeyError:
-            self.logger.error('Unable to save file to "%s"' % temp_image_path)
-            return (None,None)   # TODO fix this error message
+            error_message = 'Unable to save file to "%s"' % temp_image_path
+            self.logger.error(error_message)
+            raise errors.TestError(error_message)
 
         if config_option('torch_root') == '<PATHS>':
             torch_bin = 'th'
@@ -419,13 +424,13 @@ class TorchTrainTask(TrainTask):
         else:
             args.append('--subtractMean=no')
 
-        print args
-
         # Convert them all to strings
         args = [str(x) for x in args]
 
-        self.logger.info('%s test task started.' % self.name())
-        self.status = Status.RUN
+        print args
+
+        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+        self.logger.info('%s classify one task started.' % self.framework_name())
 
         unrecognized_output = []
 	predictions = []
@@ -441,38 +446,46 @@ class TorchTrainTask(TrainTask):
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        self.status = Status.ABORT
-                        break
+                        raise errors.TestError('%s classify one task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
 
                     if line is not None:
-                        # Remove whitespace
-                        line = line.strip()
+                        # Remove color codes and whitespace
+                        line=regex.sub('', line).strip()
                     if line:
-                        if not self.process_test_output(line, predictions):
-                            self.logger.warning('%s unrecognized input: %s' % (self.name(), line.strip()))
+                        if not self.process_test_output(line, predictions, 'one'):
+                            self.logger.warning('%s classify one task unrecognized input: %s' % (self.framework_name(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
+
         except Exception as e:
-            p.terminate()
-            pass
+            if p.poll() is None:
+                p.terminate()
+            error_message = ''
+            if type(e) == errors.TestError:
+                error_message = e.__str__()
+            else:
+                error_message = '%s classify one task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
+            self.logger.error(error_message)
+            if unrecognized_output:
+                unrecognized_output = '\n'.join(unrecognized_output)
+                error_message = error_message + unrecognized_output
+            raise errors.TestError(error_message)
+
+        finally:
+            self.after_test_run(temp_image_path)
 
         if p.returncode != 0:
-            self.logger.error('%s task failed with error code %d' % (self.name(), p.returncode))
-            if self.exception is None:
-                self.exception = 'error code %d' % p.returncode
-                if unrecognized_output:
-                    self.traceback = '\n'.join(unrecognized_output)
-            #self.after_test_run(temp_image_path)
-            self.status = Status.ERROR
-            return (None,None)
+            error_message = '%s classify one task failed with error code %d' % (self.framework_name(), p.returncode)
+            self.logger.error(error_message)
+            if unrecognized_output:
+                unrecognized_output = '\n'.join(unrecognized_output)
+                error_message = error_message + unrecognized_output
+            raise errors.TestError(error_message)
         else:
-            self.logger.info('%s test task completed.' % self.name())
-            #self.after_test_run(temp_image_path)
-            self.status = Status.DONE
+            self.logger.info('%s classify one task completed.' % self.framework_name())
 
-        #if gpu_id:
-        #    args.append('--devid=%d' % (gpu_id+1))
+        #TODO: implement visualization
 	return (predictions,None)
 
     def after_test_run(self, temp_image_path):
@@ -481,13 +494,15 @@ class TorchTrainTask(TrainTask):
         except OSError:
             pass
 
-    def process_test_output(self, line, predictions):
+    def process_test_output(self, line, predictions, test_category):
         #from digits.webapp import socketio
-        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
-        line=regex.sub('', line).strip()
 
-        # parse caffe header
+        # parse torch output
         timestamp, level, message = self.preprocess_output_torch(line)
+
+        # return false when unrecognized output is encountered
+        if not (level or message):
+            return False
 
         if not message:
             return True
@@ -511,11 +526,18 @@ class TorchTrainTask(TrainTask):
 	    predictions.append(map(float, values))
             return True
 
-        if level in ['error', 'critical']:
-            self.logger.error('%s: %s' % (self.name(), message))
-            self.exception = message
+        # displaying info and warn messages as we aren't maintaining seperate log file for model testing
+        if level == 'info':
+            self.logger.debug('%s classify %s task : %s' % (self.framework_name(), test_category, message))
             return True
-        return True
+        if level == 'warning':
+            self.logger.warning('%s classify %s task : %s' % (self.framework_name(), test_category, message))
+            return True
+
+        if level in ['error', 'critical']:
+            raise errors.TestError('%s classify %s task failed with error message - %s' % (self.framework_name(), test_category, message))
+
+        return True           # control never reach this line. It can be removed.
 
     @override
     def can_infer_many(self):
@@ -585,8 +607,8 @@ class TorchTrainTask(TrainTask):
         # Convert them all to strings
         args = [str(x) for x in args]
 
-        self.logger.info('%s test task started.' % self.name())
-        self.status = Status.RUN
+        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+        self.logger.info('%s classify many task started.' % self.name())
 
         unrecognized_output = []
 	predictions = []
@@ -602,37 +624,43 @@ class TorchTrainTask(TrainTask):
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        self.status = Status.ABORT
-                        break
+                        raise errors.TestError('%s classify many task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
 
                     if line is not None:
-                        # Remove whitespace
-                        line = line.strip()
+                        # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
+                        # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
+                        line=regex.sub('', line).strip()
                     if line:
-                        if not self.process_test_output(line, predictions):
-                            self.logger.warning('%s unrecognized input: %s' % (self.name(), line.strip()))
+                        if not self.process_test_output(line, predictions, 'many'):
+                            self.logger.warning('%s classify many task unrecognized input: %s' % (self.framework_name(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
         except Exception as e:
-            p.terminate()
-            pass
+            if p.poll() is None:
+                p.terminate()
+            error_message = ''
+            if type(e) == errors.TestError:
+                error_message = e.__str__()
+            else:
+                error_message = '%s classify many task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
+            self.logger.error(error_message)
+            if unrecognized_output:
+                unrecognized_output = '\n'.join(unrecognized_output)
+                error_message = error_message + unrecognized_output
+            raise errors.TestError(error_message)
 
-        if p.returncode != 0:  #TODO: test jobs should be run in different way. Because of the below code, if the test job fails it is overriding the errors of Train task. Need to correct this.
-            self.logger.error('%s task failed with error code %d' % (self.name(), p.returncode))
-            if self.exception is None:
-                self.exception = 'error code %d' % p.returncode
-                if unrecognized_output:
-                    self.traceback = '\n'.join(unrecognized_output)
-            self.status = Status.ERROR
-            return (None,None)
+        if p.returncode != 0:
+            error_message = '%s classify many task failed with error code %d' % (self.framework_name(), p.returncode)
+            self.logger.error(error_message)
+            if unrecognized_output:
+                unrecognized_output = '\n'.join(unrecognized_output)
+                error_message = error_message + unrecognized_output
+            raise errors.TestError(error_message)
         else:
-            self.logger.info('%s test task completed.' % self.name())
-            self.status = Status.DONE
-        #if gpu_id:
-        #    args.append('--devid=%d' % (gpu_id+1))
-	return (labels,np.array(predictions))
+            self.logger.info('%s classify many task completed.' % self.framework_name())
 
+	return (labels,np.array(predictions))
 
     def has_model(self):
         """

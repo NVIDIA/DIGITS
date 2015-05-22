@@ -21,6 +21,7 @@ from digits.model import tasks
 from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
+from digits.utils import errors
 
 NAMESPACE = '/models/images/classification'
 
@@ -260,9 +261,15 @@ def image_classification_model_classify_one():
     if 'show_visualizations' in request.form and request.form['show_visualizations']:
         layers = 'all'
 
-    predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
+    predictions, visualizations = None, None
+    try:
+        predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
+    except errors.TestError as e:
+        return e.__str__(), 403
+
     # take top 5
-    predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
+    if predictions:
+        predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
     return render_template('models/images/classification/classify_one.html',
             image_src       = utils.image.embed_image_html(image),
