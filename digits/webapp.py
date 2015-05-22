@@ -25,8 +25,7 @@ try:
     _doc = Autodoc(app)
     autodoc = _doc.doc # decorator
 except ImportError:
-    print 'ImportError'
-    def autodoc():
+    def autodoc(*args, **kwargs):
         def _doc(f):
             # noop decorator
             return f
