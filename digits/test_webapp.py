@@ -568,8 +568,9 @@ class TestCreatedModel(WebappBaseTest):
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'model creation failed'
 
     def download_model(self, extension):
-        rv = self.app.get('/models/%s/download.%s' % (self.model_id, extension))
-        assert rv.status_code == 200, 'download failed with %s' % rv.status_code
+        url = '/models/%s/download.%s' % (self.model_id, extension)
+        rv = self.app.get(url)
+        assert rv.status_code == 200, 'download "%s" failed with %s' % (url, rv.status_code)
 
     def test_download(self):
         """download model"""

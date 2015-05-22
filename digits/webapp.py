@@ -15,6 +15,7 @@ import digits.scheduler
 app = Flask(__name__)
 app.config['DEBUG'] = False
 app.config['SECRET_KEY'] = config_option('secret_key')
+app.url_map.redirect_defaults = False
 socketio = SocketIO(app)
 scheduler = digits.scheduler.Scheduler(config_option('gpu_list'))
 
