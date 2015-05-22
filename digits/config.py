@@ -414,6 +414,7 @@ class CaffeRootOption(FrameworkOption):
     def apply(self):
         if self.value:
             # Suppress GLOG output for python bindings
+            GLOG_minloglevel = os.environ.pop('GLOG_minloglevel', None)
             os.environ['GLOG_minloglevel'] = '5'
 
             if self.value != '<PATHS>':
@@ -426,7 +427,16 @@ class CaffeRootOption(FrameworkOption):
                 raise
 
             # Turn GLOG output back on for subprocess calls
-            del os.environ['GLOG_minloglevel']
+            if GLOG_minloglevel is None:
+                del os.environ['GLOG_minloglevel']
+            else:
+                os.environ['GLOG_minloglevel'] = GLOG_minloglevel
+
+            if 'GLOG_minloglevel' in os.environ:
+                print os.environ['GLOG_minloglevel']
+            else:
+                print 'None'
+
 
 class GpuListOption(ConfigOption):
     @staticmethod
