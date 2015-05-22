@@ -15,7 +15,7 @@ from caffe.proto import caffe_pb2
 import digits
 from digits.config import config_option
 from digits import utils
-from digits.webapp import app, scheduler
+from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
 from digits.model import tasks
 from forms import ImageClassificationModelForm
@@ -26,7 +26,11 @@ NAMESPACE   = '/models/images/classification'
 MULTI_GPU   = False
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@autodoc('models')
 def image_classification_model_new():
+    """
+    Return a form for a new ImageClassificationModelJob
+    """
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
     form.standard_networks.choices = get_standard_networks()
@@ -42,7 +46,11 @@ def image_classification_model_new():
             )
 
 @app.route(NAMESPACE, methods=['POST'])
+@autodoc('models')
 def image_classification_model_create():
+    """
+    Create a new ImageClassificationModelJob
+    """
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
     form.standard_networks.choices = get_standard_networks()
@@ -191,6 +199,7 @@ def show(job):
     return render_template('models/images/classification/show.html', job=job)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
+@autodoc('models')
 def image_classification_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
@@ -202,6 +211,7 @@ def image_classification_model_large_graph():
     return render_template('models/images/classification/large_graph.html', job=job)
 
 @app.route(NAMESPACE + '/classify_one', methods=['POST'])
+@autodoc('models')
 def image_classification_model_classify_one():
     """
     Classify one image and return the predictions, weights and activations
@@ -251,6 +261,7 @@ def image_classification_model_classify_one():
             )
 
 @app.route(NAMESPACE + '/classify_many', methods=['POST'])
+@autodoc('models')
 def image_classification_model_classify_many():
     """
     Classify many images and return the top 5 classifications for each
@@ -320,6 +331,7 @@ def image_classification_model_classify_many():
             )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
+@autodoc('models')
 def image_classification_model_top_n():
     """
     Classify many images and show the top N images per category by confidence

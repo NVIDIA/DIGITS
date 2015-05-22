@@ -15,30 +15,19 @@ import caffe.draw
 
 import digits
 from digits import utils
-from digits.webapp import app, scheduler
+from digits.webapp import app, scheduler, autodoc
 from forms import ModelForm
 import images.views
 import images as model_images
 
 NAMESPACE = '/models/'
 
-### CRUD Routes
-
-@app.route(NAMESPACE + 'new', methods=['GET'])
-def models_new():
-    form = ModelForm()
-    return render_template('models/new.html', form=form)
-
-@app.route(NAMESPACE, methods=['POST'])
-def models_create():
-    form = ModelForm()
-    if form.validate_on_submit():
-        return 'Yay!'
-    else:
-        return render_template('models/new.html', form=form)
-
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])
+@autodoc('models')
 def models_show(job_id):
+    """
+    Show a ModelJob
+    """
     job = scheduler.get_job(job_id)
 
     if job is None:
@@ -50,7 +39,11 @@ def models_show(job_id):
         abort(404)
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
+@autodoc('models')
 def models_show_json(job_id):
+    """
+    Return a JSON representation of a ModelJob
+    """
     job = scheduler.get_job(job_id)
 
     if job is None:
@@ -66,8 +59,11 @@ def models_show_json(job_id):
 ### Other routes
 
 @app.route(NAMESPACE + 'customize', methods=['POST'])
+@autodoc('models')
 def models_customize():
-    """Returns a customized file for the Model based on completed form fields"""
+    """
+    Returns a customized file for the ModelJob based on completed form fields
+    """
     network = request.args.get('network')
     if not network:
         return 'args.network not found!', 400
@@ -100,8 +96,11 @@ def models_customize():
     return 'ERROR: Network not found!', 400
 
 @app.route(NAMESPACE + 'visualize-network', methods=['POST'])
+@autodoc('models')
 def models_visualize_network():
-    """Returns a string of png data"""
+    """
+    Returns a visualization of the custom network as a string of PNG data
+    """
     net = caffe_pb2.NetParameter()
     text_format.Merge(request.form['custom_network'], net)
     # Throws an error if name is None
@@ -110,7 +109,11 @@ def models_visualize_network():
     return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
 
 @app.route(NAMESPACE + 'visualize-lr', methods=['POST'])
+@autodoc('models')
 def models_visualize_lr():
+    """
+    Returns a JSON object of data used to create the learning rate graph
+    """
     policy = request.form['lr_policy']
     lr = float(request.form['learning_rate'])
     if policy == 'fixed':
@@ -156,9 +159,13 @@ def models_visualize_lr():
 
     return json.dumps({'data': {'columns': [data]}})
 
-@app.route(NAMESPACE + '<job_id>/download', methods=['GET', 'POST'])
-@app.route(NAMESPACE + '<job_id>/download.<extension>', methods=['GET', 'POST'])
-def models_download(job_id, extension='tar.gz'):
+@app.route(NAMESPACE + '<job_id>/download',
+        methods=['GET', 'POST'],
+        defaults={'extension': 'tar.gz'})
+@app.route(NAMESPACE + '<job_id>/download.<extension>',
+        methods=['GET', 'POST'])
+@autodoc('models')
+def models_download(job_id, extension):
     """
     Return a tarball of all files required to run the model
     """

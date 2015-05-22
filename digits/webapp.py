@@ -19,8 +19,20 @@ app.url_map.redirect_defaults = False
 socketio = SocketIO(app)
 scheduler = digits.scheduler.Scheduler(config_option('gpu_list'))
 
-### Register filters and views
+# Set up flask API documentation, if installed
+try:
+    from flask.ext.autodoc import Autodoc
+    _doc = Autodoc(app)
+    autodoc = _doc.doc # decorator
+except ImportError:
+    print 'ImportError'
+    def autodoc():
+        def _doc(f):
+            # noop decorator
+            return f
+        return _doc
 
+### Register filters and views
 
 app.jinja_env.globals['server_name'] = config_option('server_name')
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time
