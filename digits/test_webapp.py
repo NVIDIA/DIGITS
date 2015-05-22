@@ -669,7 +669,11 @@ class TestCreatedModel(WebappBaseTest):
         """retrain model"""
         options = {}
         options['previous_networks'] = self.model_id
-        options['%s-snapshot' % self.model_id] = 1
+        rv = self.app.get('/models/%s.json' % self.model_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']), 'should have at least snapshot'
+        options['%s-snapshot' % self.model_id] = content['snapshots'][-1]
         job_id = self.create_quick_model(self.dataset_id,
                 method='previous', **options)
         self.abort_model(job_id)

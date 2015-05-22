@@ -99,7 +99,7 @@ def image_classification_model_create():
 
             for i, choice in enumerate(form.previous_networks.choices):
                 if choice[0] == form.previous_networks.data:
-                    epoch = int(request.form['%s-snapshot' % form.previous_networks.data])
+                    epoch = float(request.form['%s-snapshot' % form.previous_networks.data])
                     if epoch != 0:
                         for filename, e in old_job.train_task().snapshots:
                             if e == epoch:
