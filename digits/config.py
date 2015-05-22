@@ -412,14 +412,21 @@ class CaffeRootOption(FrameworkOption):
         return None
 
     def apply(self):
-        if self.value and self.value != '<PATHS>':
-            # Add caffe/python to PATH
-            sys.path.insert(0, os.path.join(self.value, 'python'))
+        if self.value:
+            # Suppress GLOG output for python bindings
+            os.environ['GLOG_minloglevel'] = '5'
+
+            if self.value != '<PATHS>':
+                # Add caffe/python to PATH
+                sys.path.insert(0, os.path.join(self.value, 'python'))
             try:
                 import caffe
             except ImportError as e:
                 print 'Did you forget to "make pycaffe"?'
                 raise
+
+            # Turn GLOG output back on for subprocess calls
+            del os.environ['GLOG_minloglevel']
 
 class GpuListOption(ConfigOption):
     @staticmethod
