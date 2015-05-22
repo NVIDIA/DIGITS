@@ -432,11 +432,6 @@ class CaffeRootOption(FrameworkOption):
             else:
                 os.environ['GLOG_minloglevel'] = GLOG_minloglevel
 
-            if 'GLOG_minloglevel' in os.environ:
-                print os.environ['GLOG_minloglevel']
-            else:
-                print 'None'
-
 
 class GpuListOption(ConfigOption):
     @staticmethod
