@@ -8,7 +8,7 @@ import tempfile
 import random
 
 import numpy as np
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, abort
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 

@@ -79,7 +79,7 @@ class Suggestion(object):
 def get_input(
         message     = None,
         validator   = None,
-        suggestions = [],
+        suggestions = None,
         is_path     = False,
         ):
     """
@@ -92,6 +92,9 @@ def get_input(
     suggestions -- a list of Suggestions
     is_path -- if True, tab autocomplete will be turned on
     """
+    if suggestions is None:
+        suggestions = []
+
     if message is not None:
         print message
     print
@@ -1158,8 +1161,6 @@ def config_option(name):
     Arguments:
     name -- the name of the configuration option
     """
-    global current_config
-
     if current_config is None:
         raise RuntimeError('config must be loaded first')
 

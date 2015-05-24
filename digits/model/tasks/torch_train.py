@@ -90,6 +90,7 @@ class TorchTrainTask(TrainTask):
     @override
     def before_run(self):
         # TODO
+        pass
 
     def read_labels(self):
         """
@@ -121,10 +122,12 @@ class TorchTrainTask(TrainTask):
     @override
     def task_arguments(self, **kwargs):
         # TODO
+        pass
 
     @override
     def process_output(self, line):
         # TODO
+        pass
 
     def send_iteration_update(self, it):
         """
@@ -213,6 +216,7 @@ class TorchTrainTask(TrainTask):
     @override
     def detect_snapshots(self):
         # TODO
+        pass
 
     @override
     def est_next_snapshot(self):
