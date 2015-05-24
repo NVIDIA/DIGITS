@@ -6,6 +6,8 @@ import os.path
 from pprint import pprint
 from collections import defaultdict
 
+# requires a custom version of Flask-Autodoc:
+#   pip install git+https://github.com/lukeyeager/flask-autodoc.git
 from flask.ext.autodoc import Autodoc
 
 # Add path for DIGITS package
@@ -109,8 +111,6 @@ class FlaskRouteDocGenerator(object):
         self.w('Methods: ' + ', '.join(['**%s**' % m.upper() for m in
             sorted(route['methods']) if m not in ['HEAD', 'OPTIONS']]))
         self.w()
-        if route['defaults']:
-            print route['args'], route['defaults']
         if route['args'] and route['args'] != ['None']:
             args = []
             for arg in route['args']:
@@ -119,6 +119,21 @@ class FlaskRouteDocGenerator(object):
                     args[-1] = '%s (`%s`)' % (args[-1], route['defaults'][arg])
             self.w('Arguments: ' + ', '.join(args))
             self.w()
+        if 'location' in route:
+            # get location relative to digits root
+            digits_root = os.path.dirname(
+                    os.path.dirname(
+                        os.path.normpath(digits.__file__)
+                        )
+                    )
+            filename = os.path.normpath(route['location']['filename'])
+            if filename.startswith(digits_root):
+                filename = os.path.relpath(filename, digits_root)
+                self.w('Location: [`%s@%s`](%s#L%s)' % (
+                    filename, route['location']['line'],
+                    os.path.join('..', filename), route['location']['line'],
+                    ))
+                self.w()
 
 with app.app_context():
     with open(os.path.join(os.path.dirname(__file__),'RestApi.md'), 'w') as outfile:
