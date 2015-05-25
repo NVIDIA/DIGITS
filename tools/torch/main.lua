@@ -421,6 +421,15 @@ else
     snapshot_prefix = opt.network
 end
 
+-- epoch value will be calculated for every batch size. To maintain unique epoch value between batches, it needs to be rounded to the required number of significant digits.
+local epoch_round = 0 -- holds the required number of significant digits for round function.
+local tmp_batchsize = opt.batchSize
+while tmp_batchsize <= trainSize do
+    tmp_batchsize = tmp_batchsize * 10
+    epoch_round = epoch_round + 1
+end
+logmessage.display(0,'While logging, epoch value will be rounded to ' .. epoch_round .. ' significant digits')
+
 logmessage.display(0,'Model weights will be saved as ' .. snapshot_prefix .. '_<EPOCH>_Weights.t7')
 
 
@@ -595,7 +604,7 @@ local function Train(epoch)
         collectgarbage()
       end
 
-      local current_epoch = (epoch-1)+utils.round((t+opt.batchSize)/trainSize,2)
+      local current_epoch = (epoch-1)+utils.round((math.min(t+opt.batchSize-1,trainSize))/trainSize, epoch_round)
 
       -- log details when required number of images are processed
       curr_images_cnt = curr_images_cnt + opt.batchSize
@@ -647,6 +656,18 @@ end
 local epoch = 1
 
 logmessage.display(0,'started training the model')
+
+-- run an initial validation before the first train epoch
+if opt.validation ~= '' then
+    model:evaluate()
+    validation_confusion:zero()
+    val:reset()
+    local avg_loss=Test()
+    validation_confusion:updateValids()
+    -- log details at the end of validation
+    logmessage.display(0, 'Validation (epoch ' .. epoch-1 .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+    model:training()    -- to reset model to training
+end
 
 while epoch<=opt.epoch do
     local ErrTrain = 0

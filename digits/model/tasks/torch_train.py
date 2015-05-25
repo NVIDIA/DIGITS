@@ -230,8 +230,8 @@ class TorchTrainTask(TrainTask):
                 # epoch updates
                 self.send_progress_update(index)
 
-                self.save_val_output('loss', 'SoftmaxWithLoss', l)
                 self.save_val_output('accuracy', 'Accuracy', a)
+                self.save_val_output('loss', 'SoftmaxWithLoss', l)
 
             return True
 
