@@ -26,7 +26,7 @@ These packages need to be installed:
     % cd $CAFFE_HOME
     % cat python/requirements.txt
 
-The recommended installation method is using a **virtual environment** ([installation instructions](docs/VirtualEnvironment.md)).
+The recommended installation method is using a **virtual environment** ([installation instructions](VirtualEnvironment.md)).
 
 You may be tempted to install the requirements with `pip install -r python/requirements.txt`. Use the loop statement below to install the packages in order and avoid errors.
 
