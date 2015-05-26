@@ -420,6 +420,7 @@ class Scheduler:
                     if not found:
                         raise RuntimeError('Resource "%s" with identifier="%s" not found' % (
                             resource_type, identifier))
+            task.current_resources = resources
             return True
         except Exception as e:
             self.task_error(task, e)
@@ -436,7 +437,7 @@ class Scheduler:
                 for resource in self.resources[resource_type]:
                     if resource.identifier == identifier:
                         resource.deallocate(task)
-
+        task.current_resources = None
 
     def run_task(self, task, resources):
         """

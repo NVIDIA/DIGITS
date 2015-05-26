@@ -94,10 +94,12 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def before_run(self):
+        super(CaffeTrainTask, self).before_run()
+
         if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             self.save_prototxt_files()
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         self.caffe_log = open(self.path(self.CAFFE_LOG), 'a')
         self.saving_snapshot = False
@@ -527,6 +529,7 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def after_run(self):
+        super(CaffeTrainTask, self).after_run()
         self.caffe_log.close()
 
     @override

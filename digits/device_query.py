@@ -83,6 +83,16 @@ class struct_c_nvmlDevice_t(ctypes.Structure):
     pass # opaque handle
 c_nvmlDevice_t = ctypes.POINTER(struct_c_nvmlDevice_t)
 
+class c_nvmlMemory_t(ctypes.Structure):
+    """
+    Passed to nvml.nvmlDeviceGetMemoryInfo()
+    """
+    _fields_ = [
+            ('total', ctypes.c_ulonglong),
+            ('free', ctypes.c_ulonglong),
+            ('used', ctypes.c_ulonglong),
+            ]
+
 class c_nvmlUtilization_t(ctypes.Structure):
     """
     Passed to nvml.nvmlDeviceGetUtilizationRates()
@@ -108,13 +118,16 @@ def get_library(name):
 
 devices = None
 
-def get_devices():
+def get_devices(force_reload=False):
     """
     Returns a list of c_cudaDeviceProp's
     Prints an error and returns None if something goes wrong
+
+    Keyword arguments:
+    force_reload -- if False, return the previously loaded list of devices
     """
     global devices
-    if devices is not None:
+    if not force_reload and devices is not None:
         # Only query CUDA once
         return devices
     devices = []
@@ -157,9 +170,10 @@ def get_device(device_id):
     """
     return get_devices()[int(device_id)]
 
-def get_utilization(device_id):
+def get_nvml_info(device_id):
     """
-    Returns a c_nvmlUtilization_t for the given device
+    Gets info from NVML for the given device
+    Returns a dict of dicts from different NVML functions
     """
     device = get_device(device_id)
     if device is None:
@@ -180,16 +194,36 @@ def get_utilization(device_id):
         if rc != 0:
             raise RuntimeError('nvmlDeviceGetHandleByIndex() failed with error #%s' % rc)
 
+        # Grab info for this device from NVML
+        info = {}
+
+        memory = c_nvmlMemory_t()
+        rc = nvml.nvmlDeviceGetMemoryInfo(handle, ctypes.byref(memory))
+        if rc == 0:
+            info['memory'] = {
+                    'total': memory.total,
+                    'used': memory.used,
+                    'free': memory.free,
+                    }
+
         utilization = c_nvmlUtilization_t()
         rc = nvml.nvmlDeviceGetUtilizationRates(handle, ctypes.byref(utilization))
-        if rc != 0:
-            if rc == 3:
-                # not supported for this device
-                return None
-            raise RuntimeError('nvmlDeviceGetUtilizationRates() failed with error #%s' % rc)
-        return utilization
+        if rc == 0:
+            info['utilization'] = {
+                    'gpu': utilization.gpu,
+                    'memory': utilization.memory, # redundant
+                    }
+
+        temperature = ctypes.c_int()
+        rc = nvml.nvmlDeviceGetTemperature(handle, 0, ctypes.byref(temperature))
+        if rc == 0:
+            info['temperature'] = temperature.value
+
+        return info
     finally:
         rc = nvml.nvmlShutdown()
+        if rc != 0:
+            pass
 
 
 if __name__ == '__main__':
@@ -201,9 +235,23 @@ if __name__ == '__main__':
             # Don't print int arrays
             if t in [ctypes.c_char, ctypes.c_int, ctypes.c_size_t]:
                 print '%30s %s' % (name, getattr(device, name))
-        u = get_utilization(i)
-        if u is not None:
-            print '%30s %s%% (NVML)' % ('GPU utilization', u.gpu)
-            print '%30s %s%% (NVML)' % ('Memory utilization', u.memory)
+        info = get_nvml_info(i)
+        if info is not None:
+            nvml_fmt = '%23s (NVML) %s'
+            if 'memory' in info:
+                print nvml_fmt % ('Total memory',
+                        '%s MB' % (info['memory']['total'] / 2**20,))
+                print nvml_fmt % ('Used memory',
+                        '%s MB' % (info['memory']['used'] / 2**20,))
+                print nvml_fmt % ('Free memory',
+                        '%s MB' % (info['memory']['free'] / 2**20,))
+            if 'utilization' in info:
+                print nvml_fmt % ('GPU utilization',
+                        '%s%%' % info['utilization']['gpu'])
+                print nvml_fmt % ('Memory utilization',
+                        '%s%%' % info['utilization']['memory'])
+            if 'temperature' in info:
+                print nvml_fmt % ('Temperature',
+                        '%s C' % info['temperature'])
         print
 
