@@ -174,8 +174,9 @@ class Scheduler:
             return False
         else:
             self.jobs.append(job)
-            # Let the scheduler do a little work before returning
-            time.sleep(utils.wait_time())
+            if 'DIGITS_MODE_TEST' not in os.environ:
+                # Let the scheduler do a little work before returning
+                time.sleep(utils.wait_time())
             return True
 
     def get_job(self, job_id):
