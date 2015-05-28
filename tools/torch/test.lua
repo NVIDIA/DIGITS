@@ -112,7 +112,7 @@ end
 
 package.path = paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
 
-logmessage.display(0,'Loading Model: ' .. paths.concat(opt.networkDirectory, opt.network))
+logmessage.display(0,'Loading network definition from ' .. paths.concat(opt.networkDirectory, opt.network))
 local model = require (opt.network)
 local using_ccn2 = opt.ccn2
 

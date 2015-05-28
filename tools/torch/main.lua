@@ -16,6 +16,9 @@ end
 require 'Optimizer'
 require 'LRPolicy'
 require 'logmessage'
+
+-- load utils
+local utils = require 'utils'
 ----------------------------------------------------------------------
 
 opt = lapp[[
@@ -37,7 +40,7 @@ Usage details:
 -r,--learningRate       (default 0.001)          learning rate
 -s,--save               (default results)        save directory
 -t,--train              (string)                 location in which train db exists. 
--v,--validation         (default '')             location in which validation db exists. 
+-v,--validation         (default '')             location in which validation db exists.
 -w,--weightDecay        (default 1e-4)           L2 penalty on the weights 
 
 --weights               (default '')             filename for weights of a model to use for fine-tuning
@@ -152,7 +155,7 @@ cutorch.setDevice(opt.devid)
 -- Model + Loss:
 
 package.path =  paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
-logmessage.display(0,'Loading Model: ' .. paths.concat(opt.networkDirectory, opt.network))
+logmessage.display(0,'Loading network definition from ' .. paths.concat(opt.networkDirectory, opt.network))
 local model = require (opt.network)
 
 local loss = nn.ClassNLLCriterion()
@@ -182,6 +185,10 @@ end
 
 logmessage.display(0,'found ' .. #classes .. ' categories')
 
+-- fix final output dimension of network
+utils.correctFinalOutputDim(model, #classes)
+logmessage.display(0,'Network definition: \n' .. model:__tostring__())
+logmessage.display(0,'Network definition ends')
 
 -- Set the seed of the random number generator to the current time in seconds.
 if opt.mirror == 'yes' then
@@ -301,9 +308,6 @@ if ccn2 ~= nil then
     valSize = valSize - (valSize % 32)
   end
 end
-
--- load utils
-local utils = require 'utils'
 
 --initializing learning rate policy
 logmessage.display(0,'initializing the parameters for learning rate policy: ' .. opt.policy)
@@ -471,8 +475,8 @@ local function backupforrecovery(backup_epoch)
     logmessage.display(0,'lrpolicy state saved - ' .. filename)
 end
 
--- Test function
-local function Test()
+-- Validation function
+local function Validation()
 
     model:evaluate()
     local shuffle
@@ -537,7 +541,6 @@ local function Test()
 
     --xlua.progress(valSize, valSize)
 end
-
 
 -- Train function
 local function Train(epoch)
@@ -618,7 +621,7 @@ local function Train(epoch)
       if opt.validation ~= '' and current_epoch >= next_validation then
           validation_confusion:zero()
           val:reset()
-          local avg_loss=Test()
+          local avg_loss=Validation()
           validation_confusion:updateValids()
           -- log details at the end of validation
           logmessage.display(0, 'Validation (epoch ' .. current_epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
@@ -662,7 +665,7 @@ if opt.validation ~= '' then
     model:evaluate()
     validation_confusion:zero()
     val:reset()
-    local avg_loss=Test()
+    local avg_loss=Validation()
     validation_confusion:updateValids()
     -- log details at the end of validation
     logmessage.display(0, 'Validation (epoch ' .. epoch-1 .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
@@ -684,7 +687,7 @@ end
 if opt.validation ~= '' and opt.epoch > last_validation_epoch then
     validation_confusion:zero()
     val:reset()
-    local avg_loss=Test()
+    local avg_loss=Validation()
     validation_confusion:updateValids()
     -- log details at the end of validation
     logmessage.display(0, 'Validation (epoch ' .. opt.epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)

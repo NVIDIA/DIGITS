@@ -101,6 +101,8 @@ class TorchTrainTask(TrainTask):
         self.receiving_train_output = False
         self.receiving_val_output = False
         self.last_train_update = None
+        self.displaying_network = False
+        self.temp_unrecognized_output = []
         return True
 
     @override
@@ -188,10 +190,21 @@ class TorchTrainTask(TrainTask):
         timestamp, level, message = self.preprocess_output_torch(line)
 
         # return false when unrecognized output is encountered
-        if not (level or message):
+        if not level:
+            # network display in progress
+            if self.displaying_network:
+                self.temp_unrecognized_output.append(line)
+                return True
             return False
 
         if not message:
+            return True
+
+        # network display ends
+        if self.displaying_network:
+            if message.startswith('Network definition ends'):
+                self.temp_unrecognized_output = []
+                self.displaying_network = False
             return True
 
         float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
@@ -252,10 +265,17 @@ class TorchTrainTask(TrainTask):
             self.saving_snapshot = True
             return True
 
+        # network display starting
+        if message.startswith('Network definition:'):
+            self.displaying_network = True
+            return True
+
         if level in ['error', 'critical']:
             self.logger.error('%s: %s' % (self.name(), message))
             self.exception = message
             return True
+
+        # skip remaining info and warn messages
         return True
 
     def preprocess_output_torch(self, line):
@@ -303,6 +323,12 @@ class TorchTrainTask(TrainTask):
     ### TrainTask overrides
     @override
     def after_run(self):
+        if self.temp_unrecognized_output:
+            if self.traceback:
+                self.traceback = self.traceback + ('\n'.join(self.temp_unrecognized_output))
+            else:
+                self.traceback = '\n'.join(self.temp_unrecognized_output)
+                self.temp_unrecognized_output = []
         self.torch_log.close()
 
     @override

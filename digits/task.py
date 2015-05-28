@@ -217,8 +217,11 @@ class Task(StatusCls):
             if self.exception is None:
                 self.exception = 'error code %d' % p.returncode
                 if unrecognized_output:
-                    self.traceback = '\n'.join(unrecognized_output)
-            self.after_runtime_error()
+                    if self.traceback is None:
+                        self.traceback = '\n'.join(unrecognized_output)
+                    else:
+                        self.traceback = self.traceback + ('\n'.join(unrecognized_output))
+            #self.after_runtime_error()
             self.status = Status.ERROR
             return False
         else:
