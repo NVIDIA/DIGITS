@@ -1,0 +1,22 @@
+<h1>GPU Usage</h1>
+
+{% for info in data %}
+<h3>{{info.name}}</h3>
+<dl>
+    <dt>Memory</dt>
+    {% if 'memory' in info %}
+    <dd>
+        {{info.memory.used|sizeof_fmt}} / {{info.memory.total|sizeof_fmt}}
+        ({{(100.0 * info.memory.used / info.memory.total)|round(1)}}%)
+    </dd>
+    {% endif %}
+    {% if 'utilization' in info %}
+    <dt>GPU Utilization</dt>
+    <dd>{{info.utilization.gpu}}%</dd>
+    {% endif %}
+    {% if 'temperature' in info %}
+    <dt>Temperature</dt>
+    <dd>{{info.temperature}} C</dd>
+    {% endif %}
+</dl>
+{% endfor %}

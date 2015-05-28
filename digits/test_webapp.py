@@ -569,8 +569,9 @@ class TestCreatedModel(WebappBaseTest):
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'model creation failed'
 
     def download_model(self, extension):
-        rv = self.app.get('/models/%s/download.%s' % (self.model_id, extension))
-        assert rv.status_code == 200, 'download failed with %s' % rv.status_code
+        url = '/models/%s/download.%s' % (self.model_id, extension)
+        rv = self.app.get(url)
+        assert rv.status_code == 200, 'download "%s" failed with %s' % (url, rv.status_code)
 
     def test_download(self):
         """download model"""
@@ -665,6 +666,19 @@ class TestCreatedModel(WebappBaseTest):
         keys = self.images.keys()
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'
+
+    def test_retrain(self):
+        """retrain model"""
+        options = {}
+        options['previous_networks'] = self.model_id
+        rv = self.app.get('/models/%s.json' % self.model_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']), 'should have at least snapshot'
+        options['%s-snapshot' % self.model_id] = content['snapshots'][-1]
+        job_id = self.create_quick_model(self.dataset_id,
+                method='previous', **options)
+        self.abort_model(job_id)
 
 class TestDatasetModelInteractions(WebappBaseTest):
     """

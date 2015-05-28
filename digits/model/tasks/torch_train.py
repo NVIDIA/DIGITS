@@ -106,9 +106,7 @@ class TorchTrainTask(TrainTask):
         return True
 
     @override
-    def task_arguments(self, **kwargs):
-        gpu_id = kwargs.pop('gpu_id', None)
-
+    def task_arguments(self, resources):
         if config_option('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
@@ -170,12 +168,19 @@ class TorchTrainTask(TrainTask):
             args.append('--validation=%s' % self.dataset.path(constants.VAL_DB))
             args.append('--interval=%f' % self.val_interval)
 
-        if gpu_id:
-            args.append('--devid=%d' % (gpu_id+1))
+        if 'gpus' in resources:
+            identifiers = []
+            for identifier, value in resources['gpus']:
+                identifiers.append(int(identifier))
+            if len(identifiers) == 1:
+                args.append('--devid=%s' % (identifiers[0]+1,))
+                print args
+            elif len(identifiers) > 1:
+                raise NotImplementedError("haven't tested torch with multiple GPUs yet")
 
         if self.pretrained_model:
             args.append('--weights=%s' % self.path(self.pretrained_model))
-        #print args
+
         return args
 
     @override
@@ -347,7 +352,6 @@ class TorchTrainTask(TrainTask):
 
     @override
     def detect_snapshots(self):
-        # TODO
         self.snapshots = []
 
         snapshot_dir = os.path.join(self.job_dir, os.path.dirname(self.snapshot_prefix))

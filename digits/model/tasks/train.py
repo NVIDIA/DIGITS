@@ -4,8 +4,12 @@ import time
 import os.path
 from collections import OrderedDict, namedtuple
 
-from digits import utils
+import gevent
+from flask import render_template
+
+from digits import utils, device_query
 from digits.task import Task
+from digits.utils import override
 
 # NOTE: Increment this everytime the picked object changes
 PICKLE_VERSION = 2
@@ -28,6 +32,8 @@ class TrainTask(Task):
         lr_policy -- a hash of options to be used for the learning rate policy
 
         Keyword arguments:
+        gpu_count -- how many GPUs to use for training (integer)
+        selected_gpus -- a list of GPU indexes to be used for training
         batch_size -- if set, override any network specific batch_size with this value
         val_interval -- how many epochs between validating the model with an epoch of validation data
         pretrained_model -- filename for a model to use for fine-tuning
@@ -35,6 +41,8 @@ class TrainTask(Task):
         use_mean -- subtract the dataset's mean file
         random_seed -- optional random seed
         """
+        self.gpu_count = kwargs.pop('gpu_count', None)
+        self.selected_gpus = kwargs.pop('selected_gpus', None)
         self.batch_size = kwargs.pop('batch_size', None)
         self.val_interval = kwargs.pop('val_interval', None)
         self.pretrained_model = kwargs.pop('pretrained_model', None)
@@ -67,6 +75,8 @@ class TrainTask(Task):
             del state['snapshots']
         if '_labels' in state:
             del state['_labels']
+        if '_gpu_socketio_thread' in state:
+            del state['_gpu_socketio_thread']
         return state
 
     def __setstate__(self, state):
@@ -93,6 +103,95 @@ class TrainTask(Task):
 
         self.snapshots = []
         self.dataset = None
+
+    @override
+    def offer_resources(self, resources):
+        if 'gpus' not in resources:
+            return None
+        if not resources['gpus']:
+            return {} # don't use a GPU at all
+        if self.gpu_count is not None:
+            identifiers = []
+            for resource in resources['gpus']:
+                if resource.remaining() >= 1:
+                    identifiers.append(resource.identifier)
+                    if len(identifiers) == self.gpu_count:
+                        break
+            if len(identifiers) == self.gpu_count:
+                return {'gpus': [(i, 1) for i in identifiers]}
+            else:
+                return None
+        elif self.selected_gpus is not None:
+            all_available = True
+            for i in self.selected_gpus:
+                available = False
+                for gpu in resources['gpus']:
+                    if i == gpu.identifier:
+                        if gpu.remaining() >= 1:
+                            available = True
+                        break
+                if not available:
+                    all_available = False
+                    break
+            if all_available:
+                return {'gpus': [(i, 1) for i in self.selected_gpus]}
+            else:
+                return None
+        return None
+
+    @override
+    def before_run(self):
+        if 'gpus' in self.current_resources:
+            # start a thread which sends SocketIO updates about GPU utilization
+            self._gpu_socketio_thread = gevent.spawn(
+                    self.gpu_socketio_updater,
+                    [identifier for (identifier, value)
+                        in self.current_resources['gpus']]
+                    )
+
+    def gpu_socketio_updater(self, gpus):
+        """
+        This thread sends SocketIO messages about GPU utilization
+        to connected clients
+
+        Arguments:
+        gpus -- a list of identifiers for the GPUs currently being used
+        """
+        from digits.webapp import app, socketio
+
+        devices = []
+        for index in gpus:
+            device = device_query.get_device(index)
+            if device:
+                devices.append((index, device))
+        if not devices:
+            raise RuntimeError('Failed to load gpu information for "%s"' % gpus)
+
+        # this thread continues until killed in after_run()
+        while True:
+            data = []
+
+            for index, device in devices:
+                update = {'name': device.name}
+                nvml_info = device_query.get_nvml_info(index)
+                if nvml_info is not None:
+                    update.update(nvml_info)
+                data.append(update)
+
+            with app.app_context():
+                html = render_template('models/gpu_utilization.html',
+                        data = data)
+
+                socketio.emit('task update',
+                        {
+                            'task': self.html_id(),
+                            'update': 'gpu_utilization',
+                            'html': html,
+                            },
+                        namespace='/jobs',
+                        room=self.job_id,
+                        )
+            gevent.sleep(1)
 
     def send_progress_update(self, epoch):
         """
@@ -227,6 +326,11 @@ class TrainTask(Task):
                 if len(d[key].data) != epoch_len:
                     return False
         return True
+
+    @override
+    def after_run(self):
+        if hasattr(self, '_gpu_socketio_thread'):
+            self._gpu_socketio_thread.kill()
 
     def detect_snapshots(self):
         """

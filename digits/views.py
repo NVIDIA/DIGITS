@@ -9,14 +9,19 @@ from flask.ext.socketio import emit, join_room, leave_room
 
 from . import dataset, model
 from config import config_option
-from webapp import app, socketio, scheduler
+from webapp import app, socketio, scheduler, autodoc
 from status import Status
 import dataset.views
 import model.views
 from digits.utils import errors
 
 @app.route('/')
+@autodoc('home')
 def home():
+    """
+    DIGITS home page
+    Displays all datasets and models on the server and their status
+    """
     new_dataset_options = [
             ('Images', [
                 {
@@ -45,7 +50,12 @@ def home():
             )
 
 @app.route('/index.json')
+@autodoc('home')
 def home_json():
+    """
+    JSON version of the DIGITS home page
+    Returns information about each job on the server
+    """
     datasets = get_job_list(dataset.DatasetJob, True) + get_job_list(dataset.DatasetJob, False)
     datasets = [{
         'name': j.name(),
@@ -74,7 +84,11 @@ def get_job_list(cls, running):
 ### Jobs routes
 
 @app.route('/jobs/<job_id>', methods=['GET'])
+@autodoc('jobs')
 def show_job(job_id):
+    """
+    Redirects to the appropriate /datasets/ or /models/ page
+    """
     job = scheduler.get_job(job_id)
 
     if job is None:
@@ -88,7 +102,11 @@ def show_job(job_id):
         abort(404)
 
 @app.route('/jobs/<job_id>', methods=['PUT'])
+@autodoc('jobs')
 def edit_job(job_id):
+    """
+    Edit the name of a job
+    """
     job = scheduler.get_job(job_id)
 
     if job is None:
@@ -101,7 +119,11 @@ def edit_job(job_id):
 @app.route('/datasets/<job_id>/status', methods=['GET'])
 @app.route('/models/<job_id>/status', methods=['GET'])
 @app.route('/jobs/<job_id>/status', methods=['GET'])
+@autodoc('jobs')
 def job_status(job_id):
+    """
+    Returns a JSON objecting representing the status of a job
+    """
     job = scheduler.get_job(job_id)
     result = {}
     if job is None:
@@ -116,7 +138,11 @@ def job_status(job_id):
 @app.route('/datasets/<job_id>', methods=['DELETE'])
 @app.route('/models/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])
+@autodoc('jobs')
 def delete_job(job_id):
+    """
+    Deletes a job
+    """
     job = scheduler.get_job(job_id)
     if not job:
         return 'Job not found!', 404
@@ -131,8 +157,11 @@ def delete_job(job_id):
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
 @app.route('/jobs/<job_id>/abort', methods=['POST'])
+@autodoc('jobs')
 def abort_job(job_id):
-    """Abort a job that is running"""
+    """
+    Aborts a running job
+    """
     if scheduler.abort_job(job_id):
         return 'Job aborted.'
     else:
@@ -159,7 +188,14 @@ def handle_exception(e, status_code=500):
 ### File serving
 
 @app.route('/files/<path:path>', methods=['GET'])
+@autodoc('util')
 def serve_file(path):
+    """
+    Return a file in the jobs directory
+
+    If you install the nginx.site file, nginx will serve files instead
+    and this path will never be used
+    """
     jobs_dir = config_option('jobs_dir')
     path = os.path.normpath(os.path.join(jobs_dir, path))
 

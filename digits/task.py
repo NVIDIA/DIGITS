@@ -72,7 +72,7 @@ class Task(StatusCls):
         """
         Returns a string
         """
-        raise NotImplementedError('Please implement me')
+        raise NotImplementedError
 
     def framework_name(self):
         """
@@ -146,12 +146,24 @@ class Task(StatusCls):
                 return False
         return True
 
-    def task_arguments(self, **kwargs):
+    def offer_resources(self, resources):
+        """
+        Check the available resources and return a set of requested resources
+
+        Arguments:
+        resources -- a copy of scheduler.resources
+        """
+        raise NotImplementedError
+
+    def task_arguments(self, resources):
         """
         Returns args used by subprocess.Popen to execute the task
         Returns False if the args cannot be set properly
+
+        Arguments:
+        resources -- the resources assigned by the scheduler for this task
         """
-        raise NotImplementedError('Please implement me')
+        raise NotImplementedError
 
     def before_run(self):
         """
@@ -160,13 +172,16 @@ class Task(StatusCls):
         """
         pass
 
-    def run(self, **kwargs):
+    def run(self, resources):
         """
         Execute the task
+
+        Arguments:
+        resources -- the resources assigned by the scheduler for this task
         """
         self.before_run()
 
-        args = self.task_arguments(**kwargs)
+        args = self.task_arguments(resources)
         if not args:
             self.logger.error('Could not create the arguments for Popen')
             self.status = Status.ERROR
@@ -272,7 +287,7 @@ class Task(StatusCls):
         Arguments:
         line -- a line of output
         """
-        raise NotImplementedError('Please implement me')
+        raise NotImplementedError
 
     def est_done(self):
         """

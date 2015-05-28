@@ -105,7 +105,17 @@ class ParseFolderTask(Task):
         return 'task-parse-folder-%s' % ('-'.join(sets))
 
     @override
-    def task_arguments(self, **kwargs):
+    def offer_resources(self, resources):
+        key = 'parse_folder_task_pool'
+        if key not in resources:
+            return None
+        for resource in resources[key]:
+            if resource.remaining() >= 1:
+                return {key: [(resource.identifier, 1)]}
+        return None
+
+    @override
+    def task_arguments(self, resources):
         args = [sys.executable, os.path.join(os.path.dirname(os.path.dirname(digits.__file__)), 'tools', 'parse_folder.py'),
                 self.folder,
                 self.path(utils.constants.LABELS_FILE),

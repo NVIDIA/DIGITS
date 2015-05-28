@@ -1,5 +1,7 @@
 # DIGITS (Deep GPU Training System)
 
+[![Code Health](https://landscape.io/github/NVIDIA/DIGITS/master/landscape.svg?style=flat)](https://landscape.io/github/NVIDIA/DIGITS/master)
+
 DIGITS is is a webapp for training deep learning models.
 
 Table of Contents

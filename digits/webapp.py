@@ -15,14 +15,29 @@ import digits.scheduler
 app = Flask(__name__)
 app.config['DEBUG'] = False
 app.config['SECRET_KEY'] = config_option('secret_key')
+app.url_map.redirect_defaults = False
 socketio = SocketIO(app)
 scheduler = digits.scheduler.Scheduler(config_option('gpu_list'))
 
+# Set up flask API documentation, if installed
+try:
+    from flask.ext.autodoc import Autodoc
+    _doc = Autodoc(app)
+    autodoc = _doc.doc # decorator
+except ImportError:
+    def autodoc(*args, **kwargs):
+        def _doc(f):
+            # noop decorator
+            return f
+        return _doc
+
 ### Register filters and views
 
+app.jinja_env.globals['server_name'] = config_option('server_name')
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time
 app.jinja_env.filters['print_time_diff'] = utils.time_filters.print_time_diff
 app.jinja_env.filters['print_time_since'] = utils.time_filters.print_time_since
+app.jinja_env.filters['sizeof_fmt'] = utils.sizeof_fmt
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 

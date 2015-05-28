@@ -8,14 +8,14 @@ import tempfile
 import random
 
 import numpy as np
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, abort
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 
 import digits
 from digits.config import config_option
 from digits import utils
-from digits.webapp import app, scheduler
+from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
 from digits.model import tasks
 from forms import ImageClassificationModelForm
@@ -23,10 +23,15 @@ from job import ImageClassificationModelJob
 from digits.status import Status
 from digits.utils import errors
 
-NAMESPACE = '/models/images/classification'
+NAMESPACE   = '/models/images/classification'
+MULTI_GPU   = False
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@autodoc('models')
 def image_classification_model_new():
+    """
+    Return a form for a new ImageClassificationModelJob
+    """
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
     form.standard_networks.choices = get_standard_networks()
@@ -35,10 +40,19 @@ def image_classification_model_new():
 
     prev_network_snapshots = get_previous_network_snapshots()
 
-    return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots, previous_networks_fullinfo = get_previous_networks_fulldetails(), has_datasets=(len(get_datasets())==0))
+    return render_template('models/images/classification/new.html',
+            form        = form,
+            previous_network_snapshots  = prev_network_snapshots,
+            previous_networks_fullinfo = get_previous_networks_fulldetails(),
+            multi_gpu   = MULTI_GPU,
+            )
 
 @app.route(NAMESPACE, methods=['POST'])
+@autodoc('models')
 def image_classification_model_create():
+    """
+    Create a new ImageClassificationModelJob
+    """
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
     form.standard_networks.choices = get_standard_networks()
@@ -48,7 +62,12 @@ def image_classification_model_create():
     prev_network_snapshots = get_previous_network_snapshots()
 
     if not form.validate_on_submit():
-        return render_template('models/images/classification/new.html', form=form, previous_network_snapshots=prev_network_snapshots, previous_networks_fullinfo = get_previous_networks_fulldetails()), 400
+        return render_template('models/images/classification/new.html',
+                form        = form,
+                previous_network_snapshots=prev_network_snapshots,
+                previous_networks_fullinfo = get_previous_networks_fulldetails(),
+                multi_gpu   = MULTI_GPU,
+                ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
@@ -99,13 +118,20 @@ def image_classification_model_create():
             old_job = scheduler.get_job(form.previous_networks.data)
             if not old_job:
                 raise Exception('Job not found: %s' % form.previous_networks.data)
+
             if old_job.train_task().framework_name() == "caffe":
                 network.CopyFrom(old_job.train_task().network)
+                # Rename the final layer
+                # XXX making some assumptions about network architecture here
+                ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
+                if len(ip_layers) > 0:
+                    ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
             elif old_job.train_task().framework_name() == "torch":
                 shutil.copy2(os.path.join(old_job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE))
+
             for i, choice in enumerate(form.previous_networks.choices):
                 if choice[0] == form.previous_networks.data:
-                    epoch = int(request.form['%s-snapshot' % form.previous_networks.data])
+                    epoch = float(request.form['%s-snapshot' % form.previous_networks.data])
                     if epoch != 0:
                         for filename, e in old_job.train_task().snapshots:
                             if e == epoch:
@@ -151,6 +177,21 @@ def image_classification_model_create():
         else:
             return 'Invalid policy', 404
 
+        if MULTI_GPU:
+            if form.select_gpu_count.data:
+                gpu_count = form.select_gpu_count.data
+                selected_gpus = None
+            else:
+                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
+                gpu_count = None
+        else:
+            if form.select_gpu.data == 'next':
+                gpu_count = 1
+                selected_gpus = None
+            else:
+                selected_gpus = [str(form.select_gpu.data)]
+                gpu_count = None
+
         if form.framework.data == "caffe":
 
             job.tasks.append(
@@ -161,6 +202,8 @@ def image_classification_model_create():
                     snapshot_interval   = form.snapshot_interval.data,
                     learning_rate   = form.learning_rate.data,
                     lr_policy       = policy,
+                    gpu_count       = gpu_count,
+                    selected_gpus   = selected_gpus,
                     batch_size      = form.batch_size.data,
                     val_interval    = form.val_interval.data,
                     pretrained_model= pretrained_model,
@@ -182,6 +225,8 @@ def image_classification_model_create():
                     snapshot_interval   = form.snapshot_interval.data,
                     learning_rate   = form.learning_rate.data,
                     lr_policy       = policy,
+                    gpu_count       = gpu_count,
+                    selected_gpus   = selected_gpus,
                     batch_size      = form.batch_size.data,
                     val_interval    = form.val_interval.data,
                     pretrained_model= pretrained_model,
@@ -206,6 +251,7 @@ def show(job):
     return render_template('models/images/classification/show.html', job=job)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
+@autodoc('models')
 def image_classification_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
@@ -217,6 +263,7 @@ def image_classification_model_large_graph():
     return render_template('models/images/classification/large_graph.html', job=job)
 
 @app.route(NAMESPACE + '/classify_one', methods=['POST'])
+@autodoc('models')
 def image_classification_model_classify_one():
     """
     Classify one image and return the predictions, weights and activations
@@ -278,6 +325,7 @@ def image_classification_model_classify_one():
             )
 
 @app.route(NAMESPACE + '/classify_many', methods=['POST'])
+@autodoc('models')
 def image_classification_model_classify_many():
     """
     Classify many images and return the top 5 classifications for each
@@ -358,6 +406,7 @@ def image_classification_model_classify_many():
             )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
+@autodoc('models')
 def image_classification_model_top_n():
     """
     Classify many images and show the top N images per category by confidence

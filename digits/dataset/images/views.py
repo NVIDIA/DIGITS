@@ -7,14 +7,17 @@ from flask import request
 import PIL.Image
 
 from digits import utils
-from digits.webapp import app
+from digits.webapp import app, autodoc
 import classification.views
 
 NAMESPACE = '/datasets/images'
 
 @app.route(NAMESPACE + '/resize-example', methods=['POST'])
+@autodoc('datasets')
 def image_dataset_resize_example():
-    """Returns a string of png data"""
+    """
+    Resizes the example image, and returns it as a string of png data
+    """
     try:
         import digits
         example_image_path = os.path.join(os.path.dirname(digits.__file__), 'static', 'images', 'mona_lisa.jpg')

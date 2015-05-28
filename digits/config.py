@@ -79,7 +79,7 @@ class Suggestion(object):
 def get_input(
         message     = None,
         validator   = None,
-        suggestions = [],
+        suggestions = None,
         is_path     = False,
         ):
     """
@@ -92,6 +92,9 @@ def get_input(
     suggestions -- a list of Suggestions
     is_path -- if True, tab autocomplete will be turned on
     """
+    if suggestions is None:
+        suggestions = []
+
     if message is not None:
         print message
     print
@@ -353,6 +356,16 @@ class CaffeRootOption(FrameworkOption):
                 raise ValueError('caffe binary not found at "%s"' % value)
             cls.validate_version(expected_path)
 
+            pythonpath = os.path.join(value, 'python')
+            sys.path.insert(0, pythonpath)
+            try:
+                imp.find_module('caffe')
+            except ImportError as e:
+                raise ValueError('Error while importing caffe from "%s": %s' % (pythonpath, e.message))
+            finally:
+                # Don't actually add this until apply() is called
+                sys.path.pop(0)
+
             return value
 
     # Used to validate the version
@@ -402,14 +415,25 @@ class CaffeRootOption(FrameworkOption):
         return None
 
     def apply(self):
-        if self.value and self.value != '<PATHS>':
-            # Add caffe/python to PATH
-            sys.path.insert(0, os.path.join(self.value, 'python'))
+        if self.value:
+            # Suppress GLOG output for python bindings
+            GLOG_minloglevel = os.environ.pop('GLOG_minloglevel', None)
+            os.environ['GLOG_minloglevel'] = '5'
+
+            if self.value != '<PATHS>':
+                # Add caffe/python to PATH
+                sys.path.insert(0, os.path.join(self.value, 'python'))
             try:
-                imp.find_module('caffe')
-            except ImportError:
-                print 'ERROR: python module not found at "%s"' % sys.path.pop(0)
+                import caffe
+            except ImportError as e:
+                print 'Did you forget to "make pycaffe"?'
                 raise
+
+            # Turn GLOG output back on for subprocess calls
+            if GLOG_minloglevel is None:
+                del os.environ['GLOG_minloglevel']
+            else:
+                os.environ['GLOG_minloglevel'] = GLOG_minloglevel
 
 class TorchRootOption(FrameworkOption):
     @staticmethod
@@ -500,7 +524,7 @@ class GpuListOption(ConfigOption):
 
     def prompt_message(self):
         s = 'Attached devices:\n'
-        for device_id, gpu in enumerate(self.query_gpus()):
+        for device_id, gpu in enumerate(device_query.get_devices()):
             s += 'Device #%s:\n' % device_id
             s += '\t%-20s %s\n' % ('Name', gpu.name)
             s += '\t%-20s %s.%s\n' % ('Compute capability', gpu.major, gpu.minor)
@@ -513,19 +537,19 @@ class GpuListOption(ConfigOption):
         return True
 
     def suggestions(self):
-        if len(self.query_gpus()) > 0:
+        if len(device_query.get_devices()) > 0:
             return [Suggestion(
-                ','.join([str(x) for x in xrange(len(self.query_gpus()))]),
+                ','.join([str(x) for x in xrange(len(device_query.get_devices()))]),
                 'D', desc='default', default=True)]
         else:
             return []
 
     @classmethod
     def visibility(self):
-        if len(self.query_gpus()) == 0:
+        if len(device_query.get_devices()) == 0:
             # Nothing to see here
             return -1
-        if len(self.query_gpus()) == 1:
+        if len(device_query.get_devices()) == 1:
             # Use just the one GPU by default
             return 0
         else:
@@ -537,7 +561,7 @@ class GpuListOption(ConfigOption):
             return value
 
         choices = []
-        gpus = cls.query_gpus()
+        gpus = device_query.get_devices()
 
         if not gpus:
             return ''
@@ -569,17 +593,6 @@ class GpuListOption(ConfigOption):
             return '%s %s' % (s,size_name[i])
         else:
             return '0B'
-
-    @classmethod
-    def query_gpus(cls):
-        """
-        Return a list of device_query.CudaDeviceProp objects which contain all
-        the available information on each device
-        Order is preserved in this list - item 0 is gpu #0
-        """
-        if not hasattr(cls, 'device_list'):
-            cls.device_list = device_query.get_devices()
-        return cls.device_list
 
 class JobsDirOption(ConfigOption):
     @staticmethod
@@ -719,6 +732,23 @@ class LogLevelOption(ConfigOption):
             raise ValueError
         return value
 
+class ServerNameOption(ConfigOption):
+    @staticmethod
+    def name():
+        return 'server_name'
+
+    @classmethod
+    def visibility(self):
+        return 0
+
+    def optional(self):
+        return True
+
+    def suggestions(self):
+        hostname = platform.node()
+        return [Suggestion(hostname, 'H', desc='HOSTNAME')]
+
+
 class SecretKeyOption(ConfigOption):
     @staticmethod
     def name():
@@ -741,6 +771,7 @@ def optionClasses():
             GpuListOption,
             LogFileOption,
             LogLevelOption,
+            ServerNameOption,
             SecretKeyOption,
             CaffeRootOption,
             TorchRootOption,
@@ -1071,7 +1102,6 @@ def load_option(option, mode, newConfig,
     systemConfig -- the current SystemConfigFile
     """
     if 'DIGITS_MODE_TEST' in os.environ and option.has_test_value():
-        print 'Setting %s to test value ...' % option.name()
         option.value = option.test_value()
         return option.value
 
@@ -1213,8 +1243,6 @@ def config_option(name):
     Arguments:
     name -- the name of the configuration option
     """
-    global current_config
-
     if current_config is None:
         raise RuntimeError('config must be loaded first')
 

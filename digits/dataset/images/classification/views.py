@@ -7,7 +7,7 @@ from flask import render_template, request, redirect, url_for, flash
 
 from digits import utils
 from digits.config import config_option
-from digits.webapp import app, scheduler
+from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
 from job import ImageClassificationDatasetJob
@@ -205,12 +205,20 @@ def from_files(job, form):
 
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@autodoc('datasets')
 def image_classification_dataset_new():
+    """
+    Returns a form for a new ImageClassificationDatasetJob
+    """
     form = ImageClassificationDatasetForm()
     return render_template('datasets/images/classification/new.html', form=form)
 
 @app.route(NAMESPACE, methods=['POST'])
+@autodoc('datasets')
 def image_classification_dataset_create():
+    """
+    Creates a new ImageClassificationDatasetJob
+    """
     form = ImageClassificationDatasetForm()
     if not form.validate_on_submit():
         return render_template('datasets/images/classification/new.html', form=form), 400

@@ -27,6 +27,7 @@ socket.on('job update', function (msg) {
             $("#job-statuses .job-statuses").html(msg['html']);
             if (!msg['running']) {
                 $("#abort-job").hide();
+                $('.gpu-utilization-info').hide();
             }
         }
     });
@@ -64,6 +65,10 @@ socket.on('task update', function (msg) {
         }
         else if (msg['update'] == 'snapshots') {
             updateSnapshotList(msg['data']);
+        }
+        else if (msg['update'] == 'gpu_utilization') {
+            $('.gpu-utilization-info').show();
+            $('.gpu-utilization-info').html(msg['html']);
         }
     });
         </script>
@@ -154,7 +159,8 @@ $('#delete-job').on('click', function(event) {
     </div>
 
     <!-- Tasks -->
-    <div class="panel-group col-sm-4">
+    <div class="col-sm-4">
+    <div class="panel-group">
         <div id="job-statuses" class="panel panel-{{job.status.css}}">
             <div class="panel-heading">
                 <h4 class="panel-title">
@@ -211,6 +217,8 @@ $('#delete-job').on('click', function(event) {
                 </div>
             </div>
         </div>
+        </div>
+        <div class="gpu-utilization-info" style="display:none;"></div>
     </div>
 
 </div>

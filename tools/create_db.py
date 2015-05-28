@@ -14,7 +14,8 @@ import Queue
 
 # Add path for DIGITS package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import digits.config; digits.config.load_config()
+import digits.config
+digits.config.load_config()
 from digits import utils, log
 
 import numpy as np
@@ -60,7 +61,7 @@ class DbCreator:
             self.backend = 'leveldb'
             self.db = leveldb.LevelDB(self.output_path, error_if_exists=True)
         else:
-            raise Exception('unknown backend: "%"' % backend)
+            raise ValueError('unknown backend: "%s"' % backend)
 
         self.shutdown = threading.Event()
         self.keys_lock = threading.Lock()
