@@ -8,7 +8,7 @@ from flask import render_template, flash, redirect, session, url_for, abort, mak
 from flask.ext.socketio import emit, join_room, leave_room
 
 from . import dataset, model
-from config import config_option
+from config import config_value
 from webapp import app, socketio, scheduler, autodoc
 from status import Status
 import dataset.views
@@ -196,7 +196,7 @@ def serve_file(path):
     If you install the nginx.site file, nginx will serve files instead
     and this path will never be used
     """
-    jobs_dir = config_option('jobs_dir')
+    jobs_dir = config_value('jobs_dir')
     path = os.path.normpath(os.path.join(jobs_dir, path))
 
     # Don't allow path manipulation

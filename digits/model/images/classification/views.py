@@ -13,7 +13,7 @@ from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 
 import digits
-from digits.config import config_option
+from digits.config import config_value
 from digits import utils
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
@@ -23,7 +23,6 @@ from job import ImageClassificationModelJob
 from digits.status import Status
 
 NAMESPACE   = '/models/images/classification'
-MULTI_GPU   = False
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
 @autodoc('models')
@@ -42,7 +41,7 @@ def image_classification_model_new():
     return render_template('models/images/classification/new.html',
             form        = form,
             previous_network_snapshots  = prev_network_snapshots,
-            multi_gpu   = MULTI_GPU,
+            multi_gpu   = config_value('caffe_root')['multi_gpu'],
             )
 
 @app.route(NAMESPACE, methods=['POST'])
@@ -63,7 +62,7 @@ def image_classification_model_create():
         return render_template('models/images/classification/new.html',
                 form        = form,
                 previous_network_snapshots=prev_network_snapshots,
-                multi_gpu   = MULTI_GPU,
+                multi_gpu   = config_value('caffe_root')['multi_gpu'],
                 ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
@@ -148,7 +147,7 @@ def image_classification_model_create():
         else:
             return 'Invalid policy', 404
 
-        if MULTI_GPU:
+        if config_value('caffe_root')['multi_gpu']:
             if form.select_gpu_count.data:
                 gpu_count = form.select_gpu_count.data
                 selected_gpus = None

@@ -11,7 +11,7 @@ import gevent.event
 
 from . import utils
 import digits.log
-from config import config_option
+from config import config_value
 from status import Status, StatusCls
 
 # NOTE: Increment this everytime the pickled version changes
@@ -126,7 +126,7 @@ class Task(StatusCls):
         else:
             path = os.path.join(self.job_dir, filename)
         if relative:
-            path = os.path.relpath(path, config_option('jobs_dir'))
+            path = os.path.relpath(path, config_value('jobs_dir'))
         return str(path)
 
     def ready_to_queue(self):

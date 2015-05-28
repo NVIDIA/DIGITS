@@ -10,7 +10,7 @@ import gevent
 import gevent.event
 import gevent.queue
 
-from config import config_option
+from config import config_value
 from . import utils
 from status import Status
 from job import Job
@@ -109,8 +109,8 @@ class Scheduler:
         """
         failed = 0
         loaded_jobs = []
-        for dir_name in sorted(os.listdir(config_option('jobs_dir'))):
-            if os.path.isdir(os.path.join(config_option('jobs_dir'), dir_name)):
+        for dir_name in sorted(os.listdir(config_value('jobs_dir'))):
+            if os.path.isdir(os.path.join(config_value('jobs_dir'), dir_name)):
                 exists = False
 
                 # Make sure it hasn't already been loaded
@@ -238,9 +238,9 @@ class Scheduler:
                 return True
 
         # see if the folder exists on disk
-        path = os.path.join(config_option('jobs_dir'), job_id)
+        path = os.path.join(config_value('jobs_dir'), job_id)
         path = os.path.normpath(path)
-        if os.path.dirname(path) == config_option('jobs_dir') and os.path.exists(path):
+        if os.path.dirname(path) == config_value('jobs_dir') and os.path.exists(path):
             shutil.rmtree(path)
             return True
 

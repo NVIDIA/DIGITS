@@ -9,7 +9,7 @@ import shutil
 from flask import render_template
 
 from digits import utils
-from digits.config import config_option
+from digits.config import config_value
 from status import Status, StatusCls
 
 # NOTE: Increment this everytime the pickled object changes
@@ -29,7 +29,7 @@ class Job(StatusCls):
         """
         from digits.model.tasks import TrainTask
 
-        job_dir = os.path.join(config_option('jobs_dir'), job_id)
+        job_dir = os.path.join(config_value('jobs_dir'), job_id)
         filename = os.path.join(job_dir, cls.SAVE_FILE)
         with open(filename, 'rb') as savefile:
             job = pickle.load(savefile)
@@ -51,7 +51,7 @@ class Job(StatusCls):
 
         # create a unique ID
         self._id = '%s-%s' % (time.strftime('%Y%m%d-%H%M%S'), os.urandom(2).encode('hex'))
-        self._dir = os.path.join(config_option('jobs_dir'), self._id)
+        self._dir = os.path.join(config_value('jobs_dir'), self._id)
         self._name = name
         self.pickver_job = PICKLE_VERSION
         self.tasks = []
@@ -103,7 +103,7 @@ class Job(StatusCls):
         else:
             path = os.path.join(self._dir, filename)
         if relative:
-            path = os.path.relpath(path, config_option('jobs_dir'))
+            path = os.path.relpath(path, config_value('jobs_dir'))
         return str(path)
 
     def path_is_local(self, path):

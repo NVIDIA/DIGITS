@@ -2,17 +2,17 @@
 
 import os
 import re
-import caffe
 import time
 import math
 import subprocess
 
 import numpy as np
 from google.protobuf import text_format
+import caffe
 from caffe.proto import caffe_pb2
 
 from train import TrainTask
-from digits.config import config_option
+from digits.config import config_value
 from digits.status import Status
 from digits import utils, dataset
 from digits.utils import subclass, override, constants
@@ -284,12 +284,14 @@ class CaffeTrainTask(TrainTask):
         # get enum value for solver type
         solver.solver_type = getattr(solver, self.solver_type)
         solver.net = self.train_val_file
-        # TODO: detect if caffe is built with CPU_ONLY
-        gpu_list = config_option('gpu_list')
-        if gpu_list and gpu_list != 'NONE':
+
+        # Set CPU/GPU mode
+        if config_value('caffe_root')['cuda_enabled'] and \
+                bool(config_value('gpu_list')):
             solver.solver_mode = caffe_pb2.SolverParameter.GPU
         else:
             solver.solver_mode = caffe_pb2.SolverParameter.CPU
+
         solver.snapshot_prefix = self.snapshot_prefix
 
         # Epochs -> Iterations
@@ -371,12 +373,7 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def task_arguments(self, resources):
-        if config_option('caffe_root') == '<PATHS>':
-            caffe_bin = 'caffe'
-        else:
-            #caffe_bin = os.path.join(config_option('caffe_root'), 'bin', 'caffe.bin')
-            caffe_bin = os.path.join(config_option('caffe_root'), 'build', 'tools', 'caffe.bin')
-        args = [caffe_bin,
+        args = [config_value('caffe_root')['executable'],
                 'train',
                 '--solver=%s' % self.path(self.solver_file),
                 ]

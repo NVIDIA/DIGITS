@@ -34,7 +34,7 @@ if __name__ == '__main__':
     from digits import config
 
     if args['config']:
-        config.load_config('verbose')
+        config.load_config('normal')
     else:
         config.load_config('quiet')
 

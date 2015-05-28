@@ -4,13 +4,13 @@ from nose.tools import assert_raises
 import mock
 
 from . import scheduler as _
-from config import config_option
+from config import config_value
 from job import Job
 
 class TestScheduler():
 
     def get_scheduler(self):
-        return _.Scheduler(config_option('gpu_list'))
+        return _.Scheduler(config_value('gpu_list'))
 
     def test_add_before_start(self):
         """add_job before scheduler start"""
@@ -34,7 +34,7 @@ class TestSchedulerFlow():
 
     @classmethod
     def setUpClass(cls):
-        cls.s = _.Scheduler(config_option('gpu_list'))
+        cls.s = _.Scheduler(config_value('gpu_list'))
         assert cls.s.start(), 'failed to start'
 
     @classmethod

@@ -10,7 +10,6 @@ import subprocess
 import numpy as np
 
 from train import TrainTask
-from digits.config import config_option
 from digits.status import Status
 from digits import utils, dataset
 from digits.utils import subclass, override, constants

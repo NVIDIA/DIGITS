@@ -8,7 +8,8 @@ import wtforms
 from wtforms import validators
 from caffe.proto import caffe_pb2
 
-from digits import utils, config
+from digits import utils
+from digits.config import config_value
 from digits.device_query import get_device
 
 class ModelForm(Form):
@@ -201,7 +202,7 @@ class ModelForm(Form):
             choices = [('next', 'Next available')] + [(
                 index,
                 '#%s - %s' % (index, get_device(index).name),
-                ) for index in config.config_option('gpu_list').split(',') if index],
+                ) for index in config_value('gpu_list').split(',') if index],
             default = 'next',
             )
 
@@ -210,13 +211,13 @@ class ModelForm(Form):
             choices = [(
                 index,
                 '#%s - %s' % (index, get_device(index).name),
-                ) for index in config.config_option('gpu_list').split(',') if index]
+                ) for index in config_value('gpu_list').split(',') if index]
             )
 
     # Use next available N GPUs
     select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
             validators = [
-                validators.NumberRange(min=1, max=len(config.config_option('gpu_list').split(',')))
+                validators.NumberRange(min=1, max=len(config_value('gpu_list').split(',')))
                 ],
             default = 1,
             )

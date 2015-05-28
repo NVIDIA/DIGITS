@@ -7,17 +7,17 @@ from flask import Flask
 from flask.ext.socketio import SocketIO
 
 from digits import utils
-from config import config_option
+from config import config_value
 import digits.scheduler
 
 ### Create Flask, Scheduler and SocketIO objects
 
 app = Flask(__name__)
 app.config['DEBUG'] = False
-app.config['SECRET_KEY'] = config_option('secret_key')
+app.config['SECRET_KEY'] = config_value('secret_key')
 app.url_map.redirect_defaults = False
 socketio = SocketIO(app)
-scheduler = digits.scheduler.Scheduler(config_option('gpu_list'))
+scheduler = digits.scheduler.Scheduler(config_value('gpu_list'))
 
 # Set up flask API documentation, if installed
 try:
@@ -33,7 +33,7 @@ except ImportError:
 
 ### Register filters and views
 
-app.jinja_env.globals['server_name'] = config_option('server_name')
+app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time
 app.jinja_env.filters['print_time_diff'] = utils.time_filters.print_time_diff
 app.jinja_env.filters['print_time_since'] = utils.time_filters.print_time_since
