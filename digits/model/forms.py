@@ -17,12 +17,13 @@ class ModelForm(Form):
         super(ModelForm, self).__init__(csrf_enabled=csrf_enabled, *args, **kwargs)
 
     ### Methods
+
     def selection_exists_in_choices(form, field):
-        found=False
-        for i, choice in enumerate(field.choices):
+        found = False
+        for choice in field.choices:
             if choice[0] == field.data:
-                found=True
-        if found == False:
+                found = True
+        if not found:
             raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
 
     def required_if_method(value):
@@ -128,7 +129,7 @@ class ModelForm(Form):
         if form.lr_policy.data == 'multistep':
             for value in field.data.split(','):
                 try:
-                    v = float(value)
+                    float(value)
                 except ValueError:
                     raise validators.ValidationError('invalid value')
     lr_multistep_gamma = wtforms.FloatField('Gamma',

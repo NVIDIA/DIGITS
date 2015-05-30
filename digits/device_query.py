@@ -111,8 +111,7 @@ def get_library(name):
             return ctypes.cdll.LoadLibrary('%s.so' % name)
         elif platform.system() == 'Darwin':
             return ctypes.cdll.LoadLibrary('%s.dylib' % name)
-    except OSError as e:
-        #print 'ERROR in device_query.get_library("%s"): %s' % (name, e.message)
+    except OSError:
         pass
     return None
 

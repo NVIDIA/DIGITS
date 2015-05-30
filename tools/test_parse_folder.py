@@ -67,18 +67,18 @@ class TestValidateRange():
         assert _.validate_range(0) == True
 
     def test_min_less(self):
-        assert _.validate_range(-1, min=0) == False
+        assert _.validate_range(-1, min_value=0) == False
     def test_min_equal(self):
-        assert _.validate_range(0, min=0) == True
+        assert _.validate_range(0, min_value=0) == True
     def test_min_more(self):
-        assert _.validate_range(1, min=0) == True
+        assert _.validate_range(1, min_value=0) == True
 
     def test_max_less(self):
-        assert _.validate_range(9, max=10) == True
+        assert _.validate_range(9, max_value=10) == True
     def test_max_equal(self):
-        assert _.validate_range(10, max=10) == True
+        assert _.validate_range(10, max_value=10) == True
     def test_max_more(self):
-        assert _.validate_range(11, max=10) == False
+        assert _.validate_range(11, max_value=10) == False
 
     def test_allow_none_true(self):
         assert _.validate_range(None, allow_none=True) == True

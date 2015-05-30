@@ -30,7 +30,7 @@ class CaffeTrainTask(TrainTask):
     CAFFE_LOG = 'caffe_output.log'
 
     @staticmethod
-    def upgrade_network(cls, network):
+    def upgrade_network(network):
         #TODO
         pass
 
@@ -393,7 +393,6 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def process_output(self, line):
-        from digits.webapp import socketio
         float_exp = '(NaN|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         self.caffe_log.write('%s\n' % line)
@@ -651,14 +650,13 @@ class CaffeTrainTask(TrainTask):
         indices = (-scores).argsort()
         predictions = []
         for i in indices:
-            predictions.append( (self.get_labels()[i], scores[i]) )
+            predictions.append( (labels[i], scores[i]) )
 
 
         # add visualizations
         visualizations = []
         if layers and layers != 'none':
             if layers == 'all':
-                added_weights = []
                 added_activations = []
                 for layer in self.network.layer:
                     print 'Computing visualizations for "%s"...' % layer.name

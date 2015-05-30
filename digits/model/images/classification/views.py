@@ -102,7 +102,7 @@ def image_classification_model_create():
             if len(ip_layers) > 0:
                 ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
 
-            for i, choice in enumerate(form.previous_networks.choices):
+            for choice in form.previous_networks.choices:
                 if choice[0] == form.previous_networks.data:
                     epoch = float(request.form['%s-snapshot' % form.previous_networks.data])
                     if epoch != 0:

@@ -173,7 +173,7 @@ class DbCreator:
             for line in lines:
                 # Expect format - [/]path/to/file.jpg 123
                 match = re_match(r'(.+)\s+(\d+)\s*$', line)
-                if match != None:
+                if match is not None:
                     path = match.group(1)
                     label = int(match.group(2))
                     self.read_queue.put( (path, label) )
