@@ -4,8 +4,6 @@ from flask.ext.wtf import Form
 from wtforms import StringField
 from wtforms.validators import DataRequired
 
-from .. import utils
-
 class DatasetForm(Form):
     """
     Defines the form used to create a new Dataset

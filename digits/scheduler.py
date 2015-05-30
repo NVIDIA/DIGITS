@@ -14,8 +14,8 @@ from config import config_value
 from . import utils
 from status import Status
 from job import Job
-from dataset import DatasetJob, tasks as dataset_tasks
-from model import ModelJob, tasks as model_tasks
+from dataset import DatasetJob
+from model import ModelJob
 from digits.utils import errors
 from log import logger
 

@@ -8,7 +8,6 @@ import operator
 import digits
 from digits import utils
 from digits.utils import subclass, override
-from digits.status import Status
 from digits.task import Task
 
 # NOTE: Increment this everytime the pickled version changes

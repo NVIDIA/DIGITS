@@ -1,8 +1,5 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os
-import sys
-
 from flask import Flask
 from flask.ext.socketio import SocketIO
 

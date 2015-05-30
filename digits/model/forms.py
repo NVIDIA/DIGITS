@@ -8,7 +8,6 @@ import wtforms
 from wtforms import validators
 from caffe.proto import caffe_pb2
 
-from digits import utils
 from digits.config import config_value
 from digits.device_query import get_device
 

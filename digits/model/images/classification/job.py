@@ -2,8 +2,6 @@
 
 import os.path
 
-from digits.model import tasks
-from digits import utils
 from digits.utils import subclass, override
 from ..job import ImageModelJob
 

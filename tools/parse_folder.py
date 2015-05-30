@@ -8,7 +8,6 @@ import argparse
 import time
 import logging
 import random
-from urlparse import urlparse
 import urllib
 
 import requests

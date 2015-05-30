@@ -4,13 +4,12 @@ import os
 import json
 import traceback
 
-from flask import render_template, flash, redirect, session, url_for, abort, make_response, request, jsonify
-from flask.ext.socketio import emit, join_room, leave_room
+from flask import render_template, redirect, session, url_for, abort, make_response, request, jsonify
+from flask.ext.socketio import join_room, leave_room
 
 from . import dataset, model
 from config import config_value
 from webapp import app, socketio, scheduler, autodoc
-from status import Status
 import dataset.views
 import model.views
 from digits.utils import errors
@@ -219,35 +218,47 @@ def serve_file(path):
 
 @socketio.on('connect', namespace='/home')
 def on_connect():
-    #print '>>> Somebody connected to the homepage'
+    """
+    Somebody connected to the homepage
+    """
     pass
 
 @socketio.on('disconnect', namespace='/home')
 def on_disconnect():
-    #print '>>> Somebody disconnected from the homepage'
+    """
+    Somebody disconnected from the homepage
+    """
     pass
 
 ## /jobs
 
 @socketio.on('connect', namespace='/jobs')
 def on_connect():
-    #print '>>> Somebody connected to a jobs page'
-    pass
+    """
+    Somebody connected to a jobs page
+    """
 
 @socketio.on('disconnect', namespace='/jobs')
 def on_disconnect():
-    #print '>>> Somebody disconnected from a jobs page'
+    """
+    Somebody disconnected from a jobs page
+    """
     pass
 
 @socketio.on('join', namespace='/jobs')
 def on_join(data):
+    """
+    Somebody joined a room
+    """
     room = data['room']
-    #print '>>> Somebody joined room %s' % room
     join_room(room)
     session['room'] = room
 
 @socketio.on('leave', namespace='/jobs')
 def on_leave():
+    """
+    Somebody left a room
+    """
     if 'room' in session:
         room = session['room']
         del session['room']

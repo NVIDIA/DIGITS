@@ -8,7 +8,6 @@ import shutil
 
 from flask import render_template
 
-from digits import utils
 from digits.config import config_value
 from status import Status, StatusCls
 

@@ -9,14 +9,12 @@ import tarfile
 import zipfile
 
 from google.protobuf import text_format
-from flask import render_template, request, redirect, url_for, flash, make_response, abort, jsonify
+from flask import render_template, request, url_for, flash, make_response, abort, jsonify
 from caffe.proto import caffe_pb2
 import caffe.draw
 
 import digits
-from digits import utils
 from digits.webapp import app, scheduler, autodoc
-from forms import ModelForm
 import images.views
 import images as model_images
 
