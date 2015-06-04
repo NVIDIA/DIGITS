@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import time
 import unittest
+import itertools
 
 from gevent import monkey
 monkey.patch_all()
@@ -16,6 +17,8 @@ from urlparse import urlparse
 from cStringIO import StringIO
 
 import webapp
+from config import config_value
+import device_query
 
 
 DUMMY_IMAGE_DIM = 10
@@ -560,6 +563,46 @@ class TestModelCreation(WebappBaseTest):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']) == 2, 'should take 2 snapshots'
+
+    @unittest.skipIf(
+            not config_value('gpu_list'),
+            'no GPUs selected')
+    @unittest.skipIf(
+            not config_value('caffe_root')['cuda_enabled'],
+            'CUDA disabled')
+    @unittest.skipIf(
+            config_value('caffe_root')['multi_gpu'],
+            'multi-GPU enabled')
+    def test_select_gpu(self):
+        """model - select GPU"""
+        for index in config_value('gpu_list').split(','):
+            yield self.check_select_gpu, index
+
+    def check_select_gpu(self, gpu_index):
+        job_id = self.create_quick_model(self.dataset_id, select_gpu=gpu_index)
+        assert self.delete_model(job_id) == 200, 'delete failed'
+
+    @unittest.skipIf(
+            not config_value('gpu_list'),
+            'no GPUs selected')
+    @unittest.skipIf(
+            not config_value('caffe_root')['cuda_enabled'],
+            'CUDA disabled')
+    @unittest.skipIf(
+            not config_value('caffe_root')['multi_gpu'],
+            'multi-GPU disabled')
+    def test_select_gpus(self):
+        """model - select GPUs"""
+        # test all possible combinations
+        gpu_list = config_value('gpu_list').split(',')
+        for i in xrange(len(gpu_list)):
+            for combination in itertools.combinations(gpu_list, i+1):
+                yield self.check_select_gpus, combination
+
+    def check_select_gpus(self, gpu_list):
+        job_id = self.create_quick_model(self.dataset_id,
+                select_gpus_list=','.join(gpu_list))
+        assert self.delete_model(job_id) == 200, 'delete failed'
 
 class TestCreatedModel(WebappBaseTest):
     """
