@@ -11,6 +11,9 @@ import digits.scheduler
 
 app = Flask(__name__)
 app.config['DEBUG'] = False
+# Disable CSRF checking in WTForms
+app.config['WTF_CSRF_ENABLED'] = False
+# This is still necessary for SocketIO
 app.config['SECRET_KEY'] = config_value('secret_key')
 app.url_map.redirect_defaults = False
 socketio = SocketIO(app)

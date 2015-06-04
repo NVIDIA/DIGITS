@@ -13,9 +13,6 @@ from digits.device_query import get_device
 
 class ModelForm(Form):
 
-    def __init__(self, csrf_enabled=False, *args, **kwargs):
-        super(ModelForm, self).__init__(csrf_enabled=csrf_enabled, *args, **kwargs)
-
     ### Methods
 
     def selection_exists_in_choices(form, field):
