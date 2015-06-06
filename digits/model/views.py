@@ -15,46 +15,34 @@ import caffe.draw
 
 import digits
 from digits.webapp import app, scheduler, autodoc
+from digits.utils.routing import request_wants_json
 import images.views
 import images as model_images
 
 NAMESPACE = '/models/'
 
+@app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])
-@autodoc('models')
+@autodoc(['models', 'api'])
 def models_show(job_id):
     """
     Show a ModelJob
+
+    Returns JSON when requested:
+        {id, name, directory, status, snapshots: [epoch,epoch,...]}
     """
     job = scheduler.get_job(job_id)
 
     if job is None:
         abort(404)
 
-    if isinstance(job, model_images.ImageClassificationModelJob):
-        return model_images.classification.views.show(job)
+    if request_wants_json():
+        return jsonify(job.json_dict(True))
     else:
-        abort(404)
-
-@app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
-@autodoc('models')
-def models_show_json(job_id):
-    """
-    Return a JSON representation of a ModelJob
-    """
-    job = scheduler.get_job(job_id)
-
-    if job is None:
-        abort(404)
-
-    return jsonify({
-        'id': job.id(),
-        'name': job.name(),
-        'status': job.status.name,
-        'snapshots': [s[1] for s in job.train_task().snapshots],
-        })
-
-### Other routes
+        if isinstance(job, model_images.ImageClassificationModelJob):
+            return model_images.classification.views.show(job)
+        else:
+            abort(404)
 
 @app.route(NAMESPACE + 'customize', methods=['POST'])
 @autodoc('models')

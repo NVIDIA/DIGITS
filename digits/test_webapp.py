@@ -484,7 +484,7 @@ class TestCreatedDataset(WebappBaseTest):
         assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'dataset creation failed'
 
     def test_index_json(self):
-        """index.json"""
+        """created dataset - index.json"""
         rv = self.app.get('/index.json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
@@ -494,6 +494,13 @@ class TestCreatedDataset(WebappBaseTest):
                 found = True
                 break
         assert found, 'dataset not found in list'
+
+    def test_dataset_json(self):
+        """created dataset - json"""
+        rv = self.app.get('/datasets/%s.json' % self.dataset_id)
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert content['id'] == self.dataset_id, 'expected different job_id'
 
 class TestModelCreation(WebappBaseTest):
     """
@@ -622,12 +629,12 @@ class TestCreatedModel(WebappBaseTest):
         assert rv.status_code == 200, 'download "%s" failed with %s' % (url, rv.status_code)
 
     def test_download(self):
-        """download model"""
+        """created model - download"""
         for extension in ['tar', 'zip', 'tar.gz', 'tar.bz2']:
             yield self.download_model, extension
 
     def test_index_json(self):
-        """index.json"""
+        """created model - index.json"""
         rv = self.app.get('/index.json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
@@ -638,8 +645,8 @@ class TestCreatedModel(WebappBaseTest):
                 break
         assert found, 'model not found in list'
 
-    def test_job_json(self):
-        """job.json"""
+    def test_model_json(self):
+        """created model - json"""
         rv = self.app.get('/models/%s.json' % self.model_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
@@ -647,7 +654,7 @@ class TestCreatedModel(WebappBaseTest):
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
     def test_classify_one(self):
-        """classify one image"""
+        """created model - classify one"""
         image_path = self.images['green'][0]
         image_path = os.path.join(self.data_path, image_path)
         with open(image_path) as infile:
@@ -669,7 +676,7 @@ class TestCreatedModel(WebappBaseTest):
         assert predictions[0][1] == 'green', 'image misclassified'
 
     def test_classify_many(self):
-        """classify many images"""
+        """created model - classify many"""
         textfile_images = ''
         label_id = 0
         for (label, images) in self.images.iteritems():
@@ -691,7 +698,7 @@ class TestCreatedModel(WebappBaseTest):
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
 
     def test_top_n(self):
-        """top n predictions"""
+        """created model - top n predictions"""
         textfile_images = ''
         label_id = 0
         for (label, images) in self.images.iteritems():
@@ -716,7 +723,7 @@ class TestCreatedModel(WebappBaseTest):
             assert key in rv.data, '"%s" not found in the response'
 
     def test_retrain(self):
-        """retrain model"""
+        """created model - retrain"""
         options = {}
         options['previous_networks'] = self.model_id
         rv = self.app.get('/models/%s.json' % self.model_id)

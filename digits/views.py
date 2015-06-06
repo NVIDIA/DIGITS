@@ -13,64 +13,62 @@ from webapp import app, socketio, scheduler, autodoc
 import dataset.views
 import model.views
 from digits.utils import errors
+from digits.utils.routing import request_wants_json
 
-@app.route('/')
-@autodoc('home')
+@app.route('/index.json', methods=['GET'])
+@app.route('/', methods=['GET'])
+@autodoc(['home', 'api'])
 def home():
     """
     DIGITS home page
-    Displays all datasets and models on the server and their status
-    """
-    new_dataset_options = [
-            ('Images', [
-                {
-                    'title': 'Classification',
-                    'id': 'image-classification',
-                    'url': url_for('image_classification_dataset_new'),
-                    },
-                ])
-            ]
-    new_model_options = [
-            ('Images', [
-                {
-                    'title': 'Classification',
-                    'id': 'image-classification',
-                    'url': url_for('image_classification_model_new'),
-                    },
-                ])
-            ]
-    return render_template('home.html',
-            new_dataset_options = new_dataset_options,
-            running_datasets    = get_job_list(dataset.DatasetJob, True),
-            completed_datasets  = get_job_list(dataset.DatasetJob, False),
-            new_model_options   = new_model_options,
-            running_models      = get_job_list(model.ModelJob, True),
-            completed_models    = get_job_list(model.ModelJob, False),
-            )
-
-@app.route('/index.json')
-@autodoc('home')
-def home_json():
-    """
-    JSON version of the DIGITS home page
     Returns information about each job on the server
+
+    Returns JSON when requested:
+        {
+            datasets: [{id, name, status},...],
+            models: [{id, name, status},...]
+        }
     """
-    datasets = get_job_list(dataset.DatasetJob, True) + get_job_list(dataset.DatasetJob, False)
-    datasets = [{
-        'name': j.name(),
-        'id': j.id(),
-        'status': j.status.name,
-        } for j in datasets]
-    models = get_job_list(model.ModelJob, True) + get_job_list(model.ModelJob, False)
-    models = [{
-        'name': j.name(),
-        'id': j.id(),
-        'status': j.status.name,
-        } for j in models]
-    return jsonify({
-        'datasets': datasets,
-        'models': models,
-        })
+    running_datasets    = get_job_list(dataset.DatasetJob, True)
+    completed_datasets  = get_job_list(dataset.DatasetJob, False)
+    running_models      = get_job_list(model.ModelJob, True)
+    completed_models    = get_job_list(model.ModelJob, False)
+
+    if request_wants_json():
+        return jsonify({
+            'datasets': [j.json_dict()
+                for j in running_datasets + completed_datasets],
+            'models': [j.json_dict()
+                for j in running_models + completed_models],
+            })
+    else:
+        new_dataset_options = [
+                ('Images', [
+                    {
+                        'title': 'Classification',
+                        'id': 'image-classification',
+                        'url': url_for('image_classification_dataset_new'),
+                        },
+                    ])
+                ]
+        new_model_options = [
+                ('Images', [
+                    {
+                        'title': 'Classification',
+                        'id': 'image-classification',
+                        'url': url_for('image_classification_model_new'),
+                        },
+                    ])
+                ]
+
+        return render_template('home.html',
+                new_dataset_options = new_dataset_options,
+                running_datasets    = running_datasets,
+                completed_datasets  = completed_datasets,
+                new_model_options   = new_model_options,
+                running_models      = running_models,
+                completed_models    = completed_models,
+                )
 
 def get_job_list(cls, running):
     return sorted(
@@ -172,17 +170,26 @@ def abort_job(job_id):
 def handle_exception(e, status_code=500):
     if 'DIGITS_MODE_TEST' in os.environ:
         raise e
-    title = type(e).__name__
-    message = str(e)
+    error_type = type(e).__name__
+    message = e.message
     trace = None
     if app.debug:
         trace = traceback.format_exc()
-        #trace = '<br>\n'.join(trace.split('\n'))
-    return render_template('500.html',
-            title   = title,
-            message = message,
-            trace   = trace,
-            ), status_code
+
+    if request_wants_json():
+        j = {
+                'error': message,
+                'error_type': error_type,
+                }
+        if trace is not None:
+            j['trace'] = trace.split('\n')
+        return jsonify(j), status_code
+    else:
+        return render_template('500.html',
+                title   = error_type,
+                message = message,
+                trace   = trace,
+                ), status_code
 
 ### File serving
 

@@ -76,6 +76,21 @@ class Job(StatusCls):
         """
         self.__dict__ = state
 
+    def json_dict(self, detailed=False):
+        """
+        Returns a dict used for a JSON representation
+        """
+        d = {
+                'id': self.id(),
+                'name': self.name(),
+                'status': self.status.name,
+                }
+        if detailed:
+            d.update({
+                'directory': self.dir(),
+                })
+        return d
+
     def id(self):
         """getter for _id"""
         return self._id

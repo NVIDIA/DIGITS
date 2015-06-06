@@ -6,13 +6,14 @@ import tempfile
 import random
 
 import numpy as np
-from flask import render_template, request, redirect, url_for, abort
+from flask import render_template, request, redirect, url_for, abort, jsonify
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 
 import digits
 from digits.config import config_value
 from digits import utils
+from digits.utils.routing import request_wants_json
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
 from digits.model import tasks
@@ -37,16 +38,19 @@ def image_classification_model_new():
     prev_network_snapshots = get_previous_network_snapshots()
 
     return render_template('models/images/classification/new.html',
-            form        = form,
-            previous_network_snapshots  = prev_network_snapshots,
-            multi_gpu   = config_value('caffe_root')['multi_gpu'],
+            form = form,
+            previous_network_snapshots = prev_network_snapshots,
+            multi_gpu = config_value('caffe_root')['multi_gpu'],
             )
 
+@app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
-@autodoc('models')
+@autodoc(['models', 'api'])
 def image_classification_model_create():
     """
     Create a new ImageClassificationModelJob
+
+    Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
@@ -57,15 +61,18 @@ def image_classification_model_create():
     prev_network_snapshots = get_previous_network_snapshots()
 
     if not form.validate_on_submit():
-        return render_template('models/images/classification/new.html',
-                form        = form,
-                previous_network_snapshots=prev_network_snapshots,
-                multi_gpu   = config_value('caffe_root')['multi_gpu'],
-                ), 400
+        if request_wants_json():
+            return jsonify({'errors': form.errors}), 400
+        else:
+            return render_template('models/images/classification/new.html',
+                    form = form,
+                    previous_network_snapshots = prev_network_snapshots,
+                    multi_gpu = config_value('caffe_root')['multi_gpu'],
+                    ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
-        return 'Unknown dataset job_id "%s"' % form.dataset.data, 500
+        raise ValueError('Unknown dataset job_id "%s"' % form.dataset.data)
 
     job = None
     try:
@@ -89,11 +96,11 @@ def image_classification_model_create():
                         found = True
                         break
             if not found:
-                raise Exception('Unknown standard model "%s"' % form.standard_networks.data)
+                raise ValueError('Unknown standard model "%s"' % form.standard_networks.data)
         elif form.method.data == 'previous':
             old_job = scheduler.get_job(form.previous_networks.data)
             if not old_job:
-                raise Exception('Job not found: %s' % form.previous_networks.data)
+                raise ValueError('Job not found: %s' % form.previous_networks.data)
 
             network.CopyFrom(old_job.train_task().network)
             # Rename the final layer
@@ -112,16 +119,17 @@ def image_classification_model_create():
                                 break
 
                         if pretrained_model is None:
-                            raise Exception("For the job %s, selected pretrained_model for epoch %d is invalid!" % (form.previous_networks.data, epoch))
+                            raise ValueError("For the job %s, selected pretrained_model for epoch %d is invalid!"
+                                    % (form.previous_networks.data, epoch))
                         if not (os.path.exists(pretrained_model)):
-                            raise Exception("Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
+                            raise ValueError("Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
                     break
 
         elif form.method.data == 'custom':
             text_format.Merge(form.custom_network.data, network)
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:
-            raise Exception('Unrecognized method: "%s"' % form.method.data)
+            raise ValueError('Unrecognized method: "%s"' % form.method.data)
 
         policy = {'policy': form.lr_policy.data}
         if form.lr_policy.data == 'fixed':
@@ -143,7 +151,7 @@ def image_classification_model_create():
             policy['stepsize'] = form.lr_sigmoid_step.data
             policy['gamma'] = form.lr_sigmoid_gamma.data
         else:
-            return 'Invalid policy', 404
+            raise ValueError('Invalid learning rate policy')
 
         if config_value('caffe_root')['multi_gpu']:
             if form.select_gpu_count.data:
@@ -174,7 +182,7 @@ def image_classification_model_create():
                     val_interval    = form.val_interval.data,
                     pretrained_model= pretrained_model,
                     crop_size       = form.crop_size.data,
-                    use_mean        = form.use_mean.data,
+                    use_mean        = bool(form.use_mean.data),
                     network         = network,
                     random_seed     = form.random_seed.data,
                     solver_type     = form.solver_type.data,
@@ -182,7 +190,10 @@ def image_classification_model_create():
                 )
 
         scheduler.add_job(job)
-        return redirect(url_for('models_show', job_id=job.id()))
+        if request_wants_json():
+            return jsonify(job.json_dict())
+        else:
+            return redirect(url_for('models_show', job_id=job.id()))
 
     except:
         if job:
