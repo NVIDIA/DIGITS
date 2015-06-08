@@ -4,7 +4,7 @@ import os
 import json
 import traceback
 
-from flask import render_template, redirect, session, url_for, abort, make_response, request, jsonify
+import flask
 from flask.ext.socketio import join_room, leave_room
 
 from . import dataset, model
@@ -35,7 +35,7 @@ def home():
     completed_models    = get_job_list(model.ModelJob, False)
 
     if request_wants_json():
-        return jsonify({
+        return flask.jsonify({
             'datasets': [j.json_dict()
                 for j in running_datasets + completed_datasets],
             'models': [j.json_dict()
@@ -47,7 +47,7 @@ def home():
                     {
                         'title': 'Classification',
                         'id': 'image-classification',
-                        'url': url_for('image_classification_dataset_new'),
+                        'url': flask.url_for('image_classification_dataset_new'),
                         },
                     ])
                 ]
@@ -56,12 +56,12 @@ def home():
                     {
                         'title': 'Classification',
                         'id': 'image-classification',
-                        'url': url_for('image_classification_model_new'),
+                        'url': flask.url_for('image_classification_model_new'),
                         },
                     ])
                 ]
 
-        return render_template('home.html',
+        return flask.render_template('home.html',
                 new_dataset_options = new_dataset_options,
                 running_datasets    = running_datasets,
                 completed_datasets  = completed_datasets,
@@ -89,14 +89,14 @@ def show_job(job_id):
     job = scheduler.get_job(job_id)
 
     if job is None:
-        abort(404)
+        flask.abort(404)
 
     if isinstance(job, dataset.DatasetJob):
-        return redirect(url_for('datasets_show', job_id=job_id))
+        return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
     if isinstance(job, model.ModelJob):
-        return redirect(url_for('models_show', job_id=job_id))
+        return flask.redirect(flask.url_for('models_show', job_id=job_id))
     else:
-        abort(404)
+        flask.abort(404)
 
 @app.route('/jobs/<job_id>', methods=['PUT'])
 @autodoc('jobs')
@@ -107,10 +107,10 @@ def edit_job(job_id):
     job = scheduler.get_job(job_id)
 
     if job is None:
-        abort(404)
+        flask.abort(404)
 
     old_name = job.name()
-    job._name = request.form['job_name']
+    job._name = flask.request.form['job_name']
     return 'Changed job name from "%s" to "%s"' % (old_name, job.name())
 
 @app.route('/datasets/<job_id>/status', methods=['GET'])
@@ -171,21 +171,21 @@ def handle_exception(e, status_code=500):
     if 'DIGITS_MODE_TEST' in os.environ:
         raise e
     error_type = type(e).__name__
-    message = e.message
+    message = str(e)
     trace = None
     if app.debug:
         trace = traceback.format_exc()
 
     if request_wants_json():
-        j = {
-                'error': message,
-                'error_type': error_type,
+        details = {
+                'message': message,
+                'type': error_type,
                 }
         if trace is not None:
-            j['trace'] = trace.split('\n')
-        return jsonify(j), status_code
+            details['trace'] = trace.split('\n')
+        return flask.jsonify({'error': details}), status_code
     else:
-        return render_template('500.html',
+        return flask.render_template('500.html',
                 title   = error_type,
                 message = message,
                 trace   = trace,
@@ -207,15 +207,15 @@ def serve_file(path):
 
     # Don't allow path manipulation
     if not os.path.commonprefix([path, jobs_dir]).startswith(jobs_dir):
-        abort(403)
+        flask.abort(403)
 
     if not os.path.exists(path):
-        abort(404)
+        flask.abort(404)
     if os.path.isdir(path):
-        abort(403)
+        flask.abort(403)
 
     with open(path, 'r') as infile:
-        response = make_response(infile.read())
+        response = flask.make_response(infile.read())
         response.headers["Content-Disposition"] = "attachment; filename=%s" % os.path.basename(path)
         return response
 
@@ -259,16 +259,16 @@ def on_join(data):
     """
     room = data['room']
     join_room(room)
-    session['room'] = room
+    flask.session['room'] = room
 
 @socketio.on('leave', namespace='/jobs')
 def on_leave():
     """
     Somebody left a room
     """
-    if 'room' in session:
-        room = session['room']
-        del session['room']
+    if 'room' in flask.session:
+        room = flask.session['room']
+        del flask.session['room']
         #print '>>> Somebody left room %s' % room
         leave_room(room)
 

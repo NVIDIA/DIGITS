@@ -6,7 +6,7 @@ import os.path
 import pickle
 import shutil
 
-from flask import render_template
+import flask
 
 from digits.config import config_value
 from status import Status, StatusCls
@@ -152,7 +152,7 @@ class Job(StatusCls):
                 'running': self.status.is_running(),
                 }
         with app.app_context():
-            message['html'] = render_template('status_updates.html', updates=self.status_history)
+            message['html'] = flask.render_template('status_updates.html', updates=self.status_history)
 
         socketio.emit('job update',
                 message,

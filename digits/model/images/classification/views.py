@@ -5,8 +5,8 @@ import re
 import tempfile
 import random
 
+import flask
 import numpy as np
-from flask import render_template, request, redirect, url_for, abort, jsonify
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 
@@ -37,7 +37,7 @@ def image_classification_model_new():
 
     prev_network_snapshots = get_previous_network_snapshots()
 
-    return render_template('models/images/classification/new.html',
+    return flask.render_template('models/images/classification/new.html',
             form = form,
             previous_network_snapshots = prev_network_snapshots,
             multi_gpu = config_value('caffe_root')['multi_gpu'],
@@ -62,9 +62,9 @@ def image_classification_model_create():
 
     if not form.validate_on_submit():
         if request_wants_json():
-            return jsonify({'errors': form.errors}), 400
+            return flask.jsonify({'errors': form.errors}), 400
         else:
-            return render_template('models/images/classification/new.html',
+            return flask.render_template('models/images/classification/new.html',
                     form = form,
                     previous_network_snapshots = prev_network_snapshots,
                     multi_gpu = config_value('caffe_root')['multi_gpu'],
@@ -111,7 +111,7 @@ def image_classification_model_create():
 
             for choice in form.previous_networks.choices:
                 if choice[0] == form.previous_networks.data:
-                    epoch = float(request.form['%s-snapshot' % form.previous_networks.data])
+                    epoch = float(flask.request.form['%s-snapshot' % form.previous_networks.data])
                     if epoch != 0:
                         for filename, e in old_job.train_task().snapshots:
                             if e == epoch:
@@ -191,9 +191,9 @@ def image_classification_model_create():
 
         scheduler.add_job(job)
         if request_wants_json():
-            return jsonify(job.json_dict())
+            return flask.jsonify(job.json_dict())
         else:
-            return redirect(url_for('models_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('models_show', job_id=job.id()))
 
     except:
         if job:
@@ -204,7 +204,7 @@ def show(job):
     """
     Called from digits.model.views.models_show()
     """
-    return render_template('models/images/classification/show.html', job=job)
+    return flask.render_template('models/images/classification/show.html', job=job)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
 @autodoc('models')
@@ -212,11 +212,11 @@ def image_classification_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
     """
-    job = scheduler.get_job(request.args['job_id'])
+    job = scheduler.get_job(flask.request.args['job_id'])
     if not job:
-        abort(404)
+        flask.abort(404)
 
-    return render_template('models/images/classification/large_graph.html', job=job)
+    return flask.render_template('models/images/classification/large_graph.html', job=job)
 
 @app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
@@ -227,19 +227,19 @@ def image_classification_model_classify_one():
 
     Returns JSON when requested: {predictions: {category: confidence,...}}
     """
-    job = scheduler.get_job(request.args['job_id'])
+    job = scheduler.get_job(flask.request.args['job_id'])
     if not job:
-        abort(404)
+        flask.abort(404)
 
     image = None
-    if 'image_url' in request.form and request.form['image_url']:
-        image = utils.image.load_image(request.form['image_url'])
-    elif 'image_file' in request.files and request.files['image_file']:
+    if 'image_url' in flask.request.form and flask.request.form['image_url']:
+        image = utils.image.load_image(flask.request.form['image_url'])
+    elif 'image_file' in flask.request.files and flask.request.files['image_file']:
         with tempfile.NamedTemporaryFile() as outfile:
-            request.files['image_file'].save(outfile.name)
+            flask.request.files['image_file'].save(outfile.name)
             image = utils.image.load_image(outfile.name)
     else:
-        abort(400)
+        flask.abort(400)
 
     # resize image
     db_task = job.train_task().dataset.train_db_task()
@@ -254,11 +254,11 @@ def image_classification_model_classify_one():
             )
 
     epoch = None
-    if 'snapshot_epoch' in request.form:
-        epoch = float(request.form['snapshot_epoch'])
+    if 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
 
     layers = 'none'
-    if 'show_visualizations' in request.form and request.form['show_visualizations']:
+    if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
         layers = 'all'
 
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
@@ -266,9 +266,9 @@ def image_classification_model_classify_one():
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
     if request_wants_json():
-        return jsonify({'predictions': predictions})
+        return flask.jsonify({'predictions': predictions})
     else:
-        return render_template('models/images/classification/classify_one.html',
+        return flask.render_template('models/images/classification/classify_one.html',
                 image_src       = utils.image.embed_image_html(image),
                 predictions     = predictions,
                 visualizations  = visualizations,
@@ -283,17 +283,17 @@ def image_classification_model_classify_many():
 
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
-    job = scheduler.get_job(request.args['job_id'])
+    job = scheduler.get_job(flask.request.args['job_id'])
     if not job:
-        abort(404)
+        flask.abort(404)
 
-    image_list = request.files['image_list']
+    image_list = flask.request.files['image_list']
     if not image_list:
         return 'File upload not found', 400
 
     epoch = None
-    if 'snapshot_epoch' in request.form:
-        epoch = float(request.form['snapshot_epoch'])
+    if 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
 
     paths = []
     images = []
@@ -344,9 +344,9 @@ def image_classification_model_classify_many():
 
     if request_wants_json():
         joined = dict(zip(paths, classifications))
-        return jsonify({'classifications': joined})
+        return flask.jsonify({'classifications': joined})
     else:
-        return render_template('models/images/classification/classify_many.html',
+        return flask.render_template('models/images/classification/classify_many.html',
                 paths=paths,
                 classifications=classifications,
                 )
@@ -357,23 +357,23 @@ def image_classification_model_top_n():
     """
     Classify many images and show the top N images per category by confidence
     """
-    job = scheduler.get_job(request.args['job_id'])
+    job = scheduler.get_job(flask.request.args['job_id'])
     if not job:
-        abort(404)
+        flask.abort(404)
 
-    image_list = request.files['image_list']
+    image_list = flask.request.files['image_list']
     if not image_list:
         return 'File upload not found', 400
 
     epoch = None
-    if 'snapshot_epoch' in request.form:
-        epoch = float(request.form['snapshot_epoch'])
-    if 'top_n' in request.form and request.form['top_n'].strip():
-        top_n = int(request.form['top_n'])
+    if 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+    if 'top_n' in flask.request.form and flask.request.form['top_n'].strip():
+        top_n = int(flask.request.form['top_n'])
     else:
         top_n = 9
-    if 'num_test_images' in request.form and request.form['num_test_images'].strip():
-        num_images = int(request.form['num_test_images'])
+    if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
+        num_images = int(flask.request.form['num_test_images'])
     else:
         num_images = None
 
@@ -429,7 +429,7 @@ def image_classification_model_top_n():
                     )
                 ))
 
-    return render_template('models/images/classification/top_n.html',
+    return flask.render_template('models/images/classification/top_n.html',
             job=job,
             results=results,
             )

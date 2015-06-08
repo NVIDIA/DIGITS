@@ -5,7 +5,7 @@ import os.path
 from collections import OrderedDict, namedtuple
 
 import gevent
-from flask import render_template
+import flask
 
 from digits import utils, device_query
 from digits.task import Task
@@ -179,7 +179,7 @@ class TrainTask(Task):
                 data.append(update)
 
             with app.app_context():
-                html = render_template('models/gpu_utilization.html',
+                html = flask.render_template('models/gpu_utilization.html',
                         data = data)
 
                 socketio.emit('task update',

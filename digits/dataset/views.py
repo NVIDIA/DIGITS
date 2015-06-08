@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-from flask import render_template, request, abort, jsonify
+import flask
 
 from digits.webapp import app, scheduler, autodoc
 from digits.utils.routing import request_wants_json
@@ -22,15 +22,15 @@ def datasets_show(job_id):
     job = scheduler.get_job(job_id)
 
     if job is None:
-        abort(404)
+        flask.abort(404)
 
     if request_wants_json():
-        return jsonify(job.json_dict(True))
+        return flask.jsonify(job.json_dict(True))
     else:
         if isinstance(job, dataset_images.ImageClassificationDatasetJob):
             return dataset_images.classification.views.show(job)
         else:
-            abort(404)
+            flask.abort(404)
 
 @app.route(NAMESPACE + 'summary', methods=['GET'])
 @autodoc('datasets')
@@ -38,11 +38,11 @@ def dataset_summary():
     """
     Return a short HTML summary of a DatasetJob
     """
-    job_id = request.args.get('job_id', '')
+    job_id = flask.request.args.get('job_id', '')
     if not job_id:
         return 'No job_id in request!'
 
     job = scheduler.get_job(job_id)
 
-    return render_template('datasets/summary.html', dataset=job)
+    return flask.render_template('datasets/summary.html', dataset=job)
 

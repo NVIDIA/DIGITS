@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-from flask import Flask
+import flask
 from flask.ext.socketio import SocketIO
 
 from digits import utils
@@ -9,7 +9,7 @@ import digits.scheduler
 
 ### Create Flask, Scheduler and SocketIO objects
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
 app.config['DEBUG'] = False
 # Disable CSRF checking in WTForms
 app.config['WTF_CSRF_ENABLED'] = False
