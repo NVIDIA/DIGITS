@@ -179,7 +179,7 @@ class ApiDocGenerator(DocGenerator):
         super(ApiDocGenerator, self).__init__(include_groups=['api'], *args, **kwargs)
 
     def filename(self):
-        return 'API.md'
+        return '../docs/API.md'
 
     def print_header(self):
         text = """
@@ -209,7 +209,7 @@ class FlaskRouteDocGenerator(DocGenerator):
         super(FlaskRouteDocGenerator, self).__init__(exclude_groups=['api'], *args, **kwargs)
 
     def filename(self):
-        return 'FlaskRoutes.md'
+        return '../docs/FlaskRoutes.md'
 
     def print_header(self):
         text = """
