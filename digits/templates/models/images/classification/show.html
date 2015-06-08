@@ -133,6 +133,14 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             class="btn btn-info">
                             Download Model
                         </button>
+                        <!-- Computes a performance evaluation -->
+                        <button
+                            formaction="{{url_for('image_classification_evaluation_create', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-info">
+                            Evaluate performance
+                        </button>
                     </div>
                 </div>
                 {% if task.get_framework_id() in framework_ids %}

@@ -1,0 +1,148 @@
+{% extends "job.html" %}
+
+{% macro print_accuracy_task(task) %}
+<div class="panel-heading">
+    <h2>Performances on {{ task.db_task.db_name }}</h2>
+</div>
+<div class="panel-body">
+    <h3>Accuracy / recall curve</h3>
+    <div id="avgacc-graph-{{task.html_id()}}"
+        class="avgacc-graph"
+        style="height:300px;width:100%;background:white;display:none;">
+    </div>
+    {% if task.avg_accuracy_graph_data() %}
+    <script>
+    drawAverageAccuracyGraph(
+        {% autoescape false %}
+            {{task.avg_accuracy_graph_data()}}
+        {% endautoescape %}, "{{ task.html_id() }}");
+    </script>
+    {% endif %}
+    <h3>Confusion matrix</h3>
+    <div id="confusion-matrix-{{task.html_id()}}" class="confusion-matrix" style="display:none;"></div>
+
+    {% if task.confusion_matrix_data() %}
+    <script>
+        drawConfusionMatrix({% autoescape false %}{{task.confusion_matrix_data()}}{% endautoescape %}, "{{ task.html_id() }}");
+    </script>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{% block job_content %}
+<script>
+function drawConfusionMatrix(data, taskId) {
+    var datas = data['results'].sort(function (a,b) {
+        return b.acc > a.acc;
+    });
+
+    $("#confusion-matrix-"+taskId).show().empty();
+
+    datas.forEach(function (o) {
+        var curDiv = $('<div class="row"></div>');
+        curDiv.append('<div class="col-sm-4"><h4>' + o.label + ' - ' + (o.acc*100).toFixed(2) + '%</h4></div>');
+        $("#confusion-matrix-"+taskId).append(curDiv);
+        o.classes.forEach(function (c) {
+                $("#confusion-matrix-"+taskId).append('<div class="row">' +
+                    '<div class="col-sm-2 text-right">' + (c.acc*100).toFixed(2) + '% </div>' +
+                    '<div class="col-sm-1 text-center">&nbsp; - &nbsp;</div>' +
+                    '<div class="col-sm-2 text-left">' + c.label + '</div>' +
+                    '</div>'
+                    );
+        });
+        $("#confusion-matrix-"+taskId).append('<br/>');
+    });
+}
+
+function drawAverageAccuracyGraph(data, taskId) {
+    $("#avgacc-graph-"+taskId).show();
+
+    c3.generate({
+        "bindto": '#avgacc-graph-'+taskId,
+        "data": data,
+        "axis": {
+            "x": {
+                "show": true,
+                "tick": {
+                    format: function (x) { return  x.toFixed(2); }
+                },
+                "label": {
+                    "text": "Output threshold",
+                    "position": "outer-left"
+                }
+
+            },
+            "y": {
+                "show": true,
+                "label": {
+                  "text": 'Accuracy (%)',
+                  "position": 'outer-middle'
+                },
+                "tick": {
+                    format: function (x) { return  100*x.toFixed(2); }
+                },
+
+            },
+            "y2": {
+                "show": true,
+                "label": {
+                  "text": 'Recall (%)',
+                  "position": 'outer-middle'
+                },
+                "tick": {
+                    format: function (x) { return  100*x.toFixed(2); }
+                },
+            }
+        }
+     });
+}
+
+</script>
+
+{% for task in job.accuracy_tasks() %}
+    {% set train_task = job.model_job.train_task() %}
+    {% set dataset = train_task.dataset %}
+    {% if loop.first %}
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="well">
+                <h4 class='text-center'>Trained model</h4>
+                <h4>
+                    <a href="{{url_for('show_job', job_id=job.model_job.id())}}" target="_blank">
+                        {{job.model_job.name()}}
+                    </a>
+                </h4>
+                <dl>
+                    <dt>Epoch</dt>
+                    <dd>{{ job.model_epoch }} </dd>
+                    <dt>File</dt>
+                    <dd>{{task.snapshot}}</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="well">
+                <h4 class='text-center'>Dataset</h4>
+                {% if dataset %}
+                {% with dataset = dataset %}
+                {% include 'datasets/images/classification/summary.html' %}
+                {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-sm-12">
+            <div id="{{task.html_id()}}" class="panel panel-default">
+                {{ print_accuracy_task(task) }}
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+
+{% endblock %}
+

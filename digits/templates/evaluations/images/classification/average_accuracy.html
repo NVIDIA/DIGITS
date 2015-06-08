@@ -1,0 +1,67 @@
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "job.html" %}
+
+{% block job_content %}
+
+{% set task = job.accuracy_task() %}
+
+
+<script>
+function drawAverageAccuracyGraph(data) {
+    $(".avgacc-graph").show();
+    c3.generate($.extend({
+        bindto: '.avgacc-graph',
+        size: {height: 300},
+        axis: {
+            x: {
+                label: {
+                    text: 'Threshold',
+                    position: 'outer-center',
+                },
+                tick: {
+                    // 3 sig-digs
+                    format: function(x) { return Math.round(x*1000)/1000; },
+                    fit: false,
+                },
+                min: 0,
+                padding: {left: 0},
+            },
+            y: {
+                label: {
+                    text: 'Accuracy',
+                    position: 'outer-middle',
+                },
+                min: 0,
+                padding: {bottom: 0},
+            },
+        },
+        grid: {x: {show: true} },
+        legend: {show: false},
+    },
+    {data: data}
+    ));
+}
+
+</script>
+
+
+<h1>{{ task.snapshot }}</h1>
+<div class="page-header">
+    <h1>ACCURACY</h1>
+</div>
+
+
+<div class="avgacc-graph" style="height:300px;width:100%;background:white;display:none;"></div>
+{% set avg_accuracy_graph_data = job.train_task().avg_accuracy_graph_data() %}
+{% if avg_accuracy_graph_data %}
+<script>
+    drawAverageAccuracyGraph({% autoescape false %}{{avg_accuracy_graph_data}}{% endautoescape %});
+</script>
+{% endif %}
+
+
+{{ job.id() }}
+
+
+{% endblock %}

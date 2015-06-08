@@ -37,8 +37,9 @@ class CaffeOption(config_option.FrameworkOption):
                 suggestions.append(prompt.Suggestion(
                     self.validate(d), 'R',
                     desc='CAFFE_ROOT', default=True))
-            except config_option.BadValue:
-                pass
+            except config_option.BadValue as e:
+                print 'CAFFE_ROOT "%s" is invalid:' % d
+                print '\t%s' % e
         if 'CAFFE_HOME' in os.environ:
             d = os.environ['CAFFE_HOME']
             try:
@@ -48,8 +49,9 @@ class CaffeOption(config_option.FrameworkOption):
                 suggestions.append(prompt.Suggestion(
                     self.validate(d), 'H',
                     desc='CAFFE_HOME', default=default))
-            except config_option.BadValue:
-                pass
+            except config_option.BadValue as e:
+                print 'CAFFE_HOME "%s" is invalid:' % d
+                print '\t%s' % e
         suggestions.append(prompt.Suggestion('<PATHS>', 'P',
             desc='PATH/PYTHONPATH', default=True))
         return suggestions
@@ -66,8 +68,6 @@ class CaffeOption(config_option.FrameworkOption):
         if value == '<PATHS>':
             # Find the executable
             executable = cls.find_executable('caffe')
-            if not executable:
-                executable = cls.find_executable('caffe.exe')
             if not executable:
                 raise config_option.BadValue('caffe binary not found in PATH')
             cls.validate_version(executable)
@@ -202,9 +202,7 @@ class CaffeOption(config_option.FrameworkOption):
             self._config_dict_value = None
         else:
             if value == '<PATHS>':
-                executable = self.find_executable('caffe')
-                if not executable:
-                    executable = self.find_executable('caffe.exe')
+                executable = 'caffe'
             else:
                 executable = os.path.join(value, 'build', 'tools', 'caffe')
 
@@ -229,17 +227,11 @@ class CaffeOption(config_option.FrameworkOption):
         if self._config_file_value:
             # Suppress GLOG output for python bindings
             GLOG_minloglevel = os.environ.pop('GLOG_minloglevel', None)
-            # Show only "ERROR" and "FATAL"
-            os.environ['GLOG_minloglevel'] = '2'
+            os.environ['GLOG_minloglevel'] = '5'
 
             if self._config_file_value != '<PATHS>':
                 # Add caffe/python to PATH
-                p = os.path.join(self._config_file_value, 'python')
-                sys.path.insert(0, p)
-                # Add caffe/python to PYTHONPATH
-                #   so that build/tools/caffe is aware of python layers there
-                os.environ['PYTHONPATH'] = '%s:%s' % (p, os.environ.get('PYTHONPATH'))
-
+                sys.path.insert(0, os.path.join(self._config_file_value, 'python'))
             try:
                 import caffe
             except ImportError:
@@ -255,5 +247,4 @@ class CaffeOption(config_option.FrameworkOption):
                 del os.environ['GLOG_minloglevel']
             else:
                 os.environ['GLOG_minloglevel'] = GLOG_minloglevel
-
 

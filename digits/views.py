@@ -11,9 +11,10 @@ import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
 import digits
-from . import dataset, model
+from . import dataset, model, evaluation
 from config import config_value
 from webapp import app, socketio, scheduler, autodoc
+import evaluation.views
 import dataset.views
 import model.views
 from digits.utils import errors
@@ -92,6 +93,30 @@ def home():
                 remaining_gpu_count = sum(r.remaining() for r in scheduler.resources['gpus']),
                 )
 
+    datasets = get_job_list(dataset.DatasetJob, True) + get_job_list(dataset.DatasetJob, False)
+    datasets = [{
+        'name': j.name(),
+        'id': j.id(),
+        'status': j.status.name,
+        } for j in datasets]
+    models = get_job_list(model.ModelJob, True) + get_job_list(model.ModelJob, False)
+    models = [{
+        'name': j.name(),
+        'id': j.id(),
+        'status': j.status.name,
+        } for j in models]
+    evaluations = get_job_list(evaluation.EvaluationJob, True) + get_job_list(evaluation.EvaluationJob, False)
+    evaluations = [{
+        'name': j.name(),
+        'id': j.id(),
+        'status': j.status.name,
+        } for j in evaluations]
+    return jsonify({
+        'datasets': datasets,
+        'models': models,
+        'evaluations': evaluations,
+        })
+
 def get_job_list(cls, running):
     return sorted(
             [j for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running],
@@ -116,6 +141,8 @@ def show_job(job_id):
         return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
     if isinstance(job, model.ModelJob):
         return flask.redirect(flask.url_for('models_show', job_id=job_id))
+    if isinstance(job, evaluation.EvaluationJob):
+        return flask.redirect(flask.url_for('evaluations_show', job_id=job_id))
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
@@ -149,6 +176,7 @@ def edit_job(job_id):
 
 @app.route('/datasets/<job_id>/status', methods=['GET'])
 @app.route('/models/<job_id>/status', methods=['GET'])
+@app.route('/evaluations/<job_id>/status', methods=['GET'])
 @app.route('/jobs/<job_id>/status', methods=['GET'])
 @autodoc('jobs')
 def job_status(job_id):
@@ -183,6 +211,7 @@ def job_management():
 
 @app.route('/datasets/<job_id>', methods=['DELETE'])
 @app.route('/models/<job_id>', methods=['DELETE'])
+@app.route('/evaluations/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])
 @autodoc('jobs')
 def delete_job(job_id):
@@ -202,6 +231,7 @@ def delete_job(job_id):
         raise werkzeug.exceptions.Forbidden(str(e))
 
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
+@app.route('/evaluations/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
 @app.route('/jobs/<job_id>/abort', methods=['POST'])
 @autodoc('jobs')

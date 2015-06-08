@@ -1,0 +1,2 @@
+from accuracy import AccuracyTask
+from caffe_accuracy import CaffeAccuracyTask
