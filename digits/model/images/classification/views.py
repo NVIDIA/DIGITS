@@ -218,11 +218,14 @@ def image_classification_model_large_graph():
 
     return render_template('models/images/classification/large_graph.html', job=job)
 
-@app.route(NAMESPACE + '/classify_one', methods=['POST'])
-@autodoc('models')
+@app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
+@app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
+@autodoc(['models', 'api'])
 def image_classification_model_classify_one():
     """
-    Classify one image and return the predictions, weights and activations
+    Classify one image and return the top 5 classifications
+
+    Returns JSON when requested: {predictions: {category: confidence,...}}
     """
     job = scheduler.get_job(request.args['job_id'])
     if not job:
@@ -236,7 +239,7 @@ def image_classification_model_classify_one():
             request.files['image_file'].save(outfile.name)
             image = utils.image.load_image(outfile.name)
     else:
-        return 'You must select an image to classify', 400
+        abort(400)
 
     # resize image
     db_task = job.train_task().dataset.train_db_task()
@@ -262,17 +265,23 @@ def image_classification_model_classify_one():
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
-    return render_template('models/images/classification/classify_one.html',
-            image_src       = utils.image.embed_image_html(image),
-            predictions     = predictions,
-            visualizations  = visualizations,
-            )
+    if request_wants_json():
+        return jsonify({'predictions': predictions})
+    else:
+        return render_template('models/images/classification/classify_one.html',
+                image_src       = utils.image.embed_image_html(image),
+                predictions     = predictions,
+                visualizations  = visualizations,
+                )
 
-@app.route(NAMESPACE + '/classify_many', methods=['POST'])
-@autodoc('models')
+@app.route(NAMESPACE + '/classify_many.json', methods=['POST'])
+@app.route(NAMESPACE + '/classify_many', methods=['POST', 'GET'])
+@autodoc(['models', 'api'])
 def image_classification_model_classify_many():
     """
     Classify many images and return the top 5 classifications for each
+
+    Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
     job = scheduler.get_job(request.args['job_id'])
     if not job:
@@ -333,10 +342,14 @@ def image_classification_model_classify_many():
             result.append((labels[i], round(100.0*scores[image_index, i],2)))
         classifications.append(result)
 
-    return render_template('models/images/classification/classify_many.html',
-            paths=paths,
-            classifications=classifications,
-            )
+    if request_wants_json():
+        joined = dict(zip(paths, classifications))
+        return jsonify({'classifications': joined})
+    else:
+        return render_template('models/images/classification/classify_many.html',
+                paths=paths,
+                classifications=classifications,
+                )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
 @autodoc('models')
