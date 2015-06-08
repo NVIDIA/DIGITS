@@ -48,13 +48,13 @@ class DocGenerator(object):
                 if g not in first_groups + hidden_groups]
         self._groups = first_groups + other_groups
 
-    def generate(self):
+    def generate(self, filename):
         """
         Writes the documentation to file
         """
         with open(os.path.join(
                     os.path.dirname(__file__),
-                    self.filename()), 'w') as self._handle:
+                    filename), 'w') as self._handle:
             groups = []
             for group in self._groups:
                 if (not self.include_groups or group in self.include_groups) and \
@@ -65,13 +65,6 @@ class DocGenerator(object):
             self._print_toc(groups)
             for group in groups:
                 self._print_group(group, print_header=(len(groups)>1))
-
-    def filename(self):
-        """
-        This function must be overridden in child classes
-        """
-        raise NotImplementedError
-
 
     def w(self, line='', add_newline=True):
         """
@@ -178,9 +171,6 @@ class ApiDocGenerator(DocGenerator):
     def __init__(self, *args, **kwargs):
         super(ApiDocGenerator, self).__init__(include_groups=['api'], *args, **kwargs)
 
-    def filename(self):
-        return '../docs/API.md'
-
     def print_header(self):
         text = """
 # REST API
@@ -200,16 +190,13 @@ For more information about other routes used for the web interface, see [this pa
                 yield route
 
 
-class FlaskRouteDocGenerator(DocGenerator):
+class FlaskRoutesDocGenerator(DocGenerator):
     """
     Generates FlaskRoutes.md
     """
 
     def __init__(self, *args, **kwargs):
-        super(FlaskRouteDocGenerator, self).__init__(exclude_groups=['api'], *args, **kwargs)
-
-    def filename(self):
-        return '../docs/FlaskRoutes.md'
+        super(FlaskRoutesDocGenerator, self).__init__(exclude_groups=['api'], *args, **kwargs)
 
     def print_header(self):
         text = """
@@ -230,7 +217,8 @@ These are all technically RESTful, but they return HTML pages. To get JSON respo
                 yield route
 
 
-with app.app_context():
-    ApiDocGenerator(doc).generate()
-    FlaskRouteDocGenerator(doc).generate()
+if __name__ == '__main__':
+    with app.app_context():
+        ApiDocGenerator(doc).generate('../docs/API.md')
+        FlaskRoutesDocGenerator(doc).generate('../docs/FlaskRoutes.md')
 

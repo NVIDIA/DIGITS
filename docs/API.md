@@ -1,6 +1,6 @@
 # REST API
 
-*Generated Jun 05, 2015*
+*Generated Jun 08, 2015*
 
 DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
 
@@ -20,7 +20,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/dataset/views.py@14`](../digits/dataset/views.py#L14)
+Location: [`digits/dataset/views.py@15`](../digits/dataset/views.py#L15)
 
 ### `/datasets/images/classification.json`
 
@@ -54,7 +54,7 @@ Location: [`digits/dataset/images/classification/views.py@217`](../digits/datase
 
 Methods: **GET**
 
-Location: [`digits/views.py@20`](../digits/views.py#L20)
+Location: [`digits/views.py@21`](../digits/views.py#L21)
 
 ### `/models/<job_id>.json`
 
@@ -70,7 +70,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/model/views.py@26`](../digits/model/views.py#L26)
+Location: [`digits/model/views.py@27`](../digits/model/views.py#L27)
 
 ### `/models/images/classification.json`
 
@@ -82,5 +82,29 @@ Location: [`digits/model/views.py@26`](../digits/model/views.py#L26)
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@48`](../digits/model/images/classification/views.py#L48)
+Location: [`digits/model/images/classification/views.py@49`](../digits/model/images/classification/views.py#L49)
+
+### `/models/images/classification/classify_many.json`
+
+> Classify many images and return the top 5 classifications for each
+
+> 
+
+> Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
+
+Methods: **POST**
+
+Location: [`digits/model/images/classification/views.py@287`](../digits/model/images/classification/views.py#L287)
+
+### `/models/images/classification/classify_one.json`
+
+> Classify one image and return the top 5 classifications
+
+> 
+
+> Returns JSON when requested: {predictions: {category: confidence,...}}
+
+Methods: **POST**
+
+Location: [`digits/model/images/classification/views.py@231`](../digits/model/images/classification/views.py#L231)
 
