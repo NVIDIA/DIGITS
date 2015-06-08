@@ -6,7 +6,7 @@ import os.path
 import pickle
 import shutil
 
-from flask import render_template
+import flask
 
 from digits.config import config_value
 from status import Status, StatusCls
@@ -76,6 +76,21 @@ class Job(StatusCls):
         """
         self.__dict__ = state
 
+    def json_dict(self, detailed=False):
+        """
+        Returns a dict used for a JSON representation
+        """
+        d = {
+                'id': self.id(),
+                'name': self.name(),
+                'status': self.status.name,
+                }
+        if detailed:
+            d.update({
+                'directory': self.dir(),
+                })
+        return d
+
     def id(self):
         """getter for _id"""
         return self._id
@@ -137,7 +152,7 @@ class Job(StatusCls):
                 'running': self.status.is_running(),
                 }
         with app.app_context():
-            message['html'] = render_template('status_updates.html', updates=self.status_history)
+            message['html'] = flask.render_template('status_updates.html', updates=self.status_history)
 
         socketio.emit('job update',
                 message,

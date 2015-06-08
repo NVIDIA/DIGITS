@@ -10,6 +10,7 @@ from caffe.proto import caffe_pb2
 
 from digits.config import config_value
 from digits.device_query import get_device
+from digits.utils.forms import validate_required_iff
 
 class ModelForm(Form):
 
@@ -22,16 +23,6 @@ class ModelForm(Form):
                 found = True
         if not found:
             raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
-
-    def required_if_method(value):
-        def _required(form, field):
-            if form.method.data == value:
-                if not field.data or (isinstance(field.data, str) and field.data.strip() == ""):
-                    raise validators.ValidationError('This field is required.')
-            else:
-                field.errors[:] = []
-                raise validators.StopValidation()
-        return _required
 
     def validate_NetParameter(form, field):
         pb = caffe_pb2.NetParameter()
@@ -153,34 +144,35 @@ class ModelForm(Form):
 
     ### Network
 
-    method = wtforms.HiddenField('Model type',
-            validators = [
-                validators.AnyOf(
-                    ['standard', 'previous', 'custom'],
-                    message='The method you chose is not currently supported.'
-                    )
+    # Use a SelectField instead of a HiddenField so that the default value
+    # is used when nothing is provided (through the REST API)
+    method = wtforms.SelectField(u'Network type',
+            choices = [
+                ('standard', 'Standard network'),
+                ('previous', 'Previous network'),
+                ('custom', 'Custom network'),
                 ],
-            default = 'standard',
+            default='standard',
             )
 
     # The options for this get set in the view (since they are dependent on the data type)
     standard_networks = wtforms.RadioField('Standard Networks',
             validators = [
-                required_if_method('standard'),
+                validate_required_iff(method='standard'),
                 ],
             )
 
     previous_networks = wtforms.RadioField('Previous Networks',
             choices = [],
             validators = [
-                required_if_method('previous'),
+                validate_required_iff(method='previous'),
                 selection_exists_in_choices,
                 ],
             )
 
     custom_network = wtforms.TextAreaField('Custom Network',
             validators = [
-                required_if_method('custom'),
+                validate_required_iff(method='custom'),
                 validate_NetParameter,
                 ]
             )

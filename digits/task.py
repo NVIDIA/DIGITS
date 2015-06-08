@@ -6,7 +6,7 @@ import time
 import logging
 import subprocess
 
-from flask import render_template
+import flask
 import gevent.event
 
 from . import utils
@@ -96,7 +96,7 @@ class Task(StatusCls):
                 'running': self.status.is_running(),
                 }
         with app.app_context():
-            message['html'] = render_template('status_updates.html',
+            message['html'] = flask.render_template('status_updates.html',
                     updates     = self.status_history,
                     exception   = self.exception,
                     traceback   = self.traceback,

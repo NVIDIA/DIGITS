@@ -3,6 +3,7 @@
 
 import sys
 import os.path
+import time
 from pprint import pprint
 from collections import defaultdict
 
@@ -15,27 +16,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config; digits.config.load_config()
 from digits.webapp import app, _doc as doc
 
-class FlaskRouteDocGenerator(object):
+class DocGenerator(object):
     """
-    Generates markdown for FlaskRoutes
+    Generates markdown for Flask routes
     """
 
-    def __init__(self, autodoc, file_handle = None):
+    def __init__(self, autodoc,
+            include_groups=None, exclude_groups=None):
         """
         Arguments:
         autodoc -- an Autodoc instance
 
         Keyword arguments:
-        file_handle -- handle to file to write
-            if not provided, prints documentation to stdout
+        include_groups -- a list of groups to print
+        exclude_groups -- a list of groups not to print
         """
         self.autodoc = autodoc
-        if file_handle:
-            self._handle = file_handle
-        else:
-            self._handle = sys.stdout
-
-        ### Process data
+        self.include_groups = include_groups
+        self.exclude_groups = exclude_groups
+        self._handle = None
 
         # get list of groups
         group_names = defaultdict(int)
@@ -47,15 +46,32 @@ class FlaskRouteDocGenerator(object):
         hidden_groups = ['all']
         other_groups = [g for g in sorted(group_names.keys())
                 if g not in first_groups + hidden_groups]
-        self.groups = first_groups + other_groups
+        self._groups = first_groups + other_groups
 
-        ### Print data
+    def generate(self):
+        """
+        Writes the documentation to file
+        """
+        with open(os.path.join(
+                    os.path.dirname(__file__),
+                    self.filename()), 'w') as self._handle:
+            groups = []
+            for group in self._groups:
+                if (not self.include_groups or group in self.include_groups) and \
+                        (not self.exclude_groups or group not in self.exclude_groups):
+                    groups.append(group)
 
-        self._print_header()
-        self._print_toc()
+            self.print_header()
+            self._print_toc(groups)
+            for group in groups:
+                self._print_group(group, print_header=(len(groups)>1))
 
-        for group in self.groups:
-            self._print_group(group)
+    def filename(self):
+        """
+        This function must be overridden in child classes
+        """
+        raise NotImplementedError
+
 
     def w(self, line='', add_newline=True):
         """
@@ -65,38 +81,56 @@ class FlaskRouteDocGenerator(object):
             line = '%s\n' % line
         self._handle.write(line)
 
-    def _print_header(self):
+    def _print_header(self, header):
         """
         Print the document page header
         """
-        self.w('# DIGITS REST API')
-        self.w()
-        self.w('Documentation on the various REST routes in DIGITS.')
-        self.w()
+        pass
 
-    def _print_toc(self):
+    def timestamp(self):
+        """
+        Returns a string which notes the current time
+        """
+        return time.strftime('*Generated %b %d, %Y*')
+
+    def _print_toc(self, groups=None):
         """
         Print the table of contents
         """
+        if groups is None:
+            groups = self._groups
+
+        if len(groups) <= 1:
+            # No sense printing the TOC
+            return
+
         self.w('### Table of Contents')
         self.w()
-        for group in self.groups:
+        for group in groups:
             self.w('* [%s](#%s)' % (group.capitalize(), group))
         self.w()
 
-    def _print_group(self, group):
+    def _print_group(self, group, print_header=True):
         """
         Print a group of routes
         """
-        routes = self.autodoc.generate(groups=group)
+        routes = self.get_routes(group)
         if not routes:
             return
 
-        self.w('## %s' % group.capitalize())
-        self.w()
+        if print_header:
+            self.w('## %s' % group.capitalize())
+            self.w()
 
         for route in routes:
             self._print_route(route)
+
+    def get_routes(self, group):
+        """
+        Get the routes for this group
+        """
+        return self.autodoc.generate(groups=group)
+
 
     def _print_route(self, route):
         """
@@ -135,6 +169,68 @@ class FlaskRouteDocGenerator(object):
                     ))
                 self.w()
 
+
+class ApiDocGenerator(DocGenerator):
+    """
+    Generates API.md
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(ApiDocGenerator, self).__init__(include_groups=['api'], *args, **kwargs)
+
+    def filename(self):
+        return 'API.md'
+
+    def print_header(self):
+        text = """
+# REST API
+
+%s
+
+DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
+
+For more information about other routes used for the web interface, see [this page](FlaskRoutes.md).
+""" % self.timestamp()
+        self.w(text.strip())
+        self.w()
+
+    def get_routes(self, group):
+        for route in self.autodoc.generate(groups=group):
+            if '.json' in route['rule']:
+                yield route
+
+
+class FlaskRouteDocGenerator(DocGenerator):
+    """
+    Generates FlaskRoutes.md
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(FlaskRouteDocGenerator, self).__init__(exclude_groups=['api'], *args, **kwargs)
+
+    def filename(self):
+        return 'FlaskRoutes.md'
+
+    def print_header(self):
+        text = """
+# Flask Routes
+
+%s
+
+Documentation on the various routes used internally for the web application.
+
+These are all technically RESTful, but they return HTML pages. To get JSON responses, see [this page](API.md).
+""" % self.timestamp()
+        self.w(text.strip())
+        self.w()
+
+    def get_routes(self, group):
+        for route in self.autodoc.generate(groups=group):
+            if '.json' not in route['rule']:
+                yield route
+
+
 with app.app_context():
-    with open(os.path.join(os.path.dirname(__file__),'RestApi.md'), 'w') as outfile:
-        generator = FlaskRouteDocGenerator(doc, outfile)
+    ApiDocGenerator(doc).generate()
+    FlaskRouteDocGenerator(doc).generate()
+
