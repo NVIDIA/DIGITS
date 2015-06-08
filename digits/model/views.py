@@ -9,6 +9,7 @@ import tarfile
 import zipfile
 
 import flask
+import werkzeug.exceptions
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 import caffe.draw
@@ -32,9 +33,8 @@ def models_show(job_id):
         {id, name, directory, status, snapshots: [epoch,epoch,...]}
     """
     job = scheduler.get_job(job_id)
-
     if job is None:
-        flask.abort(404)
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     if request_wants_json():
         return flask.jsonify(job.json_dict(True))
@@ -42,7 +42,8 @@ def models_show(job_id):
         if isinstance(job, model_images.ImageClassificationModelJob):
             return model_images.classification.views.show(job)
         else:
-            flask.abort(404)
+            raise werkzeug.exceptions.BadRequest(
+                    'Invalid job type')
 
 @app.route(NAMESPACE + 'customize', methods=['POST'])
 @autodoc('models')
@@ -50,9 +51,9 @@ def models_customize():
     """
     Returns a customized file for the ModelJob based on completed form fields
     """
-    network = flask.request.args.get('network')
+    network = flask.request.args['network']
     if not network:
-        return 'args.network not found!', 400
+        raise werkzeug.exceptions.BadRequest('network not provided')
 
     networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks')
     for filename in os.listdir(networks_dir):
@@ -63,6 +64,9 @@ def models_customize():
                 with open(path) as infile:
                     return json.dumps({'network': infile.read()})
     job = scheduler.get_job(network)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
     snapshot = None
     try:
         epoch = int(flask.request.form['snapshot_epoch'])
@@ -73,13 +77,10 @@ def models_customize():
     except:
         pass
 
-    if job:
-        return json.dumps({
-            'network': text_format.MessageToString(job.train_task().network),
-            'snapshot': snapshot
-            })
-
-    return 'ERROR: Network not found!', 400
+    return json.dumps({
+        'network': text_format.MessageToString(job.train_task().network),
+        'snapshot': snapshot
+        })
 
 @app.route(NAMESPACE + 'visualize-network', methods=['POST'])
 @autodoc('models')
@@ -122,7 +123,7 @@ def models_visualize_lr():
         step = float(flask.request.form['lr_sigmoid_step'])
         gamma = float(flask.request.form['lr_sigmoid_gamma'])
     else:
-        return 'Invalid policy', 404
+        raise werkzeug.exceptions.BadRequest('Invalid policy')
 
     data = ['Learning Rate']
     for i in xrange(101):
@@ -156,9 +157,8 @@ def models_download(job_id, extension):
     Return a tarball of all files required to run the model
     """
     job = scheduler.get_job(job_id)
-
-    if not job:
-        return 'Job not found', 404
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     epoch = -1
     # GET ?epoch=n
@@ -181,7 +181,7 @@ def models_download(job_id, extension):
                 snapshot_filename = f
                 break
     if not snapshot_filename:
-        return 'Invalid epoch', 400
+        raise werkzeug.exceptions.BadRequest('Invalid epoch')
 
     b = io.BytesIO()
     if extension in ['tar', 'tar.gz', 'tgz', 'tar.bz2']:
@@ -199,7 +199,7 @@ def models_download(job_id, extension):
             for path, name in job.download_files(epoch):
                 zf.write(path, arcname=name)
     else:
-        return 'Unrecognized extension "%s"' % extension, 400
+        raise werkzeug.exceptions.BadRequest('Invalid extension')
 
     response = flask.make_response(b.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)

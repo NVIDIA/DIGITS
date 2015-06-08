@@ -277,7 +277,6 @@ class WebappBaseTest(object):
         Abort a job
         Returns the HTTP status code
         """
-        print 'aborting job %s' % job_id
         rv = cls.app.post('/%s/%s/abort' % (job_type, job_id))
         return rv.status_code
 
@@ -331,7 +330,6 @@ class WebappBaseTest(object):
         Delete a job
         Returns the HTTP status code
         """
-        print 'deleting job %s' % job_id
         rv = cls.app.delete('/%s/%s' % (job_type, job_id))
         return rv.status_code
 

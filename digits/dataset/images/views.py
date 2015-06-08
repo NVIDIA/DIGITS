@@ -19,7 +19,6 @@ def image_dataset_resize_example():
     Resizes the example image, and returns it as a string of png data
     """
     try:
-        import digits
         example_image_path = os.path.join(os.path.dirname(digits.__file__), 'static', 'images', 'mona_lisa.jpg')
         image = utils.image.load_image(example_image_path)
 

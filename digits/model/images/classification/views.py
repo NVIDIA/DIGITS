@@ -6,6 +6,7 @@ import tempfile
 import random
 
 import flask
+import werkzeug.exceptions
 import numpy as np
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
@@ -72,7 +73,8 @@ def image_classification_model_create():
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
-        raise ValueError('Unknown dataset job_id "%s"' % form.dataset.data)
+        raise werkzeug.exceptions.BadRequest(
+                'Unknown dataset job_id "%s"' % form.dataset.data)
 
     job = None
     try:
@@ -96,11 +98,13 @@ def image_classification_model_create():
                         found = True
                         break
             if not found:
-                raise ValueError('Unknown standard model "%s"' % form.standard_networks.data)
+                raise werkzeug.exceptions.BadRequest(
+                        'Unknown standard model "%s"' % form.standard_networks.data)
         elif form.method.data == 'previous':
             old_job = scheduler.get_job(form.previous_networks.data)
             if not old_job:
-                raise ValueError('Job not found: %s' % form.previous_networks.data)
+                raise werkzeug.exceptions.BadRequest(
+                        'Job not found: %s' % form.previous_networks.data)
 
             network.CopyFrom(old_job.train_task().network)
             # Rename the final layer
@@ -119,17 +123,20 @@ def image_classification_model_create():
                                 break
 
                         if pretrained_model is None:
-                            raise ValueError("For the job %s, selected pretrained_model for epoch %d is invalid!"
+                            raise werkzeug.exceptions.BadRequest(
+                                    "For the job %s, selected pretrained_model for epoch %d is invalid!"
                                     % (form.previous_networks.data, epoch))
                         if not (os.path.exists(pretrained_model)):
-                            raise ValueError("Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
+                            raise werkzeug.exceptions.BadRequest(
+                                    "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
                     break
 
         elif form.method.data == 'custom':
             text_format.Merge(form.custom_network.data, network)
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:
-            raise ValueError('Unrecognized method: "%s"' % form.method.data)
+            raise werkzeug.exceptions.BadRequest(
+                    'Unrecognized method: "%s"' % form.method.data)
 
         policy = {'policy': form.lr_policy.data}
         if form.lr_policy.data == 'fixed':
@@ -151,7 +158,8 @@ def image_classification_model_create():
             policy['stepsize'] = form.lr_sigmoid_step.data
             policy['gamma'] = form.lr_sigmoid_gamma.data
         else:
-            raise ValueError('Invalid learning rate policy')
+            raise werkzeug.exceptions.BadRequest(
+                    'Invalid learning rate policy')
 
         if config_value('caffe_root')['multi_gpu']:
             if form.select_gpu_count.data:
@@ -213,8 +221,8 @@ def image_classification_model_large_graph():
     Show the loss/accuracy graph, but bigger
     """
     job = scheduler.get_job(flask.request.args['job_id'])
-    if not job:
-        flask.abort(404)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     return flask.render_template('models/images/classification/large_graph.html', job=job)
 
@@ -228,8 +236,8 @@ def image_classification_model_classify_one():
     Returns JSON when requested: {predictions: {category: confidence,...}}
     """
     job = scheduler.get_job(flask.request.args['job_id'])
-    if not job:
-        flask.abort(404)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     image = None
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
@@ -239,7 +247,7 @@ def image_classification_model_classify_one():
             flask.request.files['image_file'].save(outfile.name)
             image = utils.image.load_image(outfile.name)
     else:
-        flask.abort(400)
+        raise werkzeug.exceptions.BadRequest('No image given')
 
     # resize image
     db_task = job.train_task().dataset.train_db_task()
@@ -284,12 +292,12 @@ def image_classification_model_classify_many():
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
     job = scheduler.get_job(flask.request.args['job_id'])
-    if not job:
-        flask.abort(404)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     image_list = flask.request.files['image_list']
     if not image_list:
-        return 'File upload not found', 400
+        raise werkzeug.exceptions.BadRequest('File upload not found')
 
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
@@ -325,11 +333,12 @@ def image_classification_model_classify_many():
             print e
 
     if not len(images):
-        return 'Unable to load any images from the file', 400
+        raise werkzeug.exceptions.BadRequest(
+                'Unable to load any images from the file')
 
     labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
     if scores is None:
-        return 'An error occured while processing the images', 500
+        raise RuntimeError('An error occured while processing the images')
 
     # take top 5
     indices = (-scores).argsort()[:, :5]
@@ -358,12 +367,12 @@ def image_classification_model_top_n():
     Classify many images and show the top N images per category by confidence
     """
     job = scheduler.get_job(flask.request.args['job_id'])
-    if not job:
-        flask.abort(404)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     image_list = flask.request.files['image_list']
     if not image_list:
-        return 'File upload not found', 400
+        raise werkzeug.exceptions.BadRequest('File upload not found')
 
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
@@ -410,11 +419,12 @@ def image_classification_model_top_n():
             print e
 
     if not len(images):
-        return 'Unable to load any images from the file', 400
+        raise werkzeug.exceptions.BadRequest(
+                'Unable to load any images from the file')
 
     labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
     if scores is None:
-        return 'An error occured while processing the images', 500
+        raise RuntimeError('An error occured while processing the images')
 
     indices = (-scores).argsort(axis=0)[:top_n]
     results = []
@@ -467,3 +477,4 @@ def get_previous_network_snapshots():
                 for _, epoch in reversed(job.train_task().snapshots)]
         prev_network_snapshots.append(e)
     return prev_network_snapshots
+

@@ -5,6 +5,7 @@ import json
 import traceback
 
 import flask
+import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
 from . import dataset, model
@@ -87,16 +88,15 @@ def show_job(job_id):
     Redirects to the appropriate /datasets/ or /models/ page
     """
     job = scheduler.get_job(job_id)
-
     if job is None:
-        flask.abort(404)
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     if isinstance(job, dataset.DatasetJob):
         return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
     if isinstance(job, model.ModelJob):
         return flask.redirect(flask.url_for('models_show', job_id=job_id))
     else:
-        flask.abort(404)
+        raise werkzeug.exceptions.BadRequest('Invalid job type')
 
 @app.route('/jobs/<job_id>', methods=['PUT'])
 @autodoc('jobs')
@@ -105,9 +105,8 @@ def edit_job(job_id):
     Edit the name of a job
     """
     job = scheduler.get_job(job_id)
-
     if job is None:
-        flask.abort(404)
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     old_name = job.name()
     job._name = flask.request.form['job_name']
@@ -141,15 +140,16 @@ def delete_job(job_id):
     Deletes a job
     """
     job = scheduler.get_job(job_id)
-    if not job:
-        return 'Job not found!', 404
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
     try:
         if scheduler.delete_job(job_id):
             return 'Job deleted.'
         else:
-            return 'Job could not be deleted! Check log for more details', 403
+            raise werkzeug.exceptions.Forbidden('Job not deleted')
     except errors.DeleteError as e:
-        return e.__str__(), 403
+        raise werkzeug.exceptions.Forbidden(str(e))
 
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
@@ -159,17 +159,21 @@ def abort_job(job_id):
     """
     Aborts a running job
     """
+    job = scheduler.get_job(job_id)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
     if scheduler.abort_job(job_id):
         return 'Job aborted.'
     else:
-        return 'Job not found!', 404
+        raise werkzeug.exceptions.Forbidden('Job not aborted')
 
 ### Error handling
 
 @app.errorhandler(Exception)
 def handle_exception(e, status_code=500):
     if 'DIGITS_MODE_TEST' in os.environ:
-        raise e
+        raise
     error_type = type(e).__name__
     message = str(e)
     trace = None
@@ -207,12 +211,12 @@ def serve_file(path):
 
     # Don't allow path manipulation
     if not os.path.commonprefix([path, jobs_dir]).startswith(jobs_dir):
-        flask.abort(403)
+        raise werkzeug.exceptions.Forbidden('Path manipulation not allowed')
 
     if not os.path.exists(path):
-        flask.abort(404)
+        raise werkzeug.exceptions.NotFound('File not found')
     if os.path.isdir(path):
-        flask.abort(403)
+        raise werkzeug.exceptions.Forbidden('Folder cannot be served')
 
     with open(path, 'r') as infile:
         response = flask.make_response(infile.read())
