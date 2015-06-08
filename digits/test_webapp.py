@@ -126,13 +126,23 @@ class WebappBaseTest(object):
         Arguments:
         data -- data to be sent with POST request
         """
-        funky = data.pop('funky', False)
-
         if 'dataset_name' not in data:
             data['dataset_name'] = 'dummy_dataset'
-        rv = cls.app.post(
-                '/datasets/images/classification',
-                data = data)
+
+        request_json = data.pop('json', False)
+        url = '/datasets/images/classification'
+        if request_json:
+            url += '.json'
+
+        rv = cls.app.post(url, data=data)
+
+        if request_json:
+            if rv.status_code != 200:
+                print json.loads(rv.data)
+                raise RuntimeError('Model creation failed with %s' % rv.status_code)
+            return json.loads(rv.data)['id']
+
+        # expect a redirect
         if not 300 <= rv.status_code <= 310:
             s = BeautifulSoup(rv.data)
             div = s.select('div.alert-danger')
@@ -178,9 +188,21 @@ class WebappBaseTest(object):
         """
         if 'model_name' not in data:
             data['model_name'] = 'dummy_model'
-        rv = cls.app.post(
-                '/models/images/classification',
-                data = data)
+
+        request_json = data.pop('json', False)
+        url = '/models/images/classification'
+        if request_json:
+            url += '.json'
+
+        rv = cls.app.post(url, data=data)
+
+        if request_json:
+            if rv.status_code != 200:
+                print json.loads(rv.data)
+                raise RuntimeError('Model creation failed with %s' % rv.status_code)
+            return json.loads(rv.data)['id']
+
+        # expect a redirect
         if not 300 <= rv.status_code <= 310:
             s = BeautifulSoup(rv.data)
             div = s.select('div.alert-danger')
@@ -384,6 +406,10 @@ class TestDatasetCreation(WebappBaseTest):
             return
         raise AssertionError('Should have failed')
 
+    def test_create_json(self):
+        """dataset - create w/ json"""
+        self.create_quick_dataset(json=True)
+
     def test_create_delete(self):
         """dataset - create, delete"""
         job_id = self.create_quick_dataset()
@@ -399,7 +425,7 @@ class TestDatasetCreation(WebappBaseTest):
 
     def test_create_abort_delete(self):
         """dataset - create, abort, delete"""
-        job_id = self.create_quick_dataset(funky=True)
+        job_id = self.create_quick_dataset()
         assert self.abort_dataset(job_id) == 200, 'abort failed'
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
@@ -530,6 +556,10 @@ class TestModelCreation(WebappBaseTest):
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         image = s.select('img')
         assert image is not None, "didn't return an image"
+
+    def test_create_json(self):
+        """model - create w/ json"""
+        self.create_quick_model(self.dataset_id, json=True)
 
     def test_create_delete(self):
         """model - create, delete"""
@@ -673,6 +703,25 @@ class TestCreatedModel(WebappBaseTest):
         predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
         assert predictions[0][1] == 'green', 'image misclassified'
 
+    def test_classify_one_json(self):
+        """created model - classify one JSON"""
+        image_path = self.images['green'][0]
+        image_path = os.path.join(self.data_path, image_path)
+        with open(image_path) as infile:
+            # StringIO wrapping is needed to simulate POST file upload.
+            image_upload = (StringIO(infile.read()), 'image.png')
+
+        rv = self.app.post(
+                '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
+                data = {
+                    'image_file': image_upload,
+                    'show_visualizations': 'y',
+                    }
+                )
+        assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        data = json.loads(rv.data)
+        assert data['predictions'][0][0] == 'green', 'image misclassified'
+
     def test_classify_many(self):
         """created model - classify many"""
         textfile_images = ''
@@ -694,6 +743,28 @@ class TestCreatedModel(WebappBaseTest):
         s = BeautifulSoup(rv.data)
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
+    def test_classify_many_json(self):
+        """created model - classify many JSON"""
+        textfile_images = ''
+        label_id = 0
+        for (label, images) in self.images.iteritems():
+            for image in images:
+                image_path = image
+                image_path = os.path.join(self.data_path, image_path)
+                textfile_images += '%s %d\n' % (image_path, label_id)
+            label_id += 1
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        rv = self.app.post(
+                '/models/images/classification/classify_many.json?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload}
+                )
+        assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        data = json.loads(rv.data)
+        assert 'classifications' in data, 'invalid response'
 
     def test_top_n(self):
         """created model - top n predictions"""
