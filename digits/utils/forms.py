@@ -12,10 +12,8 @@ def validate_required_iff(**kwargs):
     Otherwise, no validation is done
     """
     def _validator(form, field):
-        print '>>> validating', field.name
         all_conditions_met = True
         for key, value in kwargs.iteritems():
-            print 'key,val:', key, value
             if getattr(form, key).data != value:
                 all_conditions_met = False
 
