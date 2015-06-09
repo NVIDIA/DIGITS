@@ -1,11 +1,10 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import sys
-import os
 import logging
 import logging.handlers
 
-from digits.config import config_option
+from digits.config import config_value
 
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -73,25 +72,26 @@ def setup_logging():
 
     ### digits.webapp logger
 
-    if config_option('log_file'):
+    if config_value('log_file'):
         webapp_logger = logging.getLogger('digits.webapp')
         webapp_logger.setLevel(logging.DEBUG)
         # Log to file
         fileHandler = logging.handlers.RotatingFileHandler(
-                config_option('log_file'),
+                config_value('log_file'),
                 maxBytes=(1024*1024*10), # 10 MB
                 backupCount=10,
                 )
         fileHandler.setFormatter(formatter)
-        if config_option('log_level') == 'debug':
+        level = config_value('log_level')
+        if level == 'debug':
             fileHandler.setLevel(logging.DEBUG)
-        elif config_option('log_level') == 'info':
+        elif level == 'info':
             fileHandler.setLevel(logging.INFO)
-        elif config_option('log_level') == 'warning':
+        elif level == 'warning':
             fileHandler.setLevel(logging.WARNING)
-        elif config_option('log_level') == 'error':
+        elif level == 'error':
             fileHandler.setLevel(logging.ERROR)
-        elif config_option('log_level') == 'critical':
+        elif level == 'critical':
             fileHandler.setLevel(logging.CRITICAL)
         webapp_logger.addHandler(fileHandler)
 

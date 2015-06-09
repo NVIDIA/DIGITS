@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import time
 import unittest
+import itertools
 
 from gevent import monkey
 monkey.patch_all()
@@ -16,6 +17,8 @@ from urlparse import urlparse
 from cStringIO import StringIO
 
 import webapp
+from config import config_value
+import device_query
 
 
 DUMMY_IMAGE_DIM = 10
@@ -100,13 +103,16 @@ class WebappBaseTest(object):
         webapp.app.config['WTF_CSRF_ENABLED'] = False
         webapp.app.config['TESTING'] = True
         cls.app = webapp.app.test_client()
-        cls.created_jobs = []
+        cls.created_datasets = []
+        cls.created_models = []
 
     @classmethod
     def tearDownClass(cls):
         # Remove all jobs
-        for job in cls.created_jobs:
-            cls.delete_job(job)
+        for job_id in cls.created_models:
+            cls.delete_model(job_id)
+        for job_id in cls.created_datasets:
+            cls.delete_dataset(job_id)
         # Remove the dummy data
         shutil.rmtree(cls.data_path)
 
@@ -120,6 +126,8 @@ class WebappBaseTest(object):
         Arguments:
         data -- data to be sent with POST request
         """
+        funky = data.pop('funky', False)
+
         if 'dataset_name' not in data:
             data['dataset_name'] = 'dummy_dataset'
         rv = cls.app.post(
@@ -134,9 +142,10 @@ class WebappBaseTest(object):
                 raise RuntimeError('Failed to create dataset')
 
         job_id = cls.job_id_from_response(rv)
+
         assert cls.dataset_exists(job_id), 'dataset not found after successful creation'
 
-        cls.created_jobs.append(job_id)
+        cls.created_datasets.append(job_id)
         return job_id
 
     @classmethod
@@ -183,7 +192,7 @@ class WebappBaseTest(object):
         job_id = cls.job_id_from_response(rv)
         assert cls.model_exists(job_id), 'model not found after successful creation'
 
-        cls.created_jobs.append(job_id)
+        cls.created_models.append(job_id)
         return job_id
 
     @classmethod
@@ -379,21 +388,21 @@ class TestDatasetCreation(WebappBaseTest):
         raise AssertionError('Should have failed')
 
     def test_create_delete(self):
-        """create, delete"""
+        """dataset - create, delete"""
         job_id = self.create_quick_dataset()
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
     def test_create_wait_delete(self):
-        """create, wait, delete"""
+        """dataset - create, wait, delete"""
         job_id = self.create_quick_dataset()
         assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
     def test_create_abort_delete(self):
-        """create, abort, delete"""
-        job_id = self.create_quick_dataset()
+        """dataset - create, abort, delete"""
+        job_id = self.create_quick_dataset(funky=True)
         assert self.abort_dataset(job_id) == 200, 'abort failed'
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
@@ -439,18 +448,18 @@ class TestDatasetCreation(WebappBaseTest):
         return self.create_dataset(**data)
 
     def test_textfile_absolute(self):
-        """textfiles (absolute), wait"""
+        """dataset - textfiles (absolute), wait"""
         job_id = self.create_from_textfiles(absolute_path=True)
         assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
 
     def test_textfile_relative(self):
-        """textfiles (relative), wait"""
+        """dataset - textfiles (relative), wait"""
         job_id = self.create_from_textfiles(absolute_path=False)
         status = self.dataset_wait_completion(job_id)
         assert status == 'Done', 'create failed "%s"' % status
 
     def test_nonsquare_dimensions(self):
-        """nonsquare dimensions"""
+        """dataset - nonsquare dimensions"""
         job_id = self.create_quick_dataset(
                 resize_width = DUMMY_IMAGE_DIM,
                 resize_height = DUMMY_IMAGE_DIM*2,
@@ -519,27 +528,27 @@ class TestModelCreation(WebappBaseTest):
         assert image is not None, "didn't return an image"
 
     def test_create_delete(self):
-        """create, delete"""
+        """model - create, delete"""
         job_id = self.create_quick_model(self.dataset_id)
         assert self.delete_model(job_id) == 200, 'delete failed'
         assert not self.model_exists(job_id), 'model exists after delete'
 
     def test_create_wait_delete(self):
-        """create, wait, delete"""
+        """model - create, wait, delete"""
         job_id = self.create_quick_model(self.dataset_id)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         assert self.delete_model(job_id) == 200, 'delete failed'
         assert not self.model_exists(job_id), 'model exists after delete'
 
     def test_create_abort_delete(self):
-        """create, abort, delete"""
+        """model - create, abort, delete"""
         job_id = self.create_quick_model(self.dataset_id)
         assert self.abort_model(job_id) == 200, 'abort failed'
         assert self.delete_model(job_id) == 200, 'delete failed'
         assert not self.model_exists(job_id), 'model exists after delete'
 
     def test_snapshot_interval_2(self):
-        """snapshot_interval 2"""
+        """model - snapshot_interval 2"""
         job_id = self.create_quick_model(self.dataset_id, train_epochs=1, snapshot_interval=0.5)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         rv = self.app.get('/models/%s.json' % job_id)
@@ -548,13 +557,53 @@ class TestModelCreation(WebappBaseTest):
         assert len(content['snapshots']) > 1, 'should take >1 snapshot'
 
     def test_snapshot_interval_0_5(self):
-        """snapshot_interval 0.5"""
+        """model - snapshot_interval 0.5"""
         job_id = self.create_quick_model(self.dataset_id, train_epochs=4, snapshot_interval=2)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         rv = self.app.get('/models/%s.json' % job_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']) == 2, 'should take 2 snapshots'
+
+    @unittest.skipIf(
+            not config_value('gpu_list'),
+            'no GPUs selected')
+    @unittest.skipIf(
+            not config_value('caffe_root')['cuda_enabled'],
+            'CUDA disabled')
+    @unittest.skipIf(
+            config_value('caffe_root')['multi_gpu'],
+            'multi-GPU enabled')
+    def test_select_gpu(self):
+        """model - select GPU"""
+        for index in config_value('gpu_list').split(','):
+            yield self.check_select_gpu, index
+
+    def check_select_gpu(self, gpu_index):
+        job_id = self.create_quick_model(self.dataset_id, select_gpu=gpu_index)
+        assert self.delete_model(job_id) == 200, 'delete failed'
+
+    @unittest.skipIf(
+            not config_value('gpu_list'),
+            'no GPUs selected')
+    @unittest.skipIf(
+            not config_value('caffe_root')['cuda_enabled'],
+            'CUDA disabled')
+    @unittest.skipIf(
+            not config_value('caffe_root')['multi_gpu'],
+            'multi-GPU disabled')
+    def test_select_gpus(self):
+        """model - select GPUs"""
+        # test all possible combinations
+        gpu_list = config_value('gpu_list').split(',')
+        for i in xrange(len(gpu_list)):
+            for combination in itertools.combinations(gpu_list, i+1):
+                yield self.check_select_gpus, combination
+
+    def check_select_gpus(self, gpu_list):
+        job_id = self.create_quick_model(self.dataset_id,
+                select_gpus_list=','.join(gpu_list))
+        assert self.delete_model(job_id) == 200, 'delete failed'
 
 class TestCreatedModel(WebappBaseTest):
     """

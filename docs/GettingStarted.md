@@ -28,7 +28,7 @@ If you are not using the web installer, use the `digits-devserver` script:
 
 The first time DIGITS is run, you may be asked to provide some configuration options.
 
-<pre>
+```
 % ./digits-devserver
   ___ ___ ___ ___ _____ ___
  |   \_ _/ __|_ _|_   _/ __|
@@ -36,24 +36,24 @@ The first time DIGITS is run, you may be asked to provide some configuration opt
  |___/___\___|___| |_| |___/
 
 DIGITS requires at least one DL backend to run.
-================================== caffe_root ==================================
+==================================== Caffe =====================================
 Where is caffe installed?
 
-Suggested values:
-(P*) [PATH/PYTHONPATH] <PATHS>
+        Suggested values:
+        (P*) [PATH/PYTHONPATH] <PATHS>
 >> ~/caffe
 Using "/home/username/caffe"
 
 Saved config to /home/username/digits/digits/digits.cfg
  * Running on http://0.0.0.0:5000/
-</pre>
+```
 
  Most values are set silently by default. If you need more control over your configuration, try one of these commands:
 
     # Set more options before starting the server
     ./digits-devserver --config
     # Advanced usage
-    python digits/config.py --verbose
+    python -m digits.config.edit --verbose
 
 ## Using DIGITS
 

@@ -5,7 +5,6 @@ import os.path
 import re
 
 import digits
-from digits.status import Status
 from digits import utils
 from digits.utils import subclass, override
 from digits.task import Task

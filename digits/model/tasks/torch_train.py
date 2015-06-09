@@ -14,7 +14,7 @@ import tempfile
 import PIL.Image
 import digits
 from train import TrainTask
-from digits.config import config_option
+from digits.config import config_value
 from digits.status import Status
 from digits import utils, dataset
 from digits.utils import subclass, override, constants, errors
@@ -107,10 +107,10 @@ class TorchTrainTask(TrainTask):
 
     @override
     def task_arguments(self, resources):
-        if config_option('torch_root') == '<PATHS>':
+        if config_value('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
-            torch_bin = os.path.join(config_option('torch_root'), 'bin', 'th')
+            torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
         if self.batch_size is None:
             self.batch_size = constants.DEFAULT_TORCH_BATCH_SIZE
@@ -123,12 +123,12 @@ class TorchTrainTask(TrainTask):
                 '--networkDirectory=%s' % self.job_dir,
                 '--save=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
-                '--snapshotInterval=%f' % self.snapshot_interval,
+                '--snapshotInterval=%s' % self.snapshot_interval,
                 '--useMeanPixel=yes',
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file),
                 '--batchSize=%d' % self.batch_size,
-                '--learningRate=%f' % self.learning_rate,
+                '--learningRate=%s' % self.learning_rate,
                 '--policy=%s' % str(self.lr_policy['policy'])
                 ]
 
@@ -136,21 +136,21 @@ class TorchTrainTask(TrainTask):
         if self.lr_policy['policy'] == 'fixed':
             pass
         elif self.lr_policy['policy'] == 'step':
-            args.append('--gamma=%f' % self.lr_policy['gamma'])
-            args.append('--stepvalues=%f' % self.lr_policy['stepsize'])
+            args.append('--gamma=%s' % self.lr_policy['gamma'])
+            args.append('--stepvalues=%s' % self.lr_policy['stepsize'])
         elif self.lr_policy['policy'] == 'multistep':
             args.append('--stepvalues=%s' % self.lr_policy['stepvalue'])
-            args.append('--gamma=%f' % self.lr_policy['gamma'])
+            args.append('--gamma=%s' % self.lr_policy['gamma'])
         elif self.lr_policy['policy'] == 'exp':
-            args.append('--gamma=%f' % self.lr_policy['gamma'])
+            args.append('--gamma=%s' % self.lr_policy['gamma'])
         elif self.lr_policy['policy'] == 'inv':
-            args.append('--gamma=%f' % self.lr_policy['gamma'])
-            args.append('--power=%f' % self.lr_policy['power'])
+            args.append('--gamma=%s' % self.lr_policy['gamma'])
+            args.append('--power=%s' % self.lr_policy['power'])
         elif self.lr_policy['policy'] == 'poly':
-            args.append('--power=%f' % self.lr_policy['power'])
+            args.append('--power=%s' % self.lr_policy['power'])
         elif self.lr_policy['policy'] == 'sigmoid':
-            args.append('--stepvalues=%f' % self.lr_policy['stepsize'])
-            args.append('--gamma=%f' % self.lr_policy['gamma'])
+            args.append('--stepvalues=%s' % self.lr_policy['stepsize'])
+            args.append('--gamma=%s' % self.lr_policy['gamma'])
 
         if self.shuffle:
             args.append('--shuffle=yes')
@@ -164,9 +164,21 @@ class TorchTrainTask(TrainTask):
         else:
             args.append('--subtractMean=no')
 
+        if self.random_seed is not None:
+            args.append('--seed=%s' % self.random_seed)
+
+        if self.solver_type == 'NESTEROV':
+            args.append('--optimization=nag')
+
+        if self.solver_type == 'ADAGRAD':
+            args.append('--optimization=adagrad')
+
+        if self.solver_type == 'SGD':
+            args.append('--optimization=sgd')
+
         if os.path.exists(self.dataset.path(constants.VAL_DB)) and self.val_interval > 0:
             args.append('--validation=%s' % self.dataset.path(constants.VAL_DB))
-            args.append('--interval=%f' % self.val_interval)
+            args.append('--interval=%s' % self.val_interval)
 
         if 'gpus' in resources:
             identifiers = []
@@ -425,10 +437,10 @@ class TorchTrainTask(TrainTask):
             self.logger.error(error_message)
             raise errors.TestError(error_message)
 
-        if config_option('torch_root') == '<PATHS>':
+        if config_value('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
-            torch_bin = os.path.join(config_option('torch_root'), 'bin', 'th')
+            torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
@@ -600,10 +612,10 @@ class TorchTrainTask(TrainTask):
         """
 	labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
 
-        if config_option('torch_root') == '<PATHS>':
+        if config_value('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
-            torch_bin = os.path.join(config_option('torch_root'), 'bin', 'th')
+            torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),

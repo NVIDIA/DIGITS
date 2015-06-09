@@ -10,12 +10,12 @@ import gevent
 import gevent.event
 import gevent.queue
 
-from config import config_option
+from config import config_value
 from . import utils
 from status import Status
 from job import Job
-from dataset import DatasetJob, tasks as dataset_tasks
-from model import ModelJob, tasks as model_tasks
+from dataset import DatasetJob
+from model import ModelJob
 from digits.utils import errors
 from log import logger
 
@@ -109,8 +109,8 @@ class Scheduler:
         """
         failed = 0
         loaded_jobs = []
-        for dir_name in sorted(os.listdir(config_option('jobs_dir'))):
-            if os.path.isdir(os.path.join(config_option('jobs_dir'), dir_name)):
+        for dir_name in sorted(os.listdir(config_value('jobs_dir'))):
+            if os.path.isdir(os.path.join(config_value('jobs_dir'), dir_name)):
                 exists = False
 
                 # Make sure it hasn't already been loaded
@@ -174,8 +174,9 @@ class Scheduler:
             return False
         else:
             self.jobs.append(job)
-            # Let the scheduler do a little work before returning
-            time.sleep(utils.wait_time())
+            if 'DIGITS_MODE_TEST' not in os.environ:
+                # Let the scheduler do a little work before returning
+                time.sleep(utils.wait_time())
             return True
 
     def get_job(self, job_id):
@@ -237,9 +238,9 @@ class Scheduler:
                 return True
 
         # see if the folder exists on disk
-        path = os.path.join(config_option('jobs_dir'), job_id)
+        path = os.path.join(config_value('jobs_dir'), job_id)
         path = os.path.normpath(path)
-        if os.path.dirname(path) == config_option('jobs_dir') and os.path.exists(path):
+        if os.path.dirname(path) == config_value('jobs_dir') and os.path.exists(path):
             shutil.rmtree(path)
             return True
 

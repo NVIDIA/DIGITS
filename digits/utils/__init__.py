@@ -8,7 +8,6 @@ from random import uniform
 from urlparse import urlparse
 from io import BlockingIOError
 import inspect
-import re
 
 HTTP_TIMEOUT = 6.05
 

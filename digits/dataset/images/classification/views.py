@@ -1,12 +1,10 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
-import shutil
 
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for
 
 from digits import utils
-from digits.config import config_option
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm

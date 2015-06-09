@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-from flask import render_template, url_for, request, abort
+from flask import render_template, request, abort
 
 from digits.webapp import app, scheduler, autodoc
 import images.views

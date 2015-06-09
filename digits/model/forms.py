@@ -8,21 +8,19 @@ import wtforms
 from wtforms import validators
 from caffe.proto import caffe_pb2
 
-from digits import utils, config
+from digits.config import config_value
 from digits.device_query import get_device
 
 class ModelForm(Form):
 
-    def __init__(self, csrf_enabled=False, *args, **kwargs):
-        super(ModelForm, self).__init__(csrf_enabled=csrf_enabled, *args, **kwargs)
-
     ### Methods
+
     def selection_exists_in_choices(form, field):
-        found=False
-        for i, choice in enumerate(field.choices):
+        found = False
+        for choice in field.choices:
             if choice[0] == field.data:
-                found=True
-        if found == False:
+                found = True
+        if not found:
             raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
 
     def required_if_method(value, framework_opt = None):
@@ -129,7 +127,7 @@ class ModelForm(Form):
         if form.lr_policy.data == 'multistep':
             for value in field.data.split(','):
                 try:
-                    v = float(value)
+                    float(value)
                 except ValueError:
                     raise validators.ValidationError('invalid value')
     lr_multistep_gamma = wtforms.FloatField('Gamma',
@@ -220,7 +218,7 @@ class ModelForm(Form):
             choices = [('next', 'Next available')] + [(
                 index,
                 '#%s - %s' % (index, get_device(index).name),
-                ) for index in config.config_option('gpu_list').split(',') if index],
+                ) for index in config_value('gpu_list').split(',') if index],
             default = 'next',
             )
 
@@ -229,13 +227,19 @@ class ModelForm(Form):
             choices = [(
                 index,
                 '#%s - %s' % (index, get_device(index).name),
-                ) for index in config.config_option('gpu_list').split(',') if index]
+                ) for index in config_value('gpu_list').split(',') if index]
             )
+
+    def validate_select_gpus(form, field):
+        # XXX For testing
+        # The Flask test framework can't handle SelectMultipleFields correctly
+        if hasattr(form, 'select_gpus_list'):
+            field.data = form.select_gpus_list.split(',')
 
     # Use next available N GPUs
     select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
             validators = [
-                validators.NumberRange(min=1, max=len(config.config_option('gpu_list').split(',')))
+                validators.NumberRange(min=1, max=len(config_value('gpu_list').split(',')))
                 ],
             default = 1,
             )

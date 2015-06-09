@@ -2,7 +2,7 @@
 
 import tempfile
 
-from . import config as _
+from . import config_file as _
 
 class TestConfigFile():
     def test_write_and_read(self):

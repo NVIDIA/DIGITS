@@ -2,18 +2,16 @@
 
 import os
 import re
-import sys
-import shutil
 import tempfile
 import random
 
 import numpy as np
-from flask import render_template, request, redirect, url_for, flash, abort
+from flask import render_template, request, redirect, url_for, abort
 from google.protobuf import text_format
 from caffe.proto import caffe_pb2
 
 import digits
-from digits.config import config_option
+from digits.config import config_value
 from digits import utils
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
@@ -24,7 +22,6 @@ from digits.status import Status
 from digits.utils import errors
 
 NAMESPACE   = '/models/images/classification'
-MULTI_GPU   = False
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
 @autodoc('models')
@@ -44,7 +41,7 @@ def image_classification_model_new():
             form        = form,
             previous_network_snapshots  = prev_network_snapshots,
             previous_networks_fullinfo = get_previous_networks_fulldetails(),
-            multi_gpu   = MULTI_GPU,
+            multi_gpu   = config_value('caffe_root')['multi_gpu'],
             )
 
 @app.route(NAMESPACE, methods=['POST'])
@@ -66,7 +63,7 @@ def image_classification_model_create():
                 form        = form,
                 previous_network_snapshots=prev_network_snapshots,
                 previous_networks_fullinfo = get_previous_networks_fulldetails(),
-                multi_gpu   = MULTI_GPU,
+                multi_gpu   = config_value('caffe_root')['multi_gpu'],
                 ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
@@ -129,7 +126,7 @@ def image_classification_model_create():
             elif old_job.train_task().framework_name() == "torch":
                 shutil.copy2(os.path.join(old_job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE))
 
-            for i, choice in enumerate(form.previous_networks.choices):
+            for choice in form.previous_networks.choices:
                 if choice[0] == form.previous_networks.data:
                     epoch = float(request.form['%s-snapshot' % form.previous_networks.data])
                     if epoch != 0:
@@ -177,7 +174,7 @@ def image_classification_model_create():
         else:
             return 'Invalid policy', 404
 
-        if MULTI_GPU:
+        if config_value('caffe_root')['multi_gpu']:
             if form.select_gpu_count.data:
                 gpu_count = form.select_gpu_count.data
                 selected_gpus = None
@@ -232,6 +229,8 @@ def image_classification_model_create():
                     pretrained_model= pretrained_model,
                     crop_size       = form.crop_size.data,
                     use_mean        = form.use_mean.data,
+                    random_seed     = form.random_seed.data,
+                    solver_type     = form.solver_type.data,
                     shuffle         = form.shuffle.data,
                     )
                 )

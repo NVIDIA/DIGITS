@@ -43,6 +43,7 @@ Usage details:
 -v,--validation         (default '')             location in which validation db exists.
 -w,--weightDecay        (default 1e-4)           L2 penalty on the weights 
 
+--seed                  (default '')             fixed input seed for repeatable experiments
 --weights               (default '')             filename for weights of a model to use for fine-tuning
 --retrain               (default '')             Specifies path to model to retrain with
 --optimState            (default '')             Specifies path to an optimState to reload from
@@ -85,6 +86,12 @@ Usage details:
 -- 2) We should also save and restore some information like epoch, batch size, snapshot interval, subtractMean and useMeanPizel option, shuffle, mirror, crop, croplen
 --      Precautions should be taken while restoring these options.
 -----------------------------------------------------------------------------------------------------------------------------
+
+
+-- Set the seed of the random number generator to the given number.
+if opt.seed ~= '' then
+   torch.manualSeed(tonumber(opt.seed))
+end
 
 -- validate options
 if opt.crop == 'yes' and opt.croplen == 0 then
@@ -149,6 +156,11 @@ if opt.retrain ~= '' and opt.weights ~= '' then
     return
 end
 
+if opt.randomState ~= '' and opt.seed ~= '' then
+  logmessage.display(2,"Both '--randomState' and '--seed' options cannot be used at the same time.")
+  return
+end
+
 torch.setnumthreads(opt.threads)
 cutorch.setDevice(opt.devid)
 ----------------------------------------------------------------------
@@ -190,9 +202,8 @@ utils.correctFinalOutputDim(model, #classes)
 logmessage.display(0,'Network definition: \n' .. model:__tostring__())
 logmessage.display(0,'Network definition ends')
 
--- Set the seed of the random number generator to the current time in seconds.
 if opt.mirror == 'yes' then
-    torch.manualSeed(os.time())
+    --torch.manualSeed(os.time())
     logmessage.display(0,'mirror option was selected, so during training for some of the random images, mirror view will be considered instead of original image view')
 end
 
@@ -389,7 +400,8 @@ logmessage.display(0,'initializing the parameters for Optimizer')
 local optimizer = Optimizer{
     Model = model,
     Loss = loss,
-    OptFunction = optim.sgd,
+    --OptFunction = optim.sgd,
+    OptFunction = _G.optim[opt.optimization],
     OptState = optimState,
     Parameters = {Weights, Gradients},
     HookFunction = updateConfusion,

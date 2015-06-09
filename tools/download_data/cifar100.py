@@ -3,7 +3,6 @@
 import os
 import tarfile
 import cPickle
-import numpy as np
 import PIL.Image
 
 from downloader import DataDownloader
