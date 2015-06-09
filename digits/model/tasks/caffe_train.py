@@ -432,7 +432,7 @@ class CaffeTrainTask(TrainTask):
             return True
 
         # learning rate updates
-        match = re.match(r'Iteration (\d+), lr = %s' % float_exp, message, flags=re.IGNORECASE)
+        match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
         if match:
             i = int(match.group(1))
             lr = float(match.group(2))
@@ -444,7 +444,7 @@ class CaffeTrainTask(TrainTask):
             if not message.startswith('Snapshotting solver state'):
                 self.logger.warning('caffe output format seems to have changed. Expected "Snapshotting solver state..." after "Snapshotting to..."')
             else:
-                self.logger.info('Snapshot saved.')
+                self.logger.debug('Snapshot saved.')
             self.detect_snapshots()
             self.send_snapshot_update()
             self.saving_snapshot = False
@@ -460,7 +460,7 @@ class CaffeTrainTask(TrainTask):
         match = re.match(r'Memory required for data:\s+(\d+)', message)
         if match:
             bytes_required = int(match.group(1))
-            self.logger.debug('memory required: %s' % utils.sizeof_fmt(bytes_required))
+            #self.logger.debug('memory required: %s' % utils.sizeof_fmt(bytes_required))
             return True
 
         if level in ['error', 'critical']:
