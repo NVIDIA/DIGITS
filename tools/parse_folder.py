@@ -200,7 +200,7 @@ def parse_web_listing(url):
             if match.group(1).endswith('/'):
                 dirs.append(match.group(1))
 
-            elif match.group(1).lower().endswith(('.jpg','.jpeg','.png', '.bmp')):
+            elif match.group(1).lower().endswith(utils.image.SUPPORTED_EXTENSIONS):
                 files.append(match.group(1))
     return (dirs, files)
 
@@ -383,7 +383,7 @@ def parse_folder(folder, labels_file,
         else:
             for dirpath, dirnames, filenames in os.walk(os.path.join(folder, subdir), followlinks=True):
                 for filename in filenames:
-                    if filename.lower().endswith(('.jpg','.jpeg','.png', '.bmp')):
+                    if filename.lower().endswith(utils.image.SUPPORTED_EXTENSIONS):
                         lines.append('%s %d' % (os.path.join(folder, subdir, dirpath, filename), label_index))
                         if max_per_category is not None and len(lines) >= max_per_category:
                             break
