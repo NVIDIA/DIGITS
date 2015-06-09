@@ -918,8 +918,9 @@ class CaffeTrainTask(TrainTask):
                 self.path(self.deploy_file),
                 file_to_load,
                 caffe.TEST)
-        # TODO: once we can query CPU/GPU mode, turn this on
-        #caffe.set_mode_gpu()
+
+        if config_value('caffe_root')['cuda_enabled']:
+            caffe.set_mode_gpu()
 
         self.loaded_snapshot_epoch = epoch
         self.loaded_snapshot_file = file_to_load
