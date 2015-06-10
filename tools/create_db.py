@@ -12,8 +12,11 @@ import random
 import threading
 import Queue
 
-# Add path for DIGITS package
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    import digits
+except ImportError:
+    # Add path for DIGITS package
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
 digits.config.load_config()
 from digits import utils, log
