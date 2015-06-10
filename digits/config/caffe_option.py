@@ -82,7 +82,7 @@ class CaffeOption(config_option.FrameworkOption):
             value = os.path.abspath(value)
             if not os.path.isdir(value):
                 raise config_option.BadValue('"%s" is not a directory' % value)
-            expected_path = os.path.join(value, 'build', 'tools', 'caffe.bin')
+            expected_path = os.path.join(value, 'build', 'tools', 'caffe')
             if not os.path.exists(expected_path):
                 raise config_option.BadValue('caffe binary not found at "%s"' % value)
             cls.validate_version(expected_path)
@@ -200,7 +200,7 @@ class CaffeOption(config_option.FrameworkOption):
             if value == '<PATHS>':
                 executable = 'caffe'
             else:
-                executable = os.path.join(value, 'build', 'tools', 'caffe.bin')
+                executable = os.path.join(value, 'build', 'tools', 'caffe')
 
             version = self.get_version(executable)
 
