@@ -913,14 +913,15 @@ class CaffeTrainTask(TrainTask):
                 and hasattr(self, '_caffe_net') and self._caffe_net is not None:
             return self._caffe_net
 
+        if config_value('caffe_root')['cuda_enabled'] and\
+                config_value('gpu_list'):
+            caffe.set_mode_gpu()
+
         # load a new model
         self._caffe_net = caffe.Net(
                 self.path(self.deploy_file),
                 file_to_load,
                 caffe.TEST)
-
-        if config_value('caffe_root')['cuda_enabled']:
-            caffe.set_mode_gpu()
 
         self.loaded_snapshot_epoch = epoch
         self.loaded_snapshot_file = file_to_load
