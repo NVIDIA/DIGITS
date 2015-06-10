@@ -6,6 +6,7 @@ from cStringIO import StringIO
 import flask
 import PIL.Image
 
+import digits
 from digits import utils
 from digits.webapp import app, autodoc
 import classification.views
