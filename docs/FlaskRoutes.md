@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Jun 08, 2015*
+*Generated Jun 10, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -194,7 +194,7 @@ Location: [`digits/dataset/images/classification/views.py@207`](../digits/datase
 
 Methods: **POST**
 
-Location: [`digits/dataset/images/views.py@16`](../digits/dataset/images/views.py#L16)
+Location: [`digits/dataset/images/views.py@17`](../digits/dataset/images/views.py#L17)
 
 ### `/datasets/summary`
 
