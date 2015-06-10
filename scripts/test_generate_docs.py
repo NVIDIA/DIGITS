@@ -1,10 +1,25 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
+import os.path
+import sys
 import tempfile
 import itertools
+import unittest
 
-from . import generate_docs as _
+try:
+    import flask.ext.autodoc
+except ImportError as e:
+    raise unittest.SkipTest('Flask-Autodoc not installed')
+
+try:
+    import digits
+except ImportError:
+    # Add path for DIGITS package
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import digits.config; digits.config.load_config()
 from digits.webapp import app, _doc as doc
+from . import generate_docs as _
 
 def check_doc_file(generator, doc_filename):
     """
@@ -22,19 +37,23 @@ def check_doc_file(generator, doc_filename):
                         tmp_line.startswith('*Generated'):
                     # If the date is different, that's not a problem
                     pass
-                else:
-                    assert doc_line == tmp_line, '%s needs to be regenerated. Use scripts/generate_docs.py' % doc_filename
+                elif doc_line != tmp_line:
+                    print '(Previous)', doc_line
+                    print '(New)     ', tmp_line
+                    raise RuntimeError('%s needs to be regenerated. Use scripts/generate_docs.py' % doc_filename)
 
 def test_api_md():
     """API.md out-of-date"""
     with app.app_context():
         generator = _.ApiDocGenerator(doc)
-        check_doc_file(generator, 'docs/API.md')
+        check_doc_file(generator,
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs', 'API.md'))
 
 def test_flask_routes_md():
     """FlaskRoutes.md out-of-date"""
     with app.app_context():
         generator = _.FlaskRoutesDocGenerator(doc)
-        check_doc_file(generator, 'docs/FlaskRoutes.md')
+        check_doc_file(generator,
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs', 'FlaskRoutes.md'))
 
 
