@@ -36,9 +36,8 @@ class CaffeOption(config_option.FrameworkOption):
                 suggestions.append(prompt.Suggestion(
                     self.validate(d), 'R',
                     desc='CAFFE_ROOT', default=True))
-            except config_option.BadValue as e:
-                print 'CAFFE_ROOT "%s" is invalid:' % d
-                print '\t%s' % e
+            except config_option.BadValue:
+                pass
         if 'CAFFE_HOME' in os.environ:
             d = os.environ['CAFFE_HOME']
             try:
@@ -48,9 +47,8 @@ class CaffeOption(config_option.FrameworkOption):
                 suggestions.append(prompt.Suggestion(
                     self.validate(d), 'H',
                     desc='CAFFE_HOME', default=default))
-            except config_option.BadValue as e:
-                print 'CAFFE_HOME "%s" is invalid:' % d
-                print '\t%s' % e
+            except config_option.BadValue:
+                pass
         suggestions.append(prompt.Suggestion('<PATHS>', 'P',
             desc='PATH/PYTHONPATH', default=True))
         return suggestions
