@@ -27,6 +27,7 @@ install:
     - popd
       # change permissions for installed python packages
     - sudo chown travis:travis -R /home/travis/miniconda
+    - conda install --yes cython nose ipython h5py pandas python-dateutil python-gflags
     - for req in $(cat caffe/python/requirements.txt); do pip install $req; done
       # DIGITS
       # use miniconda for some deps
