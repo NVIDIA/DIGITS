@@ -223,7 +223,8 @@ class CaffeOption(config_option.FrameworkOption):
         if self._config_file_value:
             # Suppress GLOG output for python bindings
             GLOG_minloglevel = os.environ.pop('GLOG_minloglevel', None)
-            os.environ['GLOG_minloglevel'] = '5'
+            # Show only "ERROR" and "FATAL"
+            os.environ['GLOG_minloglevel'] = '2'
 
             if self._config_file_value != '<PATHS>':
                 # Add caffe/python to PATH
