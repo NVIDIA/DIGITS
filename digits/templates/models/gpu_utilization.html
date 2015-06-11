@@ -3,8 +3,8 @@
 {% for info in data %}
 <h3>{{info.name}} (#{{info.index}})</h3>
 <dl>
-    <dt>Memory</dt>
     {% if 'memory' in info %}
+    <dt>Memory</dt>
     <dd>
         {{info.memory.used|sizeof_fmt}} / {{info.memory.total|sizeof_fmt}}
         ({{(100.0 * info.memory.used / info.memory.total)|round(1)}}%)
