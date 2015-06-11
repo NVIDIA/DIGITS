@@ -21,7 +21,8 @@ logger = logging.getLogger('digits.tools.resize_image')
 
 def validate_output_file(filename):
     if filename is None:
-        return True
+        logger.error('an output file is required.')
+        return False
     if os.path.exists(filename):
         if not os.access(filename, os.W_OK):
             logger.error('cannot overwrite existing output file "%s"' % filename)
