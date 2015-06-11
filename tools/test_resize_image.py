@@ -30,13 +30,7 @@ class TestOutputValidation():
 
 class TestInputValidation():
     def test_does_not_exist(self):
-        temp_dir = tempfile.mkdtemp()
-
-        missing_filename = os.path.join(temp_dir, 'does_not_exist.png')
-        assert not os.path.exists(missing_filename), '"%s" exists in directory, but shouldn\'t' % missing_filename
-        assert not _.validate_input_file(missing_filename), 'validation should not pass on missing file "%s"' % missing_filename
-
-        os.rmdir(temp_dir)
+        assert not _.validate_input_file(''), 'validation should not pass on missing file'
 
     @mock.patch('os.access')
     def test_unreadable_file(self, mock_access):
