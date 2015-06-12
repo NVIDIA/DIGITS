@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Jun 10, 2015*
+*Generated Jun 12, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -220,7 +220,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/model/views.py@27`](../digits/model/views.py#L27)
+Location: [`digits/model/views.py@31`](../digits/model/views.py#L31)
 
 ### `/models/<job_id>/download`
 
@@ -230,7 +230,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension` (`tar.gz`)
 
-Location: [`digits/model/views.py@154`](../digits/model/views.py#L154)
+Location: [`digits/model/views.py@158`](../digits/model/views.py#L158)
 
 ### `/models/<job_id>/download.<extension>`
 
@@ -240,7 +240,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension`
 
-Location: [`digits/model/views.py@154`](../digits/model/views.py#L154)
+Location: [`digits/model/views.py@158`](../digits/model/views.py#L158)
 
 ### `/models/customize`
 
@@ -248,7 +248,7 @@ Location: [`digits/model/views.py@154`](../digits/model/views.py#L154)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@49`](../digits/model/views.py#L49)
+Location: [`digits/model/views.py@53`](../digits/model/views.py#L53)
 
 ### `/models/images/classification`
 
@@ -260,7 +260,7 @@ Location: [`digits/model/views.py@49`](../digits/model/views.py#L49)
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@49`](../digits/model/images/classification/views.py#L49)
+Location: [`digits/model/images/classification/views.py@53`](../digits/model/images/classification/views.py#L53)
 
 ### `/models/images/classification/classify_many`
 
@@ -272,7 +272,7 @@ Location: [`digits/model/images/classification/views.py@49`](../digits/model/ima
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@287`](../digits/model/images/classification/views.py#L287)
+Location: [`digits/model/images/classification/views.py@291`](../digits/model/images/classification/views.py#L291)
 
 ### `/models/images/classification/classify_one`
 
@@ -284,7 +284,7 @@ Location: [`digits/model/images/classification/views.py@287`](../digits/model/im
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@231`](../digits/model/images/classification/views.py#L231)
+Location: [`digits/model/images/classification/views.py@235`](../digits/model/images/classification/views.py#L235)
 
 ### `/models/images/classification/large_graph`
 
@@ -292,7 +292,7 @@ Location: [`digits/model/images/classification/views.py@231`](../digits/model/im
 
 Methods: **GET**
 
-Location: [`digits/model/images/classification/views.py@218`](../digits/model/images/classification/views.py#L218)
+Location: [`digits/model/images/classification/views.py@222`](../digits/model/images/classification/views.py#L222)
 
 ### `/models/images/classification/new`
 
@@ -300,7 +300,7 @@ Location: [`digits/model/images/classification/views.py@218`](../digits/model/im
 
 Methods: **GET**
 
-Location: [`digits/model/images/classification/views.py@28`](../digits/model/images/classification/views.py#L28)
+Location: [`digits/model/images/classification/views.py@32`](../digits/model/images/classification/views.py#L32)
 
 ### `/models/images/classification/top_n`
 
@@ -308,7 +308,7 @@ Location: [`digits/model/images/classification/views.py@28`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@364`](../digits/model/images/classification/views.py#L364)
+Location: [`digits/model/images/classification/views.py@368`](../digits/model/images/classification/views.py#L368)
 
 ### `/models/visualize-lr`
 
@@ -316,7 +316,7 @@ Location: [`digits/model/images/classification/views.py@364`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@99`](../digits/model/views.py#L99)
+Location: [`digits/model/views.py@103`](../digits/model/views.py#L103)
 
 ### `/models/visualize-network`
 
@@ -324,7 +324,7 @@ Location: [`digits/model/views.py@99`](../digits/model/views.py#L99)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@86`](../digits/model/views.py#L86)
+Location: [`digits/model/views.py@90`](../digits/model/views.py#L90)
 
 ## Util
 

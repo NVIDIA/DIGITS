@@ -38,8 +38,8 @@ install:
     - conda install --yes gevent greenlet
     - popd
     - sudo apt-get install graphviz
-    - for req in $(cat requirements.txt); do pip install $req; done
-    - for req in $(cat requirements_test.txt); do pip install $req; done
+    - pip install -r requirements.txt
+    - pip install -r requirements_test.txt
 before_script:
     - export CAFFE_HOME=$(pwd)/caffe
 script:
