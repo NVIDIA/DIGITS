@@ -170,15 +170,20 @@ class Job(StatusCls):
             task.abort()
 
     def save(self):
-        """save to pickle file"""
+        """
+        Saves the job to disk as a pickle file
+        Suppresses errors, but returns False if something goes wrong
+        """
         try:
             # use tmpfile so we don't abort during pickle dump (leading to EOFErrors)
             tmpfile_path = self.path(self.SAVE_FILE + '.tmp')
             with open(tmpfile_path, 'wb') as tmpfile:
                 pickle.dump(self, tmpfile)
             shutil.move(tmpfile_path, self.path(self.SAVE_FILE))
+            return True
         except KeyboardInterrupt:
             pass
         except Exception as e:
             print 'Caught %s while saving job: %s' % (type(e).__name__, e)
+        return False
 

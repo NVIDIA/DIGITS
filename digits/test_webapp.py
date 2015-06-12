@@ -651,6 +651,11 @@ class TestCreatedModel(WebappBaseTest):
         cls.model_id = cls.create_quick_model(cls.dataset_id)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'model creation failed'
 
+    def test_save(self):
+        """created model - save"""
+        job = webapp.scheduler.get_job(self.model_id)
+        assert job.save(), 'Job failed to save'
+
     def download_model(self, extension):
         url = '/models/%s/download.%s' % (self.model_id, extension)
         rv = self.app.get(url)
