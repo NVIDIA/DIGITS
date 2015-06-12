@@ -10,7 +10,7 @@ from . import resize_image as _
 
 class TestOutputValidation():
     def test_no_filename(self):
-        assert not _.validate_output_file(None), 'validation should not pass on None'
+        assert _.validate_output_file(None), 'All new files should be valid'
 
     @mock.patch('os.access')
     def test_not_writable(self, mock_access):
