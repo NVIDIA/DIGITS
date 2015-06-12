@@ -24,9 +24,9 @@ import device_query
 DUMMY_IMAGE_DIM = 10
 DUMMY_IMAGE_COUNT = 10 # per category
 
-# TODO: these might be too short on a slow system
+# May be too short on a slow system
 TIMEOUT_DATASET = 10
-TIMEOUT_MODEL = 10
+TIMEOUT_MODEL = 15
 
 def create_dummy_dataset(data_path):
     """
