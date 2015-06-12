@@ -8,7 +8,11 @@ import unittest
 import mock
 import flask
 from bs4 import BeautifulSoup
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 
 from . import views as _
 import digits

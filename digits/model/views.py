@@ -11,7 +11,11 @@ import zipfile
 import flask
 import werkzeug.exceptions
 from google.protobuf import text_format
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 import caffe.draw
 
 import digits

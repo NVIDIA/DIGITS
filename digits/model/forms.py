@@ -6,7 +6,11 @@ from google.protobuf import text_format
 from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 
 from digits.config import config_value
 from digits.device_query import get_device
