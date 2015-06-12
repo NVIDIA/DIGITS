@@ -8,6 +8,6 @@ requests>=2.2.1
 gevent>=1.0
 Flask>=0.10.1
 Flask-WTF>=0.11
-gunicorn>=17.5
+gunicorn==17.5
 Flask-SocketIO
 lmdb
