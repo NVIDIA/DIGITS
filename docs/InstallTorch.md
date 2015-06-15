@@ -21,8 +21,15 @@ For now, Torch reads datasets that were created for Caffe. This requires install
 
 If LMDB wasn’t already installed, install it using the command below:
 
-* On Ubuntu: `sudo apt-get install liblmdb-dev`
+* On Ubuntu 14.04: `sudo apt-get install liblmdb-dev`
 * On Mac OS X: `brew install lmdb`
+
+Other OS's:
+```
+git clone https://gitorious.org/mdb/mdb.git ~/lmdb
+cd ~/lmdb/libraries/liblmdb
+make
+```
 
 #### Lua Wrapper for LMDB (lightningmdb)
 
@@ -37,5 +44,9 @@ During installation, lightningmdb requires the LMDB header and libraries, so lua
 
 Install lightningmdb (you may need to edit the paths at the end for your specific LMDB installation):
 
+    # Ubuntu 14.04
     % luarocks install lightningmdb LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
+
+    # From source
+    % luarocks install lightningmdb LMDB_INCDIR=~/lmdb/libraries/liblmdb LMDB_LIBDIR=~/lmdb/libraries/liblmdb
 
