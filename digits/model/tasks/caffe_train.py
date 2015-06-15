@@ -74,9 +74,12 @@ class CaffeTrainTask(TrainTask):
         super(CaffeTrainTask, self).__setstate__(state)
 
         # Upgrade pickle file
+        if state['pickver_task_caffe_train'] <= 1:
+            print 'Upgrading CaffeTrainTask to version 2 ...'
+            self.caffe_log_file = self.CAFFE_LOG
         if state['pickver_task_caffe_train'] <= 2:
-            print 'upgrading %s' % self.job_id
-            self.log_file = self.CAFFE_LOG
+            print 'Upgrading CaffeTrainTask to version 3 ...'
+            self.log_file = self.caffe_log_file
         self.pickver_task_caffe_train = PICKLE_VERSION
 
         # Make changes to self
