@@ -6,7 +6,7 @@ import os.path
 import pickle
 import shutil
 
-from flask import render_template
+import flask
 
 from digits.config import config_value
 from status import Status, StatusCls
@@ -76,6 +76,21 @@ class Job(StatusCls):
         """
         self.__dict__ = state
 
+    def json_dict(self, detailed=False):
+        """
+        Returns a dict used for a JSON representation
+        """
+        d = {
+                'id': self.id(),
+                'name': self.name(),
+                'status': self.status.name,
+                }
+        if detailed:
+            d.update({
+                'directory': self.dir(),
+                })
+        return d
+
     def id(self):
         """getter for _id"""
         return self._id
@@ -137,7 +152,7 @@ class Job(StatusCls):
                 'running': self.status.is_running(),
                 }
         with app.app_context():
-            message['html'] = render_template('status_updates.html', updates=self.status_history)
+            message['html'] = flask.render_template('status_updates.html', updates=self.status_history)
 
         socketio.emit('job update',
                 message,
@@ -155,15 +170,20 @@ class Job(StatusCls):
             task.abort()
 
     def save(self):
-        """save to pickle file"""
+        """
+        Saves the job to disk as a pickle file
+        Suppresses errors, but returns False if something goes wrong
+        """
         try:
             # use tmpfile so we don't abort during pickle dump (leading to EOFErrors)
             tmpfile_path = self.path(self.SAVE_FILE + '.tmp')
             with open(tmpfile_path, 'wb') as tmpfile:
                 pickle.dump(self, tmpfile)
             shutil.move(tmpfile_path, self.path(self.SAVE_FILE))
+            return True
         except KeyboardInterrupt:
             pass
         except Exception as e:
             print 'Caught %s while saving job: %s' % (type(e).__name__, e)
+        return False
 

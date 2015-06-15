@@ -31,27 +31,30 @@ class TestLoadImage():
     def test_good_file(self):
         """load_image file"""
         for args in [
+                # created mode, file extension, pixel value, loaded mode (expected)
                 # Grayscale
-                ('1', 1, 'L'),
-                ('L', 127, 'L'),
-                ('LA', (127, 255), 'L'),
+                ('1',   'png',  1,              'L'),
+                ('1',   'ppm',  1,              'L'),
+                ('L',   'png',  127,            'L'),
+                ('L',   'jpg',  127,            'L'),
+                ('L',   'ppm',  127,            'L'),
+                ('LA',  'png',  (127, 255),     'L'),
                 # Color
-                ('RGB', (127, 127, 127), 'RGB'),
-                ('RGBA', (127, 127, 127, 255), 'RGB'),
-                ('P', 127, 'RGB'),
-                ('CMYK', (127, 127, 127, 127), 'RGB', '.jpg'),
-                ('YCbCr', (127, 127, 127), 'RGB', '.jpg'),
+                ('RGB', 'png',  (127, 127, 127),        'RGB'),
+                ('RGB', 'jpg',  (127, 127, 127),        'RGB'),
+                ('RGB', 'ppm',  (127, 127, 127),        'RGB'),
+                ('RGBA','png',  (127, 127, 127, 255),   'RGB'),
+                ('P',   'png',  127,                    'RGB'),
+                ('CMYK','jpg',  (127, 127, 127, 127),   'RGB'),
+                ('YCbCr','jpg', (127, 127, 127),        'RGB'),
                 ]:
             yield self.check_good_file, args
 
     def check_good_file(self, args):
-        if len(args) == 3:
-            args += ('.png',)
-        orig_mode, pixel, new_mode, suffix = args
-        print args
+        orig_mode, suffix, pixel, new_mode = args
 
         orig = PIL.Image.new(orig_mode, (10,10), pixel)
-        with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
+        with tempfile.NamedTemporaryFile(suffix='.' + suffix) as tmp:
             orig.save(tmp.name)
             new = _.load_image(tmp.name)
         assert new is not None, 'load_image should never return None'

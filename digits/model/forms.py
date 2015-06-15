@@ -6,10 +6,15 @@ from google.protobuf import text_format
 from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 
 from digits.config import config_value
 from digits.device_query import get_device
+from digits.utils.forms import validate_required_iff
 
 class ModelForm(Form):
 
@@ -22,17 +27,6 @@ class ModelForm(Form):
                 found = True
         if not found:
             raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
-
-    def required_if_method(value, framework_opt = None):
-        def _required(form, field):
-            # second condition is to ensure that framework check will be done only when the framework parameter is provided to the required_if_method()
-            if form.method.data == value and (framework_opt is None or form.framework.data == framework_opt):
-                if not field.data or (isinstance(field.data, str) and field.data.strip() == ""):
-                    raise validators.ValidationError('This field is required.')
-            else:
-                field.errors[:] = []
-                raise validators.StopValidation()
-        return _required
 
     def validate_NetParameter(form, field):
         pb = caffe_pb2.NetParameter()
@@ -154,14 +148,15 @@ class ModelForm(Form):
 
     ### Network
 
-    method = wtforms.HiddenField('Model type',
-            validators = [
-                validators.AnyOf(
-                    ['standard', 'previous', 'custom'],
-                    message='The method you chose is not currently supported.'
-                    )
+    # Use a SelectField instead of a HiddenField so that the default value
+    # is used when nothing is provided (through the REST API)
+    method = wtforms.SelectField(u'Network type',
+            choices = [
+                ('standard', 'Standard network'),
+                ('previous', 'Previous network'),
+                ('custom', 'Custom network'),
                 ],
-            default = 'standard',
+            default='standard',
             )
 
     ## framework
@@ -178,14 +173,14 @@ class ModelForm(Form):
     # The options for this get set in the view (since they are dependent on the data type)
     standard_networks = wtforms.RadioField('Standard Networks',
             validators = [
-                required_if_method('standard'),
+                validate_required_iff(method='standard'),
                 ],
             )
 
     previous_networks = wtforms.RadioField('Previous Networks',
             choices = [],
             validators = [
-                required_if_method('previous'),
+                validate_required_iff(method='previous'),
                 selection_exists_in_choices,
                 ],
             )
@@ -193,14 +188,14 @@ class ModelForm(Form):
     # custom network validation is required for the caffe framework, because of limited protobuf support for torch framework.
     caffe_custom_network = wtforms.TextAreaField('Caffe Custom Network',
             validators = [
-                required_if_method('custom','caffe'),
+                validate_required_iff(method='custom',framework='caffe'),
                 validate_NetParameter,
                 ]
             )
 
     torch_custom_network = wtforms.TextAreaField('Torch Custom Network',
             validators = [
-                required_if_method('custom','torch')
+                validate_required_iff(method='custom',framework='torch'),
                 ]
             )
 

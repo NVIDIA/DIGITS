@@ -6,9 +6,13 @@ import tempfile
 
 import unittest
 import mock
-from flask import url_for
+import flask
 from bs4 import BeautifulSoup
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 
 from . import views as _
 import digits
@@ -44,7 +48,7 @@ class TestCreate(BaseTestCase):
         super(TestCreate, cls).setupClass()
 
         with app.test_request_context():
-            cls.url = url_for('image_classification_model_create')
+            cls.url = flask.url_for('image_classification_model_create')
 
         dj = mock.Mock(spec=digits.dataset.ImageClassificationDatasetJob)
         dj.status.is_running.return_value = True

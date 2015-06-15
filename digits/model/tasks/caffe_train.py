@@ -9,7 +9,11 @@ import subprocess
 import numpy as np
 from google.protobuf import text_format
 import caffe
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 
 from train import TrainTask
 from digits.config import config_value
@@ -439,7 +443,7 @@ class CaffeTrainTask(TrainTask):
             return True
 
         # learning rate updates
-        match = re.match(r'Iteration (\d+), lr = %s' % float_exp, message, flags=re.IGNORECASE)
+        match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
         if match:
             i = int(match.group(1))
             lr = float(match.group(2))
@@ -451,7 +455,7 @@ class CaffeTrainTask(TrainTask):
             if not message.startswith('Snapshotting solver state'):
                 self.logger.warning('caffe output format seems to have changed. Expected "Snapshotting solver state..." after "Snapshotting to..."')
             else:
-                self.logger.info('Snapshot saved.')
+                self.logger.debug('Snapshot saved.')
             self.detect_snapshots()
             self.send_snapshot_update()
             self.saving_snapshot = False
@@ -467,7 +471,7 @@ class CaffeTrainTask(TrainTask):
         match = re.match(r'Memory required for data:\s+(\d+)', message)
         if match:
             bytes_required = int(match.group(1))
-            self.logger.debug('memory required: %s' % utils.sizeof_fmt(bytes_required))
+            #self.logger.debug('memory required: %s' % utils.sizeof_fmt(bytes_required))
             return True
 
         if level in ['error', 'critical']:
@@ -920,13 +924,15 @@ class CaffeTrainTask(TrainTask):
                 and hasattr(self, '_caffe_net') and self._caffe_net is not None:
             return self._caffe_net
 
+        if config_value('caffe_root')['cuda_enabled'] and\
+                config_value('gpu_list'):
+            caffe.set_mode_gpu()
+
         # load a new model
         self._caffe_net = caffe.Net(
                 self.path(self.deploy_file),
                 file_to_load,
                 caffe.TEST)
-        # TODO: once we can query CPU/GPU mode, turn this on
-        #caffe.set_mode_gpu()
 
         self.loaded_snapshot_epoch = epoch
         self.loaded_snapshot_file = file_to_load

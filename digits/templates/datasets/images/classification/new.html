@@ -305,27 +305,28 @@ textfile_image_sets_disabled();
                     </script>
 
                     <div class="row">
-                        <div class="col-sm-12 form-group{{ ' has-error' if form.textfile_shuffle.errors else '' }}">
-                            {{ form.textfile_shuffle }}
-                            {{ form.textfile_shuffle.label }}
-                            <span name="textfile_shuffle_explanation"
-                                class="explanation-tooltip glyphicon glyphicon-question-sign"
-                                data-container="body"
-                                title="Shuffle the list[s] of images before creating the database."
-                                ></span>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-sm-5 col-sm-offset-2 form-group{{ ' has-error' if form.textfile_labels_file.errors else '' }}">
-                            {{ form.textfile_labels_file.label }}
-                            <div class="input-group">
-                                {{ form.textfile_labels_file(class='form-control') }}
-                                <span name="textfile_labels_file_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
-                                    ></span>
+                        <div class="col-sm-6 col-sm-offset-1">
+                            <div class="form-group{{ ' has-error' if form.textfile_shuffle.errors else '' }}">
+                                {{ form.textfile_shuffle.label }}
+                                <div class="input-group">
+                                    {{ form.textfile_shuffle(class='form-control') }}
+                                    <span name="textfile_shuffle_explanation"
+                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                        data-container="body"
+                                        title="Shuffle the list[s] of images before creating the database."
+                                        ></span>
+                                </div>
+                            </div>
+                            <div class="form-group{{ ' has-error' if form.textfile_labels_file.errors else '' }}">
+                                {{ form.textfile_labels_file.label }}
+                                <div class="input-group">
+                                    {{ form.textfile_labels_file(class='form-control') }}
+                                    <span name="textfile_labels_file_explanation"
+                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                        data-container="body"
+                                        title="The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
+                                        ></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -334,10 +335,10 @@ textfile_image_sets_disabled();
             </div>
         </div>
     </div>
-    {{ form.method }}
+    {{ form.method(style="display:none;") }}
     <script>
 function update_db_tab(tabName) {
-    $('input[name=method]').val( tabName );
+    $('select[name=method]').val( tabName );
 }
 $('#db-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         parts = e.target.href.split('-');

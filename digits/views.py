@@ -4,7 +4,8 @@ import os
 import json
 import traceback
 
-from flask import render_template, redirect, session, url_for, abort, make_response, request, jsonify
+import flask
+import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
 from . import dataset, model
@@ -13,64 +14,62 @@ from webapp import app, socketio, scheduler, autodoc
 import dataset.views
 import model.views
 from digits.utils import errors
+from digits.utils.routing import request_wants_json
 
-@app.route('/')
-@autodoc('home')
+@app.route('/index.json', methods=['GET'])
+@app.route('/', methods=['GET'])
+@autodoc(['home', 'api'])
 def home():
     """
     DIGITS home page
-    Displays all datasets and models on the server and their status
-    """
-    new_dataset_options = [
-            ('Images', [
-                {
-                    'title': 'Classification',
-                    'id': 'image-classification',
-                    'url': url_for('image_classification_dataset_new'),
-                    },
-                ])
-            ]
-    new_model_options = [
-            ('Images', [
-                {
-                    'title': 'Classification',
-                    'id': 'image-classification',
-                    'url': url_for('image_classification_model_new'),
-                    },
-                ])
-            ]
-    return render_template('home.html',
-            new_dataset_options = new_dataset_options,
-            running_datasets    = get_job_list(dataset.DatasetJob, True),
-            completed_datasets  = get_job_list(dataset.DatasetJob, False),
-            new_model_options   = new_model_options,
-            running_models      = get_job_list(model.ModelJob, True),
-            completed_models    = get_job_list(model.ModelJob, False),
-            )
-
-@app.route('/index.json')
-@autodoc('home')
-def home_json():
-    """
-    JSON version of the DIGITS home page
     Returns information about each job on the server
+
+    Returns JSON when requested:
+        {
+            datasets: [{id, name, status},...],
+            models: [{id, name, status},...]
+        }
     """
-    datasets = get_job_list(dataset.DatasetJob, True) + get_job_list(dataset.DatasetJob, False)
-    datasets = [{
-        'name': j.name(),
-        'id': j.id(),
-        'status': j.status.name,
-        } for j in datasets]
-    models = get_job_list(model.ModelJob, True) + get_job_list(model.ModelJob, False)
-    models = [{
-        'name': j.name(),
-        'id': j.id(),
-        'status': j.status.name,
-        } for j in models]
-    return jsonify({
-        'datasets': datasets,
-        'models': models,
-        })
+    running_datasets    = get_job_list(dataset.DatasetJob, True)
+    completed_datasets  = get_job_list(dataset.DatasetJob, False)
+    running_models      = get_job_list(model.ModelJob, True)
+    completed_models    = get_job_list(model.ModelJob, False)
+
+    if request_wants_json():
+        return flask.jsonify({
+            'datasets': [j.json_dict()
+                for j in running_datasets + completed_datasets],
+            'models': [j.json_dict()
+                for j in running_models + completed_models],
+            })
+    else:
+        new_dataset_options = [
+                ('Images', [
+                    {
+                        'title': 'Classification',
+                        'id': 'image-classification',
+                        'url': flask.url_for('image_classification_dataset_new'),
+                        },
+                    ])
+                ]
+        new_model_options = [
+                ('Images', [
+                    {
+                        'title': 'Classification',
+                        'id': 'image-classification',
+                        'url': flask.url_for('image_classification_model_new'),
+                        },
+                    ])
+                ]
+
+        return flask.render_template('home.html',
+                new_dataset_options = new_dataset_options,
+                running_datasets    = running_datasets,
+                completed_datasets  = completed_datasets,
+                new_model_options   = new_model_options,
+                running_models      = running_models,
+                completed_models    = completed_models,
+                )
 
 def get_job_list(cls, running):
     return sorted(
@@ -89,16 +88,15 @@ def show_job(job_id):
     Redirects to the appropriate /datasets/ or /models/ page
     """
     job = scheduler.get_job(job_id)
-
     if job is None:
-        abort(404)
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     if isinstance(job, dataset.DatasetJob):
-        return redirect(url_for('datasets_show', job_id=job_id))
+        return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
     if isinstance(job, model.ModelJob):
-        return redirect(url_for('models_show', job_id=job_id))
+        return flask.redirect(flask.url_for('models_show', job_id=job_id))
     else:
-        abort(404)
+        raise werkzeug.exceptions.BadRequest('Invalid job type')
 
 @app.route('/jobs/<job_id>', methods=['PUT'])
 @autodoc('jobs')
@@ -107,12 +105,11 @@ def edit_job(job_id):
     Edit the name of a job
     """
     job = scheduler.get_job(job_id)
-
     if job is None:
-        abort(404)
+        raise werkzeug.exceptions.NotFound('Job not found')
 
     old_name = job.name()
-    job._name = request.form['job_name']
+    job._name = flask.request.form['job_name']
     return 'Changed job name from "%s" to "%s"' % (old_name, job.name())
 
 @app.route('/datasets/<job_id>/status', methods=['GET'])
@@ -143,15 +140,16 @@ def delete_job(job_id):
     Deletes a job
     """
     job = scheduler.get_job(job_id)
-    if not job:
-        return 'Job not found!', 404
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
     try:
         if scheduler.delete_job(job_id):
             return 'Job deleted.'
         else:
-            return 'Job could not be deleted! Check log for more details', 403
+            raise werkzeug.exceptions.Forbidden('Job not deleted')
     except errors.DeleteError as e:
-        return e.__str__(), 403
+        raise werkzeug.exceptions.Forbidden(str(e))
 
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
@@ -161,28 +159,41 @@ def abort_job(job_id):
     """
     Aborts a running job
     """
+    job = scheduler.get_job(job_id)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
     if scheduler.abort_job(job_id):
         return 'Job aborted.'
     else:
-        return 'Job not found!', 404
+        raise werkzeug.exceptions.Forbidden('Job not aborted')
 
 ### Error handling
 
 @app.errorhandler(Exception)
 def handle_exception(e, status_code=500):
     if 'DIGITS_MODE_TEST' in os.environ:
-        raise e
-    title = type(e).__name__
+        raise
+    error_type = type(e).__name__
     message = str(e)
     trace = None
     if app.debug:
         trace = traceback.format_exc()
-        #trace = '<br>\n'.join(trace.split('\n'))
-    return render_template('500.html',
-            title   = title,
-            message = message,
-            trace   = trace,
-            ), status_code
+
+    if request_wants_json():
+        details = {
+                'message': message,
+                'type': error_type,
+                }
+        if trace is not None:
+            details['trace'] = trace.split('\n')
+        return flask.jsonify({'error': details}), status_code
+    else:
+        return flask.render_template('500.html',
+                title   = error_type,
+                message = message,
+                trace   = trace,
+                ), status_code
 
 ### File serving
 
@@ -200,15 +211,15 @@ def serve_file(path):
 
     # Don't allow path manipulation
     if not os.path.commonprefix([path, jobs_dir]).startswith(jobs_dir):
-        abort(403)
+        raise werkzeug.exceptions.Forbidden('Path manipulation not allowed')
 
     if not os.path.exists(path):
-        abort(404)
+        raise werkzeug.exceptions.NotFound('File not found')
     if os.path.isdir(path):
-        abort(403)
+        raise werkzeug.exceptions.Forbidden('Folder cannot be served')
 
     with open(path, 'r') as infile:
-        response = make_response(infile.read())
+        response = flask.make_response(infile.read())
         response.headers["Content-Disposition"] = "attachment; filename=%s" % os.path.basename(path)
         return response
 
@@ -252,16 +263,16 @@ def on_join(data):
     """
     room = data['room']
     join_room(room)
-    session['room'] = room
+    flask.session['room'] = room
 
 @socketio.on('leave', namespace='/jobs')
 def on_leave():
     """
     Somebody left a room
     """
-    if 'room' in session:
-        room = session['room']
-        del session['room']
+    if 'room' in flask.session:
+        room = flask.session['room']
+        del flask.session['room']
         #print '>>> Somebody left room %s' % room
         leave_room(room)
 

@@ -1,6 +1,10 @@
-# DIGITS REST API
+# Flask Routes
 
-Documentation on the various REST routes in DIGITS.
+*Generated Jun 12, 2015*
+
+Documentation on the various routes used internally for the web application.
+
+These are all technically RESTful, but they return HTML pages. To get JSON responses, see [this page](API.md).
 
 ### Table of Contents
 
@@ -16,21 +20,23 @@ Documentation on the various REST routes in DIGITS.
 
 > DIGITS home page
 
-> Displays all datasets and models on the server and their status
-
-Methods: **GET**
-
-Location: [`digits/views.py@19`](../digits/views.py#L19)
-
-### `/index.json`
-
-> JSON version of the DIGITS home page
-
 > Returns information about each job on the server
 
+> 
+
+> Returns JSON when requested:
+
+> {
+
+> datasets: [{id, name, status},...],
+
+> models: [{id, name, status},...]
+
+> }
+
 Methods: **GET**
 
-Location: [`digits/views.py@53`](../digits/views.py#L53)
+Location: [`digits/views.py@21`](../digits/views.py#L21)
 
 ## Jobs
 
@@ -42,7 +48,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@141`](../digits/views.py#L141)
+Location: [`digits/views.py@137`](../digits/views.py#L137)
 
 ### `/datasets/<job_id>/abort`
 
@@ -52,7 +58,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@160`](../digits/views.py#L160)
+Location: [`digits/views.py@157`](../digits/views.py#L157)
 
 ### `/datasets/<job_id>/status`
 
@@ -62,7 +68,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@122`](../digits/views.py#L122)
+Location: [`digits/views.py@118`](../digits/views.py#L118)
 
 ### `/jobs/<job_id>`
 
@@ -72,7 +78,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@87`](../digits/views.py#L87)
+Location: [`digits/views.py@85`](../digits/views.py#L85)
 
 ### `/jobs/<job_id>`
 
@@ -82,7 +88,7 @@ Methods: **PUT**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@105`](../digits/views.py#L105)
+Location: [`digits/views.py@102`](../digits/views.py#L102)
 
 ### `/jobs/<job_id>`
 
@@ -92,7 +98,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@141`](../digits/views.py#L141)
+Location: [`digits/views.py@137`](../digits/views.py#L137)
 
 ### `/jobs/<job_id>/abort`
 
@@ -102,7 +108,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@160`](../digits/views.py#L160)
+Location: [`digits/views.py@157`](../digits/views.py#L157)
 
 ### `/jobs/<job_id>/status`
 
@@ -112,7 +118,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@122`](../digits/views.py#L122)
+Location: [`digits/views.py@118`](../digits/views.py#L118)
 
 ### `/models/<job_id>`
 
@@ -122,7 +128,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@141`](../digits/views.py#L141)
+Location: [`digits/views.py@137`](../digits/views.py#L137)
 
 ### `/models/<job_id>/abort`
 
@@ -132,7 +138,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@160`](../digits/views.py#L160)
+Location: [`digits/views.py@157`](../digits/views.py#L157)
 
 ### `/models/<job_id>/status`
 
@@ -142,7 +148,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@122`](../digits/views.py#L122)
+Location: [`digits/views.py@118`](../digits/views.py#L118)
 
 ## Datasets
 
@@ -150,15 +156,25 @@ Location: [`digits/views.py@122`](../digits/views.py#L122)
 
 > Show a DatasetJob
 
+> 
+
+> Returns JSON when requested:
+
+> {id, name, directory, status}
+
 Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/dataset/views.py@12`](../digits/dataset/views.py#L12)
+Location: [`digits/dataset/views.py@15`](../digits/dataset/views.py#L15)
 
 ### `/datasets/images/classification`
 
 > Creates a new ImageClassificationDatasetJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
 
 Methods: **POST**
 
@@ -170,7 +186,7 @@ Location: [`digits/dataset/images/classification/views.py@217`](../digits/datase
 
 Methods: **GET**
 
-Location: [`digits/dataset/images/classification/views.py@208`](../digits/dataset/images/classification/views.py#L208)
+Location: [`digits/dataset/images/classification/views.py@207`](../digits/dataset/images/classification/views.py#L207)
 
 ### `/datasets/images/resize-example`
 
@@ -178,7 +194,7 @@ Location: [`digits/dataset/images/classification/views.py@208`](../digits/datase
 
 Methods: **POST**
 
-Location: [`digits/dataset/images/views.py@16`](../digits/dataset/images/views.py#L16)
+Location: [`digits/dataset/images/views.py@17`](../digits/dataset/images/views.py#L17)
 
 ### `/datasets/summary`
 
@@ -186,7 +202,7 @@ Location: [`digits/dataset/images/views.py@16`](../digits/dataset/images/views.p
 
 Methods: **GET**
 
-Location: [`digits/dataset/views.py@28`](../digits/dataset/views.py#L28)
+Location: [`digits/dataset/views.py@36`](../digits/dataset/views.py#L36)
 
 ## Models
 
@@ -194,21 +210,17 @@ Location: [`digits/dataset/views.py@28`](../digits/dataset/views.py#L28)
 
 > Show a ModelJob
 
-Methods: **GET**
+> 
 
-Arguments: `job_id`
+> Returns JSON when requested:
 
-Location: [`digits/model/views.py@26`](../digits/model/views.py#L26)
-
-### `/models/<job_id>.json`
-
-> Return a JSON representation of a ModelJob
+> {id, name, directory, status, snapshots: [epoch,epoch,...]}
 
 Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/model/views.py@42`](../digits/model/views.py#L42)
+Location: [`digits/model/views.py@31`](../digits/model/views.py#L31)
 
 ### `/models/<job_id>/download`
 
@@ -218,7 +230,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension` (`tar.gz`)
 
-Location: [`digits/model/views.py@167`](../digits/model/views.py#L167)
+Location: [`digits/model/views.py@158`](../digits/model/views.py#L158)
 
 ### `/models/<job_id>/download.<extension>`
 
@@ -228,7 +240,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension`
 
-Location: [`digits/model/views.py@167`](../digits/model/views.py#L167)
+Location: [`digits/model/views.py@158`](../digits/model/views.py#L158)
 
 ### `/models/customize`
 
@@ -236,31 +248,43 @@ Location: [`digits/model/views.py@167`](../digits/model/views.py#L167)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@62`](../digits/model/views.py#L62)
+Location: [`digits/model/views.py@53`](../digits/model/views.py#L53)
 
 ### `/models/images/classification`
 
 > Create a new ImageClassificationModelJob
 
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@49`](../digits/model/images/classification/views.py#L49)
+Location: [`digits/model/images/classification/views.py@53`](../digits/model/images/classification/views.py#L53)
 
 ### `/models/images/classification/classify_many`
 
 > Classify many images and return the top 5 classifications for each
 
-Methods: **POST**
+> 
 
-Location: [`digits/model/images/classification/views.py@264`](../digits/model/images/classification/views.py#L264)
+> Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
+
+Methods: **GET**, **POST**
+
+Location: [`digits/model/images/classification/views.py@291`](../digits/model/images/classification/views.py#L291)
 
 ### `/models/images/classification/classify_one`
 
-> Classify one image and return the predictions, weights and activations
+> Classify one image and return the top 5 classifications
 
-Methods: **POST**
+> 
 
-Location: [`digits/model/images/classification/views.py@214`](../digits/model/images/classification/views.py#L214)
+> Returns JSON when requested: {predictions: {category: confidence,...}}
+
+Methods: **GET**, **POST**
+
+Location: [`digits/model/images/classification/views.py@235`](../digits/model/images/classification/views.py#L235)
 
 ### `/models/images/classification/large_graph`
 
@@ -268,7 +292,7 @@ Location: [`digits/model/images/classification/views.py@214`](../digits/model/im
 
 Methods: **GET**
 
-Location: [`digits/model/images/classification/views.py@202`](../digits/model/images/classification/views.py#L202)
+Location: [`digits/model/images/classification/views.py@222`](../digits/model/images/classification/views.py#L222)
 
 ### `/models/images/classification/new`
 
@@ -276,7 +300,7 @@ Location: [`digits/model/images/classification/views.py@202`](../digits/model/im
 
 Methods: **GET**
 
-Location: [`digits/model/images/classification/views.py@29`](../digits/model/images/classification/views.py#L29)
+Location: [`digits/model/images/classification/views.py@32`](../digits/model/images/classification/views.py#L32)
 
 ### `/models/images/classification/top_n`
 
@@ -284,7 +308,7 @@ Location: [`digits/model/images/classification/views.py@29`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@334`](../digits/model/images/classification/views.py#L334)
+Location: [`digits/model/images/classification/views.py@368`](../digits/model/images/classification/views.py#L368)
 
 ### `/models/visualize-lr`
 
@@ -292,7 +316,7 @@ Location: [`digits/model/images/classification/views.py@334`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@112`](../digits/model/views.py#L112)
+Location: [`digits/model/views.py@103`](../digits/model/views.py#L103)
 
 ### `/models/visualize-network`
 
@@ -300,7 +324,7 @@ Location: [`digits/model/views.py@112`](../digits/model/views.py#L112)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@99`](../digits/model/views.py#L99)
+Location: [`digits/model/views.py@90`](../digits/model/views.py#L90)
 
 ## Util
 
@@ -318,5 +342,5 @@ Methods: **GET**
 
 Arguments: `path`
 
-Location: [`digits/views.py@191`](../digits/views.py#L191)
+Location: [`digits/views.py@201`](../digits/views.py#L201)
 

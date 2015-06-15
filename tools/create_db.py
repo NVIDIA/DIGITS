@@ -12,8 +12,11 @@ import random
 import threading
 import Queue
 
-# Add path for DIGITS package
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    import digits
+except ImportError:
+    # Add path for DIGITS package
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
 digits.config.load_config()
 from digits import utils, log
@@ -25,7 +28,11 @@ import lmdb
 from cStringIO import StringIO
 # must call digits.config.load_config() before caffe to set the path
 import caffe.io
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 
 logger = logging.getLogger('digits.tools.create_db')
 
