@@ -1,10 +1,11 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os.path
+import os
 import tempfile
 import shutil
+import itertools
 
-from nose.tools import assert_raises
+from nose.tools import raises, assert_raises
 import mock
 
 from . import parse_folder as _
@@ -48,8 +49,21 @@ class TestValidateOutputFile():
     def tearDownClass(cls):
         shutil.rmtree(cls.tmpdir)
 
+    def test_missing_file(self):
+        assert _.validate_output_file(None) == True, 'all new files should be valid'
+
     def test_file(self):
         assert _.validate_output_file(os.path.join(self.tmpdir, 'output.txt')) == True
+
+    @mock.patch('os.access')
+    def test_local_file(self, mock_access):
+        mock_access.return_value = True
+        assert _.validate_output_file('not-a-file.txt') == True, 'relative paths should be accepted'
+
+    @mock.patch('os.access')
+    def test_not_writeable(self, mock_access):
+        mock_access.return_value = False
+        assert _.validate_output_file(self.tmpfile) == False, 'should not succeed without write permission'
 
     def test_existing_file(self):
         assert _.validate_output_file(self.tmpfile) == False
@@ -61,6 +75,24 @@ class TestValidateOutputFile():
                     'output.txt'
                     )
                 ) == False
+
+class TestValidateInputFile():
+    @classmethod
+    def setUpClass(cls):
+        _handle, cls.tmpfile = tempfile.mkstemp()
+        os.close(_handle)
+
+    @classmethod
+    def tearDownClass(cls):
+        os.remove(cls.tmpfile)
+
+    def test_missing_file(self):
+        assert _.validate_input_file('not-a-file.txt') == False, 'should not pass on missigle file'
+
+    @mock.patch('os.access')
+    def test_not_readable(self, mock_access):
+        mock_access.return_value = False
+        assert _.validate_input_file(self.tmpfile) == False, 'should not succeed without read permission'
 
 class TestValidateRange():
     def test_no_range(self):
@@ -87,6 +119,88 @@ class TestValidateRange():
 
     def test_string(self):
         assert _.validate_range('foo') == False
+
+
+@mock.patch('tools.parse_folder.validate_output_file')
+@mock.patch('tools.parse_folder.validate_input_file')
+class TestCalculatePercentages():
+    @raises(AssertionError)
+    def test_making_0(self, mock_input, mock_output):
+        _.calculate_percentages(None, None, None, None, None, None, None)
+
+    def test_making_1(self, mock_input, mock_output):
+        mock_input.return_value = True
+        mock_output.return_value = True
+
+        expected_outputs = [
+            ('train_file', (100, 0, 0)),
+            ('val_file', (0, 100, 0)),
+            ('test_file', (0, 0, 100))
+        ]
+
+        for supplied, expected in expected_outputs:
+            args = {k: None for k in ['labels_file', 'train_file', 'percent_train', 'val_file', 'percent_val', 'test_file', 'percent_test']}
+            args.update({supplied: ''})
+
+            output = _.calculate_percentages(**args)
+            assert output == expected, 'expected output of {}, got {}'.format(output, expected) 
+
+    def test_making_2(self, mock_input, mock_output):
+        mock_input.return_value = True
+        mock_output.return_value = True
+
+        permutes = itertools.combinations(['train', 'val', 'test'], 2)
+        expected_outputs = itertools.izip(permutes, itertools.repeat((32, 68)))
+
+        for supplied, expected in expected_outputs:
+            args = {k: None for k in ['labels_file', 'train_file', 'percent_train', 'val_file', 'percent_val', 'test_file', 'percent_test']}
+            args.update({k+'_file': '' for k in supplied})
+            args.update({'percent_'+k: v for k, v in itertools.izip(supplied, expected)})
+
+            # Tricky line. itertools returns combinations in sorted order, always.
+            # The order of the returned non-zero values should always be correct.
+            output = [x for x in _.calculate_percentages(**args) if x != 0]
+            assert output == list(expected), 'expected output of {}, got {}'.format(output, expected) 
+
+
+    def test_making_3_all_given(self, mock_input, mock_output):
+        mock_input.return_value = True
+        mock_output.return_value = True
+
+        expected = (25, 30, 45)
+        assert _.calculate_percentages(
+            labels_file='not-a-file.txt',
+            train_file='not-a-file.txt', percent_train=25,
+            val_file='not-a-file.txt', percent_val=30,
+            test_file='not-a-file.txt', percent_test=45
+        ) == expected, 'Calculate percentages should return identical values of {}'.format(expected)
+
+
+    def test_making_3_2_given(self, mock_input, mock_output):
+        mock_input.return_value = True
+        mock_output.return_value = True
+
+        expected = 45
+        assert _.calculate_percentages(
+            labels_file='not-a-file.txt',
+            train_file='not-a-file.txt', percent_train=25,
+            val_file='not-a-file.txt', percent_val=30,
+            test_file='not-a-file.txt', percent_test=None
+        )[2] == expected, 'Calculate percentages should calculate third value of {}'.format(expected)
+
+
+    @raises(AssertionError)
+    def test_making_out_of_range(self, mock_input, mock_output):
+        mock_input.return_value = True
+        mock_output.return_value = True
+
+        # should raise AssertionError because percentages not between 0-100 are invalid
+        _.calculate_percentages(
+            labels_file='not-a-file.txt',
+            train_file='not-a-file.txt', percent_train=-1,
+            val_file=None, percent_val=None,
+            test_file=None, percent_test=None
+        )
 
 
 class TestParseWebListing():
@@ -145,3 +259,17 @@ class TestParseWebListing():
     def check_listing(self, rc):
         assert _.parse_web_listing('any_url') == rc
 
+class TestSplitIndices():
+    def test_indices(self):
+        for size in [5, 22, 32]:
+            for percent_b in range(0, 100, 31):
+                for percent_c in range(0, 100-percent_b, 41):
+                    yield self.check_split, size, percent_b, percent_c
+
+    def check_split(self, size, pct_b, pct_c):
+        ideala = size * float(100 - pct_b - pct_c)/100.0
+        idealb = size * float(100 - pct_c)/100.0
+        idxa, idxb = _.three_way_split_indices(size, pct_b, pct_c)
+
+        assert abs(ideala-idxa) <= 2, 'split should be close to {}, is {}'.format(ideala, idxa)
+        assert abs(idealb-idxb) <= 2, 'split should be close to {}, is {}'.format(idealb, idxb)
