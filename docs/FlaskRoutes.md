@@ -230,7 +230,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension` (`tar.gz`)
 
-Location: [`digits/model/views.py@179`](../digits/model/views.py#L179)
+Location: [`digits/model/views.py@178`](../digits/model/views.py#L178)
 
 ### `/models/<job_id>/download.<extension>`
 
@@ -240,7 +240,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension`
 
-Location: [`digits/model/views.py@179`](../digits/model/views.py#L179)
+Location: [`digits/model/views.py@178`](../digits/model/views.py#L178)
 
 ### `/models/customize`
 
@@ -316,7 +316,7 @@ Location: [`digits/model/images/classification/views.py@446`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@124`](../digits/model/views.py#L124)
+Location: [`digits/model/views.py@123`](../digits/model/views.py#L123)
 
 ### `/models/visualize-network`
 
@@ -324,7 +324,7 @@ Location: [`digits/model/views.py@124`](../digits/model/views.py#L124)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@111`](../digits/model/views.py#L111)
+Location: [`digits/model/views.py@110`](../digits/model/views.py#L110)
 
 ## Util
 

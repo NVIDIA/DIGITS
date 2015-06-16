@@ -92,20 +92,19 @@ def models_customize():
     except:
         pass
 
-    if job:
-        if framework == "caffe":
+    if framework == "caffe":
+        return json.dumps({
+            'network': text_format.MessageToString(job.train_task().network),
+            'snapshot': snapshot
+            })
+    elif framework == "torch":
+        with open (os.path.join(job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), "r") as infile:
             return json.dumps({
-                'network': text_format.MessageToString(job.train_task().network),
+                'network':infile.read(),
                 'snapshot': snapshot
                 })
-        elif framework == "torch":
-            with open (os.path.join(job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), "r") as infile:
-                return json.dumps({
-                    'network':infile.read(),
-                    'snapshot': snapshot
-                    })
-
-    return 'ERROR: Network not found!', 400
+    else:
+        raise werkzeug.Exceptions.BadRequest('unknown framework')
 
 @app.route(NAMESPACE + 'visualize-network', methods=['POST'])
 @autodoc('models')

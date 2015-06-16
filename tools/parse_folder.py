@@ -104,6 +104,9 @@ def calculate_percentages(labels_file,
     Returns (percent_train, percent_val, percent_test)
     Throws exception on errors
     """
+    # reject any percentages not between 0-100
+    assert all(x is None or 0 <= x <= 100 for x in [percent_train, percent_val, percent_test]), 'all percentages must be 0-100 inclusive or not specified'
+
     # return values
     pt = None
     pv = None

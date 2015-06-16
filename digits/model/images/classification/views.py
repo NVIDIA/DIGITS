@@ -566,3 +566,4 @@ def get_previous_network_snapshots():
                 for _, epoch in reversed(job.train_task().snapshots)]
         prev_network_snapshots.append(e)
     return prev_network_snapshots
+
