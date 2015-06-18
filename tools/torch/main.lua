@@ -329,9 +329,20 @@ if opt.policy ~= 'torch_sgd' then
     local max_iterations = (math.ceil(trainSize/opt.batchSize))*opt.epoch
     --local stepsize = math.floor((max_iterations*opt.step/100)+0.5)    --adding 0.5 to round the value
 
-    --converting stepsize percentages into values 
-    for i=1,#stepvalues_list do
-      stepvalues_list[i] = utils.round(max_iterations*stepvalues_list[i]/100)
+    if max_iterations < #stepvalues_list then
+        logmessage.display(1,'maximum iterations (i.e., ' .. max_iterations .. ') is less than provided step values count (i.e, ' .. #stepvalues_list .. '), so learning rate policy is reset to "step" policy with the step value 1.')
+        opt.policy = 'step'
+        stepvalues_list[1] = 1
+    else
+        -- converting stepsize percentages into values
+        for i=1,#stepvalues_list do
+          stepvalues_list[i] = utils.round(max_iterations*stepvalues_list[i]/100)
+
+          -- avoids 'nan' values during learning rate calculation
+          if stepvalues_list[i] == 0 then
+              stepvalues_list[i] = 1
+          end
+        end
     end
 
     lrpolicy = LRPolicy{

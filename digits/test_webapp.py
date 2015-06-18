@@ -26,7 +26,8 @@ DUMMY_IMAGE_COUNT = 10 # per category
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 10
-TIMEOUT_MODEL = 15
+CAFFE_TIMEOUT_MODEL = 15
+TORCH_TIMEOUT_MODEL = 20
 
 def create_dummy_dataset(data_path):
     """
@@ -54,7 +55,7 @@ def create_dummy_dataset(data_path):
 
     return images
 
-def get_dummy_network():
+def get_dummy_caffe_network():
     """
     A very simple network - one fully connected layer
     """
@@ -86,6 +87,22 @@ def get_dummy_network():
             phase: TEST
         }
     }
+    """
+
+def get_dummy_torch_network():
+    """
+    A very simple network - one fully connected layer
+    """
+    return \
+    """
+    require 'nn'
+    require 'cunn'
+    local model = nn.Sequential()
+    model:add(nn.View(-1):setNumInputDims(3)) -- 10*10*3 -> 300
+    model:add(nn.Linear(300, 3))
+    model:add(nn.LogSoftMax())
+    model:cuda()
+    return model
     """
 
 
@@ -232,7 +249,7 @@ class WebappBaseTest(object):
         defaults = {
                 'dataset': dataset_id,
                 'method': 'custom',
-                'caffe_custom_network': get_dummy_network(),
+                'caffe_custom_network': get_dummy_caffe_network(),
                 'batch_size': DUMMY_IMAGE_COUNT,
                 'train_epochs': 1,
                 'framework' : 'caffe'
@@ -314,7 +331,7 @@ class WebappBaseTest(object):
     def model_wait_completion(cls, job_id, **kwargs):
         kwargs['job_type'] = 'models'
         if 'timeout' not in kwargs:
-            kwargs['timeout'] = TIMEOUT_MODEL
+            kwargs['timeout'] = CAFFE_TIMEOUT_MODEL
         return cls.job_wait_completion(job_id, **kwargs)
 
     @classmethod
@@ -550,7 +567,7 @@ class TestModelCreation(WebappBaseTest):
     def test_visualize_network(self):
         """visualize network"""
         rv = self.app.post('/models/visualize-network',
-                data = {'caffe_custom_network': get_dummy_network()}
+                data = {'caffe_custom_network': get_dummy_caffe_network()}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
@@ -845,6 +862,219 @@ class TestDatasetModelInteractions(WebappBaseTest):
         dataset_id = self.create_quick_dataset()
         model_id = self.create_quick_model(dataset_id)
         assert self.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
+        assert self.delete_dataset(dataset_id) == 403, 'dataset deletion should not have succeeded'
+        self.abort_model(model_id)
+
+class TestTorchModelCreation(WebappBaseTest):
+    """
+    Torch Model creation tests
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(TestTorchModelCreation, cls).setUpClass()
+        if config_value('torch_root') is None:
+            raise unittest.SkipTest('Torch not found')
+        cls.dataset_id = cls.create_dataset(
+                method = 'folder',
+                folder_train = cls.data_path,
+                resize_width = DUMMY_IMAGE_DIM,
+                resize_height = DUMMY_IMAGE_DIM,
+                )
+
+    @unittest.skipIf(
+            config_value('caffe_root')['executable'] is not None,
+            'Already tested')
+    def test_page_model_new(self):
+        """new image classification model page"""
+        rv = self.app.get('/models/images/classification/new')
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        assert 'New Image Classification Model' in rv.data, 'unexpected page format'
+
+    def test_torch_create_delete(self):
+        """model - create, delete"""
+        job_id = self.create_quick_model(self.dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network())
+        assert self.delete_model(job_id) == 200, 'delete failed'
+        assert not self.model_exists(job_id), 'model exists after delete'
+
+    def test_torch_create_wait_delete(self):
+        """model - create, wait, delete"""
+        job_id = self.create_quick_model(self.dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network())
+        assert self.model_wait_completion(job_id, timeout=TORCH_TIMEOUT_MODEL) == 'Done', 'create failed'
+        assert self.delete_model(job_id) == 200, 'delete failed'
+        assert not self.model_exists(job_id), 'model exists after delete'
+
+    def test_torch_create_abort_delete(self):
+        """model - create, abort, delete"""
+        job_id = self.create_quick_model(self.dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network())
+        assert self.abort_model(job_id) == 200, 'abort failed'
+        assert self.delete_model(job_id) == 200, 'delete failed'
+        assert not self.model_exists(job_id), 'model exists after delete'
+
+    def test_torch_snapshot_interval_2(self):
+        """model - snapshot_interval 2"""
+        job_id = self.create_quick_model(self.dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network(), train_epochs=1, snapshot_interval=0.5)
+        assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+        rv = self.app.get('/models/%s.json' % job_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']) > 1, 'should take >1 snapshot'
+
+    def test_torch_snapshot_interval_0_5(self):
+        """model - snapshot_interval 0.5"""
+        job_id = self.create_quick_model(self.dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network(), train_epochs=4, snapshot_interval=2)
+        assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+        rv = self.app.get('/models/%s.json' % job_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']) == 2, 'should take 2 snapshots'
+
+class TestTorchCreatedModel(WebappBaseTest):
+    """
+    Tests on a torch model that has already been created
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(TestTorchCreatedModel, cls).setUpClass()
+        if config_value('torch_root') is None:
+            raise unittest.SkipTest('Torch not found')
+        cls.dataset_id = cls.create_quick_dataset()
+        assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'dataset creation failed'
+        cls.model_id = cls.create_quick_model(cls.dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network())
+        assert cls.model_wait_completion(cls.model_id, timeout=TORCH_TIMEOUT_MODEL) == 'Done', 'model creation failed'
+
+    def download_model(self, extension):
+        url = '/models/%s/download.%s' % (self.model_id, extension)
+        rv = self.app.get(url)
+        assert rv.status_code == 200, 'download "%s" failed with %s' % (url, rv.status_code)
+
+    def test_download(self):
+        """created model - download"""
+        for extension in ['tar', 'zip', 'tar.gz', 'tar.bz2']:
+            yield self.download_model, extension
+
+    def test_index_json(self):
+        """index.json"""
+        rv = self.app.get('/index.json')
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        found = False
+        for m in content['models']:
+            if m['id'] == self.model_id:
+                found = True
+                break
+        assert found, 'model not found in list'
+
+    def test_job_json(self):
+        """job.json"""
+        rv = self.app.get('/models/%s.json' % self.model_id)
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert content['id'] == self.model_id, 'expected different job_id'
+        assert len(content['snapshots']) > 0, 'no snapshots in list'
+
+    def test_classify_one(self):
+        """classify one image"""
+        image_path = self.images['green'][0]
+        image_path = os.path.join(self.data_path, image_path)
+        with open(image_path) as infile:
+            # StringIO wrapping is needed to simulate POST file upload.
+            image_upload = (StringIO(infile.read()), 'image.png')
+
+        # Currently Torch doesn't support visualizations
+        rv = self.app.post(
+                '/models/images/classification/classify_one?job_id=%s' % self.model_id,
+                data = {
+                    'image_file': image_upload,
+                    'snapshot_epoch' : 1,
+                    }
+                )
+        s = BeautifulSoup(rv.data)
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        # gets an array of arrays [[confidence, label],...]
+        predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
+        assert predictions[0][1] == 'green', 'image misclassified'
+
+    def test_classify_many(self):
+        """classify many images"""
+        textfile_images = ''
+        label_id = 0
+        for (label, images) in self.images.iteritems():
+            for image in images:
+                image_path = image
+                image_path = os.path.join(self.data_path, image_path)
+                textfile_images += '%s %d\n' % (image_path, label_id)
+            label_id += 1
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        rv = self.app.post(
+                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload,
+                    'snapshot_epoch' : 1,
+                    }
+                )
+        s = BeautifulSoup(rv.data)
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
+    def test_retrain(self):
+        """retrain model"""
+        options = {}
+        options['previous_networks'] = self.model_id
+        options['framework'] = 'torch'
+        options['torch_custom_network'] = get_dummy_torch_network()
+        rv = self.app.get('/models/%s.json' % self.model_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']), 'should have at least snapshot'
+        options['%s-snapshot' % self.model_id] = content['snapshots'][-1]
+        job_id = self.create_quick_model(self.dataset_id,
+                method='previous', **options)
+        self.abort_model(job_id)
+
+class TestDatasetTorchModelInteractions(WebappBaseTest):
+    """
+    Test the interactions between datasets and models
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestDatasetTorchModelInteractions, cls).setUpClass()
+        if config_value('torch_root') is None:
+            raise unittest.SkipTest('Torch not found')
+
+    def test_model_with_deleted_database(self):
+        """model on deleted dataset"""
+        dataset_id = self.create_quick_dataset()
+        assert self.delete_dataset(dataset_id) == 200, 'delete failed'
+        assert not self.dataset_exists(dataset_id), 'dataset exists after delete'
+
+        try:
+            model_id = self.create_quick_model(dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network())
+        except RuntimeError:
+            return
+        assert False, 'Should have failed'
+
+    def test_model_on_running_dataset(self):
+        """model on running dataset"""
+        dataset_id = self.create_quick_dataset()
+        model_id = self.create_quick_model(dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network())
+        # should wait until dataset has finished
+        assert self.model_status(model_id) in ['Initialized', 'Waiting', 'Done'], 'model not waiting'
+        assert self.dataset_wait_completion(dataset_id, timeout=TORCH_TIMEOUT_MODEL) == 'Done', 'dataset creation failed'
+        time.sleep(1)
+        # then it should start
+        assert self.model_status(model_id) in ['Running', 'Done'], "model didn't start"
+        self.abort_model(model_id)
+
+    # A dataset should not be deleted while a model using it is running.
+    def test_model_create_dataset_delete(self):
+        """delete dataset with dependent model"""
+        dataset_id = self.create_quick_dataset()
+        model_id = self.create_quick_model(dataset_id, framework='torch', torch_custom_network=get_dummy_torch_network())
+        assert self.dataset_wait_completion(dataset_id, timeout=TORCH_TIMEOUT_MODEL) == 'Done', 'dataset creation failed'
         assert self.delete_dataset(dataset_id) == 403, 'dataset deletion should not have succeeded'
         self.abort_model(model_id)
 

@@ -186,7 +186,6 @@ class TorchTrainTask(TrainTask):
                 identifiers.append(int(identifier))
             if len(identifiers) == 1:
                 args.append('--devid=%s' % (identifiers[0]+1,))
-                print args
             elif len(identifiers) > 1:
                 raise NotImplementedError("haven't tested torch with multiple GPUs yet")
 
@@ -469,7 +468,7 @@ class TorchTrainTask(TrainTask):
         # Convert them all to strings
         args = [str(x) for x in args]
 
-        print args
+        #print args
 
         regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
         self.logger.info('%s classify one task started.' % self.framework_name())
@@ -552,13 +551,13 @@ class TorchTrainTask(TrainTask):
         float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         # format of output while testing single image
-        match = re.match(r'For image \d+, predicted class \d+: (\d+) \(.*?\) %s'  % (float_exp), message)
+        match = re.match(r'For image \d+, predicted class \d+: \d+ \((.*?)\) %s'  % (float_exp), message)
         if match:
-            label = int(match.group(1))
+            label = match.group(1)
             confidence = match.group(2)
             assert confidence.lower() != 'nan', 'Network reported "nan" for confidence value. Please check image and network'
             confidence = float(confidence)
-            predictions.append((label-1, confidence))   # In Torch, array index starts from 1 instead of 0. So, subtracted 1 from label value to refer correct label in labels file.
+            predictions.append((label, confidence))
             return True
 
         # format of output while testing multiple images
@@ -644,7 +643,7 @@ class TorchTrainTask(TrainTask):
         else:
             args.append('--subtractMean=no')
 
-        print args
+        #print args
 
         # Convert them all to strings
         args = [str(x) for x in args]

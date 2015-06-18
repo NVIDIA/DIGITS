@@ -4,7 +4,7 @@ import os
 import re
 import tempfile
 import random
-
+import shutil
 import flask
 import werkzeug.exceptions
 import numpy as np

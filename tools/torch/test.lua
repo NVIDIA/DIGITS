@@ -167,6 +167,10 @@ local inputs = nil
 local batch_size = 0
 local predictions = nil
 local topN = 5    -- displays top 5 predictions
+if topN > #class_labels then
+    topN = #class_labels
+end
+
 local val,classes = nil,nil
 local counter = 0
 local index = 0
