@@ -28,17 +28,91 @@ DUMMY_IMAGE_COUNT = 10 # per category
 TIMEOUT_DATASET = 10
 TIMEOUT_MODEL = 15
 
-def create_dummy_dataset(data_path):
+class Dataset():
+    def __init__(self, data_path, images):
+        self.data_path = data_path
+        self.images = images
+
+class Direction():
+    RIGHT, UP, LEFT, DOWN = range(4)
+
+NUM_TYPES = 2
+
+class ImageType():
+    COLOR, GRAY = range(NUM_TYPES)
+
+LABELS = {
+    'red-to-right': (0, Direction.RIGHT),
+    'green-to-left': (1, Direction.LEFT),
+    'blue-to-bottom': (2, Direction.DOWN)
+}
+
+CATEGORIES = LABELS.keys()
+
+dummy_network = \
+"""
+layer {
+    name: "in"
+    type: 'InnerProduct'
+    bottom: "data"
+    top: "in"
+    inner_product_param {
+        num_output: 3
+    }
+}
+layer {
+    name: "loss"
+    type: "SoftmaxWithLoss"
+    bottom: "in"
+    bottom: "label"
+    top: "loss"
+}
+layer {
+    name: "accuracy"
+    type: "Accuracy"
+    bottom: "in"
+    bottom: "label"
+    top: "accuracy"
+    include {
+        phase: TEST
+    }
+}
+"""
+
+def create_color_direction(size, color_from, color_to, direction, image_type):
+    """
+    Make an image with a color gradient in a specific direction
+    """
+    # create gradient
+    rgb_arrays = [np.linspace(color_from[x], color_to[x], size, dtype=np.uint8) for x in range(3)]
+    gradient = np.concatenate(rgb_arrays)
+
+    # extend to 2d
+    picture = np.repeat(gradient, size)
+    picture.shape = (3, size, size)
+    
+    # make image and rotate
+    image = PIL.Image.fromarray(picture.T)
+    image = image.rotate(direction*90)
+
+    # convert to grayscale if necessary
+    if image_type == ImageType.GRAY:
+        image = image.convert('L')
+
+    return image
+
+def build_dataset(data_path, image_type):
     """
     A very simple dataset - Red, Green and Blue PNGs
     """
     dim = DUMMY_IMAGE_DIM
     count = DUMMY_IMAGE_COUNT
     min_color = 200
-    labels = {'red': 0, 'green': 1, 'blue': 2}
+
     # Stores the relative path of each image of the dataset.
-    images = {'red': [], 'green': [], 'blue': []}
-    for (label, idx) in labels.iteritems():
+    images = {k: [] for k in CATEGORIES}
+
+    for (label, (idx, direction)) in LABELS.iteritems():
         label_path = label
         os.mkdir(os.path.join(data_path, label_path))
 
@@ -46,48 +120,12 @@ def create_dummy_dataset(data_path):
         for i in range(count):
             pixel = [0, 0, 0]
             pixel[idx] = colors[i]
-            img = np.full((dim, dim, 3), pixel, dtype=np.uint8)
-            pil_img = PIL.Image.fromarray(img)
+            pil_img = create_color_direction(dim, (0, 0, 0), pixel, direction, image_type)
             img_path = os.path.join(label_path, str(i) + '.png')
             pil_img.save(os.path.join(data_path, img_path))
             images[label].append(img_path)
 
     return images
-
-def get_dummy_network():
-    """
-    A very simple network - one fully connected layer
-    """
-    return \
-    """
-    layer {
-        name: "in"
-        type: 'InnerProduct'
-        bottom: "data"
-        top: "in"
-        inner_product_param {
-            num_output: 3
-        }
-    }
-    layer {
-        name: "loss"
-        type: "SoftmaxWithLoss"
-        bottom: "in"
-        bottom: "label"
-        top: "loss"
-    }
-    layer {
-        name: "accuracy"
-        type: "Accuracy"
-        bottom: "in"
-        bottom: "label"
-        top: "accuracy"
-        include {
-            phase: TEST
-        }
-    }
-    """
-
 
 class WebappBaseTest(object):
     """
@@ -96,8 +134,12 @@ class WebappBaseTest(object):
     @classmethod
     def setUpClass(cls):
         # Create some dummy data
-        cls.data_path = tempfile.mkdtemp()
-        cls.images = create_dummy_dataset(cls.data_path)
+        cls.image_type_data = {}
+        for image_type in range(NUM_TYPES):
+            data_path = tempfile.mkdtemp()
+            images = build_dataset(data_path, image_type)
+            cls.image_type_data[image_type] = Dataset(data_path, images)
+
         # Start up the server
         assert webapp.scheduler.start(), "scheduler wouldn't start"
         webapp.app.config['WTF_CSRF_ENABLED'] = False
@@ -114,7 +156,7 @@ class WebappBaseTest(object):
         for job_id in cls.created_datasets:
             cls.delete_dataset(job_id)
         # Remove the dummy data
-        shutil.rmtree(cls.data_path)
+        [shutil.rmtree(x.data_path) for x in cls.image_type_data.itervalues()]
 
     @classmethod
     def create_dataset(cls, **data):
@@ -159,7 +201,7 @@ class WebappBaseTest(object):
         return job_id
 
     @classmethod
-    def create_quick_dataset(cls, **kwargs):
+    def create_quick_dataset(cls, image_type, **kwargs):
         """
         Creates a simple dataset quickly
         Returns the job_id
@@ -169,7 +211,7 @@ class WebappBaseTest(object):
         """
         defaults = {
                 'method': 'folder',
-                'folder_train': cls.data_path,
+                'folder_train': cls.image_type_data[image_type].data_path,
                 'resize_width': DUMMY_IMAGE_DIM,
                 'resize_height': DUMMY_IMAGE_DIM,
                 }
@@ -232,7 +274,7 @@ class WebappBaseTest(object):
         defaults = {
                 'dataset': dataset_id,
                 'method': 'custom',
-                'custom_network': get_dummy_network(),
+                'custom_network': dummy_network,
                 'batch_size': DUMMY_IMAGE_COUNT,
                 'train_epochs': 1,
                 }
@@ -406,32 +448,47 @@ class TestDatasetCreation(WebappBaseTest):
             return
         raise AssertionError('Should have failed')
 
-    def test_create_json(self):
-        """dataset - create w/ json"""
-        self.create_quick_dataset(json=True)
+    def test_alltests(self):
+        for image_type in range(NUM_TYPES):
+            yield self.check_create_json, image_type
+            yield self.check_create_delete, image_type
+            yield self.check_create_wait_delete, image_type
+            yield self.check_create_abort_delete, image_type
+            yield self.check_nonsquare_dimensions, image_type
 
-    def test_create_delete(self):
+            for absolute_path in (True, False):
+                yield self.check_textfile, image_type, absolute_path
+
+    def check_create_json(self, image_type):
+        """dataset - create w/ json"""
+        self.create_quick_dataset(image_type, json=True)
+
+    def check_create_delete(self, image_type):
         """dataset - create, delete"""
-        job_id = self.create_quick_dataset()
+        job_id = self.create_quick_dataset(image_type)
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
-    def test_create_wait_delete(self):
+    def check_create_wait_delete(self, image_type):
         """dataset - create, wait, delete"""
-        job_id = self.create_quick_dataset()
+        job_id = self.create_quick_dataset(image_type)
         assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
-    def test_create_abort_delete(self):
+    def check_create_abort_delete(self, image_type):
         """dataset - create, abort, delete"""
-        job_id = self.create_quick_dataset()
+        job_id = self.create_quick_dataset(image_type)
         assert self.abort_dataset(job_id) == 200, 'abort failed'
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
+    def check_textfile(self, image_type, absolute_path):
+        """any image type, and absolute or relative path"""
+        job_id = self.create_from_textfiles(image_type, absolute_path=absolute_path)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
 
-    def create_from_textfiles(self, absolute_path=True):
+    def create_from_textfiles(self, image_type, absolute_path=True):
         """
         Create a dataset from textfiles
 
@@ -441,12 +498,12 @@ class TestDatasetCreation(WebappBaseTest):
         textfile_train_images = ''
         textfile_labels_file = ''
         label_id = 0
-        for (label, images) in self.images.iteritems():
+        for (label, images) in self.image_type_data[image_type].images.iteritems():
             textfile_labels_file += '%s\n' % label
             for image in images:
                 image_path = image
                 if absolute_path:
-                    image_path = os.path.join(self.data_path, image_path)
+                    image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
                 textfile_train_images += '%s %d\n' % (image_path, label_id)
 
             label_id += 1
@@ -465,25 +522,15 @@ class TestDatasetCreation(WebappBaseTest):
                 'textfile_labels_file': labels_upload,
                 }
         if not absolute_path:
-            data['textfile_train_folder'] = self.data_path
-            data['textfile_val_folder'] = self.data_path
+            data['textfile_train_folder'] = self.image_type_data[image_type].data_path
+            data['textfile_val_folder'] = self.image_type_data[image_type].data_path
 
         return self.create_dataset(**data)
 
-    def test_textfile_absolute(self):
-        """dataset - textfiles (absolute), wait"""
-        job_id = self.create_from_textfiles(absolute_path=True)
-        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
-
-    def test_textfile_relative(self):
-        """dataset - textfiles (relative), wait"""
-        job_id = self.create_from_textfiles(absolute_path=False)
-        status = self.dataset_wait_completion(job_id)
-        assert status == 'Done', 'create failed "%s"' % status
-
-    def test_nonsquare_dimensions(self):
+    def check_nonsquare_dimensions(self, image_type):
         """dataset - nonsquare dimensions"""
         job_id = self.create_quick_dataset(
+                image_type,
                 resize_width = DUMMY_IMAGE_DIM,
                 resize_height = DUMMY_IMAGE_DIM*2,
                 )
@@ -504,27 +551,33 @@ class TestCreatedDataset(WebappBaseTest):
     @classmethod
     def setUpClass(cls):
         super(TestCreatedDataset, cls).setUpClass()
-        cls.dataset_id = cls.create_quick_dataset()
-        assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'dataset creation failed'
+        cls.dataset_ids = [cls.create_quick_dataset(image_type) for image_type in range(NUM_TYPES)]
+        for dataset_id in cls.dataset_ids:
+            assert cls.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
 
-    def test_index_json(self):
+    def test_alltests(self):
+        for dataset_id in self.dataset_ids:
+            yield self.check_index_json, dataset_id
+            yield self.check_dataset_json, dataset_id
+
+    def check_index_json(self, dataset_id):
         """created dataset - index.json"""
         rv = self.app.get('/index.json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         found = False
         for d in content['datasets']:
-            if d['id'] == self.dataset_id:
+            if d['id'] == dataset_id:
                 found = True
                 break
         assert found, 'dataset not found in list'
 
-    def test_dataset_json(self):
+    def check_dataset_json(self, dataset_id):
         """created dataset - json"""
-        rv = self.app.get('/datasets/%s.json' % self.dataset_id)
+        rv = self.app.get('/datasets/%s.json' % dataset_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
-        assert content['id'] == self.dataset_id, 'expected different job_id'
+        assert content['id'] == dataset_id, 'expected different job_id'
 
 class TestModelCreation(WebappBaseTest):
     """
@@ -533,12 +586,12 @@ class TestModelCreation(WebappBaseTest):
     @classmethod
     def setUpClass(cls):
         super(TestModelCreation, cls).setUpClass()
-        cls.dataset_id = cls.create_dataset(
+        cls.dataset_ids = [cls.create_dataset(
                 method = 'folder',
-                folder_train = cls.data_path,
+                folder_train = dataset.data_path,
                 resize_width = DUMMY_IMAGE_DIM,
                 resize_height = DUMMY_IMAGE_DIM,
-                )
+                ) for dataset in cls.image_type_data.itervalues()]
 
     def test_page_model_new(self):
         """new image classification model page"""
@@ -549,7 +602,7 @@ class TestModelCreation(WebappBaseTest):
     def test_visualize_network(self):
         """visualize network"""
         rv = self.app.post('/models/visualize-network',
-                data = {'custom_network': get_dummy_network()}
+                data = {'custom_network': dummy_network}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
@@ -557,47 +610,58 @@ class TestModelCreation(WebappBaseTest):
         image = s.select('img')
         assert image is not None, "didn't return an image"
 
-    def test_create_json(self):
-        """model - create w/ json"""
-        self.create_quick_model(self.dataset_id, json=True)
+    def test_alltests(self):
+        for dataset_id in self.dataset_ids:
+            yield self.check_create_json, dataset_id
+            yield self.check_create_delete, dataset_id
+            yield self.check_create_wait_delete, dataset_id
+            yield self.check_create_abort_delete, dataset_id
+            yield self.check_snapshot_interval_2, dataset_id
+            yield self.check_snapshot_interval_0_5, dataset_id
 
-    def test_create_delete(self):
+    def check_create_json(self, dataset_id):
+        """model - create w/ json"""
+        self.create_quick_model(dataset_id, json=True)
+
+    def check_create_delete(self, dataset_id):
         """model - create, delete"""
-        job_id = self.create_quick_model(self.dataset_id)
+        job_id = self.create_quick_model(dataset_id)
         assert self.delete_model(job_id) == 200, 'delete failed'
         assert not self.model_exists(job_id), 'model exists after delete'
 
-    def test_create_wait_delete(self):
+    def check_create_wait_delete(self, dataset_id):
         """model - create, wait, delete"""
-        job_id = self.create_quick_model(self.dataset_id)
+        job_id = self.create_quick_model(dataset_id)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         assert self.delete_model(job_id) == 200, 'delete failed'
         assert not self.model_exists(job_id), 'model exists after delete'
 
-    def test_create_abort_delete(self):
+    def check_create_abort_delete(self, dataset_id):
         """model - create, abort, delete"""
-        job_id = self.create_quick_model(self.dataset_id)
+        job_id = self.create_quick_model(dataset_id)
         assert self.abort_model(job_id) == 200, 'abort failed'
         assert self.delete_model(job_id) == 200, 'delete failed'
         assert not self.model_exists(job_id), 'model exists after delete'
 
-    def test_snapshot_interval_2(self):
+    def check_snapshot_interval_2(self, dataset_id):
         """model - snapshot_interval 2"""
-        job_id = self.create_quick_model(self.dataset_id, train_epochs=1, snapshot_interval=0.5)
+        job_id = self.create_quick_model(dataset_id, train_epochs=1, snapshot_interval=0.5)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         rv = self.app.get('/models/%s.json' % job_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']) > 1, 'should take >1 snapshot'
 
-    def test_snapshot_interval_0_5(self):
+    def check_snapshot_interval_0_5(self, dataset_id):
         """model - snapshot_interval 0.5"""
-        job_id = self.create_quick_model(self.dataset_id, train_epochs=4, snapshot_interval=2)
+        job_id = self.create_quick_model(dataset_id, train_epochs=4, snapshot_interval=2)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         rv = self.app.get('/models/%s.json' % job_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']) == 2, 'should take 2 snapshots'
+
+    # for the GPU tests, only test the first dataset.
 
     @unittest.skipIf(
             not config_value('gpu_list'),
@@ -614,7 +678,7 @@ class TestModelCreation(WebappBaseTest):
             yield self.check_select_gpu, index
 
     def check_select_gpu(self, gpu_index):
-        job_id = self.create_quick_model(self.dataset_id, select_gpu=gpu_index)
+        job_id = self.create_quick_model(self.dataset_ids[0], select_gpu=gpu_index)
         assert self.delete_model(job_id) == 200, 'delete failed'
 
     @unittest.skipIf(
@@ -635,7 +699,7 @@ class TestModelCreation(WebappBaseTest):
                 yield self.check_select_gpus, combination
 
     def check_select_gpus(self, gpu_list):
-        job_id = self.create_quick_model(self.dataset_id,
+        job_id = self.create_quick_model(self.dataset_ids[0],
                 select_gpus_list=','.join(gpu_list))
         assert self.delete_model(job_id) == 200, 'delete failed'
 
@@ -646,56 +710,75 @@ class TestCreatedModel(WebappBaseTest):
     @classmethod
     def setUpClass(cls):
         super(TestCreatedModel, cls).setUpClass()
-        cls.dataset_id = cls.create_quick_dataset()
-        assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'dataset creation failed'
-        cls.model_id = cls.create_quick_model(cls.dataset_id)
-        assert cls.model_wait_completion(cls.model_id) == 'Done', 'model creation failed'
+        cls.dataset_ids = [(cls.create_quick_dataset(image_type), image_type) for image_type in range(NUM_TYPES)]
+        cls.model_to_dataset = {}
 
-    def test_save(self):
+        for dataset_id, image_type in cls.dataset_ids:
+            assert cls.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
+            model_id = cls.create_quick_model(dataset_id)
+            assert cls.model_wait_completion(model_id) == 'Done', 'model creation failed'
+            cls.model_to_dataset[model_id] = (dataset_id, image_type)
+
+    def test_alltests(self):
+        for (model_id, (dataset_id, image_type)) in self.model_to_dataset.iteritems():
+            yield self.check_save, model_id
+            # check_download yields on its own
+            self.check_download(model_id)
+            yield self.check_index_json, model_id
+            yield self.check_model_json, model_id
+            yield self.check_classify_one, model_id, image_type
+            yield self.check_classify_one_json, model_id, image_type
+            yield self.check_classify_many, model_id, image_type
+            yield self.check_classify_many_json, model_id, image_type
+            yield self.check_top_n, model_id, image_type
+            yield self.check_retrain, model_id, dataset_id
+
+    def check_save(self, model_id):
         """created model - save"""
-        job = webapp.scheduler.get_job(self.model_id)
+        job = webapp.scheduler.get_job(model_id)
         assert job.save(), 'Job failed to save'
 
-    def download_model(self, extension):
-        url = '/models/%s/download.%s' % (self.model_id, extension)
+    def download_model(self, model_id, extension):
+        url = '/models/%s/download.%s' % (model_id, extension)
         rv = self.app.get(url)
         assert rv.status_code == 200, 'download "%s" failed with %s' % (url, rv.status_code)
 
-    def test_download(self):
+    def check_download(self, model_id):
         """created model - download"""
         for extension in ['tar', 'zip', 'tar.gz', 'tar.bz2']:
-            yield self.download_model, extension
+            yield self.download_model, model_id, extension
 
-    def test_index_json(self):
+    def check_index_json(self, model_id):
         """created model - index.json"""
         rv = self.app.get('/index.json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         found = False
         for m in content['models']:
-            if m['id'] == self.model_id:
+            if m['id'] == model_id:
                 found = True
                 break
         assert found, 'model not found in list'
 
-    def test_model_json(self):
+    def check_model_json(self, model_id):
         """created model - json"""
-        rv = self.app.get('/models/%s.json' % self.model_id)
+        rv = self.app.get('/models/%s.json' % model_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
-        assert content['id'] == self.model_id, 'expected different job_id'
+        assert content['id'] == model_id, 'expected different job_id'
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
-    def test_classify_one(self):
+    def check_classify_one(self, model_id, image_type):
         """created model - classify one"""
-        image_path = self.images['green'][0]
-        image_path = os.path.join(self.data_path, image_path)
+        category = next(iter(LABELS))
+        image_path = self.image_type_data[image_type].images[category][0]
+        image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
         with open(image_path) as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-                '/models/images/classification/classify_one?job_id=%s' % self.model_id,
+                '/models/images/classification/classify_one?job_id=%s' % model_id,
                 data = {
                     'image_file': image_upload,
                     'show_visualizations': 'y',
@@ -706,18 +789,19 @@ class TestCreatedModel(WebappBaseTest):
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         # gets an array of arrays [[confidence, label],...]
         predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
-        assert predictions[0][1] == 'green', 'image misclassified'
+        assert predictions[0][1] == category, 'image misclassified'
 
-    def test_classify_one_json(self):
+    def check_classify_one_json(self, model_id, image_type):
         """created model - classify one JSON"""
-        image_path = self.images['green'][0]
-        image_path = os.path.join(self.data_path, image_path)
+        category = next(iter(LABELS))
+        image_path = self.image_type_data[image_type].images[category][0]
+        image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
         with open(image_path) as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-                '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
+                '/models/images/classification/classify_one.json?job_id=%s' % model_id,
                 data = {
                     'image_file': image_upload,
                     'show_visualizations': 'y',
@@ -725,16 +809,16 @@ class TestCreatedModel(WebappBaseTest):
                 )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
-        assert data['predictions'][0][0] == 'green', 'image misclassified'
+        assert data['predictions'][0][0] == category, 'image misclassified'
 
-    def test_classify_many(self):
+    def check_classify_many(self, model_id, image_type):
         """created model - classify many"""
         textfile_images = ''
         label_id = 0
-        for (label, images) in self.images.iteritems():
+        for (label, images) in self.image_type_data[image_type].images.iteritems():
             for image in images:
                 image_path = image
-                image_path = os.path.join(self.data_path, image_path)
+                image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
                 textfile_images += '%s %d\n' % (image_path, label_id)
             label_id += 1
 
@@ -742,21 +826,21 @@ class TestCreatedModel(WebappBaseTest):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+                '/models/images/classification/classify_many?job_id=%s' % model_id,
                 data = {'image_list': file_upload}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
 
-    def test_classify_many_json(self):
+    def check_classify_many_json(self, model_id, image_type):
         """created model - classify many JSON"""
         textfile_images = ''
         label_id = 0
-        for (label, images) in self.images.iteritems():
+        for (label, images) in self.image_type_data[image_type].images.iteritems():
             for image in images:
                 image_path = image
-                image_path = os.path.join(self.data_path, image_path)
+                image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
                 textfile_images += '%s %d\n' % (image_path, label_id)
             label_id += 1
 
@@ -764,21 +848,21 @@ class TestCreatedModel(WebappBaseTest):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many.json?job_id=%s' % self.model_id,
+                '/models/images/classification/classify_many.json?job_id=%s' % model_id,
                 data = {'image_list': file_upload}
                 )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
         assert 'classifications' in data, 'invalid response'
 
-    def test_top_n(self):
+    def check_top_n(self, model_id, image_type):
         """created model - top n predictions"""
         textfile_images = ''
         label_id = 0
-        for (label, images) in self.images.iteritems():
+        for (label, images) in self.image_type_data[image_type].images.iteritems():
             for image in images:
                 image_path = image
-                image_path = os.path.join(self.data_path, image_path)
+                image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
                 textfile_images += '%s %d\n' % (image_path, label_id)
             label_id += 1
 
@@ -786,26 +870,26 @@ class TestCreatedModel(WebappBaseTest):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/top_n?job_id=%s' % self.model_id,
+                '/models/images/classification/top_n?job_id=%s' % model_id,
                 data = {'image_list': file_upload}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-        keys = self.images.keys()
+        keys = self.image_type_data[image_type].images.keys()
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'
 
-    def test_retrain(self):
+    def check_retrain(self, model_id, dataset_id):
         """created model - retrain"""
         options = {}
-        options['previous_networks'] = self.model_id
-        rv = self.app.get('/models/%s.json' % self.model_id)
+        options['previous_networks'] = model_id
+        rv = self.app.get('/models/%s.json' % model_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']), 'should have at least snapshot'
-        options['%s-snapshot' % self.model_id] = content['snapshots'][-1]
-        job_id = self.create_quick_model(self.dataset_id,
+        options['%s-snapshot' % model_id] = content['snapshots'][-1]
+        job_id = self.create_quick_model(dataset_id,
                 method='previous', **options)
         self.abort_model(job_id)
 
@@ -813,10 +897,15 @@ class TestDatasetModelInteractions(WebappBaseTest):
     """
     Test the interactions between datasets and models
     """
+    def test_alltests(self):
+        for image_type in range(NUM_TYPES):
+            yield self.check_model_with_deleted_database, image_type
+            yield self.check_model_on_running_dataset, image_type
+            yield self.check_model_create_dataset_delete, image_type
 
-    def test_model_with_deleted_database(self):
+    def check_model_with_deleted_database(self, image_type):
         """model on deleted dataset"""
-        dataset_id = self.create_quick_dataset()
+        dataset_id = self.create_quick_dataset(image_type)
         assert self.delete_dataset(dataset_id) == 200, 'delete failed'
         assert not self.dataset_exists(dataset_id), 'dataset exists after delete'
 
@@ -826,9 +915,9 @@ class TestDatasetModelInteractions(WebappBaseTest):
             return
         assert False, 'Should have failed'
 
-    def test_model_on_running_dataset(self):
+    def check_model_on_running_dataset(self, image_type):
         """model on running dataset"""
-        dataset_id = self.create_quick_dataset()
+        dataset_id = self.create_quick_dataset(image_type)
         model_id = self.create_quick_model(dataset_id)
         # should wait until dataset has finished
         assert self.model_status(model_id) in ['Initialized', 'Waiting', 'Done'], 'model not waiting'
@@ -839,9 +928,9 @@ class TestDatasetModelInteractions(WebappBaseTest):
         self.abort_model(model_id)
 
     # A dataset should not be deleted while a model using it is running.
-    def test_model_create_dataset_delete(self):
+    def check_model_create_dataset_delete(self, image_type):
         """delete dataset with dependent model"""
-        dataset_id = self.create_quick_dataset()
+        dataset_id = self.create_quick_dataset(image_type)
         model_id = self.create_quick_model(dataset_id)
         assert self.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
         assert self.delete_dataset(dataset_id) == 403, 'dataset deletion should not have succeeded'
