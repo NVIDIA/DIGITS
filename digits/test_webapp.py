@@ -25,7 +25,7 @@ DUMMY_IMAGE_DIM = 10
 DUMMY_IMAGE_COUNT = 10 # per category
 
 # May be too short on a slow system
-TIMEOUT_DATASET = 10
+TIMEOUT_DATASET = 15
 TIMEOUT_MODEL = 15
 
 class Dataset():
