@@ -620,6 +620,8 @@ class TestModelCreation(WebappBaseTest):
             yield self.check_snapshot_interval_2, image_type
             yield self.check_snapshot_interval_0_5, image_type
 
+
+
     def check_create_json(self, image_type):
         """model - create w/ json"""
         self.create_quick_model(self.datasets[image_type], json=True)
@@ -679,7 +681,7 @@ class TestModelCreation(WebappBaseTest):
             yield self.check_select_gpu, index
 
     def check_select_gpu(self, gpu_index):
-        job_id = self.create_quick_model(self.dataset_ids[0], select_gpu=gpu_index)
+        job_id = self.create_quick_model(self.datasets[ImageType.COLOR], select_gpu=gpu_index)
         assert self.delete_model(job_id) == 200, 'delete failed'
 
     @unittest.skipIf(
@@ -700,7 +702,7 @@ class TestModelCreation(WebappBaseTest):
                 yield self.check_select_gpus, combination
 
     def check_select_gpus(self, gpu_list):
-        job_id = self.create_quick_model(self.dataset_ids[0],
+        job_id = self.create_quick_model(self.datasets[ImageType.COLOR],
                 select_gpus_list=','.join(gpu_list))
         assert self.delete_model(job_id) == 200, 'delete failed'
 
