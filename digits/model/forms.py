@@ -199,7 +199,7 @@ class ModelForm(Form):
                     index,
                     get_device(index).name,
                     ' (%s memory)' % sizeof_fmt(get_nvml_info(index)['memory']['total'])
-                        if 'memory' in get_nvml_info(index) else '',
+                        if get_nvml_info(index) and 'memory' in get_nvml_info(index) else '',
                     ),
                 ) for index in config_value('gpu_list').split(',') if index],
             default = 'next',
@@ -213,7 +213,7 @@ class ModelForm(Form):
                     index,
                     get_device(index).name,
                     ' (%s memory)' % sizeof_fmt(get_nvml_info(index)['memory']['total'])
-                        if 'memory' in get_nvml_info(index) else '',
+                        if get_nvml_info(index) and 'memory' in get_nvml_info(index) else '',
                     ),
                 ) for index in config_value('gpu_list').split(',') if index]
             )
