@@ -13,7 +13,8 @@ except ImportError:
     from caffe.proto import caffe_pb2
 
 from digits.config import config_value
-from digits.device_query import get_device
+from digits.device_query import get_device, get_nvml_info
+from digits.utils import sizeof_fmt
 from digits.utils.forms import validate_required_iff
 
 class ModelForm(Form):
@@ -212,7 +213,12 @@ class ModelForm(Form):
     select_gpu = wtforms.RadioField('Select which GPU you would like to use',
             choices = [('next', 'Next available')] + [(
                 index,
-                '#%s - %s' % (index, get_device(index).name),
+                '#%s - %s%s' % (
+                    index,
+                    get_device(index).name,
+                    ' (%s memory)' % sizeof_fmt(get_nvml_info(index)['memory']['total'])
+                        if 'memory' in get_nvml_info(index) else '',
+                    ),
                 ) for index in config_value('gpu_list').split(',') if index],
             default = 'next',
             )
@@ -221,7 +227,12 @@ class ModelForm(Form):
     select_gpus = wtforms.SelectMultipleField('Select which GPU[s] you would like to use',
             choices = [(
                 index,
-                '#%s - %s' % (index, get_device(index).name),
+                '#%s - %s%s' % (
+                    index,
+                    get_device(index).name,
+                    ' (%s memory)' % sizeof_fmt(get_nvml_info(index)['memory']['total'])
+                        if 'memory' in get_nvml_info(index) else '',
+                    ),
                 ) for index in config_value('gpu_list').split(',') if index]
             )
 

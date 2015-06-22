@@ -50,7 +50,7 @@ For greater performance, you can also install cuDNN.
 * Follow the installation instructions
 * You can copy the files directly into your CUDA installation
     * `cp -a libcudnn* $CUDA_HOME/lib64/`
-    * `cp cudnn.h $CUDA_HOME/`
+    * `cp cudnn.h $CUDA_HOME/include/`
 
 ### Deep learning frameworks
 
