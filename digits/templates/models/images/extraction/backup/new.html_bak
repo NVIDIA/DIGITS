@@ -1,0 +1,663 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+
+{% extends "layout.html" %}
+
+{% block title %}
+New Image Classification Model
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{url_for('image_classification_model_new')}}">New Model</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>New Image Classification Model</h1>
+</div>
+
+<form id="model-form" action="{{url_for('image_classification_model_create')}}" enctype="multipart/form-data" method="post">
+    {{ form.hidden_tag() }}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field, errors in form.errors.items() %}
+                <li>{{ field }}
+                    <ul>
+                        {% for e in errors %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="well">
+                <div class="form-group{{' has-error' if form.dataset.errors}}">
+                    {{form.dataset.label}}
+                    <span name="dataset_explanation"
+                        class="explanation-tooltip glyphicon glyphicon-question-sign"
+                        data-container="body"
+                        title="Choose the dataset to use for this model."
+                        ></span>
+                    {{form.dataset(class='form-control', size=5)}}
+                </div>
+            </div>
+        </div>
+        <script>
+$("#dataset").change(function() {
+        $.ajax("/datasets/summary?job_id=" + $(this).val(),
+            {
+                type: "GET",
+                }
+            )
+        .done(function(data) {
+            $("#dataset-summary").html(data);
+            })
+        .fail(function(data) {
+            $("#dataset-summary").html("");
+            errorAlert(data);
+            });
+        });
+        </script>
+        <div class="col-sm-4">
+            <div id="dataset-summary">
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="well">
+                <h4>Data Transformations</h4>
+                <div class="form-group{{' has-error' if form.crop_size.errors}}">
+                    {{form.crop_size.label}}
+                    <div class="input-group">
+                        {{form.crop_size(class='form-control', placeholder='none')}}
+                        <span name="crop_size_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="If specified, during training a random square crop will be taken from the input image before using as input for the network."
+                            ></span>
+                    </div>
+                </div>
+                <div class="form-group{{' has-error' if form.use_mean.errors}}">
+                    {{form.use_mean.label}}
+                    <div class="input-group">
+                        {{form.use_mean(class='form-control')}}
+                        <span name="use_mean_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Subtract the mean file for this dataset from each image."
+                            ></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="well">
+                <h4>Solver Options</h4>
+
+                <!-- Length -->
+
+                <div class="form-group{{' has-error' if form.train_epochs.errors}}">
+                    {{form.train_epochs.label}}
+                    <div class="input-group">
+                        {{form.train_epochs(class='form-control')}}
+                        <span name="train_epochs_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="How many passes through the training data?"
+                            ></span>
+                    </div>
+                </div>
+                <div class="form-group{{' has-error' if form.snapshot_interval.errors}}">
+                    {{form.snapshot_interval.label}}
+                    <div class="input-group">
+                        {{form.snapshot_interval(class='form-control')}}
+                        <span name="snapshot_interval_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="How many epochs of training between taking a snapshot?"
+                            ></span>
+                    </div>
+                </div>
+                <div class="form-group{{' has-error' if form.val_interval.errors}}">
+                    {{form.val_interval.label}}
+                    <div class="input-group">
+                        {{form.val_interval(class='form-control')}}
+                        <span name="val_interval_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="How many epochs of training between running through one pass of the validation data?"
+                            ></span>
+                    </div>
+                </div>
+                {# TODO: neat progress bar #}
+                <div class="form-group{{' has-error' if form.random_seed.errors}}">
+                    {{form.random_seed.label}}
+                    <div class="input-group">
+                        {{form.random_seed(class='form-control', placeholder='[none]')}}
+                        <span name="random_seed_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="If you provide a random seed, then back-to-back runs with the same model and dataset should give identical results."
+                            ></span>
+                    </div>
+                </div>
+                <div class="form-group{{' has-error' if form.batch_size.errors}}">
+                    {{form.batch_size.label}}
+                    <div class="input-group">
+                        {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
+                        <span name="batch_size_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="How many images to process at once. If blank, values are used from the network definition."
+                            ></span>
+                    </div>
+                </div>
+                <div class="form-group{{' has-error' if form.solver_type.errors}}">
+                    {{form.solver_type.label}}
+                    <div class="input-group">
+                        {{form.solver_type(class='form-control')}}
+                        <span name="solver_type_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="What type of solver will be used??"
+                            ></span>
+                    </div>
+                </div>
+                <div class="form-group{{' has-error' if form.learning_rate.errors}}">
+                    {{form.learning_rate.label}}
+                    <div class="input-group">
+                        {{form.learning_rate(class='form-control learning-rate-option')}}
+                        <span name="learning_rate_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Affects how quickly the network learns. If you are getting NaN for your loss, you probably need to lower this value."
+                            ></span>
+                    </div>
+                </div>
+
+                <p>
+                <label class="checkbox-inline">
+                    <input id="show-advanced-lr-options" type="checkbox" />
+                    Show advanced learning rate options
+                </label>
+                </p>
+                <script>
+function showHideAdvancedLROptions() {
+    if ($("#show-advanced-lr-options").prop("checked")) {
+        $("#advanced-lr-options").show();
+        $("#showLRGraphBtn").show();
+        showSelectedAdvancedLROptions();
+    } else
+        $("#advanced-lr-options").hide();
+}
+
+$("#show-advanced-lr-options").click(showHideAdvancedLROptions);
+showHideAdvancedLROptions();
+                </script>
+
+                <div id="advanced-lr-options" style="display:none;">
+                    <div class="form-group{{' has-error' if form.lr_policy.errors}}">
+                        {{form.lr_policy.label}}
+                        {{form.lr_policy(class='form-control learning-rate-option')}}
+                    </div>
+
+                    <div class="form-group{{' has-error' if form.lr_step_size.errors}}">
+                        {{form.lr_step_size.label}}
+                        <div class="input-group">
+                            {{form.lr_step_size(class='form-control learning-rate-option')}}
+                            <span class="input-group-addon">%</span>
+                        </div>
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_step_gamma.errors}}">
+                        {{form.lr_step_gamma.label}}
+                        {{form.lr_step_gamma(class='form-control learning-rate-option')}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_multistep_values.errors}}">
+                        {{form.lr_multistep_values.label}}
+                        <div class="input-group">
+                            {{form.lr_multistep_values(class='form-control learning-rate-option')}}
+                            <span class="input-group-addon">%</span>
+                        </div>
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_multistep_gamma.errors}}">
+                        {{form.lr_multistep_gamma.label}}
+                        {{form.lr_multistep_gamma(class='form-control learning-rate-option')}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_exp_gamma.errors}}">
+                        {{form.lr_exp_gamma.label}}
+                        {{form.lr_exp_gamma(class='form-control learning-rate-option')}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_inv_gamma.errors}}">
+                        {{form.lr_inv_gamma.label}}
+                        {{form.lr_inv_gamma(class='form-control learning-rate-option')}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_inv_power.errors}}">
+                        {{form.lr_inv_power.label}}
+                        {{form.lr_inv_power(class='form-control learning-rate-option')}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_poly_power.errors}}">
+                        {{form.lr_poly_power.label}}
+                        {{form.lr_poly_power(class='form-control learning-rate-option')}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_sigmoid_step.errors}}">
+                        {{form.lr_sigmoid_step.label}}
+                        <div class="input-group">
+                            {{form.lr_sigmoid_step(class='form-control learning-rate-option')}}
+                            <span class="input-group-addon">%</span>
+                        </div>
+                    </div>
+                    <div class="form-group{{' has-error' if form.lr_sigmoid_gamma.errors}}">
+                        {{form.lr_sigmoid_gamma.label}}
+                        {{form.lr_sigmoid_gamma(class='form-control learning-rate-option')}}
+                    </div>
+                    <a id="showLRGraphBtn" class="btn btn-info btn-sm" href="#" onClick="return getLRGraph();">Visualize LR</a>
+                    <div id="visualize-lr" style="display:none;">
+                        <a class="close" onClick="$('#visualize-lr').hide();return false;">&times;</a>
+                        <br>
+                        <div id="visualize-lr-graph" style="background:white;"></div>
+                    </div>
+
+                    <script>
+                        function showHideAdvancedLROption(selector, show) {
+                            show = show || true;
+                            var element = $(selector);
+                            while (!element.hasClass('form-group')) {
+                                element = element.parent();
+                                if (element.attr('id') == 'advanced_lr_options')
+                                    // We've gone too far
+                                    return;
+                            }
+                            if (show)
+                                element.show();
+                            else
+                                element.hide();
+                        }
+                        function showSelectedAdvancedLROptions() {
+                            $("#advanced-lr-options div.form-group").hide();
+                            showHideAdvancedLROption('#lr_policy');
+
+                            // Turn some back on
+                            switch($("#lr_policy").val()) {
+                                case 'step':
+                                showHideAdvancedLROption('#lr_step_size');
+                                showHideAdvancedLROption('#lr_step_gamma');
+                                break;
+                                case 'multistep':
+                                showHideAdvancedLROption('#lr_multistep_values');
+                                showHideAdvancedLROption('#lr_multistep_gamma');
+                                break;
+                                case 'exp':
+                                showHideAdvancedLROption('#lr_exp_gamma');
+                                break;
+                                case 'inv':
+                                showHideAdvancedLROption('#lr_inv_gamma');
+                                showHideAdvancedLROption('#lr_inv_power');
+                                break;
+                                case 'poly':
+                                showHideAdvancedLROption('#lr_poly_power');
+                                break;
+                                case 'sigmoid':
+                                showHideAdvancedLROption('#lr_sigmoid_step');
+                                showHideAdvancedLROption('#lr_sigmoid_gamma');
+                                break;
+                                default:
+                                break;
+                            }
+                        }
+                        function drawLRGraph(data) {
+                            $("#visualize-lr").show();
+                            c3.generate($.extend(true, data, {
+                                bindto: '#visualize-lr-graph',
+                                size: {height: 200},
+                                axis: {
+                                    x: {
+                                        label: {
+                                            text: 'Training (%)',
+                                            position: 'outer-center',
+                                        },
+                                    },
+                                    y: {
+                                        min: 0,
+                                        padding: {bottom: 0},
+                                    }
+                                },
+                                legend: {show: false},
+                            }));
+                        }
+                        function getLRGraph() {
+                            $.ajax("{{url_for('models_visualize_lr')}}",
+                            {
+                                type: "POST",
+                                data: $(".learning-rate-option").serialize()
+                            }
+                            )
+                            .done(function(data) {
+                                drawLRGraph($.parseJSON(data));
+                            })
+                            .fail(function(data) {
+                                $("#visualize-lr-graph").html("");
+                                errorAlert(data);
+                            });
+                            return false;
+                        }
+
+                        $("input.learning-rate-option").change(function() {
+                            getLRGraph();
+                        });
+                        $("select.learning-rate-option").change(function() {
+                            showSelectedAdvancedLROptions();
+                            getLRGraph();
+                        });
+                        showSelectedAdvancedLROptions();
+                    </script>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-8">
+            <script>
+function customizeNetwork(network, snapshot_list) {
+    function fillCustomTab(network, snapshot_list) {
+        data = null;
+        if (snapshot_list)
+            data = {'snapshot_epoch': $('#'+snapshot_list).val()};
+        $.ajax("{{url_for('models_customize')}}?network=" + network,
+                {
+                    type: "POST",
+                    data: data
+                    }
+              )
+        .done(function(data) {
+                data = $.parseJSON(data);
+                $('textarea[name=custom_network]').val(data['network']);
+                if (data['snapshot'])
+                    $('input[name=custom_network_snapshot]').val(data['snapshot']);
+                else
+                    $('input[name=custom_network_snapshot]').val('');
+                })
+        .fail(function(data) {
+                $('textarea[name=custom_network]').val('');
+                $('input[name=custom_network_snapshot]').val('');
+                errorAlert(data);
+                });
+        $('#network-tabs a:last').tab('show');
+    }
+
+    if ($('textarea[name=custom_network]').val() != "") {
+        bootbox.confirm(
+                'This will overwrite data in the Custom Network tab. Continue?',
+                function(result) { if (result) fillCustomTab(network, snapshot_list); }
+                );
+    } else {
+        fillCustomTab(network, snapshot_list);
+    }
+}
+            </script>
+
+            <ul class="nav nav-tabs" id="network-tabs">
+                <li class="active"><a href="#network-tab-standard" data-toggle="tab">Standard Networks</a></li>
+                <li><a href="#network-tab-previous" data-toggle="tab">Previous Networks</a></li>
+                <li><a href="#network-tab-custom" data-toggle="tab">Custom Network</a></li>
+            </ul>
+            <div class="tab-content well">
+                <div id="network-tab-standard" class="tab-pane active">
+                    <table class="table">
+                        <tr>
+                            <th>Network</th>
+                            <th>Details</th>
+                            <th>Intended image size</th>
+                            <th></th>
+                        </tr>
+                        {% for network in form.standard_networks %}
+                        <tr>
+                            <td>{{network}} {{network.label}}</td>
+                            {% if network.data == 'lenet' %}
+                            <td>
+                                <a href="http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf" target="_blank">Original paper</a>
+                                [1998]
+                            </td>
+                            <td>28x28 (gray)</td>
+                            {% elif network.data == 'alexnet' %}
+                            <td>
+                                <a href="http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional" target="_blank">Original paper</a>
+                                [2012]
+                            </td>
+                            <td>256x256</td>
+                            {% elif network.data == 'vgg-16' %}
+                            <td>
+                                <a href="http://arxiv.org/abs/1409.1556" target="_blank">Original paper</a>
+                                [2014]
+                            </td>
+                            <td>256x256</td>
+                            {% elif network.data == 'googlenet' %}
+                            <td>
+                                <a href="http://arxiv.org/abs/1409.4842" target="_blank">Original paper</a>
+                                [2014]
+                            </td>
+                            <td>256x256</td>
+                            {% else %}
+                            <td></td><td>?</td>
+                            {% endif %}
+                            <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}');">Customize</a></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+
+                </div>
+                <div id="network-tab-previous" class="tab-pane">
+                    <table class="table">
+                        <tr>
+                            <th>Network</th>
+                            <th>Pretrained Model</th>
+                            <th></th>
+                        </tr>
+                        {% for network in form.previous_networks %}
+                        <tr>
+                            <td>
+                                {{network}}
+                                {{network.label}}
+                                <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
+                            </td>
+                            <td>
+                                {% set snapshot_list = previous_network_snapshots[loop.index0] %}
+                                {% if snapshot_list|length %}
+                                <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
+                                    {% for each_epoch in snapshot_list %}
+                                    <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
+                                    {% endfor %}
+                                </select>
+                                {% endif %}
+                            </td>
+                            <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot');">Customize</a></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td><i>None</i></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <script>
+                    // hide some buttons and form elements
+                    $("#network-tab-standard .btn.btn-sm").css('visibility', 'hidden');
+                    $("#network-tab-previous .btn.btn-sm").css('visibility', 'hidden');
+                    $("#network-tab-previous select").css('visibility', 'hidden');
+
+                    var $stdtab_prev_clicked_tr = null;
+                    $("input:radio[name=standard_networks]").click(function(){
+                        if ($stdtab_prev_clicked_tr != null) {
+                            $stdtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
+                        }
+                        $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
+                        $stdtab_prev_clicked_tr = $(this).parents('tr');
+                    });
+
+                    var $prevtab_prev_clicked_tr = null;
+                    $("input:radio[name=previous_networks]").click(function(){
+                        if ($prevtab_prev_clicked_tr != null) {
+                            $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
+                            $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
+                        }
+                        $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
+                        $(this).parents('tr').find(".form-control").css('visibility', 'visible');
+                        $prevtab_prev_clicked_tr = $(this).parents('tr');
+                    });
+
+                    //fix to the following issue: when validation fails and the screen was re-displayed, the selected radio buttons in "previous networks" tab remains selected but the select input field and customize button beside the selected previous network is in hidden status, which is wrong. same issue exists in standard networks tab. The below code ensures that select field and customize button beside selected radio button will be visible even when validation fails.
+
+                    if($("input:radio[name=standard_networks]").is(":checked")) {
+                        $stdtab_prev_clicked_tr = $("input:radio[name=standard_networks]:checked").parents('tr');
+                        $stdtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
+                    }
+                    if($("input:radio[name=previous_networks]").is(":checked")) {
+                        $prevtab_prev_clicked_tr =  $("input:radio[name=previous_networks]:checked").parents('tr');
+                        $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
+                        $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'visible');
+                    }
+
+                </script>
+                <div id="network-tab-custom" class="tab-pane">
+                    <script>
+function visualizeNetwork() {
+    $.ajax("{{url_for('models_visualize_network')}}",
+        {
+            type: "POST",
+            data: $("#custom_network").serialize()
+            }
+        )
+    .done(function(data) {
+            bootbox.alert({
+                message: data,
+                animate: false,
+                className: "wide-bootbox",
+                });
+            $(".wide-bootbox").animate({scrollTop: 0}, "");
+        })
+    .fail(function(data) { errorAlert(data); });
+    return false;
+}
+                    </script>
+                    <div class="form-group{{' has-error' if form.custom_network.errors}}">
+                        {{form.custom_network.label}}
+                        <div id="custom_network_explanation" style="display:none;">
+                            <h1>Specifying a custom network</h1>
+                            <p>
+                            You should enter a train_val network here. Some cleanup is done for you automatically:
+                            <ul>
+                                <li>
+                                The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
+                                </li>
+                                <li>
+                                Any <b>Accuracy</b> layers with <i>top_k</i> &gt;= num_labels is removed automatically.
+                                </li>
+                            </ul>
+                            </p>
+                            The deploy network will be created for you automatically. Once caffe implements their "all-in-one" nets feature, you will be able to specify which layers to include in the deploy file. Until then, these things are done automatically:
+                            <ul>
+                                <li>
+                                The last <b>SoftmaxWithLoss</b> layer is replaced with a <b>Softmax</b> layer.
+                                </li>
+                                <li>
+                                All other loss layers and accuracy layers are removed.
+                                </li>
+                            </ul>
+                            </p>
+                        </div>
+                        <a href=# onClick="bootbox.alert($('#custom_network_explanation').html()); return false;"><span class="glyphicon glyphicon-question-sign"></span></a>
+                        <div class="pull-right">
+                            <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
+                        </div>
+                        {{form.custom_network(class='form-control', rows=10)}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
+                        {{form.custom_network_snapshot.label}}
+                        <div class="input-group">
+                            {{form.custom_network_snapshot(class='form-control')}}
+                            <span name="pretrained_model_explanation"
+                                class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Path to pretrained model file. Only edit this field if you understand how fine-tuning works in caffe"
+                            ></span>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{ form.method(style="display:none;") }}
+            <script>
+function updateNetworkTab(method) {
+    $('select[name=method]').val(method);
+}
+$('#network-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        parts = e.target.href.split('-');
+        updateNetworkTab( parts[parts.length-1] );
+        });
+$('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
+            </script>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6 col-sm-offset-3 well">
+            {% if form.select_gpu.choices|length > 2 and not multi_gpu %}
+            <div class="form-group{{' has-error' if form.select_gpu.errors}}">
+                <b>{{form.select_gpu.label.text}}</b><br>
+                {% for choice in form.select_gpu %}
+                <div class="radio">
+                    <label>
+                        {{choice}}
+                        {{choice.label.text}}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if form.select_gpus.choices| length > 1 and multi_gpu %}
+            <div class="form-group{{' has-error' if form.select_gpu_count.errors}}">
+                {{form.select_gpu_count.label}}
+                {{form.select_gpu_count(class='form-control')}}
+            </div>
+            <p class="text-center"><i>or</i></p>
+            <div class="form-group{{' has-error' if form.select_gpus.errors}}">
+                {{form.select_gpus.label}}
+                <span name="select_gpus_explanation"
+                    class="explanation-tooltip glyphicon glyphicon-question-sign"
+                    data-container="body"
+                    title="The job won't start until all of the chosen GPUs are available."
+                    ></span>
+                {{form.select_gpus(class='form-control', size=4)}}
+            </div>
+            <script type="text/javascript">
+                // Only allow one of these to be selected
+                $("#select_gpus").change(function(){ $("#select_gpu_count").val(null);});
+                $("#select_gpu_count").change(function(){ $("#select_gpus").val(null);});
+            </script>
+            {% endif %}
+            <div class="form-group{{' has-error' if form.model_name.errors}}">
+                {{form.model_name.label}}
+                <div class="input-group">
+                    {{form.model_name(class='form-control')}}
+                    <span name="model_name_explanation"
+                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                        data-container="body"
+                        title="An identifier, later used to refer to this model in the Application."
+                    ></span>
+
+                </div>
+            </div>
+            <input type="submit" name="create-model" class="btn btn-primary" value="Create">
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}

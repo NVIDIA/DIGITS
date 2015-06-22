@@ -1,0 +1,251 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "job.html" %}
+
+{% block job_content %}
+
+<script src="{{ url_for('static', filename='js/model-graphs.js') }}"></script>
+
+{% set task = job.train_task() %}
+
+<div class="row">
+    <div class="col-sm-6">
+        <div class="well">
+            <dl>
+                <dt>Solver</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{{task.solver_file}}</a></dd>
+                <dt>Network (train/val)</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{{task.train_val_file}}</a></dd>
+                <dt>Network (deploy)</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
+                <dt>Raw caffe output</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}">{{task.caffe_log_file}}</a></dd>
+                {% if task.pretrained_model %}
+                <dt>Pretrained Model</dt>
+                <dd>{{task.pretrained_model}}</dd>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div class="well">
+            <h4 class='text-center'>Dataset</h4>
+            {% if job.dataset %}
+            {% with dataset = job.dataset %}
+            {% include 'datasets/summary.html' %}
+            {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="well">
+            <div id="combined-graph" class="combined-graph"
+                style="height:500px;width:100%;background:white;display:none;"></div>
+            <div class="pull-right combined-graph" style="display:none;">
+                <a class="btn btn-primary btn-sm" target="_blank"
+                    href="{{url_for('image_classification_model_large_graph', job_id=job.id())}}">
+                    View Large
+                </a>
+            </div>
+            <br>
+            <br>
+            {% set combined_graph_data = job.train_task().combined_graph_data() %}
+            {% if combined_graph_data %}
+            <script>
+                drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
+            </script>
+            {% endif %}
+
+            <div id="lr-graph" class="lr-graph"
+                style="height:300px;width:100%;background:white;display:none;"></div>
+            {% set lr_graph_data = job.train_task().lr_graph_data() %}
+            {% if lr_graph_data %}
+            <script>
+                drawLRGraph({% autoescape false %}{{lr_graph_data}}{% endautoescape %});
+            </script>
+            {% endif %}
+
+            {% set task = job.train_task() %}
+            <hr>
+            <form id="test-model-form"
+                enctype="multipart/form-data"
+                method="post"
+                onkeypress="return event.keyCode != 13;" {# Disable enter to submit #}
+                {% if not task.has_model() %}
+                style="display:none;"
+                {% endif %}
+                >
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="form-group">
+                            <label for="snapshot_epoch">Select Model</label>
+                            <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
+                            </select>
+                            <script>
+function updateSnapshotList(data) {
+    var selected = null;
+    var latest_selected = true;
+    if ($("#snapshot_epoch").find('option').length) {
+        latest_selected = ($("#snapshot_epoch").find('option').first().val() == $("#snapshot_epoch").val());
+        selected = $("#snapshot_epoch").val();
+    }
+    // remove old options
+    $("#snapshot_epoch").find("option").remove();
+    if (data.length)
+        $("#test-model-form").show();
+    for (var i=0; i<data.length; i++) {
+        option = data[i];
+        $("#snapshot_epoch").append('<option value="'+option[0]+'">'+option[1]+'</option>');
+    }
+    if (data.length) {
+        var value = selected;
+        if (!value || latest_selected)
+            value = data[0][0];
+        if (value)
+            $("#snapshot_epoch").val(value);
+    }
+}
+updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescape %});
+                            </script>
+                        </div>
+                        <button
+                            formaction="{{url_for('models_download', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-info">
+                            Download
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="image_url" class="control-label">Image URL</label>
+                            <input type="text" id="image_url" name="image_url" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="image_file" class="control-label">Upload image</label>
+                            <input type="file" id="image_file" name="image_file" class="form-control">
+                        </div>
+                        <script type="text/javascript">
+                            // When you fill in one field, the other gets blanked out
+                            $("#image_url").change(function() { $("#image_file").val(""); });
+                            $("#image_file").change(function() { $("#image_url").val(""); });
+                        </script>
+                        <div class="form-group">
+                            <label for="show_visualizations">
+                                <input id="show_visualizations" name="show_visualizations" type="checkbox" value="y">
+                                Show visualizations and statistics
+                            </label>
+                            <span name="show_visualizations_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="For each layer in the network, show statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
+                                ></span>
+                        </div>
+                        <button name="classify-one-btn" onClick="return classifyOne();" class="btn btn-primary">Classify One Image</button>
+                        <span name="classify-one-explanation"
+                            class="explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Classify one image and show the top 5 category predictions. Also displays weights and activations for the network."
+                            ></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="image_list" class="control-label">Upload Image List</label>
+                            <input type="file" id="image_list" name="image_list" class="form-control">
+                            <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
+                        </div>
+                        <button name="classify-many-btn" onClick="return classifyMany();" class="btn btn-primary">Classify Many Images</button>
+                        <span name="classify-many-explanation"
+                            class="explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Classify a list of images and show the top 5 category predictions for each."
+                            ></span>
+                        <div class="form-group">
+                            <label for="num_test_images" class="control-label">Number of images use from the file</label>
+                            <input type="text" id="num_test_images" name="num_test_images" class="form-control" value="100" placeholder="All">
+                            <small>Leave blank to use all</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="top_n" class="control-label">Number of images to show per category</label>
+                            <input type="text" id="top_n" name="top_n" class="form-control" placeholder="9">
+                        </div>
+                        <button name="top-n-btn"
+                            formaction="{{url_for('image_classification_model_top_n', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            formtarget="_blank"
+                            class="btn btn-primary">
+                            Top N Predictions per Category
+                        </button>
+                        <span name="top-n-explanation"
+                            class="explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Classify a list of images and show the top N results per category by confidence."
+                            ></span>
+                    </div>
+                </div>
+            </form>
+
+            <script>
+function classifyOne() {
+    // grab all form data
+    var formData = new FormData($("#test-model-form")[0]);
+
+    $.ajax("{{url_for('image_classification_model_classify_one', job_id=job.id())}}",
+    {
+        type: "POST",
+        data: formData,
+        // options to tell jQuery not to process data or worry about content-type
+        cache: false,
+        contentType: false,
+        processData: false,
+    })
+    .done(function(data) {
+        bootbox.alert({
+            message: 'Loading...',
+            animate: false,
+            className: "wide-bootbox"
+        });
+        // Do this after the page loads so javascript works
+        $('div.bootbox-body').html(data);
+        $(".wide-bootbox").animate({scrollTop: 0}, "");
+    })
+    .fail(function(data) { errorAlert(data); });
+    return false;
+}
+function classifyMany() {
+    // grab all form data
+    var formData = new FormData($("#test-model-form")[0]);
+
+    $.ajax("{{url_for('image_classification_model_classify_many', job_id=job.id())}}",
+            {
+                type: "POST",
+                data: formData,
+                // options to tell jQuery not to process data or worry about content-type
+                cache: false,
+                contentType: false,
+                processData: false,
+            })
+    .done(function(data) {
+            bootbox.alert({
+                message: data,
+                animate: false,
+                className: "wide-bootbox"
+                });
+            $(".wide-bootbox").animate({scrollTop: 0}, "");
+            })
+    .fail(function(data) { errorAlert(data); });
+    return false;
+}
+            </script>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

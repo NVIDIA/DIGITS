@@ -1,0 +1,17 @@
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<table class="table">
+    {% for path in paths %}
+    {% set result = classifications[loop.index0] %}
+    <tr>
+        <td>{{path}}</td>
+        {% for r in result %}
+        <td align="right">
+            <b>{{r[0]}}</b>
+        </td>
+        <td align="left">
+            <span class="badge">{{r[1]}}%</span>
+        </td>
+        {% endfor %}
+    {% endfor %}
+</table>
