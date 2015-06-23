@@ -1,5 +1,5 @@
 Pillow>=2.3.0
-numpy>=1.7
+numpy>=1.8.2
 scipy>=0.13.3
 protobuf>=2.5.0
 six>=1.5.2

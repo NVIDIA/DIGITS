@@ -83,7 +83,7 @@ def create_color_direction(size, color_from, color_to, direction):
     Make an image with a color gradient in a specific direction
     """
     # create gradient
-    rgb_arrays = [np.linspace(color_from[x], color_to[x], size, dtype=np.uint8) for x in range(3)]
+    rgb_arrays = [np.linspace(color_from[x], color_to[x], size).astype('uint8') for x in range(3)]
     gradient = np.concatenate(rgb_arrays)
 
     # extend to 2d
