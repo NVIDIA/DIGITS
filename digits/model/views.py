@@ -48,8 +48,7 @@ def models_show(job_id):
         elif isinstance(job, model_images.FeatureExtractionModelJob):
             return model_images.extraction.views.show(job)
         else:
-            raise werkzeug.exceptions.BadRequest(
-                    'Invalid job type')
+            raise werkzeug.exceptions.BadRequest('Invalid job type')
 
 @app.route(NAMESPACE + 'customize', methods=['POST'])
 @autodoc('models')
