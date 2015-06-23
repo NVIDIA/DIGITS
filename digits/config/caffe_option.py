@@ -226,7 +226,7 @@ class CaffeOption(config_option.FrameworkOption):
 
             if self._config_file_value != '<PATHS>':
                 # Add caffe/python to PATH
-                sys.path.append(os.path.join(self._config_file_value, 'python'))
+                sys.path.insert(0, os.path.join(self._config_file_value, 'python'))
 
             try:
                 import caffe
@@ -236,7 +236,7 @@ class CaffeOption(config_option.FrameworkOption):
 
             if platform.system() == 'Darwin':
                 # Strange issue with protocol buffers and pickle - see issue #32
-                sys.path.append(os.path.join(
+                sys.path.insert(0, os.path.join(
                     os.path.dirname(caffe.__file__), 'proto'))
 
             # Turn GLOG output back on for subprocess calls
