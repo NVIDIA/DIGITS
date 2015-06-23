@@ -220,7 +220,7 @@ def show(job):
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
 @autodoc('models')
-def image_classification_model_large_graph():
+def feature_extraction_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
     """
@@ -228,12 +228,12 @@ def image_classification_model_large_graph():
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
-    return flask.render_template('models/images/classification/large_graph.html', job=job)
+    return flask.render_template('models/images/extraction/large_graph.html', job=job)
 
 @app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
 @autodoc(['models', 'api'])
-def image_classification_model_classify_one():
+def feature_extraction_model_classify_one():
     """
     Classify one image and return the top 5 classifications
 
@@ -280,7 +280,7 @@ def image_classification_model_classify_one():
     if request_wants_json():
         return flask.jsonify({'predictions': predictions})
     else:
-        return flask.render_template('models/images/classification/classify_one.html',
+        return flask.render_template('models/images/extraction/classify_one.html',
                 image_src       = utils.image.embed_image_html(image),
                 predictions     = predictions,
                 visualizations  = visualizations,
@@ -289,7 +289,7 @@ def image_classification_model_classify_one():
 @app.route(NAMESPACE + '/classify_many.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_many', methods=['POST', 'GET'])
 @autodoc(['models', 'api'])
-def image_classification_model_classify_many():
+def feature_extraction_model_classify_many():
     """
     Classify many images and return the top 5 classifications for each
 
@@ -359,14 +359,14 @@ def image_classification_model_classify_many():
         joined = dict(zip(paths, classifications))
         return flask.jsonify({'classifications': joined})
     else:
-        return flask.render_template('models/images/classification/classify_many.html',
+        return flask.render_template('models/images/extraction/classify_many.html',
                 paths=paths,
                 classifications=classifications,
                 )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
 @autodoc('models')
-def image_classification_model_top_n():
+def extraction_model_top_n():
     """
     Classify many images and show the top N images per category by confidence
     """
@@ -443,7 +443,7 @@ def image_classification_model_top_n():
                     )
                 ))
 
-    return flask.render_template('models/images/classification/top_n.html',
+    return flask.render_template('models/images/extraction/top_n.html',
             job=job,
             results=results,
             )
@@ -468,7 +468,7 @@ def get_default_standard_network():
 
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
-        [j for j in scheduler.jobs if isinstance(j, ImageClassificationModelJob)],
+        [j for j in scheduler.jobs if isinstance(j, FeatureExtractionModelJob)],
         cmp=lambda x,y: cmp(y.id(), x.id())
         )
         ]
