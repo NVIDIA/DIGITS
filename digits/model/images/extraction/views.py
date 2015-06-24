@@ -32,10 +32,13 @@ NAMESPACE   = '/models/images/extraction'
 @autodoc('models')
 def feature_extraction_model_new():
     """
-    Return a form for a new FeatureExtractionJob.
+    Return a form for a new ImageClassificationModelJob for feature extraction.
     """
     form = FeatureExtractionModelForm()
+    # TODO : Gotta make this constant. Probably remove this from here and just keep a fix value in the next controller.
+    #      : Set lr=0, and epoch=0 in the next controller.
     form.dataset.choices = get_datasets()
+    #####################################
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
@@ -53,12 +56,15 @@ def feature_extraction_model_new():
 @autodoc(['models', 'api'])
 def feature_extraction_model_create():
     """
-    Create a new FeatureExtractionModelJob
+    Create a new ImageClassificationModelJob for feature extraction.
 
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
     form = FeatureExtractionModelForm()
+    # TODO : Gotta make this constant. Probably remove this from here and just keep a fix value in the next controller.
+    #      : Set lr=0, and epoch=0 in the next controller.
     form.dataset.choices = get_datasets()
+    #####################################
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
@@ -75,6 +81,7 @@ def feature_extraction_model_create():
                     multi_gpu = config_value('caffe_root')['multi_gpu'],
                     ), 400
 
+    # TODO : Make sure the dataset passed here is what we were trying to pass.
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
         raise werkzeug.exceptions.BadRequest(
@@ -271,14 +278,17 @@ def feature_extraction_model_classify_one():
 
     layers = 'none'
     if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
-        layers = 'all'
+        if 'select_visualization_layer' in flask.request.form and flask.request.form['select_visualization_layer']:
+            layers = flask.request.form['select_visualization_layer']
+        else:
+            layers = 'all'
 
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
     if request_wants_json():
-        return flask.jsonify({'predictions': predictions})
+        return flask.jsonify({'predictions': predictions}, {'visualizations': visualizations})
     else:
         return flask.render_template('models/images/extraction/classify_one.html',
                 image_src       = utils.image.embed_image_html(image),

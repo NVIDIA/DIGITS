@@ -146,6 +146,15 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 title="For each layer in the network, show statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
                                 ></span>
                         </div>
+                        <div class="form-group">
+                            <label for="select_visualization_layer" class="control-label">Specify Layer to Visualize</label>
+                            <span name="show_visualizations_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Specify name of the layer to obtain visualizations for that layer. Provide 'all' to visualize all layers."
+                                ></span>
+                            <input id="select_visualization_layer" name="select_visualization_layer" type="text" value="all" class="form-control">
+                        </div>
                         <button name="classify-one-btn" onClick="return classifyOne();" class="btn btn-primary">Classify One Image</button>
                         <span name="classify-one-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"

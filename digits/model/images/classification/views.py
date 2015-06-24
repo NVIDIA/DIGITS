@@ -271,14 +271,17 @@ def image_classification_model_classify_one():
 
     layers = 'none'
     if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
-        layers = 'all'
+        if 'select_visualization_layer' in flask.request.form and flask.request.form['select_visualization_layer']:
+            layers = flask.request.form['select_visualization_layer']
+        else:
+            layers = 'all'
 
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
     if request_wants_json():
-        return flask.jsonify({'predictions': predictions})
+        return flask.jsonify({'predictions': predictions}, {'visualizations': visualizations})
     else:
         return flask.render_template('models/images/classification/classify_one.html',
                 image_src       = utils.image.embed_image_html(image),
