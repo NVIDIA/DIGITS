@@ -2,6 +2,4 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 DIGITS_MODE_TEST=1 $(command -v python) $(command -v nosetests) \
-    --no-path-adjustment -v \
-    scripts/ tools/ digits/ \
-    $@
+    --no-path-adjustment $@
