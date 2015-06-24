@@ -906,12 +906,15 @@ class TestDatasetModelInteractions(WebappBaseTest):
     """
     def test_alltests(self):
         for image_type in ImageType.TYPES:
-            yield self.check_model_with_deleted_database, image_type
-            yield self.check_model_on_running_dataset, image_type
-            yield self.check_model_create_dataset_delete, image_type
+            yield self.check_create_model_deleted_dataset, image_type
+            yield self.check_create_model_running_dataset, image_type
+            yield self.check_delete_dataset_dependent_model, image_type
+            yield self.check_delete_running_dataset_dependent_model, image_type
 
-    def check_model_with_deleted_database(self, image_type):
-        """model on deleted dataset"""
+    def check_create_model_deleted_dataset(self, image_type):
+        """
+        If you try to create a model using a deleted dataset, it should fail
+        """
         dataset_id = self.create_quick_dataset(image_type)
         assert self.delete_dataset(dataset_id) == 200, 'delete failed'
         assert not self.dataset_exists(dataset_id), 'dataset exists after delete'
@@ -922,24 +925,57 @@ class TestDatasetModelInteractions(WebappBaseTest):
             return
         assert False, 'Should have failed'
 
-    def check_model_on_running_dataset(self, image_type):
-        """model on running dataset"""
+    def check_create_model_running_dataset(self, image_type):
+        """
+        If you try to create a model using a running dataset,
+        it should wait to start until the dataset is completed
+        """
         dataset_id = self.create_quick_dataset(image_type)
         model_id = self.create_quick_model(dataset_id)
-        # should wait until dataset has finished
-        assert self.model_status(model_id) in ['Initialized', 'Waiting', 'Done'], 'model not waiting'
+
+        # Model should be in WAIT status while dataset is running
+        #   Copying functionality from job_wait_completion ...
+        start_time = time.time()
+        timeout = TIMEOUT_DATASET
+
+        dataset_status = self.dataset_status(dataset_id)
+        while dataset_status != 'Done':
+            model_status = self.model_status(model_id)
+            if model_status == 'Initialized':
+                # give it some time ...
+                pass
+            elif model_status == 'Waiting':
+                # That's what we were waiting for
+                break
+            else:
+                raise Exception('Model not waiting - "%s"' % model_status)
+            assert (time.time() - start_time) < timeout, 'Job took more than %s seconds' % timeout
+            time.sleep(0.5)
+            dataset_status = self.dataset_status(dataset_id)
+
+        # Model should switch to RUN status after dataset is DONE
         assert self.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
         time.sleep(1)
-        # then it should start
         assert self.model_status(model_id) in ['Running', 'Done'], "model didn't start"
         self.abort_model(model_id)
 
-    # A dataset should not be deleted while a model using it is running.
-    def check_model_create_dataset_delete(self, image_type):
-        """delete dataset with dependent model"""
+    def check_delete_dataset_dependent_model(self, image_type):
+        """
+        If you try to delete a completed dataset with a dependent model, it should fail
+        """
         dataset_id = self.create_quick_dataset(image_type)
         model_id = self.create_quick_model(dataset_id)
         assert self.dataset_wait_completion(dataset_id) == 'Done', 'dataset creation failed'
         assert self.delete_dataset(dataset_id) == 403, 'dataset deletion should not have succeeded'
+        self.abort_model(model_id)
+
+    def check_delete_running_dataset_dependent_model(self, image_type):
+        """
+        If you try to delete a running dataset with a dependent model, it should fail
+        """
+        dataset_id = self.create_quick_dataset(image_type)
+        model_id = self.create_quick_model(dataset_id)
+        assert self.delete_dataset(dataset_id) == 403, 'dataset deletion should not have succeeded'
+        self.abort_dataset(dataset_id)
         self.abort_model(model_id)
 

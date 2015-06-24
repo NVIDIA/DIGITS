@@ -5,6 +5,7 @@ import re
 import time
 import logging
 import subprocess
+import signal
 
 import flask
 import gevent.event
@@ -196,11 +197,16 @@ class Task(StatusCls):
                 )
 
         try:
+            sigterm_time = None # When was the SIGTERM signal sent
+            sigterm_timeout = 2 # When should the SIGKILL signal be sent
             while p.poll() is None:
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
-                        p.terminate()
-                        self.status = Status.ABORT
+                        if sigterm_time is None:
+                            # Attempt graceful shutdown
+                            p.send_signal(signal.SIGTERM)
+                            sigterm_time = time.time()
+                            self.status = Status.ABORT
                         break
 
                     if line is not None:
@@ -213,6 +219,10 @@ class Task(StatusCls):
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
+                if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+                    p.send_signal(signal.SIGKILL)
+                    self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
+                    time.sleep(0.1)
         except:
             p.terminate()
             self.after_run()
