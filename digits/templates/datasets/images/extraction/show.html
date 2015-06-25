@@ -1,0 +1,203 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "job.html" %}
+
+{% macro print_job_information() %}
+<div class="panel-heading">
+    <h4>Job Information</h4>
+</div>
+<div class="panel-body">
+    <dl>
+        <dt>Job Directory</dt>
+        <dd>{{ job.dir() }}</dd>
+    </dl>
+    <dl>
+        <dt>Image Type</dt>
+        <dd>{{'Color' if job.image_dims[2] == 3 else 'Grayscale'}}</dd>
+        <dt>Image Dimensions</dt>
+        <dd>{{job.image_dims[1]}}x{{job.image_dims[0]}}</dd>
+        <dt>Resize Mode</dt>
+        <dd>{{ job.resize_mode }}</dd>
+        <dt>Encoding</dt>
+        <dd>{{job.train_db_task().encoding}}</dd>
+    </dl>
+</div>
+{% endmacro %}
+
+{% macro print_parse_folder_task(task) %}
+<div class="panel-heading">
+    <h4>{{task.name()}}</h4>
+</div>
+<div class="panel-body">
+    <dl>
+        <dt>Folder</dt>
+        <dd>{{task.folder}}</dd>
+    </dl>
+    <dl>
+        {% if task.label_count %}
+        <dt>Number of categories</dt>
+        <dd>{{task.label_count}}</dd>
+        {% endif %}
+        {% if task.train_count %}
+        <dt>Training images</dt>
+        <dd>{{task.train_count}}</dd>
+        {% endif %}
+        {% if task.val_count %}
+        <dt>Validation images</dt>
+        <dd>
+        {{task.val_count}}
+        {% if task.percent_val != 0 and task.percent_val != 100 %}
+        ({{task.percent_val}}%)
+        {% endif %}
+        </dd>
+        {% endif %}
+        {% if task.test_count %}
+        <dt>Test images</dt>
+        <dd>
+        {{task.test_count}}
+        {% if task.percent_test != 0 and task.percent_test != 100 %}
+        ({{task.percent_test}}%)
+        {% endif %}
+        {% endif %}
+    </dl>
+</div>
+{% endmacro %}
+
+{% macro print_create_db_task(task) %}
+<div class="panel-heading">
+    <h4>{{task.name()}}</h4>
+</div>
+<div class="panel-body">
+    <dl>
+        <dt>Input file{{' (before shuffling)' if task.shuffle }}</dt>
+        <dd><a href="{{url_for('serve_file', path=task.path(task.input_file, relative=True))}}">{{task.input_file}}</a></dd>
+        {% if task.entries_count %}
+        <dt>DB Entries</dt>
+        <dd>{{task.entries_count}}</dd>
+        {% endif %}
+    </dl>
+    <div class="distribution-graph" style="display:none;"></div>
+    {% if task.distribution_data() %}
+    <script>
+        drawDistributionGraph("{{task.html_id()}}",
+        {% autoescape false %}
+        {{task.distribution_data()}}
+        {% endautoescape %}
+        );
+    </script>
+    {% if task.mean_file %}
+    <b>Image mean:</b>
+    <img src="{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}" />
+    {% endif %}
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block job_content %}
+<style>
+    .distribution-graph g.c3-axis-x g.tick {
+        display: none;
+    }
+</style>
+<script>
+    function drawDistributionGraph(task_id, data) {
+        var selector = "#"+task_id+" .distribution-graph";
+        $(selector).show();
+        c3.generate($.extend(true, data, {
+            bindto: selector,
+            axis: {
+                x: {
+                    label: {
+                        text: 'Category',
+                        position: 'outer-center',
+                    },
+                    tick: {
+                        culling: true,
+                    },
+                },
+                y: {
+                    label: {
+                        text: 'Image Count',
+                        position: 'outer-middle',
+                        min: 0,
+                    }
+                }
+            },
+            legend: {show: false},
+        }));
+    }
+</script>
+
+{% if job.parse_folder_tasks()|length == 1 %}
+{% set task = job.parse_folder_tasks()[0] %}
+<div class="row">
+    <div class="col-sm-6">
+        <div id="job-information" class="panel panel-default">
+            {{ print_job_information() }}
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_parse_folder_task(task) }}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-sm-6 col-sm-offset-3">
+        <div id="job-information" class="panel panel-default">
+            {{ print_job_information() }}
+        </div>
+    </div>
+</div>
+{% if job.parse_folder_tasks()|length == 2 %}
+<div class="row">
+    {% set task = job.parse_folder_tasks()[0] %}
+    <div class="col-sm-6">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_parse_folder_task(task) }}
+        </div>
+    </div>
+    {% set task = job.parse_folder_tasks()[1] %}
+    <div class="col-sm-6">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_parse_folder_task(task) }}
+        </div>
+    </div>
+</div>
+{% elif job.parse_folder_tasks()|length == 3 %}
+<div class="row">
+    {% set task = job.parse_folder_tasks()[0] %}
+    <div class="col-sm-4">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_parse_folder_task(task) }}
+        </div>
+    </div>
+    {% set task = job.parse_folder_tasks()[1] %}
+    <div class="col-sm-4">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_parse_folder_task(task) }}
+        </div>
+    </div>
+    {% set task = job.parse_folder_tasks()[2] %}
+    <div class="col-sm-4">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_parse_folder_task(task) }}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% for task in job.create_db_tasks() %}
+<div class="row">
+    <div class="col-sm-12">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_create_db_task(task) }}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+

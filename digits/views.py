@@ -50,6 +50,11 @@ def home():
                         'id': 'image-classification',
                         'url': flask.url_for('image_classification_dataset_new'),
                         },
+                    {
+                        'title': 'Feature Extraction',
+                        'id': 'feature-extraction',
+                        'url': flask.url_for('feature_extraction_dataset_new'),
+                        },
                     ])
                 ]
         new_model_options = [

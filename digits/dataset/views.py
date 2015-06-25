@@ -29,6 +29,8 @@ def datasets_show(job_id):
     else:
         if isinstance(job, dataset_images.ImageClassificationDatasetJob):
             return dataset_images.classification.views.show(job)
+        elif isinstance(job, dataset_images.FeatureExtractionDatasetJob):
+            return dataset_images.extraction.views.show(job)
         else:
             raise werkzeug.exceptions.BadRequest('Invalid job type')
 

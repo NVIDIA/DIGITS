@@ -68,6 +68,8 @@ function deleteJob(job_id) {
         <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
         <h4 class="list-group-item-heading"><a href="{{ url_for('datasets_show', job_id=job.id()) }}">{{ job.name() }}</a></h4>
         <p class="list-group-item-text">
+        <b>Type:</b> {{job.job_type()}}
+        <br/>
         <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
         <small>({{job.status_history[0][1]|print_time_since}} ago)</small>
         <br />
@@ -89,10 +91,13 @@ function deleteJob(job_id) {
             <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
                 <h4 class="list-group-item-heading"><a href="{{ url_for('datasets_show', job_id=job.id()) }}">{{ job.name() }}</a></h4>
                 <p class="list-group-item-text">
+                <b>Type:</b> {{job.job_type()}}
+                <br/>
                 <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
                 <br />
                 <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
                 <small>after {{(job.status_history[-1][1]-job.status_history[0][1])|print_time_diff}}</small>
+                </p>
             </li>
             {% else %}
             <li class="list-group-item"><i>None</i></li>
@@ -146,7 +151,7 @@ function deleteJob(job_id) {
         <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
         <h4 class="list-group-item-heading"><a href="{{ url_for('models_show', job_id=job.id()) }}">{{ job.name() }}</a></h4>
         <p class="list-group-item-text">
-        <b>Type:</b> {{job.job_type}}
+        <b>Type:</b> {{job.job_type()}}
         <br/>
         <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
         <small>({{job.status_history[0][1]|print_time_since}} ago)</small>

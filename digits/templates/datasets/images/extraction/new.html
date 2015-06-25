@@ -1,0 +1,217 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+
+{% extends "layout.html" %}
+
+{% block title %}
+New Feature Extraction Dataset
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{url_for('feature_extraction_dataset_new')}}">New Dataset</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>New Feature Extraction Dataset</h1>
+</div>
+
+<form action="{{url_for('feature_extraction_dataset_create')}}" enctype="multipart/form-data" method="post">
+    {{ form.hidden_tag() }}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field, errors in form.errors.items() %}
+                <li>{{ field }}
+                    <ul>
+                        {% for e in errors %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-sm-4 well">
+            <div class="row">
+                <div class="form-group{{ ' has-error' if form.resize_channels.errors else '' }}">
+                    {{ form.resize_channels.label }}
+                    <div class="input-group">
+                        {{ form.resize_channels(class='form-control') }}
+                        <span name="resize_channels_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Color is 3-channel RGB. Grayscale is single channel monochrome."
+                            ></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group{{ ' has-error' if form.encoding.errors else '' }}">
+                    <div class="form-group{{' has-error' if form.encoding.errors}}">
+                        {{form.encoding.label}}
+                        <div class="input-group">
+                            {{form.encoding(class='form-control')}}
+                            <span name="encoding_explanation"
+                                class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Using either of these compression formats can save disk space, but can also require marginally more time for training."
+                                ></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group{{ ' has-error' if form.resize_width.errors or form.resize_height.errors else '' }}">
+                    <label>Image size</label>
+                    <div class="input-group">
+                        {{ form.resize_width(size=4, placeholder='width', class='form-control') }}
+                        <span class="input-group-addon">x</span>
+                        {{ form.resize_height(size=4, placeholder='height', class='form-control') }}
+                        <span name="resize_dims_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Input images will be resized to fit."
+                            ></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group{{ ' has-error' if form.resize_mode.errors else '' }}">
+                    {{ form.resize_mode.label }}
+                    <div class="input-group">
+                        {{ form.resize_mode(class='form-control') }}
+                        <span name="resize_mode_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Options for dealing with aspect ratio changes during resize. See examples below."
+                            ></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <a class="btn btn-info" href="#" onClick="return showResizeExample();">See example</a>
+                <br>
+                <br>
+                <div id="resize-example" style="display:none;">
+                    <button class="close" onClick="$('#resize-example').hide();return false;">&times;</button>
+                    <div id="resize-example-image"></div>
+                </div>
+                <script>
+function showResizeExample()
+{
+    $.post(
+            "{{url_for('image_dataset_resize_example')}}",
+            {
+                "channels": $("#resize_channels").val(),
+                "width":    $("#resize_width").val(),
+                "height":   $("#resize_height").val(),
+                "resize_mode":   $("#resize_mode").val(),
+                "encoding": $("#encoding").val(),
+            },
+            function(response) {
+                $('#resize-example-image').html(response);
+                $('#resize-example').show();
+            }
+        );
+    return false;
+}
+                </script>
+            </div>
+        </div>
+
+        <div class="col-sm-8">
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs" id="db-tabs" role="tablist">
+                <li><a href="#db-textfile" role="tab" data-toggle="tab">Upload Text Files</a></li>
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content well">
+                <!-- Textfile -->
+                <div class="tab-pane" id="db-textfile">
+                    <div class="row">
+                        <table class="table">
+                            <tr>
+                                <th>Set</th>
+
+                                <th>Text file <span name="text_file_explanation"
+                                    class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="Each line in the file should be formatted as '<PATH> <LABEL>' where <PATH> specifies image path either on the local filesystem or a URL, and the <LABEL> is a numeric label that matches the uploaded labels file"
+                                ></span></th>
+
+                            </tr>
+                            <tr>
+                                <td><b>Training</b></td>
+                                <td class="form-group{{' has-error' if form.textfile_train_images.errors}}">
+                                    {{ form.textfile_train_images(class='form-control') }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6 col-sm-offset-1">
+                            <div class="form-group{{ ' has-error' if form.textfile_shuffle.errors else '' }}">
+                                {{ form.textfile_shuffle.label }}
+                                <div class="input-group">
+                                    {{ form.textfile_shuffle(class='form-control') }}
+                                    <span name="textfile_shuffle_explanation"
+                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                        data-container="body"
+                                        title="Shuffle the list[s] of images before creating the database."
+                                        ></span>
+                                </div>
+                            </div>
+                            <div class="form-group{{ ' has-error' if form.textfile_labels_file.errors else '' }}">
+                                {{ form.textfile_labels_file.label }}
+                                <div class="input-group">
+                                    {{ form.textfile_labels_file(class='form-control') }}
+                                    <span name="textfile_labels_file_explanation"
+                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                        data-container="body"
+                                        title="The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
+                                        ></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {{ form.method(style="display:none;") }}
+    <script>
+function update_db_tab(tabName) {
+    $('select[name=method]').val( tabName );
+}
+$('#db-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        parts = e.target.href.split('-');
+        update_db_tab( parts[parts.length-1] );
+        });
+$('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
+
+    </script>
+
+    <div class="row">
+        <div class="col-sm-6 col-sm-offset-3 well">
+            <div class="form-group{{ ' has-error' if form.dataset_name.errors else '' }}">
+                {{ form.dataset_name.label }}
+                {{ form.dataset_name(class='form-control') }}
+            </div>
+            <input type="submit" name="create-dataset" class="btn btn-primary" value="Create">
+        </div>
+    </div>
+
+</form>
+
+<script>
+$(".explanation-tooltip").tooltip();
+</script>
+
+{% endblock %}
