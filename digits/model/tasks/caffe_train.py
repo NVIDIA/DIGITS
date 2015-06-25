@@ -21,6 +21,7 @@ from digits.status import Status
 from digits import utils, dataset
 from digits.utils import subclass, override, constants
 from digits.dataset import ImageClassificationDatasetJob
+from werkzeug.exceptions import NotFound
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 2
@@ -783,7 +784,7 @@ class CaffeTrainTask(TrainTask):
                                 )
                             added_activations.append(top)
             else:
-                raise NotImplementedError
+                raise NotFound("This layer is not present in the Network! Try passing 'all' as layer-name parameters to view all layers.")
 
         return (predictions, visualizations)
 
