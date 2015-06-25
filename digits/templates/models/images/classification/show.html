@@ -147,24 +147,41 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 ></span>
                         </div>
                         <div class="form-group">
-                            <label for="save_npArray">
-                                <input id="save_npArray" name="save_npArray" type="checkbox" value="y">
-                                Save visualization data as Numpy Array
+                            <label for="save_vis_file">
+                                <input id="save_vis_file" name="save_vis_file" type="checkbox" value="y">
+                                Save visualization data on file
                             </label>
-                            <span name="save_npArray_explanation"
+                            <span name="save_vis_file_explanation"
                                 class="explanation-tooltip glyphicon glyphicon-question-sign"
                                 data-container="body"
-                                title="Save the data of visualization as numpy array of coordinates at below specified location."
+                                title="Save the data of visualization as numpy array or .mat file of coordinates at below specified location."
                                 ></span>
                         </div>
                         <div class="form-group">
-                            <label for="save_npArray_location" class="control-label">Specify path to store array</label>
-                            <span name="save_npArray_location_explanation"
+                            <label for="save_type" class="control-label">Store data as :</label>
+                            <span name="save_type_explanation"
                                 class="explanation-tooltip glyphicon glyphicon-question-sign"
                                 data-container="body"
-                                title="Provide path to location where you want to store the numpy array of visualization data."
+                                title="Select option to store data as NumPy array or .mat file"
                                 ></span>
-                            <input id="save_npArray_location" name="save_npArray_location" type="text" value="/home/mohit/Downloads" class="form-control">
+                                <br/>
+                            <label for="save_type_mat">
+                                <input id="save_type_mat" name="save_type_mat" type="radio" value="mat">
+                                .mat (MATLAB)
+                            </label>
+                            <label for="save_type_numpy">
+                                <input id="save_type_numpy" name="save_type_numpy" type="radio" value="numpy">
+                                .npy (NumPy)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="save_vis_file_location" class="control-label">Specify path to store file</label>
+                            <span name="save_vis_file_location_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Provide path to location where you want to store the file of visualization data."
+                                ></span>
+                            <input id="save_vis_file_location" name="save_vis_file_location" type="text" value="/home/mohit/Downloads" class="form-control">
                         </div>
 
                         <!--div class="form-group">

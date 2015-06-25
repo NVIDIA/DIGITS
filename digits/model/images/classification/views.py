@@ -5,6 +5,7 @@ import re
 import tempfile
 import random
 import numpy as np
+import scipy.io
 
 import flask
 from flask import Response
@@ -282,22 +283,34 @@ def image_classification_model_classify_one():
     #if 'visualization_json' in flask.request.form and flask.request.form['visualization_json']:
     #    vis_json = True
 
-    save_npArray_file = False
-    if 'save_npArray' in flask.request.form and flask.request.form['save_npArray']:
-        save_npArray_file = True
-        if 'save_npArray_location' in flask.request.form and flask.request.form['save_npArray_location']:
-            save_npArray_location = flask.request.form['save_npArray_location']
+    save_vis_file = False
+    save_file_type = ''
+    if 'save_vis_file' in flask.request.form and flask.request.form['save_vis_file']:
+        save_vis_file = True
+        if 'save_type_mat' in flask.request.form and flask.request.form['save_type_mat']:
+            save_file_type = 'mat'
+        elif 'save_type_numpy' in flask.request.form and flask.request.form['save_type_numpy']:
+            save_file_type = 'numpy'
+        if 'save_vis_file_location' in flask.request.form and flask.request.form['save_vis_file_location']:
+            save_vis_file_location = flask.request.form['save_vis_file_location']
 
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
-    # Convert to numpy array : vis = np.array(vis)
-    if save_npArray_file:
-        try:
-            np.array(visualizations).dump(open(save_npArray_location+'/'+flask.request.args['job_id']+'.npy', 'wb'))
-        except:
-            print "Error saving visualization data as Numpy array"
+    if save_vis_file:
+        if save_file_type == 'numpy':
+            try:
+                np.array(visualizations).dump(open(save_vis_file_location+'/visualization_'+flask.request.args['job_id']+'.npy', 'wb'))
+            except:
+                print "Error saving visualization data as Numpy array"
+        elif save_file_type == 'mat':
+            try:
+                scipy.io.savemat(save_vis_file_location+'/visualization_'+flask.request.args['job_id']+'.mat', {'visualizations':visualizations})
+            except:
+                print "Error saving visualization data as .mat file"
+        else:
+            print "Invalid filetype for visualization data saving"
 
     #if vis_json:
     #    return Response(flask.json.dumps(visualizations), mimetype='application/json')
