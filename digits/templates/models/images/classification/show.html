@@ -147,6 +147,38 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 ></span>
                         </div>
                         <div class="form-group">
+                            <label for="save_npArray">
+                                <input id="save_npArray" name="save_npArray" type="checkbox" value="y">
+                                Save visualization data as Numpy Array
+                            </label>
+                            <span name="save_npArray_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Save the data of visualization as numpy array of coordinates at below specified location."
+                                ></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="save_npArray_location" class="control-label">Specify path to store array</label>
+                            <span name="save_npArray_location_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Provide path to location where you want to store the numpy array of visualization data."
+                                ></span>
+                            <input id="save_npArray_location" name="save_npArray_location" type="text" value="/home/mohit/Downloads" class="form-control">
+                        </div>
+
+                        <!--div class="form-group">
+                            <label for="visualization_json">
+                                <input id="visualization_json" name="visualization_json" type="checkbox" value="y">
+                                Return JSON for visualizations and statistics
+                            </label>
+                            <span name="visualization_json_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Return the data of visualization as JSON of coordinates and numpy arrays instead of graphical outputs."
+                                ></span>
+                        </div-->
+                        <div class="form-group">
                             <label for="select_visualization_layer" class="control-label">Specify Layer to Visualize</label>
                             <span name="show_visualizations_explanation"
                                 class="explanation-tooltip glyphicon glyphicon-question-sign"

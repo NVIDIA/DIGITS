@@ -4,8 +4,10 @@ import os
 import re
 import tempfile
 import random
+import numpy as np
 
 import flask
+from flask import Response
 import werkzeug.exceptions
 import numpy as np
 from google.protobuf import text_format
@@ -283,10 +285,29 @@ def feature_extraction_model_classify_one():
         else:
             layers = 'all'
 
+    #vis_json = False
+    #if 'visualization_json' in flask.request.form and flask.request.form['visualization_json']:
+    #    vis_json = True
+
+    save_npArray_file = False
+    if 'save_npArray' in flask.request.form and flask.request.form['save_npArray']:
+        save_npArray_file = True
+        if 'save_npArray_location' in flask.request.form and flask.request.form['save_npArray_location']:
+            save_npArray_location = flask.request.form['save_npArray_location']
+
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
+    # Convert to numpy array : vis = np.array(vis)
+    if save_npArray_file:
+        try:
+            np.array(visualizations).dump(open(save_npArray_location+'/'+flask.request.args['job_id']+'.npy', 'wb'))
+        except:
+            print "Error saving visualization data as Numpy array"
+
+    #if vis_json:
+    #    return Response(flask.json.dumps(visualizations), mimetype='application/json')
     if request_wants_json():
         return flask.jsonify({'predictions': predictions}, {'visualizations': visualizations})
     else:
