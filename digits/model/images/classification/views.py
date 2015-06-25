@@ -18,7 +18,7 @@ except ImportError:
 import digits
 from digits.config import config_value
 from digits import utils
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
 from digits.model import tasks
@@ -224,9 +224,7 @@ def image_classification_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
     return flask.render_template('models/images/classification/large_graph.html', job=job)
 
@@ -239,9 +237,7 @@ def image_classification_model_classify_one():
 
     Returns JSON when requested: {predictions: {category: confidence,...}}
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
     image = None
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
@@ -251,7 +247,7 @@ def image_classification_model_classify_one():
             flask.request.files['image_file'].save(outfile.name)
             image = utils.image.load_image(outfile.name)
     else:
-        raise werkzeug.exceptions.BadRequest('No image given')
+        raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
 
     # resize image
     db_task = job.train_task().dataset.train_db_task()
@@ -295,13 +291,11 @@ def image_classification_model_classify_many():
 
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
-    image_list = flask.request.files['image_list']
+    image_list = flask.request.files.get('image_list')
     if not image_list:
-        raise werkzeug.exceptions.BadRequest('File upload not found')
+        raise werkzeug.exceptions.BadRequest('image_list is a required field')
 
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
@@ -370,9 +364,7 @@ def image_classification_model_top_n():
     """
     Classify many images and show the top N images per category by confidence
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
     image_list = flask.request.files['image_list']
     if not image_list:

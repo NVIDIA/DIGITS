@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Jun 12, 2015*
+*Generated Jun 25, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -36,7 +36,7 @@ These are all technically RESTful, but they return HTML pages. To get JSON respo
 
 Methods: **GET**
 
-Location: [`digits/views.py@21`](../digits/views.py#L21)
+Location: [`digits/views.py@22`](../digits/views.py#L22)
 
 ## Jobs
 
@@ -48,7 +48,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@137`](../digits/views.py#L137)
+Location: [`digits/views.py@138`](../digits/views.py#L138)
 
 ### `/datasets/<job_id>/abort`
 
@@ -58,7 +58,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@157`](../digits/views.py#L157)
+Location: [`digits/views.py@158`](../digits/views.py#L158)
 
 ### `/datasets/<job_id>/status`
 
@@ -68,7 +68,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@118`](../digits/views.py#L118)
+Location: [`digits/views.py@119`](../digits/views.py#L119)
 
 ### `/jobs/<job_id>`
 
@@ -78,7 +78,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@85`](../digits/views.py#L85)
+Location: [`digits/views.py@86`](../digits/views.py#L86)
 
 ### `/jobs/<job_id>`
 
@@ -88,7 +88,7 @@ Methods: **PUT**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@102`](../digits/views.py#L102)
+Location: [`digits/views.py@103`](../digits/views.py#L103)
 
 ### `/jobs/<job_id>`
 
@@ -98,7 +98,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@137`](../digits/views.py#L137)
+Location: [`digits/views.py@138`](../digits/views.py#L138)
 
 ### `/jobs/<job_id>/abort`
 
@@ -108,7 +108,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@157`](../digits/views.py#L157)
+Location: [`digits/views.py@158`](../digits/views.py#L158)
 
 ### `/jobs/<job_id>/status`
 
@@ -118,7 +118,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@118`](../digits/views.py#L118)
+Location: [`digits/views.py@119`](../digits/views.py#L119)
 
 ### `/models/<job_id>`
 
@@ -128,7 +128,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@137`](../digits/views.py#L137)
+Location: [`digits/views.py@138`](../digits/views.py#L138)
 
 ### `/models/<job_id>/abort`
 
@@ -138,7 +138,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@157`](../digits/views.py#L157)
+Location: [`digits/views.py@158`](../digits/views.py#L158)
 
 ### `/models/<job_id>/status`
 
@@ -148,7 +148,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@118`](../digits/views.py#L118)
+Location: [`digits/views.py@119`](../digits/views.py#L119)
 
 ## Datasets
 
@@ -272,7 +272,7 @@ Location: [`digits/model/images/classification/views.py@53`](../digits/model/ima
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@291`](../digits/model/images/classification/views.py#L291)
+Location: [`digits/model/images/classification/views.py@287`](../digits/model/images/classification/views.py#L287)
 
 ### `/models/images/classification/classify_one`
 
@@ -284,7 +284,7 @@ Location: [`digits/model/images/classification/views.py@291`](../digits/model/im
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@235`](../digits/model/images/classification/views.py#L235)
+Location: [`digits/model/images/classification/views.py@233`](../digits/model/images/classification/views.py#L233)
 
 ### `/models/images/classification/large_graph`
 
@@ -308,7 +308,7 @@ Location: [`digits/model/images/classification/views.py@32`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@368`](../digits/model/images/classification/views.py#L368)
+Location: [`digits/model/images/classification/views.py@362`](../digits/model/images/classification/views.py#L362)
 
 ### `/models/visualize-lr`
 
@@ -342,5 +342,5 @@ Methods: **GET**
 
 Arguments: `path`
 
-Location: [`digits/views.py@201`](../digits/views.py#L201)
+Location: [`digits/views.py@216`](../digits/views.py#L216)
 
