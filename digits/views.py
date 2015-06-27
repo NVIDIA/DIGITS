@@ -5,6 +5,7 @@ import json
 import traceback
 
 import flask
+from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
@@ -181,12 +182,18 @@ def abort_job(job_id):
 ### Error handling
 
 @app.errorhandler(Exception)
-def handle_exception(e, status_code=500):
-    if 'DIGITS_MODE_TEST' in os.environ:
-        raise
+def handle_error(e):
+    """
+    Handles errors, formatting them as JSON if requested
+    """
     error_type = type(e).__name__
     message = str(e)
     trace = None
+    description = None
+    status_code = 500
+    if isinstance(e, werkzeug.exceptions.HTTPException):
+        status_code = e.code
+        description = e.description
     if app.debug:
         trace = traceback.format_exc()
 
@@ -195,15 +202,24 @@ def handle_exception(e, status_code=500):
                 'message': message,
                 'type': error_type,
                 }
+        if description is not None:
+            details['description'] = description
         if trace is not None:
             details['trace'] = trace.split('\n')
         return flask.jsonify({'error': details}), status_code
     else:
-        return flask.render_template('500.html',
-                title   = error_type,
-                message = message,
-                trace   = trace,
+        return flask.render_template('error.html',
+                title       = error_type,
+                message     = message,
+                description = description,
+                trace       = trace,
                 ), status_code
+
+# Register this handler for all error codes
+# Necessary for flask<=0.10.1
+for code in HTTP_STATUS_CODES:
+    app.register_error_handler(code, handle_error)
+
 
 ### File serving
 
