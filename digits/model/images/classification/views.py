@@ -231,6 +231,7 @@ def image_classification_model_large_graph():
  
     return flask.render_template('models/images/classification/large_graph.html', job=job)
 
+@app.route(NAMESPACE + '/visualize_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
 @autodoc(['models', 'api'])
@@ -308,10 +309,17 @@ def image_classification_model_classify_one():
         else:
             print "Invalid filetype for visualization data saving"
 
-    #if vis_json:
-    #    return Response(flask.json.dumps(visualizations), mimetype='application/json')
     if request_wants_json():
-        return flask.jsonify({'predictions': predictions})
+        if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
+            # flask.jsonify has problems creating JSON from numpy.float32
+            # convert all non-dict, non-list and non-string elements to string.
+            for layer in visualizations:
+                for ele in layer:
+                    if not isinstance(layer[ele], dict) and not isinstance(layer[ele], str) and not isinstance(layer[ele], list):
+                        layer[ele] = str(layer[ele]) 
+            return flask.jsonify({'predictions': predictions, 'visualizations': visualizations})
+        else:
+            return flask.jsonify({'predictions': predictions})
     else:
         return flask.render_template('models/images/classification/classify_one.html',
                 image_src       = utils.image.embed_image_html(image),
