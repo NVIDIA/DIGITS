@@ -282,14 +282,26 @@ def image_classification_model_classify_one():
 
     save_vis_file = False
     save_file_type = ''
+    save_vis_file_location = ''
     if 'save_vis_file' in flask.request.form and flask.request.form['save_vis_file']:
         save_vis_file = True
         if 'save_type_mat' in flask.request.form and flask.request.form['save_type_mat']:
             save_file_type = 'mat'
         elif 'save_type_numpy' in flask.request.form and flask.request.form['save_type_numpy']:
             save_file_type = 'numpy'
+        else:
+            raise werkzeug.exceptions.BadRequest('No filetype selected. Expeected .npy or .mat')
         if 'save_vis_file_location' in flask.request.form and flask.request.form['save_vis_file_location']:
             save_vis_file_location = flask.request.form['save_vis_file_location']
+        else:
+            raise werkzeug.exceptions.BadRequest('save_vis_file_location not provided.')
+    
+    if flask.request.form['job_id']:
+        job_id = flask.request.form['job_id']
+    elif flask.request.args['job_id']:
+        job_id = flask.request.args['job_id']
+    else:
+        raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')
 
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
@@ -298,16 +310,16 @@ def image_classification_model_classify_one():
     if save_vis_file:
         if save_file_type == 'numpy':
             try:
-                np.array(visualizations).dump(open(save_vis_file_location+'/visualization_'+flask.request.args['job_id']+'.npy', 'wb'))
+                np.array(visualizations).dump(open(save_vis_file_location+'/visualization_'+job_id+'.npy', 'wb'))
             except:
-                print "Error saving visualization data as Numpy array"
+                raise werkzeug.exceptions.BadRequest('Error saving visualization data as Numpy array')
         elif save_file_type == 'mat':
             try:
-                scipy.io.savemat(save_vis_file_location+'/visualization_'+flask.request.args['job_id']+'.mat', {'visualizations':visualizations})
+                scipy.io.savemat(save_vis_file_location+'/visualization_'+job_id+'.mat', {'visualizations':visualizations})
             except:
-                print "Error saving visualization data as .mat file"
+                raise werkzeug.exceptions.BadRequest('Error saving visualization data as .mat file')
         else:
-            print "Invalid filetype for visualization data saving"
+            raise werkzeug.exceptions.BadRequest('Invalid filetype for visualization data saving')
 
     if request_wants_json():
         if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:

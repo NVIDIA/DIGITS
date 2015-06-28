@@ -297,6 +297,13 @@ def feature_extraction_model_classify_one():
         if 'save_vis_file_location' in flask.request.form and flask.request.form['save_vis_file_location']:
             save_vis_file_location = flask.request.form['save_vis_file_location']
 
+    if flask.request.form['job_id']:
+        job_id = flask.request.form['job_id']
+    elif flask.request.args['job_id']:
+        job_id = flask.request.args['job_id']
+    else:
+        raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')
+
     predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
@@ -304,16 +311,16 @@ def feature_extraction_model_classify_one():
     if save_vis_file:
         if save_file_type == 'numpy':
             try:
-                np.array(visualizations).dump(open(save_vis_file_location+'/visualization_'+flask.request.args['job_id']+'.npy', 'wb'))
+                np.array(visualizations).dump(open(save_vis_file_location+'/visualization_'+job_id+'.npy', 'wb'))
             except:
-                print "Error saving visualization data as Numpy array"
+                raise werkzeug.exceptions.BadRequest('Error saving visualization data as Numpy array')
         elif save_file_type == 'mat':
             try:
-                scipy.io.savemat(save_vis_file_location+'/visualization_'+flask.request.args['job_id']+'.mat', {'visualizations':visualizations})
+                scipy.io.savemat(save_vis_file_location+'/visualization_'+job_id+'.mat', {'visualizations':visualizations})
             except:
-                print "Error saving visualization data as .mat file"
+                raise werkzeug.exceptions.BadRequest('Error saving visualization data as .mat file')
         else:
-            print "Invalid filetype for visualization data saving"
+            raise werkzeug.exceptions.BadRequest('Invalid filetype for visualization data saving')
 
     if request_wants_json():
         if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
