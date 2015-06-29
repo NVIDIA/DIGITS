@@ -290,15 +290,15 @@ def image_classification_model_classify_one():
         elif 'save_type_numpy' in flask.request.form and flask.request.form['save_type_numpy']:
             save_file_type = 'numpy'
         else:
-            raise werkzeug.exceptions.BadRequest('No filetype selected. Expeected .npy or .mat')
+            raise werkzeug.exceptions.BadRequest('No filetype selected. Expected .npy or .mat')
         if 'save_vis_file_location' in flask.request.form and flask.request.form['save_vis_file_location']:
             save_vis_file_location = flask.request.form['save_vis_file_location']
         else:
             raise werkzeug.exceptions.BadRequest('save_vis_file_location not provided.')
     
-    if flask.request.form['job_id']:
+    if 'job_id' in flask.request.form and flask.request.form['job_id']:
         job_id = flask.request.form['job_id']
-    elif flask.request.args['job_id']:
+    elif 'job_id' in flask.request.args and flask.request.args['job_id']:
         job_id = flask.request.args['job_id']
     else:
         raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')

@@ -288,18 +288,21 @@ def feature_extraction_model_classify_one():
 
     save_vis_file = False
     save_file_type = ''
+    save_vis_file_location = ''
     if 'save_vis_file' in flask.request.form and flask.request.form['save_vis_file']:
         save_vis_file = True
         if 'save_type_mat' in flask.request.form and flask.request.form['save_type_mat']:
             save_file_type = 'mat'
         elif 'save_type_numpy' in flask.request.form and flask.request.form['save_type_numpy']:
             save_file_type = 'numpy'
+        else:
+            raise werkzeug.exceptions.BadRequest('No filetype selected. Expected .npy or .mat')
         if 'save_vis_file_location' in flask.request.form and flask.request.form['save_vis_file_location']:
             save_vis_file_location = flask.request.form['save_vis_file_location']
 
-    if flask.request.form['job_id']:
+    if 'job_id' in flask.request.form and flask.request.form['job_id']:
         job_id = flask.request.form['job_id']
-    elif flask.request.args['job_id']:
+    elif 'job_id' in flask.request.args and flask.request.args['job_id']:
         job_id = flask.request.args['job_id']
     else:
         raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')
