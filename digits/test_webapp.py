@@ -26,7 +26,7 @@ DUMMY_IMAGE_COUNT = 10 # per category
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 15
-TIMEOUT_MODEL = 15
+TIMEOUT_MODEL = 20
 
 class Dataset():
     def __init__(self, data_path, images):
@@ -89,7 +89,7 @@ def create_color_direction(size, color_from, color_to, direction):
     # extend to 2d
     picture = np.repeat(gradient, size)
     picture.shape = (3, size, size)
-    
+
     # make image and rotate
     image = PIL.Image.fromarray(picture.T)
     image = image.rotate(direction*90)

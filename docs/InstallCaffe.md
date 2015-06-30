@@ -1,11 +1,13 @@
 # Install Caffe
 
-To use Caffe in DIGITS, you must install version `0.11.0` of [NVIDIA's fork](https://github.com/NVIDIA/caffe).
+To use Caffe in DIGITS, you must use [NVIDIA's fork](https://github.com/NVIDIA/caffe), version [`0.11`](https://github.com/NVIDIA/caffe/tree/caffe-0.11) or greater.
+
+To enable multi-GPU training, install version [`0.12`](https://github.com/NVIDIA/caffe/tree/caffe-0.12).
 
 ## Grab the source
 
     % cd $HOME
-    % git clone --branch v0.11.0 https://github.com/NVIDIA/caffe.git
+    % git clone --branch caffe-0.12 https://github.com/NVIDIA/caffe.git
 
 Set an environment variable so DIGITS knows where Caffe is installed (optional):
 

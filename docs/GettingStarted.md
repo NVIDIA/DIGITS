@@ -19,7 +19,7 @@ If you are installing from source, check out the [README](../README.md#installat
 
 If you are using the web installer use the `runme.sh` script:
 
-    % cd $HOME/digits-1.0
+    % cd $HOME/digits-2.0
     % ./runme.sh
 
 If you are not using the web installer, use the `digits-devserver` script:
@@ -73,7 +73,7 @@ In the Datasets section on the left side of the page, click on the blue `Images`
 * Change the image type to `Grayscale`
 * Change the image size to 28 x 28
 * Type in the path to the MNIST training images
-  * `/home/username/digits-1.0/mnist_10k` if you are using the web installer
+  * `/home/username/digits-2.0/mnist/train` if you are using the web installer
 * Give the dataset a name
 * Click on the `Create` button
 
@@ -103,7 +103,7 @@ While training the model, you should see the expected completion time on the rig
 
 To test the model, scroll to the bottom of the page.  On the left side are tools for testing the model.
 * Click on the `Upload Image` field which will bring up a local file browser and choose a file
-  * If you've used the web installer, choose one in `/home/username/digits-1.0/test_digits`
+  * If you've used the web installer, choose one in `/home/username/digits-2.0/mnist/test`
 * Or, find an image on the web and paste the URL into the `Image URL` field
 * Click on `Classify One Image`
 
@@ -117,3 +117,5 @@ DIGITS will display the top five classifications and corresponding confidence va
 ## Using the REST API
 
 Use your favorite tool (`curl`, `wget`, etc.) to interact with DIGITS through the [REST API](API.md).
+
+    curl localhost:5000/index.json
