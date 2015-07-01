@@ -126,13 +126,6 @@ class UserConfigFile(ConfigFile):
     def __init__(self):
         if 'HOME' in os.environ:
             filename = os.path.join(os.environ['HOME'], '.digits.cfg')
-            old_filename = os.path.join(os.environ['HOME'], '.digits', 'digits.cfg')
-            if not os.path.exists(filename) and os.path.exists(old_filename):
-                try:
-                    shutil.copyfile(old_filename, filename)
-                    print 'Copied file at "%s" to "%s".' % (old_filename, filename)
-                except (IOError, OSError):
-                    pass
         else:
             filename = None
         super(UserConfigFile, self).__init__(filename)
