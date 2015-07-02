@@ -19,7 +19,7 @@ If you are not on Ubuntu 14.04, you can try [Caffe's installation page](http://c
 
     % sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler libatlas-base-dev
     % sudo apt-get install --no-install-recommends libboost-all-dev
-    % sudo apt-get install python-dev python-pip gfortran
+    % sudo apt-get install python-dev python-pip python-numpy gfortran
 
 ### Python dependencies
 
