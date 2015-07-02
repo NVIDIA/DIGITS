@@ -61,6 +61,24 @@ def test_visualize_one_specific_layer(job_id, image_file):
         else:
             return False
 
+def test_visualize_one_incorrect_layer(job_id, image_file):
+    '''
+    Test the classify_one method with the visualize_one.json request and get error output.
+    '''
+    layer = 'mohit'
+    curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F select_visualization_layer='+layer
+    req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
+    (resp, err) = req.communicate()
+    if err:
+        return False
+    else:
+        resp_parsed = resp.replace("\"","").replace("\n","").replace("{","").replace("}","").replace(":","").replace(",","").split()
+        error = '404'
+        if layer not in resp_parsed and error in resp_parsed:
+            return True
+        else:
+            return False
+
 def test_visualize_one_save_mat(job_id, image_file,save_file_location):
     '''
     Test the classify_one method with the visualize_one.json request and save as .mat file
@@ -100,18 +118,44 @@ def test_visualize_one_specific_layer_save_mat(job_id, image_file,save_file_loca
     layer = 'conv1'
     not_layer = 'fc6'
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_mat=y -F save_vis_file_location='+save_file_location
-    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
         return False
     else:
+        if os.path.isfile(save_file_location+'/visualization_'+job_id+'.mat'):
+            os.system('rm '+save_file_location+'/visualization_'+job_id+'.mat')
+            return True
+        else:
+            return False
+"""
+   else:
         resp_parsed = resp.replace("\"","").replace("\n","").replace("{","").replace("}","").replace(":","").replace(",","").split()
         if layer in resp_parsed and not_layer not in resp_parsed and os.path.isfile(save_file_location+'/visualization_'+job_id+'.mat'):
             os.system('rm '+save_file_location+'/visualization_'+job_id+'.mat')
             return True
         else:
             return False
+"""
+
+def test_visualize_one_incorrect_specific_layer_save_mat(job_id, image_file,save_file_location):
+    '''
+    Test the classify_one method with the visualize_one.json request and save as .mat file
+    '''
+    layer = 'mohit'
+    curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_mat=y -F save_vis_file_location='+save_file_location
+    req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
+    (resp, err) = req.communicate()
+    if err:
+        return False
+    else:
+        error = '400'
+        resp_parsed = resp.replace("\"","").replace("\n","").replace("{","").replace("}","").replace(":","").replace(",","").split()
+        if error in resp_parsed:
+            return True
+        else:
+            return False
+
 
 def test_visualize_one_specific_layer_save_numpy(job_id, image_file,save_file_location):
     '''
@@ -125,14 +169,45 @@ def test_visualize_one_specific_layer_save_numpy(job_id, image_file,save_file_lo
     if err:
         return False
     else:
+        if os.path.isfile(save_file_location+'/visualization_'+job_id+'.npy'):
+            os.system('rm '+save_file_location+'/visualization_'+job_id+'.npy')
+            return True
+        else:
+            return False
+
+def test_visualize_one_incorrect_specific_layer_save_numpy(job_id, image_file,save_file_location):
+    '''
+    Test the classify_one method with the visualize_one.json request and save as .numpy file to return error.
+    '''
+    layer = 'mohit'
+    curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_numpy=y -F save_vis_file_location='+save_file_location
+    req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
+    (resp, err) = req.communicate()
+    if err:
+        return False
+    else:
+        error = '400'
+        resp_parsed = resp.replace("\"","").replace("\n","").replace("{","").replace("}","").replace(":","").replace(",","").split()
+        if error in resp_parsed:
+            return True
+        else:
+            return False
+
+
+"""
+    else:
         resp_parsed = resp.replace("\"","").replace("\n","").replace("{","").replace("}","").replace(":","").replace(",","").split()
         if layer in resp_parsed and not_layer not in resp_parsed and os.path.isfile(save_file_location+'/visualization_'+job_id+'.npy'):
             os.system('rm '+save_file_location+'/visualization_'+job_id+'.npy')
             return True
         else:
             return False
+"""
 
 def test_API(digits_up, job_id, image_file, save_file_location):
+    '''
+    The main function calling all methods for testing each element.
+    '''
     curl_req = 'curl localhost:5000/index.json'
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
@@ -156,7 +231,7 @@ Testing API request now ...
 
     test_ctr = 0
     test_status = 'FAIL'
-    total_test_ctr = 7
+    total_test_ctr = 10
 
 
     # Run the tests from here on.
@@ -190,17 +265,36 @@ Testing API request now ...
     print "\n[Check] : Testing visualize one image with saving .npy file of visualization --- %s\n" % test_status
     test_status = 'FAIL'
     
+    if test_visualize_one_specific_layer_save_mat(job_id, image_file, save_file_location):
+        test_status = 'PASS'
+        test_ctr+=1
+    print "\n[Check] : Testing visualize one image for a specific layer with saving .mat file of visualization --- %s\n" % test_status
+    test_status = 'FAIL'
+    
     if test_visualize_one_specific_layer_save_numpy(job_id, image_file, save_file_location):
         test_status = 'PASS'
         test_ctr+=1
     print "\n[Check] : Testing visualize one image for a specific layer with saving .npy file of visualization --- %s\n" % test_status
     test_status = 'FAIL'
     
-    if test_visualize_one_specific_layer_save_mat(job_id, image_file, save_file_location):
+    if test_visualize_one_incorrect_layer(job_id, image_file):
         test_status = 'PASS'
         test_ctr+=1
-    print "\n[Check] : Testing visualize one image for a specific layer with saving .mat file of visualization --- %s\n" % test_status
+    print "\n[Check] : Testing visualize one image for a specific layer (which is not in network)--- %s\n" % test_status
     test_status = 'FAIL'
+    
+    if test_visualize_one_incorrect_specific_layer_save_mat(job_id, image_file, save_file_location):
+        test_status = 'PASS'
+        test_ctr+=1
+    print "\n[Check] : Testing visualize one image for a specific layer (which is not in network) and saving its .mat--- %s\n" % test_status
+    test_status = 'FAIL'
+    
+    if test_visualize_one_incorrect_specific_layer_save_numpy(job_id, image_file, save_file_location):
+        test_status = 'PASS'
+        test_ctr+=1
+    print "\n[Check] : Testing visualize one image for a specific layer (which is not in network) and saving its .mat--- %s\n" % test_status
+    test_status = 'FAIL'
+    
     
     log_str = """
 
@@ -216,8 +310,8 @@ Testing Complete:
 
 if __name__=='__main__':
     
-    glob_job_id = '20150623-031218-daeb'
-    glob_image_file = '/home/mohit/Downloads/problem3.png'
+    glob_job_id = '20150625-051205-c433'
+    glob_image_file = '/home/mohit/Downloads/cat.jpg'
     glob_save_file_location = '/home/mohit/Downloads'
     
     # Check if DIGITS is running.

@@ -316,6 +316,8 @@ def image_classification_model_classify_one():
         elif save_file_type == 'mat':
             try:
                 scipy.io.savemat(save_vis_file_location+'/visualization_'+job_id+'.mat', {'visualizations':visualizations})
+            except IOError as e:
+                raise werkzeug.exceptions.BadRequest('I/O error{%s}: %s'% (e.errno, e.strerror))
             except:
                 raise werkzeug.exceptions.BadRequest('Error saving visualization data as .mat file')
         else:
