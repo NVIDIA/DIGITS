@@ -228,12 +228,39 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 title="For every image and for each layer in the network, save statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
                                 ></span>
                         </div>
+                        <div class="form-group">
+                            <label for="save_type_batch" class="control-label">Store data as :</label>
+                            <span name="save_type_batch_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Select option to store data as NumPy array or .mat file"
+                                ></span>
+                                <br/>
+                            <label for="save_type_mat_bulk">
+                                <input id="save_type_mat_bulk" name="save_type_mat_bulk" type="radio" value="mat">
+                                .mat (MATLAB)
+                            </label>
+                            <label for="save_type_numpy_bulk">
+                                <input id="save_type_numpy_bulk" name="save_type_numpy_bulk" type="radio" value="numpy">
+                                .npy (NumPy)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="save_vis_file_location_bulk" class="control-label">Specify path to store file</label>
+                            <span name="save_vis_file_location_bulk_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Provide path to location where you want to store the file of visualization data."
+                                ></span>
+                            <input id="save_vis_file_location_bulk" name="save_vis_file_location_bulk" type="text" value="/home/mohit/Downloads" class="form-control">
+                        </div>
                         <button name="classify-many-btn" onClick="return classifyMany();" class="btn btn-primary">Classify Many Images</button>
                         <span name="classify-many-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"
                             data-container="body"
                             title="Classify a list of images and show the top 5 category predictions for each."
                             ></span>
+                        <hr/>
                         <div class="form-group">
                             <label for="num_test_images" class="control-label">Number of images use from the file</label>
                             <input type="text" id="num_test_images" name="num_test_images" class="form-control" value="100" placeholder="All">
