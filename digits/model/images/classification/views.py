@@ -351,8 +351,8 @@ def image_classification_model_classify_many():
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
     job = job_from_request()
-
-    image_list = flask.request.files.get['image_list']
+    
+    image_list = flask.request.files['image_list']
     if not image_list:
         raise werkzeug.exceptions.BadRequest('image_list is a required field')
 
@@ -394,7 +394,7 @@ def image_classification_model_classify_many():
 
     labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
     if scores is None:
-        raise RuntimeError('An error occured while processing the images')
+        raise werkzeug.exceptions.BadRequest('An error occured while processing the images')
 
     # take top 5
     indices = (-scores).argsort()[:, :5]

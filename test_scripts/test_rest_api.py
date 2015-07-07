@@ -16,6 +16,7 @@ def test_classify_one(job_id, image_file):
     Test the classify_one method.
     '''
     curl_req = 'curl localhost:5000/models/images/classification/classify_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -32,6 +33,7 @@ def test_visualize_one(job_id, image_file):
     Test the classify_one method with the visualize_one.json request
     '''
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y'
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -50,6 +52,7 @@ def test_visualize_one_specific_layer(job_id, image_file):
     layer = 'conv1'
     not_layer = 'fc6'
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F select_visualization_layer='+layer
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -67,6 +70,7 @@ def test_visualize_one_incorrect_layer(job_id, image_file):
     '''
     layer = 'mohit'
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F select_visualization_layer='+layer
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -84,6 +88,7 @@ def test_visualize_one_save_mat(job_id, image_file,save_file_location):
     Test the classify_one method with the visualize_one.json request and save as .mat file
     '''
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_mat=y -F save_vis_file_location='+save_file_location
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -100,6 +105,7 @@ def test_visualize_one_save_numpy(job_id, image_file,save_file_location):
     Test the classify_one method with the visualize_one.json request and save as .npy file
     '''
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_numpy=y -F save_vis_file_location='+save_file_location
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -118,6 +124,7 @@ def test_visualize_one_specific_layer_save_mat(job_id, image_file,save_file_loca
     layer = 'conv1'
     not_layer = 'fc6'
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_mat=y -F save_vis_file_location='+save_file_location
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -144,6 +151,7 @@ def test_visualize_one_incorrect_specific_layer_save_mat(job_id, image_file,save
     '''
     layer = 'mohit'
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_mat=y -F save_vis_file_location='+save_file_location
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -164,6 +172,7 @@ def test_visualize_one_specific_layer_save_numpy(job_id, image_file,save_file_lo
     layer = 'conv1'
     not_layer = 'fc6'
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_numpy=y -F save_vis_file_location='+save_file_location
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -181,6 +190,7 @@ def test_visualize_one_incorrect_specific_layer_save_numpy(job_id, image_file,sa
     '''
     layer = 'mohit'
     curl_req = 'curl localhost:5000/models/images/classification/visualize_one.json -XPOST -F job_id='+job_id+' -F image_file=@'+image_file+' -F show_visualizations=y -F save_vis_file=y -F save_type_numpy=y -F save_vis_file_location='+save_file_location
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     if err:
@@ -209,6 +219,7 @@ def test_API(digits_up, job_id, image_file, save_file_location):
     The main function calling all methods for testing each element.
     '''
     curl_req = 'curl localhost:5000/index.json'
+    print curl_req
     req = subprocess.Popen([curl_req], stdout=subprocess.PIPE, shell=True)
     (resp, err) = req.communicate()
     try:

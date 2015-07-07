@@ -356,7 +356,7 @@ def feature_extraction_model_classify_many():
     """
     job = job_from_request()
 
-    image_list = flask.request.files.get['image_list']
+    image_list = flask.request.files['image_list']
     if not image_list:
         raise werkzeug.exceptions.BadRequest('image_list is a required field')
 
