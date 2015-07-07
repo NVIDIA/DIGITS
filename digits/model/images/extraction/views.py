@@ -403,8 +403,8 @@ def feature_extraction_model_classify_many():
         save_vis_file = True
 
         # Check for specific layer
-        if 'select_visualization_layer' in flask.request.form and flask.request.form['select_visualization_layer']:
-            layers = flask.request.form['select_visualization_layer']
+        if 'select_visualization_layer_bulk' in flask.request.form and flask.request.form['select_visualization_layer_bulk']:
+            layers = flask.request.form['select_visualization_layer_bulk']
         else:
             layers = 'all'
 

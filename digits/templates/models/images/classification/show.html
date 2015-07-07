@@ -254,6 +254,15 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 ></span>
                             <input id="save_vis_file_location_bulk" name="save_vis_file_location_bulk" type="text" value="/home/mohit/Downloads" class="form-control">
                         </div>
+                        <div class="form-group">
+                            <label for="select_visualization_layer_bulk" class="control-label">Specify Layer to Visualize</label>
+                            <span name="select_visualizations_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Specify name of the layer to obtain visualizations for that layer. Provide 'all' to visualize all layers."
+                                ></span>
+                            <input id="select_visualization_layer_bulk" name="select_visualization_layer_bulk" type="text" value="all" class="form-control">
+                        </div>
                         <button name="classify-many-btn" onClick="return classifyMany();" class="btn btn-primary">Classify Many Images</button>
                         <span name="classify-many-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"
