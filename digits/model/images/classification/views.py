@@ -392,12 +392,35 @@ def image_classification_model_classify_many():
     if not len(images):
         raise werkzeug.exceptions.BadRequest('Unable to load any images from the file')
 
-    layers = 'none'
+    save_vis_file = False
+    layers = None
     if 'save_visualizations' in flask.request.form and flask.request.form['save_visualizations']:
+        save_vis_file = True
+
+        # Check for specific layer
         if 'select_visualization_layer' in flask.request.form and flask.request.form['select_visualization_layer']:
             layers = flask.request.form['select_visualization_layer']
         else:
             layers = 'all'
+
+        # Select save file type
+        if 'save_type_mat_bulk' in flask.request.form and flask.request.form['save_type_mat_bulk']:
+            save_file_type = 'mat'
+        elif 'save_type_numpy_bulk' in flask.request.form and flask.request.form['save_type_numpy_bulk']:
+            save_file_type = 'numpy'
+        else:
+            raise werkzeug.exceptions.BadRequest('No filetype selected. Expected .npy or .mat')
+        
+        # Obtain savefile path.
+        if 'save_vis_file_location_bulk' in flask.request.form and flask.request.form['save_vis_file_location_bulk']:
+            save_vis_file_location = flask.request.form['save_vis_file_location_bulk']
+
+    if 'job_id' in flask.request.form and flask.request.form['job_id']:
+        job_id = flask.request.form['job_id']
+    elif 'job_id' in flask.request.args and flask.request.args['job_id']:
+        job_id = flask.request.args['job_id']
+    else:
+        raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')
 
     labels, scores, visualizations = job.train_task().infer_many(images, snapshot_epoch=epoch, layers=layers)
     
@@ -415,9 +438,44 @@ def image_classification_model_classify_many():
             result.append((labels[i], round(100.0*scores[image_index, i],2)))
         classifications.append(result)
 
+    if save_vis_file:
+        if save_file_type == 'numpy':
+            try:
+                joined_vis = dict(zip(paths, visualizations))
+                np.array(joined_vis).dump(open(save_vis_file_location+'/visualization_'+job_id+'.npy', 'wb'))
+            except:
+                raise werkzeug.exceptions.BadRequest('Error saving visualization data as Numpy array')
+        elif save_file_type == 'mat':
+            try:
+                for image_vis in visualizations:
+                    for layer in image_vis:
+                        for ele in layer:
+                            if not isinstance(layer[ele], dict) and not isinstance(layer[ele], str) and not isinstance(layer[ele], list):
+                                layer[ele] = str(layer[ele])
+                joined_vis = dict(zip(paths, visualizations))
+                scipy.io.savemat(save_vis_file_location+'/visualization_'+job_id+'.mat', {'visualizations':joined_vis})
+            except IOError as e:
+                raise werkzeug.exceptions.BadRequest('I/O error{%s}: %s'% (e.errno, e.strerror))
+            except:
+                raise werkzeug.exceptions.BadRequest('Error saving visualization data as .mat file')
+        else:
+            raise werkzeug.exceptions.BadRequest('Invalid filetype for visualization data saving')
+
     if request_wants_json():
-        joined = dict(zip(paths, classifications))
-        return flask.jsonify({'classifications': joined})
+        if 'save_visualizations' in flask.request.form and flask.request.form['save_visualizations']:
+            # flask.jsonify has problems creating JSON from numpy.float32
+            # convert all non-dict, non-list and non-string elements to string.
+            for image_vis in visualizations:
+                for layer in image_vis:
+                    for ele in layer:
+                        if not isinstance(layer[ele], dict) and not isinstance(layer[ele], str) and not isinstance(layer[ele], list):
+                            layer[ele] = str(layer[ele]) 
+            joined_class = dict(zip(paths, classifications))
+            joined_vis = dict(zip(paths, visualizations))
+            return flask.jsonify({'classifications': joined_class, 'visualizations': joined_vis})
+        else:
+            joined = dict(zip(paths, classifications))
+            return flask.jsonify({'classifications': joined})
     else:
         return flask.render_template('models/images/classification/classify_many.html',
                 paths=paths,
