@@ -886,12 +886,12 @@ class CaffeTrainTask(TrainTask):
         return False
 
     @override
-    def infer_many(self, data, snapshot_epoch=None):
+    def infer_many(self, data, snapshot_epoch=None, layers=None):
         if isinstance(self.dataset, ImageClassificationDatasetJob):
-            return self.classify_many(data, snapshot_epoch=snapshot_epoch)
+            return self.classify_many(data, snapshot_epoch=snapshot_epoch, layers=layers)
         raise NotImplementedError()
 
-    def classify_many(self, images, snapshot_epoch=None):
+    def classify_many(self, images, snapshot_epoch=None, layers=None):
         """
         Returns (labels, results):
         labels -- an array of strings
@@ -932,7 +932,9 @@ class CaffeTrainTask(TrainTask):
             data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
 
         scores = None
-        for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
+        visualizations_all = None
+        # for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
+        for chunk in [caffe_images[x:x+1] for x in xrange(0, len(caffe_images))]:
             new_shape = (len(chunk),) + data_shape[1:]
             if net.blobs['data'].data.shape != new_shape:
                 net.blobs['data'].reshape(*new_shape)
@@ -944,9 +946,142 @@ class CaffeTrainTask(TrainTask):
                 scores = output
             else:
                 scores = np.vstack((scores, output))
+
+            # add visualizations
+            visualizations = []
+            if layers and layers != 'none':
+                all_network_layer_names = [layer.name for layer in self.network.layer]
+                if layers == 'all':
+                    added_activations = []
+                    for layer in self.network.layer:
+                        print 'Computing visualizations for "%s"...' % layer.name
+                        if not layer.type.endswith(('Data', 'Loss', 'Accuracy')):
+                            for bottom in layer.bottom:
+                                if bottom in net.blobs and bottom not in added_activations:
+                                    data = net.blobs[bottom].data[0]
+                                    vis = self.get_layer_visualization(data)
+                                    mean, std, hist = self.get_layer_statistics(data)
+                                    visualizations.append(
+                                            {
+                                                'name': str(bottom),
+                                                'type': 'Activations',
+                                                'mean': mean,
+                                                'stddev': std,
+                                                'histogram': hist,
+                                                'image_html': utils.image.embed_image_html(vis),
+                                                }
+                                            )
+                                    added_activations.append(bottom)
+                            if layer.name in net.params:
+                                data = net.params[layer.name][0].data
+                                if layer.type not in ['InnerProduct']:
+                                    vis = self.get_layer_visualization(data)
+                                else:
+                                    vis = None
+                                mean, std, hist = self.get_layer_statistics(data)
+                                visualizations.append(
+                                        {
+                                            'name': str(layer.name),
+                                            'type': 'Weights (%s layer)' % layer.type,
+                                            'mean': mean,
+                                            'stddev': std,
+                                            'histogram': hist,
+                                            'image_html': utils.image.embed_image_html(vis),
+                                            }
+                                        )
+                            for top in layer.top:
+                                if top in net.blobs and top not in added_activations:
+                                    data = net.blobs[top].data[0]
+                                    normalize = True
+                                    # don't normalize softmax layers
+                                    if layer.type == 'Softmax':
+                                        normalize = False
+                                    vis = self.get_layer_visualization(data, normalize=normalize)
+                                    mean, std, hist = self.get_layer_statistics(data)
+                                    visualizations.append(
+                                            {
+                                                'name': str(top),
+                                                'type': 'Activation',
+                                                'mean': mean,
+                                                'stddev': std,
+                                                'histogram': hist,
+                                                'image_html': utils.image.embed_image_html(vis),
+                                                }
+                                            )
+                                    added_activations.append(top)
+                elif layers in all_network_layer_names:
+                    layer = ''
+                    for iter_layer in self.network.layer:
+                        if iter_layer.name == layers:
+                            layer = iter_layer
+                            break
+                    added_activations = []
+                    #for layer in self.network.layer:
+                    print 'Computing visualizations for "%s"...' % layer.name
+                    if not layer.type.endswith(('Data', 'Loss', 'Accuracy')):
+                        for bottom in layer.bottom:
+                            if bottom in net.blobs and bottom not in added_activations:
+                                data = net.blobs[bottom].data[0]
+                                vis = self.get_layer_visualization(data)
+                                mean, std, hist = self.get_layer_statistics(data)
+                                visualizations.append(
+                                        {
+                                            'name': str(bottom),
+                                            'type': 'Activations',
+                                            'mean': mean,
+                                            'stddev': std,
+                                            'histogram': hist,
+                                            'image_html': utils.image.embed_image_html(vis),
+                                        }
+                                    )
+                                added_activations.append(bottom)
+                        if layer.name in net.params:
+                            data = net.params[layer.name][0].data
+                            if layer.type not in ['InnerProduct']:
+                                vis = self.get_layer_visualization(data)
+                            else:
+                                vis = None
+                            mean, std, hist = self.get_layer_statistics(data)
+                            visualizations.append(
+                                    {
+                                        'name': str(layer.name),
+                                        'type': 'Weights (%s layer)' % layer.type,
+                                        'mean': mean,
+                                        'stddev': std,
+                                        'histogram': hist,
+                                        'image_html': utils.image.embed_image_html(vis),
+                                     }
+                                )
+                        for top in layer.top:
+                            if top in net.blobs and top not in added_activations:
+                                data = net.blobs[top].data[0]
+                                normalize = True
+                                # don't normalize softmax layers
+                                if layer.type == 'Softmax':
+                                    normalize = False
+                                vis = self.get_layer_visualization(data, normalize=normalize)
+                                mean, std, hist = self.get_layer_statistics(data)
+                                visualizations.append(
+                                        {
+                                            'name': str(top),
+                                            'type': 'Activation',
+                                            'mean': mean,
+                                            'stddev': std,
+                                            'histogram': hist,
+                                            'image_html': utils.image.embed_image_html(vis),
+                                        }
+                                    )
+                                added_activations.append(top)
+                else:
+                    raise NotFound("This layer is not present in the Network! Try passing 'all' as layer-name parameters to view all layers.")
+            if visualizations_all is None:
+            	visualizations_all = visualizations
+            else:
+            	visualizations_all = np.vstack((visualizations_all, visualizations))
+
             print 'Processed %s/%s images' % (len(scores), len(caffe_images))
 
-        return (labels, scores)
+        return (labels, scores, visualizations_all)
 
     def has_model(self):
         """

@@ -392,7 +392,15 @@ def image_classification_model_classify_many():
     if not len(images):
         raise werkzeug.exceptions.BadRequest('Unable to load any images from the file')
 
-    labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
+    layers = 'none'
+    if 'save_visualizations' in flask.request.form and flask.request.form['save_visualizations']:
+        if 'select_visualization_layer' in flask.request.form and flask.request.form['select_visualization_layer']:
+            layers = flask.request.form['select_visualization_layer']
+        else:
+            layers = 'all'
+
+    labels, scores, visualizations = job.train_task().infer_many(images, snapshot_epoch=epoch, layers=layers)
+    
     if scores is None:
         raise werkzeug.exceptions.BadRequest('An error occured while processing the images')
 

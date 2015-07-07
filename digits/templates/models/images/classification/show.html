@@ -217,6 +217,17 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <input type="file" id="image_list" name="image_list" class="form-control">
                             <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
                         </div>
+                        <div class="form-group">
+                            <label for="save_visualizations">
+                                <input id="save_visualizations" name="save_visualizations" type="checkbox" value="y">
+                                Save visualizations and statistics
+                            </label>
+                            <span name="save_visualizations_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="For every image and for each layer in the network, save statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
+                                ></span>
+                        </div>
                         <button name="classify-many-btn" onClick="return classifyMany();" class="btn btn-primary">Classify Many Images</button>
                         <span name="classify-many-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"
