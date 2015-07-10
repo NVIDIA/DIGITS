@@ -438,21 +438,31 @@ def image_classification_model_classify_many():
             result.append((labels[i], round(100.0*scores[image_index, i],2)))
         classifications.append(result)
 
+    layer_data = {}
+    for image_vis in visualizations:
+        for layer in image_vis:
+            for ele in layer:
+                if ele=='image_html':
+                    continue
+                if layer['name'] in layer_data:
+                    if ele in layer_data[layer['name']]:
+                        layer_data[layer['name']][ele].append(layer[ele])
+                    else:
+                        layer_data[layer['name']][ele] = [layer[ele]]
+                else:
+                    layer_data[layer['name']] = {}
+                    layer_data[layer['name']][ele] = [layer[ele]]
+
     if save_vis_file:
         if save_file_type == 'numpy':
             try:
-                joined_vis = dict(zip(paths, visualizations))
+                joined_vis = layer_data
                 np.array(joined_vis).dump(open(save_vis_file_location+'/visualization_'+job_id+'.npy', 'wb'))
             except:
                 raise werkzeug.exceptions.BadRequest('Error saving visualization data as Numpy array')
         elif save_file_type == 'mat':
             try:
-                for image_vis in visualizations:
-                    for layer in image_vis:
-                        for ele in layer:
-                            if not isinstance(layer[ele], dict) and not isinstance(layer[ele], str) and not isinstance(layer[ele], list):
-                                layer[ele] = str(layer[ele])
-                joined_vis = dict(zip(paths, visualizations))
+                joined_vis = layer_data
                 scipy.io.savemat(save_vis_file_location+'/visualization_'+job_id+'.mat', {'visualizations':joined_vis})
             except IOError as e:
                 raise werkzeug.exceptions.BadRequest('I/O error{%s}: %s'% (e.errno, e.strerror))
@@ -463,15 +473,8 @@ def image_classification_model_classify_many():
 
     if request_wants_json():
         if 'save_visualizations' in flask.request.form and flask.request.form['save_visualizations']:
-            # flask.jsonify has problems creating JSON from numpy.float32
-            # convert all non-dict, non-list and non-string elements to string.
-            for image_vis in visualizations:
-                for layer in image_vis:
-                    for ele in layer:
-                        if not isinstance(layer[ele], dict) and not isinstance(layer[ele], str) and not isinstance(layer[ele], list):
-                            layer[ele] = str(layer[ele]) 
+            joined_vis = layer_data
             joined_class = dict(zip(paths, classifications))
-            joined_vis = dict(zip(paths, visualizations))
             return flask.jsonify({'classifications': joined_class, 'visualizations': joined_vis})
         else:
             joined = dict(zip(paths, classifications))
