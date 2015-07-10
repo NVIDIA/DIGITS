@@ -62,7 +62,7 @@ Now that DIGITS is running, open a browser and go to http://localhost:5000.  You
 
 ![Home page](images/home-page-1.jpg)
 
-For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network. Both are made generously made available by Yann LeCun on his [website](http://yann.lecun.com/).
+For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network. Both are generously made available by Yann LeCun on his [website](http://yann.lecun.com/).
 
 If you are not using the web installer, you can use the script at `tools/download_data/main.py` to download the MNIST dataset. See [Standard Datasets](StandardDatasets.md) for details.
 
