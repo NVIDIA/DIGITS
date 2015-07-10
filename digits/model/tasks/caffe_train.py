@@ -1018,13 +1018,13 @@ class CaffeTrainTask(TrainTask):
                 scores = output
             else:
                 scores = np.vstack((scores, output))
-
+        
             # add visualizations
             visualizations = []
             if layers and layers != 'none':
                 all_network_layer_names = [layer.name for layer in self.network.layer]
                 if len(layers) == 1:
-                    if layers == 'all':
+                    if layers[0] == 'all':
                         added_activations = []
                         for layer in self.network.layer:
                             print 'Computing visualizations for "%s"...' % layer.name
@@ -1082,10 +1082,10 @@ class CaffeTrainTask(TrainTask):
                                                     }
                                                 )
                                         added_activations.append(top)
-                    elif layers in all_network_layer_names:
+                    elif layers[0] in all_network_layer_names:
                         layer = ''
                         for iter_layer in self.network.layer:
-                            if iter_layer.name == layers:
+                            if iter_layer.name == layers[0]:
                                 layer = iter_layer
                                 break
                         added_activations = []
