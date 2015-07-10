@@ -14,12 +14,12 @@
     <dl>
         <dt>Image Type</dt>
         <dd>{{'Color' if job.image_dims[2] == 3 else 'Grayscale'}}</dd>
+        <dt>Image Encoding</dt>
+        <dd>{{job.train_db_task().encoding}}</dd>
         <dt>Image Dimensions</dt>
         <dd>{{job.image_dims[1]}}x{{job.image_dims[0]}}</dd>
-        <dt>Resize Mode</dt>
+        <dt>Resize Transformation</dt>
         <dd>{{ job.resize_mode }}</dd>
-        <dt>Encoding</dt>
-        <dd>{{job.train_db_task().encoding}}</dd>
     </dl>
 </div>
 {% endmacro %}
@@ -35,15 +35,15 @@
     </dl>
     <dl>
         {% if task.label_count %}
-        <dt>Number of categories</dt>
+        <dt>Number of Categories</dt>
         <dd>{{task.label_count}}</dd>
         {% endif %}
         {% if task.train_count %}
-        <dt>Training images</dt>
+        <dt>Training Images</dt>
         <dd>{{task.train_count}}</dd>
         {% endif %}
         {% if task.val_count %}
-        <dt>Validation images</dt>
+        <dt>Validation Images</dt>
         <dd>
         {{task.val_count}}
         {% if task.percent_val != 0 and task.percent_val != 100 %}
@@ -69,7 +69,7 @@
 </div>
 <div class="panel-body">
     <dl>
-        <dt>Input file{{' (before shuffling)' if task.shuffle }}</dt>
+        <dt>Input File{{' (before shuffling)' if task.shuffle }}</dt>
         <dd><a href="{{url_for('serve_file', path=task.path(task.input_file, relative=True))}}">{{task.input_file}}</a></dd>
         {% if task.entries_count %}
         <dt>DB Entries</dt>
@@ -86,7 +86,7 @@
         );
     </script>
     {% if task.mean_file %}
-    <b>Image mean:</b>
+    <b>Image Mean:</b>
     <img src="{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}" />
     {% endif %}
     {% endif %}
