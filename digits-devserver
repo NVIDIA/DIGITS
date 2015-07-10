@@ -3,17 +3,12 @@
 
 import sys
 import argparse
+import digits
 
 # Only required if using SocketIO.run() and app.debug = False
 from gevent import monkey; monkey.patch_all()
 
 if __name__ == '__main__':
-    print '  ___ ___ ___ ___ _____ ___'
-    print ' |   \_ _/ __|_ _|_   _/ __|'
-    print ' | |) | | (_ || |  | | \__ \\'
-    print ' |___/___\___|___| |_| |___/'
-    print
-
     parser = argparse.ArgumentParser(description='Run DIGITS in debug mode')
     parser.add_argument('-p', '--port',
             type=int,
@@ -28,10 +23,18 @@ if __name__ == '__main__':
             action='store_true',
             help='Run the application in debug mode (with the reloader)'
             )
+    parser.add_argument('--version',
+            action='store_true',
+            help='Print the version number and exit'
+            )
 
     args = vars(parser.parse_args())
 
     from digits import config
+
+    if args['version']:
+        print digits.__version__
+        sys.exit()
 
     if args['config']:
         config.load_config('normal')
@@ -39,6 +42,12 @@ if __name__ == '__main__':
         config.load_config('quiet')
 
     from digits.webapp import app, socketio, scheduler
+
+    print '  ___ ___ ___ ___ _____ ___'
+    print ' |   \_ _/ __|_ _|_   _/ __|'
+    print ' | |) | | (_ || |  | | \__ \\'
+    print ' |___/___\___|___| |_| |___/', digits.__version__
+    print
 
     try:
         if not scheduler.start():
