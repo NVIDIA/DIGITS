@@ -38,7 +38,8 @@ def feature_extraction_model_new():
     Return a form for a new ImageClassificationModelJob for feature extraction.
     """
     form = FeatureExtractionModelForm()
-    # TODO : Gotta make this constant. Probably remove this from here and just keep a fix value in the next controller.
+    # TODO : Gotta make this constant. Probably remove this from here and just keep a fix value in the next controller, or make the user provide
+    #      : the number of categories and manually create the dataset using this info and a dummy image.
     #      : Set lr=0, and epoch=0 in the next controller.
     form.dataset.choices = get_datasets()
     #####################################
@@ -64,8 +65,9 @@ def feature_extraction_model_create():
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
     form = FeatureExtractionModelForm()
-    # TODO : Gotta make this constant. Probably remove this from here and just keep a fix value in the next controller.
-    #      : Set lr=0, and epoch=0 in the next controller.
+    # TODO : Gotta create this dataset manually from the number of classes obtained from the user. 
+    #      : Simply add a line in dataset_creation text file with a constant dummy image and the category label (integeres from 1->NoOfCategory).
+    #      : Set lr=0, and epoch=0 in the caffe parameters below.
     form.dataset.choices = get_datasets()
     #####################################
     form.standard_networks.choices = get_standard_networks()
@@ -85,6 +87,7 @@ def feature_extraction_model_create():
                     ), 400
 
     # TODO : Make sure the dataset passed here is what we were trying to pass.
+    #      : We will first have to run the create-new-dataset method with the dummy dataset_textfile created above.
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
         raise werkzeug.exceptions.BadRequest(
@@ -145,6 +148,7 @@ def feature_extraction_model_create():
                                     "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
                     break
 
+        # TODO : This is the type of model loading option we would like to have. Will have to see how to amend the model and .prototxt files to                  : get our task done.
         elif form.method.data == 'custom':
             text_format.Merge(form.custom_network.data, network)
             pretrained_model = form.custom_network_snapshot.data.strip()
@@ -152,6 +156,7 @@ def feature_extraction_model_create():
             raise werkzeug.exceptions.BadRequest(
                     'Unrecognized method: "%s"' % form.method.data)
 
+        # TODO : Make sure that the learning rate is 0 and epoch is just 1.
         policy = {'policy': form.lr_policy.data}
         if form.lr_policy.data == 'fixed':
             pass
