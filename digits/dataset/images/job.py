@@ -22,3 +22,16 @@ class ImageDatasetJob(DatasetJob):
         self.image_dims = image_dims
         self.resize_mode = resize_mode
 
+    @staticmethod
+    def choices():
+        return [
+            ('crop', 'Crop'),
+            ('squash', 'Squash'),
+            ('fill', 'Fill'),
+            ('half_crop', 'Half crop, half fill'),
+        ]
+
+    def resize_mode_name(self):
+        c = dict(self.choices())
+        return c[self.resize_mode]
+

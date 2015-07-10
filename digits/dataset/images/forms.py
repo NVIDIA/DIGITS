@@ -37,11 +37,5 @@ class ImageDatasetForm(DatasetForm):
             )
     resize_mode = wtforms.SelectField(u'Resize Transformation',
             default='squash',
-            choices=[
-                ('crop', 'Crop'),
-                ('squash', 'Squash'),
-                ('fill', 'Fill'),
-                ('half_crop', 'Half crop, half fill'),
-                ]
+            choices=ImageDatasetJob.choices()
             )
-
