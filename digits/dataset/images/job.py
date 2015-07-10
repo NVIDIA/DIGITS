@@ -23,7 +23,7 @@ class ImageDatasetJob(DatasetJob):
         self.resize_mode = resize_mode
 
     @staticmethod
-    def choices():
+    def resize_mode_choices():
         return [
             ('crop', 'Crop'),
             ('squash', 'Squash'),
@@ -32,6 +32,6 @@ class ImageDatasetJob(DatasetJob):
         ]
 
     def resize_mode_name(self):
-        c = dict(self.choices())
+        c = dict(self.resize_mode_choices())
         return c[self.resize_mode]
 
