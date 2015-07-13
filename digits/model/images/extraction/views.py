@@ -25,7 +25,7 @@ from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
 from digits.model import tasks
-from forms import FeatureExtractionModelForm
+from forms import DummyFeatureExtractionModelForm
 from job import FeatureExtractionModelJob
 from digits.status import Status
 
@@ -37,22 +37,9 @@ def feature_extraction_model_new():
     """
     Return a form for a new ImageClassificationModelJob for feature extraction.
     """
-    form = FeatureExtractionModelForm()
-    # TODO : Gotta make this constant. Probably remove this from here and just keep a fix value in the next controller, or make the user provide
-    #      : the number of categories and manually create the dataset using this info and a dummy image.
-    #      : Set lr=0, and epoch=0 in the next controller.
-    form.dataset.choices = get_datasets()
-    #####################################
-    form.standard_networks.choices = get_standard_networks()
-    form.standard_networks.default = get_default_standard_network()
-    form.previous_networks.choices = get_previous_networks()
-
-    prev_network_snapshots = get_previous_network_snapshots()
-
+    form = DummyFeatureExtractionModelForm()
     return flask.render_template('models/images/extraction/new.html',
             form = form,
-            previous_network_snapshots = prev_network_snapshots,
-            multi_gpu = config_value('caffe_root')['multi_gpu'],
             )
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
@@ -60,21 +47,11 @@ def feature_extraction_model_new():
 @autodoc(['models', 'api'])
 def feature_extraction_model_create():
     """
-    Create a new ImageClassificationModelJob for feature extraction.
+    Create a new ImageClassificationModelJob for feature extraction using pretrained model.
 
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
-    form = FeatureExtractionModelForm()
-    # TODO : Gotta create this dataset manually from the number of classes obtained from the user. 
-    #      : Simply add a line in dataset_creation text file with a constant dummy image and the category label (integeres from 1->NoOfCategory).
-    #      : Set lr=0, and epoch=0 in the caffe parameters below.
-    form.dataset.choices = get_datasets()
-    #####################################
-    form.standard_networks.choices = get_standard_networks()
-    form.standard_networks.default = get_default_standard_network()
-    form.previous_networks.choices = get_previous_networks()
-
-    prev_network_snapshots = get_previous_network_snapshots()
+    form = DummyFeatureExtractionModelForm()
 
     if not form.validate_on_submit():
         if request_wants_json():
@@ -82,16 +59,12 @@ def feature_extraction_model_create():
         else:
             return flask.render_template('models/images/extraction/new.html',
                     form = form,
-                    previous_network_snapshots = prev_network_snapshots,
-                    multi_gpu = config_value('caffe_root')['multi_gpu'],
                     ), 400
 
-    # TODO : Make sure the dataset passed here is what we were trying to pass.
-    #      : We will first have to run the create-new-dataset method with the dummy dataset_textfile created above.
-    datasetJob = scheduler.get_job(form.dataset.data)
+    datasetJob = scheduler.get_job(get_dummy_dataset_id())
     if not datasetJob:
         raise werkzeug.exceptions.BadRequest(
-                'Unknown dataset job_id "%s"' % form.dataset.data)
+                'Unknown dataset job_id "%s"' % get_dummy_dataset_id())
 
     job = None
     try:
@@ -102,117 +75,34 @@ def feature_extraction_model_create():
 
         network = caffe_pb2.NetParameter()
         pretrained_model = None
-        if form.method.data == 'standard':
-            found = False
-            networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks')
-            for filename in os.listdir(networks_dir):
-                path = os.path.join(networks_dir, filename)
-                if os.path.isfile(path):
-                    match = re.match(r'%s.prototxt' % form.standard_networks.data, filename)
-                    if match:
-                        with open(path) as infile:
-                            text_format.Merge(infile.read(), network)
-                        found = True
-                        break
-            if not found:
-                raise werkzeug.exceptions.BadRequest(
-                        'Unknown standard model "%s"' % form.standard_networks.data)
-        elif form.method.data == 'previous':
-            old_job = scheduler.get_job(form.previous_networks.data)
-            if not old_job:
-                raise werkzeug.exceptions.BadRequest(
-                        'Job not found: %s' % form.previous_networks.data)
-
-            network.CopyFrom(old_job.train_task().network)
-            # Rename the final layer
-            # XXX making some assumptions about network architecture here
-            ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
-            if len(ip_layers) > 0:
-                ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
-
-            for choice in form.previous_networks.choices:
-                if choice[0] == form.previous_networks.data:
-                    epoch = float(flask.request.form['%s-snapshot' % form.previous_networks.data])
-                    if epoch != 0:
-                        for filename, e in old_job.train_task().snapshots:
-                            if e == epoch:
-                                pretrained_model = filename
-                                break
-
-                        if pretrained_model is None:
-                            raise werkzeug.exceptions.BadRequest(
-                                    "For the job %s, selected pretrained_model for epoch %d is invalid!"
-                                    % (form.previous_networks.data, epoch))
-                        if not (os.path.exists(pretrained_model)):
-                            raise werkzeug.exceptions.BadRequest(
-                                    "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
-                    break
-
-        # TODO : This is the type of model loading option we would like to have. Will have to see how to amend the model and .prototxt files to                  : get our task done.
-        elif form.method.data == 'custom':
+        
+        if form.method.data == 'custom':
             text_format.Merge(form.custom_network.data, network)
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:
             raise werkzeug.exceptions.BadRequest(
                     'Unrecognized method: "%s"' % form.method.data)
 
-        # TODO : Make sure that the learning rate is 0 and epoch is just 1.
-        policy = {'policy': form.lr_policy.data}
-        if form.lr_policy.data == 'fixed':
-            pass
-        elif form.lr_policy.data == 'step':
-            policy['stepsize'] = form.lr_step_size.data
-            policy['gamma'] = form.lr_step_gamma.data
-        elif form.lr_policy.data == 'multistep':
-            policy['stepvalue'] = form.lr_multistep_values.data
-            policy['gamma'] = form.lr_multistep_gamma.data
-        elif form.lr_policy.data == 'exp':
-            policy['gamma'] = form.lr_exp_gamma.data
-        elif form.lr_policy.data == 'inv':
-            policy['gamma'] = form.lr_inv_gamma.data
-            policy['power'] = form.lr_inv_power.data
-        elif form.lr_policy.data == 'poly':
-            policy['power'] = form.lr_poly_power.data
-        elif form.lr_policy.data == 'sigmoid':
-            policy['stepsize'] = form.lr_sigmoid_step.data
-            policy['gamma'] = form.lr_sigmoid_gamma.data
-        else:
-            raise werkzeug.exceptions.BadRequest(
-                    'Invalid learning rate policy')
-
-        if config_value('caffe_root')['multi_gpu']:
-            if form.select_gpu_count.data:
-                gpu_count = form.select_gpu_count.data
-                selected_gpus = None
-            else:
-                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
-                gpu_count = None
-        else:
-            if form.select_gpu.data == 'next':
-                gpu_count = 1
-                selected_gpus = None
-            else:
-                selected_gpus = [str(form.select_gpu.data)]
-                gpu_count = None
-
+        policy = {'policy': 'fixed'}
+        
         job.tasks.append(
                 tasks.CaffeTrainTask(
                     job_dir         = job.dir(),
                     dataset         = datasetJob,
-                    train_epochs    = form.train_epochs.data,
-                    snapshot_interval   = form.snapshot_interval.data,
-                    learning_rate   = form.learning_rate.data,
+                    train_epochs    = 1,
+                    snapshot_interval   = 1,
+                    learning_rate   = 0,
                     lr_policy       = policy,
-                    gpu_count       = gpu_count,
-                    selected_gpus   = selected_gpus,
-                    batch_size      = form.batch_size.data,
-                    val_interval    = form.val_interval.data,
+                    gpu_count       = None,
+                    selected_gpus   = None,
+                    batch_size      = None,
+                    val_interval    = 1,
                     pretrained_model= pretrained_model,
-                    crop_size       = form.crop_size.data,
-                    use_mean        = bool(form.use_mean.data),
+                    crop_size       = None,
+                    use_mean        = False,
                     network         = network,
-                    random_seed     = form.random_seed.data,
-                    solver_type     = form.solver_type.data,
+                    random_seed     = None,
+                    solver_type     = 'SGD',
                     )
                 )
 
@@ -577,37 +467,6 @@ def extraction_model_top_n():
             results=results,
             )
 
-def get_datasets():
-    return [(j.id(), j.name()) for j in sorted(
-        [j for j in scheduler.jobs if isinstance(j, ImageClassificationDatasetJob) and (j.status.is_running() or j.status == Status.DONE)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
-
-def get_standard_networks():
-    return [
-            ('lenet', 'LeNet'),
-            ('alexnet', 'AlexNet'),
-            #('vgg-16', 'VGG (16-layer)'), #XXX model won't learn
-            ('googlenet', 'GoogLeNet'),
-            ]
-
-def get_default_standard_network():
-    return 'alexnet'
-
-def get_previous_networks():
-    return [(j.id(), j.name()) for j in sorted(
-        [j for j in scheduler.jobs if isinstance(j, FeatureExtractionModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
-
-def get_previous_network_snapshots():
-    prev_network_snapshots = []
-    for job_id, _ in get_previous_networks():
-        job = scheduler.get_job(job_id)
-        e = [(0, 'None')] + [(epoch, 'Epoch #%s' % epoch)
-                for _, epoch in reversed(job.train_task().snapshots)]
-        prev_network_snapshots.append(e)
-    return prev_network_snapshots
-
+def get_dummy_dataset_id():
+    # Hack : Hardcoding this value. Need to change to something better.
+    return '20150624-230823-df97'

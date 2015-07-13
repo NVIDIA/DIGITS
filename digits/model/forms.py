@@ -246,3 +246,55 @@ class ModelForm(Form):
             )
 
 
+class DummyModelForm(Form):
+
+    ### Methods
+
+    def selection_exists_in_choices(form, field):
+        found = False
+        for choice in field.choices:
+            if choice[0] == field.data:
+                found = True
+        if not found:
+            raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
+
+    def validate_NetParameter(form, field):
+        pb = caffe_pb2.NetParameter()
+        try:
+            text_format.Merge(field.data, pb)
+        except text_format.ParseError as e:
+            raise validators.ValidationError('Not a valid NetParameter: %s' % e)
+
+    ### Network
+
+    # Use a SelectField instead of a HiddenField so that the default value
+    # is used when nothing is provided (through the REST API)
+    method = wtforms.SelectField(u'Network type',
+            choices = [
+                ('custom', 'Custom network'),
+                ],
+            default='custom',
+            )
+
+    # The options for this get set in the view (since they are dependent on the data type)
+    custom_network = wtforms.TextAreaField('Custom Network',
+            validators = [
+                validate_required_iff(method='custom'),
+                validate_NetParameter,
+                ]
+            )
+
+    custom_network_snapshot = wtforms.TextField('Pretrained model')
+
+    def validate_custom_network_snapshot(form, field):
+        if form.method.data == 'custom':
+            snapshot = field.data.strip()
+            if snapshot:
+                if not os.path.exists(snapshot):
+                    raise validators.ValidationError('File does not exist')
+
+    model_name = wtforms.StringField('Model Name',
+            validators = [
+                validators.DataRequired()
+                ]
+            )

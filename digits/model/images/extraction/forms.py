@@ -3,11 +3,11 @@
 import wtforms
 from wtforms import validators
 
-from ..forms import ImageModelForm
+from ..forms import DummyImageModelForm
 
-class FeatureExtractionModelForm(ImageModelForm):
+class DummyFeatureExtractionModelForm(DummyImageModelForm):
     """
-    Defines the form used to create a new FeatureExtractionModelJob
+    Defines the form used to create a new DummyFeatureExtractionModelJob
     """
     pass
 
