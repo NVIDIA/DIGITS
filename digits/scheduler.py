@@ -13,9 +13,9 @@ import gevent.queue
 from config import config_value
 from . import utils
 from status import Status
-from job import Job
+from job import Job, PretrainedJob
 from dataset import DatasetJob
-from model import ModelJob
+from model import ModelJob, PretrainedModelJob
 from digits.utils import errors
 from log import logger
 
@@ -121,7 +121,10 @@ class Scheduler:
 
                 if not exists:
                     try:
-                        job = Job.load(dir_name)
+                        try:
+                            job = Job.load(dir_name)
+                        except:
+                            job = PretrainedJob.load(dir_name)
                         # The server might have crashed
                         if job.status.is_running():
                             job.status = Status.ABORT
@@ -145,7 +148,21 @@ class Scheduler:
         for job in loaded_jobs:
             if isinstance(job, DatasetJob):
                 self.jobs.append(job)
-
+        
+        # add PretrainedModelJobs
+        for jon in loaded_jobs:
+            if isinstance(job, PretrainedModelJob):
+                try:
+                    self.job.append(job)
+                except Exception as e:
+                    failed += 1
+                    if self.verbose:
+                        if str(e):
+                            print 'Caught %s while loading job "%s":' % (type(e).__name__, job.id())
+                            print '\t%s' % e
+                        else:
+                            print 'Caught %s while loading job "%s"' % (type(e).__name__, job.id())
+                            
         # add ModelJobs
         for job in loaded_jobs:
             if isinstance(job, ModelJob):
@@ -212,6 +229,8 @@ class Scheduler:
             job_id = str(job)
         elif isinstance(job, Job):
             job_id = job.id()
+        elif isinstance(job, PretrainedJob):
+            job_id = job.id()
         else:
             raise ValueError('called delete_job with a %s' % type(job))
         dependent_jobs = []
@@ -269,10 +288,24 @@ class Scheduler:
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
-    def running_model_jobs(self):
+    def completed_model_jobs(self):
         """a query utility"""
         return sorted(
                 [j for j in self.jobs if isinstance(j, ModelJob) and not j.status.is_running()],
+                cmp=lambda x,y: cmp(y.id(), x.id())
+                )
+    
+    def running_pretrained_model_jobs(self):
+        """a query utility"""
+        return sorted(
+                [j for j in self.jobs if isinstance(j, PretrainedModelJob) and j.status.is_running()],
+                cmp=lambda x,y: cmp(y.id(), x.id())
+                )
+
+    def completed_pretrained_model_jobs(self):
+        """a query utility"""
+        return sorted(
+                [j for j in self.jobs if isinstance(j, PretrainedModelJob) and not j.status.is_running()],
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
