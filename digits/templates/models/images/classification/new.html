@@ -454,37 +454,57 @@ function customizeNetwork(network, snapshot_list) {
 
                 </div>
                 <div id="network-tab-previous" class="tab-pane">
-                    <table class="table">
-                        <tr>
-                            <th>Network</th>
-                            <th>Pretrained Model</th>
-                            <th></th>
-                        </tr>
-                        {% for network in form.previous_networks %}
-                        <tr>
-                            <td>
-                                {{network}}
-                                {{network.label}}
-                                <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
-                            </td>
-                            <td>
-                                {% set snapshot_list = previous_network_snapshots[loop.index0] %}
-                                {% if snapshot_list|length %}
-                                <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
-                                    {% for each_epoch in snapshot_list %}
-                                    <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
-                                    {% endfor %}
-                                </select>
-                                {% endif %}
-                            </td>
-                            <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot');">Customize</a></td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td><i>None</i></td>
-                        </tr>
+
+                    <div class="tab-content">
+		                {% for batch in form.previous_networks|batch(10) %}
+		                <div class="tab-pane{{' active' if loop.index==1}}" id="previous_networks-page-{{loop.index}}">
+
+                            <table class="table">
+                                <tr>
+                                    <th>Network</th>
+                                    <th>Pretrained Model</th>
+                                    <th></th>
+                                </tr>
+                                {% for network in batch %}
+                                <tr>
+                                    <td>
+                                        {{network}}
+                                        {{network.label}}
+                                        <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
+                                    </td>
+                                    <td>
+                                        {% set snapshot_list = previous_network_snapshots[loop.index0] %}
+                                        {% if snapshot_list|length %}
+                                        <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
+                                            {% for each_epoch in snapshot_list %}
+                                            <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% endif %}
+                                    </td>
+                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot');">Customize</a></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td><i>None</i></td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            
+                        </div>
                         {% endfor %}
-                    </table>
+                    </div>
+
+                    {% if form.previous_networks.choices|length > 10 %}
+                    <div class="text-center">
+                        <ul class="pagination">
+                            {% for i in range((form.previous_networks.choices|length/10)|round(0,'ceil')|int) %}
+                            <li class="{{'active' if i==0}}"><a href="#previous_networks-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
                 </div>
                 <script>
                     // hide some buttons and form elements
