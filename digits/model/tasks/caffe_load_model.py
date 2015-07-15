@@ -48,6 +48,10 @@ class CaffeLoadModelTask(LoadModelTask):
 
         self.network = network
 
+        input_dims = self.get_input_dims()
+        self.channels = input_dims[0]
+        self.crop_size = input_dims[1]
+
         self.loaded_snapshot_file = None
         self.loaded_snapshot_epoch = None
         self.solver = None
@@ -125,7 +129,7 @@ class CaffeLoadModelTask(LoadModelTask):
                     elif rule.phase == caffe_pb2.TEST:
                         assert val_data_layer is None, 'cannot specify two test data layers'
                         val_data_layer = layer
-            elif layer.type == 'SoftmaxWithLoss':
+            elif layer.type == 'SoftmaxWithLoss' or layer.type =='Softmax':
                 loss_layers.append(layer)
             elif layer.type == 'Accuracy':
                 addThis = True
@@ -243,7 +247,7 @@ class CaffeLoadModelTask(LoadModelTask):
         deploy_network.input_dim.append(1)
         
         #TODO : Obtain the channel size somehow.
-        deploy_network.input_dim.append(3)
+        deploy_network.input_dim.append(self.channels)
         if self.crop_size:
             deploy_network.input_dim.append(self.crop_size)
             deploy_network.input_dim.append(self.crop_size)
@@ -254,7 +258,7 @@ class CaffeLoadModelTask(LoadModelTask):
         deploy_network.MergeFrom(hidden_layers)
 
         # output layers
-        if loss_layers[-1].type == 'SoftmaxWithLoss':
+        if loss_layers[-1].type == 'SoftmaxWithLoss' or loss_layers[-1].type == 'Softmax':
             prob_layer = deploy_network.layer.add(
                     type = 'Softmax',
                     name = 'prob')
@@ -895,11 +899,11 @@ class CaffeLoadModelTask(LoadModelTask):
 
         if self.batch_size:
             #TODO : get channels somehow.
-            data_shape = (self.batch_size, 3)
+            data_shape = (self.batch_size, self.channels)
         # TODO: grab batch_size from the TEST phase in train_val network
         else:
             #TODO : get channels somehow.
-            data_shape = (constants.DEFAULT_BATCH_SIZE, 3)
+            data_shape = (constants.DEFAULT_BATCH_SIZE, self.channels)
 
         if self.crop_size:
             data_shape += (self.crop_size, self.crop_size)
@@ -1188,7 +1192,7 @@ class CaffeLoadModelTask(LoadModelTask):
             return self._transformer
 
         # TODO : get channels somehow.
-        data_shape = (1, 3)
+        data_shape = (1, self.channels)
         if self.crop_size:
             data_shape += (self.crop_size, self.crop_size)
         else:

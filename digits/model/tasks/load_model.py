@@ -36,6 +36,7 @@ class LoadModelTask(Task):
         """
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.crop_size = kwargs.pop('crop_size', None)
+        self.channels = kwargs.pop('channels', 3)
 
         super(LoadModelTask, self).__init__(**kwargs)
         self.pickver_task_loadmodel = PICKLE_VERSION
@@ -112,6 +113,23 @@ class LoadModelTask(Task):
         Run inference on many inputs
         """
         return None
+
+    def get_input_dims(self):
+        """
+        Returns the number of channels, crop_size expected as input.
+        """
+        if hasattr(self, '_input_dims') and self._input_dims:
+            return self._input_dims
+
+        input_dims = []
+        try:
+            input_dims.append(self.network.input_dim[1])
+            input_dims.append(self.network.input_dim[2])
+            self._input_dims = input_dims
+            return self._input_dims
+        except:
+            raise NotImplementedError('Network deploy file missing input_dimension parameters')
+         
 
     def get_labels(self):
         """

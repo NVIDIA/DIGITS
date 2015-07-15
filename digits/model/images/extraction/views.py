@@ -76,11 +76,13 @@ def feature_extraction_model_create():
             raise werkzeug.exceptions.BadRequest(
                     'Unrecognized method: "%s"' % form.method.data)
 
+        
         job.tasks.append(
                 tasks.CaffeLoadModelTask(
                     job_dir         = job.dir(),
                     pretrained_model= pretrained_model,
                     crop_size       = None,
+                    channels        = None,
                     network         = network,
                     )
                 )
