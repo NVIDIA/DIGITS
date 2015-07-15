@@ -26,7 +26,6 @@ from werkzeug.exceptions import NotFound
 PICKLE_VERSION = 2
 
 @subclass
-
 class CaffeLoadModelTask(LoadModelTask): 
     """
     Loads a caffe model
@@ -54,6 +53,7 @@ class CaffeLoadModelTask(LoadModelTask):
         self.solver = None
 
         self.solver_file = constants.CAFFE_SOLVER_FILE
+        self.train_val_file = constants.CAFFE_TRAIN_VAL_FILE
         self.snapshot_prefix = constants.CAFFE_SNAPSHOT_PREFIX
         self.deploy_file = constants.CAFFE_DEPLOY_FILE
         self.caffe_log_file = self.CAFFE_LOG
@@ -212,15 +212,15 @@ class CaffeLoadModelTask(LoadModelTask):
         if val_data_layer is not None:
             val_data_layer.data_param.source = val_data_layer.data_param.source
             val_data_layer.data_param.backend = val_data_layer.data_param.backend
-        if self.batch_size:
-            train_data_layer.data_param.batch_size = self.batch_size
-            if val_data_layer is not None:
-                val_data_layer.data_param.batch_size = self.batch_size
-        else:
-            if not train_data_layer.data_param.HasField('batch_size'):
-                train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
-            if val_data_layer is not None and not val_data_layer.data_param.HasField('batch_size'):
-                val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+        #if self.batch_size:
+        #    train_data_layer.data_param.batch_size = self.batch_size
+        #    if val_data_layer is not None:
+        #        val_data_layer.data_param.batch_size = self.batch_size
+        #else:
+        #    if not train_data_layer.data_param.HasField('batch_size'):
+        train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+        #    if val_data_layer is not None and not val_data_layer.data_param.HasField('batch_size'):
+        val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
         # hidden layers
         train_val_network.MergeFrom(hidden_layers)
@@ -268,7 +268,7 @@ class CaffeLoadModelTask(LoadModelTask):
 
         solver = caffe_pb2.SolverParameter()
         # get enum value for solver type
-        solver.solver_type = getattr(solver, self.solver_type)
+        solver.solver_type = solver.ADAGRAD
         solver.net = self.train_val_file
 
         # Set CPU/GPU mode
@@ -297,8 +297,8 @@ class CaffeLoadModelTask(LoadModelTask):
         #        int(math.ceil(5000.0 / train_data_layer.data_param.batch_size))
         #        ))
 
-        if self.random_seed is not None:
-            solver.random_seed = self.random_seed
+        #if self.random_seed is not None:
+        #    solver.random_seed = self.random_seed
 
         with open(self.path(self.solver_file), 'w') as outfile:
             text_format.PrintMessage(solver, outfile)
@@ -307,9 +307,7 @@ class CaffeLoadModelTask(LoadModelTask):
         return True
 
 
-    def iteration_to_epoch(self, it):
-        return float(it * self.train_epochs) / self.solver.max_iter
-
+    #TODO : What to pass as the args here? We are not performing any task as such.
     @override
     def task_arguments(self, resources):
         args = [config_value('caffe_root')['executable'],

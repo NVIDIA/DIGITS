@@ -147,7 +147,13 @@ class Task(StatusCls):
         Arguments:
         resources -- a copy of scheduler.resources
         """
-        raise NotImplementedError
+        key = 'load_model_task_pool'
+        if key not in resources:
+            return None
+        for resource in resources[key]:
+            if resource.remaining() >=1:
+                return {key: [(resource.identifier, 1)]}
+        return None
 
     def task_arguments(self, resources):
         """

@@ -128,9 +128,9 @@ class LoadModelTask(Task):
             if layer.type!='Data' and layer.type!='SoftmaxWithLoss' and layer.type!='Accuracy':
                 layers.append(layer)
 
-        lastLayer = layer[-1]
+        lastLayer = layers[-1]
         try:
-            nCategories = int(laterLayer.inner_product_param.num_output)
+            nCategories = int(lastLayer.inner_product_param.num_output)
             for i in range(nCategories):
                 labels.append(i)
         except:
