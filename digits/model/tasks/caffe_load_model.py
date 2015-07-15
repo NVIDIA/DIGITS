@@ -272,7 +272,7 @@ class CaffeLoadModelTask(LoadModelTask):
 
         solver = caffe_pb2.SolverParameter()
         # get enum value for solver type
-        solver.solver_type = solver.ADAGRAD
+        solver.solver_type = solver.ADAGRAD # hardcoding this as we dont need it.
         solver.net = self.train_val_file
 
         # Set CPU/GPU mode
@@ -310,10 +310,10 @@ class CaffeLoadModelTask(LoadModelTask):
 
         return True
 
-
-    #TODO : What to pass as the args here? We are not performing any task as such.
     @override
     def task_arguments(self, resources):
+        # This is what was loading the training task. We dont need it for a load-model task.
+        """
         args = [config_value('caffe_root')['executable'],
                 'train',
                 '--solver=%s' % self.path(self.solver_file),
@@ -329,7 +329,8 @@ class CaffeLoadModelTask(LoadModelTask):
                 args.append('--gpus=%s' % ','.join(identifiers))
         if self.pretrained_model:
             args.append('--weights=%s' % self.path(self.pretrained_model))
-
+        """
+        args = ['echo', 'this is mohits command'] # IS_JUNK_VALUE: will put the command to copy the caffemodel-binary into the job directory here.
         return args
 
     @override

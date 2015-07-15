@@ -95,7 +95,6 @@ class PretrainedModelJob(PretrainedJob):
                 })
         return d
 
-    # TODO : write a function like the train_task() above as this is required in the /images/extraction/views.py
     def load_model_task(self):
         """
         Return the first LoadModelTask for this job.

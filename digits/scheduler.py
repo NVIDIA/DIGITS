@@ -166,7 +166,7 @@ class Scheduler:
                             
         # add ModelJobs
         for job in loaded_jobs:
-            if isinstance(job, ModelJob):
+            if isinstance(job, ModelJob):    
                 try:
                     # load the DatasetJob
                     job.load_dataset()
