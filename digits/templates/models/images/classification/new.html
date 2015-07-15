@@ -456,8 +456,8 @@ function customizeNetwork(network, snapshot_list) {
                 <div id="network-tab-previous" class="tab-pane">
 
                     <div class="tab-content">
-		                {% for batch in form.previous_networks|batch(10) %}
-		                <div class="tab-pane{{' active' if loop.index==1}}" id="previous_networks-page-{{loop.index}}">
+                        {% for batch in form.previous_networks|batch(10) %}
+                        <div class="tab-pane{{' active' if loop.index==1}}" id="previous_networks-page-{{loop.index}}">
 
                             <table class="table">
                                 <tr>
@@ -490,7 +490,7 @@ function customizeNetwork(network, snapshot_list) {
                                 </tr>
                                 {% endfor %}
                             </table>
-                            
+
                         </div>
                         {% endfor %}
                     </div>
