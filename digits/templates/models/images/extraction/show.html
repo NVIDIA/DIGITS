@@ -6,69 +6,69 @@
 
 <script src="{{ url_for('static', filename='js/model-graphs.js') }}"></script>
 
-{% set task = job.train_task() %}
+{% set task = job.load_model_task() %}
 
-<div class="row">
+<!--div class="row">
     <div class="col-sm-6">
         <div class="well">
             <dl>
                 <dt>Solver</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{{task.solver_file}}</a></dd>
+                <dd><a href="{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{task.solver_file}}</a></dd>
                 <dt>Network (train/val)</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{{task.train_val_file}}</a></dd>
+                <dd><a href="{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{task.train_val_file}}</a></dd>
                 <dt>Network (deploy)</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
+                <dd><a href="{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{task.deploy_file}}</a></dd>
                 <dt>Raw caffe output</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}">{{task.caffe_log_file}}</a></dd>
-                {% if task.pretrained_model %}
+                <dd><a href="{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}">{task.caffe_log_file}}</a></dd>
+                % if task.pretrained_model %}
                 <dt>Pretrained Model</dt>
-                <dd>{{task.pretrained_model}}</dd>
-                {% endif %}
+                <dd>{task.pretrained_model}}</dd>
+                % endif %}
             </dl>
         </div>
     </div>
     <div class="col-sm-6">
         <div class="well">
             <h4 class='text-center'>Dataset</h4>
-            {% if job.dataset %}
-            {% with dataset = job.dataset %}
-            {% include 'datasets/summary.html' %}
-            {% endwith %}
-            {% endif %}
+            % if job.dataset %}
+            % with dataset = job.dataset %}
+            % include 'datasets/summary.html' %}
+            % endwith %}
+            % endif %}
         </div>
     </div>
-</div>
+</div-->
 
 <div class="row">
     <div class="col-sm-12">
         <div class="well">
             <div id="combined-graph" class="combined-graph"
                 style="height:500px;width:100%;background:white;display:none;"></div>
-            <div class="pull-right combined-graph" style="display:none;">
+            <!--div class="pull-right combined-graph" style="display:none;">
                 <a class="btn btn-primary btn-sm" target="_blank"
-                    href="{{url_for('image_classification_model_large_graph', job_id=job.id())}}">
+                    href="{url_for('image_classification_model_large_graph', job_id=job.id())}}">
                     View Large
                 </a>
             </div>
             <br>
             <br>
-            {% set combined_graph_data = job.train_task().combined_graph_data() %}
-            {% if combined_graph_data %}
+            % set combined_graph_data = job.train_task().combined_graph_data() %}
+            % if combined_graph_data %}
             <script>
-                drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
+                drawCombinedGraph(% autoescape false %}{combined_graph_data}}% endautoescape %});
             </script>
-            {% endif %}
+            % endif %}
 
             <div id="lr-graph" class="lr-graph"
                 style="height:300px;width:100%;background:white;display:none;"></div>
-            {% set lr_graph_data = job.train_task().lr_graph_data() %}
-            {% if lr_graph_data %}
+            % set lr_graph_data = job.train_task().lr_graph_data() %}
+            % if lr_graph_data %}
             <script>
-                drawLRGraph({% autoescape false %}{{lr_graph_data}}{% endautoescape %});
+                drawLRGraph(% autoescape false %}{lr_graph_data}}% endautoescape %});
             </script>
-            {% endif %}
+            % endif %}-->
 
-            {% set task = job.train_task() %}
+            {% set task = job.load_model_task() %}
             <hr>
             <form id="test-model-form"
                 enctype="multipart/form-data"

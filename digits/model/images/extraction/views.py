@@ -184,7 +184,7 @@ def feature_extraction_model_classify_one():
     else:
         raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')
 
-    predictions, visualizations = job.model_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
+    predictions, visualizations = model_task.infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 

@@ -16,12 +16,12 @@
 
 {% block content %}
 
-{% set task = job.train_task() %}
+{% set task = job.load_model_task() %}
 
 <div class="row">
     <div class="col-sm-12">
         <div class="well">
-            {% set combined_graph_data = job.train_task().combined_graph_data(cull=False) %}
+            {% set combined_graph_data = job.load_model_task().combined_graph_data(cull=False) %}
             {% if combined_graph_data %}
             <div id="combined-graph" style="height:800px;width:100%;background:white"></div>
             <script>

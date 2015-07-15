@@ -85,6 +85,16 @@ class PretrainedModelJob(PretrainedJob):
         """
         return NotImplementedError()
 
+    @override
+    def json_dict(self, verbose=False):
+        d = super(PretrainedModelJob, self).json_dict(verbose)
+
+        if verbose:
+            d.update({
+                'snapshots': [s[1] for s in self.load_model_task().snapshots],
+                })
+        return d
+
     # TODO : write a function like the train_task() above as this is required in the /images/extraction/views.py
     def load_model_task(self):
         """
