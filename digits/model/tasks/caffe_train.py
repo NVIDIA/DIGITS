@@ -230,9 +230,23 @@ class CaffeTrainTask(TrainTask):
             val_data_layer.data_param.source = self.dataset.path(self.dataset.val_db_task().db_name)
             val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
         if self.use_mean:
-            train_data_layer.transform_param.mean_file = self.dataset.path(self.dataset.train_db_task().mean_file)
+            mean_pixel = None
+            with open(self.dataset.path(self.dataset.train_db_task().mean_file)) as f:
+                blob = caffe_pb2.BlobProto()
+                blob.MergeFromString(f.read())
+                mean = np.reshape(blob.data,
+                        (
+                            self.dataset.image_dims[2],
+                            self.dataset.image_dims[0],
+                            self.dataset.image_dims[1],
+                            )
+                        )
+                mean_pixel = mean.mean(1).mean(1)
+            for value in mean_pixel:
+                train_data_layer.transform_param.mean_value.append(value)
             if val_data_layer is not None and has_val_set:
-                val_data_layer.transform_param.mean_file = self.dataset.path(self.dataset.train_db_task().mean_file)
+                for value in mean_pixel:
+                    val_data_layer.transform_param.mean_value.append(value)
         if self.batch_size:
             train_data_layer.data_param.batch_size = self.batch_size
             if val_data_layer is not None and has_val_set:
