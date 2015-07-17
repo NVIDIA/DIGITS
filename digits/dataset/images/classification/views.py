@@ -11,7 +11,7 @@ from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
 from job import ImageClassificationDatasetJob
 
-NAMESPACE = '/datasets/images/classification'
+NAMESPACE = '/digits/datasets/images/classification'
 
 def from_folders(job, form):
     """

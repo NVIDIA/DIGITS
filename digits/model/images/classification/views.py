@@ -29,7 +29,7 @@ from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
 
-NAMESPACE   = '/models/images/classification'
+NAMESPACE   = '/digits/models/images/classification'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
 @autodoc('models')
