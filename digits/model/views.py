@@ -174,7 +174,10 @@ def models_download(job_id, extension):
     elif 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
 
-    task = job.train_task()
+    if isinstance(job, model_images.FeatureExtractionModelJob):
+        task = job.load_model_task()
+    else:
+        task = job.train_task()
 
     snapshot_filename = None
     if epoch == -1 and len(task.snapshots):

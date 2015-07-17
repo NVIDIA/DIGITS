@@ -26,7 +26,7 @@ class Job(StatusCls):
         Loads a Job in the given job_id
         Returns the Job or throws an exception
         """
-        from digits.model.tasks import TrainTask
+        from digits.model.tasks import TrainTask, LoadModelTask
 
         job_dir = os.path.join(config_value('jobs_dir'), job_id)
         filename = os.path.join(job_dir, cls.SAVE_FILE)
@@ -39,6 +39,8 @@ class Job(StatusCls):
                 if isinstance(task, TrainTask):
                     # can't call this until the job_dir is set
                     task.detect_snapshots()
+                elif isinstance(task, LoadModelTask):
+                    return None
             return job
 
     def __init__(self, name):
@@ -211,6 +213,8 @@ class PretrainedJob(StatusCls):
             job._dir = job_dir
             for task in job.tasks:
                 task.job_dir = job_dir
+                if isinstance(task, LoadModelTask):
+                    task.detect_snapshots()
             return job
 
     def __init__(self, name):

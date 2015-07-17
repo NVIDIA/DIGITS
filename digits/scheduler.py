@@ -124,8 +124,11 @@ class Scheduler:
                     try:
                         try:
                             job = Job.load(dir_name)
-                        except:
-                            job = PretrainedJob.load(dir_name)
+                            if not job:
+                                job = PretrainedJob.load(dir_name)
+                        except Exception as e:
+                            print e
+                            #job = PretrainedJob.load(dir_name)
                         # The server might have crashed
                         if job.status.is_running():
                             job.status = Status.ABORT
@@ -154,7 +157,7 @@ class Scheduler:
         for job in loaded_jobs:
             if isinstance(job, PretrainedModelJob):
                 try:
-                    self.job.append(job)
+                    self.jobs.append(job)
                 except Exception as e:
                     failed += 1
                     if self.verbose:

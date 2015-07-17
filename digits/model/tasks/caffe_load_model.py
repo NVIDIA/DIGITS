@@ -293,7 +293,7 @@ class CaffeLoadModelTask(LoadModelTask):
         #elif 1 < snapshot_interval < solver.max_iter:
         #    solver.snapshot = int(snapshot_interval)
         #else:
-        solver.snapshot = 0 # only take one snapshot at the end
+        solver.snapshot = 1 # only take one snapshot at the end
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         #solver.display = max(1, min(
@@ -330,7 +330,10 @@ class CaffeLoadModelTask(LoadModelTask):
         if self.pretrained_model:
             args.append('--weights=%s' % self.path(self.pretrained_model))
         """
-        args = ['echo', 'this is mohits command'] # IS_JUNK_VALUE: will put the command to copy the caffemodel-binary into the job directory here.
+        # Place the caffemodel as snapshot_iter_1.caffemodel file in te job directory.
+        args = ['cp', self.path(self.pretrained_model), self.path(self.job_dir)+'/snapshot_iter_1.caffemodel']
+        self.pretrained_model =  args[2]
+        self.snapshots.append( (args[2],1) )
         return args
 
     @override
