@@ -29,7 +29,7 @@ from forms import DummyFeatureExtractionModelForm
 from job import FeatureExtractionModelJob
 from digits.status import Status
 
-NAMESPACE   = '/digits/models/images/extraction'
+NAMESPACE   = '/digits/digits/models/images/extraction'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
 @autodoc('models')

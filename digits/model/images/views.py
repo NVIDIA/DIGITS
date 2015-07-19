@@ -4,5 +4,5 @@ from digits.webapp import app
 import classification.views
 import extraction.views
 
-NAMESPACE = '/digits/models/images'
+NAMESPACE = '/digits/digits/models/images'
 

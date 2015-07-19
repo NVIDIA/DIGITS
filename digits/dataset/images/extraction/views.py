@@ -11,7 +11,7 @@ from digits.dataset import tasks
 from forms import FeatureExtractionDatasetForm
 from job import FeatureExtractionDatasetJob
 
-NAMESPACE = '/digits/datasets/images/extraction'
+NAMESPACE = '/digits/digits/datasets/images/extraction'
 
 def from_files(job, form):
     """
