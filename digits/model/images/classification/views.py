@@ -303,6 +303,7 @@ def image_classification_model_classify_many():
 
     paths = []
     images = []
+    ground_truths = []
     dataset = job.train_task().dataset
 
     for line in image_list.readlines():
@@ -312,11 +313,13 @@ def image_classification_model_classify_many():
 
         path = None
         # might contain a numerical label at the end
-        match = re.match(r'(.*\S)\s+\d+$', line)
+        match = re.match(r'(.*\S)\s+(\d+)$', line)
         if match:
             path = match.group(1)
+            ground_truth = int(match.group(2))
         else:
             path = line
+            ground_truth = None
 
         try:
             image = utils.image.load_image(path)
@@ -327,6 +330,7 @@ def image_classification_model_classify_many():
                     )
             paths.append(path)
             images.append(image)
+            ground_truths.append(ground_truth)
         except utils.errors.LoadImageError as e:
             print e
 
@@ -349,6 +353,9 @@ def image_classification_model_classify_many():
             result.append((labels[i], round(100.0*scores[image_index, i],2)))
         classifications.append(result)
 
+    # replace ground truth indices with labels
+    ground_truths = [labels[x] if x is not None else None for x in ground_truths]
+
     if request_wants_json():
         joined = dict(zip(paths, classifications))
         return flask.jsonify({'classifications': joined})
@@ -356,6 +363,8 @@ def image_classification_model_classify_many():
         return flask.render_template('models/images/classification/classify_many.html',
                 paths=paths,
                 classifications=classifications,
+                show_ground_truth=not(ground_truths == [None]*len(ground_truths)),
+                ground_truths=ground_truths
                 )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])

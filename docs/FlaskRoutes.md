@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Jun 25, 2015*
+*Generated Jul 19, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -308,7 +308,7 @@ Location: [`digits/model/images/classification/views.py@32`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@362`](../digits/model/images/classification/views.py#L362)
+Location: [`digits/model/images/classification/views.py@371`](../digits/model/images/classification/views.py#L371)
 
 ### `/models/visualize-lr`
 

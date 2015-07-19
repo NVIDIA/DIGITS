@@ -1,10 +1,17 @@
 {# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
 
 <table class="table">
+    <tr>
+        <th>Path</th>
+        {% if show_ground_truth %}<th>Ground truth</th>{% endif %}
+        <th colspan=10>Top predictions</th>
+    </tr>
     {% for path in paths %}
     {% set result = classifications[loop.index0] %}
+    {% set ground_truth = ground_truths[loop.index0] %}
     <tr>
         <td>{{path}}</td>
+        {% if show_ground_truth %}<td>{% if ground_truth is not none%}{{ground_truth}}{% endif %}</td>{% endif %}
         {% for r in result %}
         <td align="right">
             <b>{{r[0]}}</b>
