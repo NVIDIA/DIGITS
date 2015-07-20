@@ -4,10 +4,12 @@ To use Caffe in DIGITS, you must use [NVIDIA's fork](https://github.com/NVIDIA/c
 
 To enable multi-GPU training, install version [`0.12`](https://github.com/NVIDIA/caffe/tree/caffe-0.12).
 
+To take advantage of the performance gains in cuDNN v3, install version [`0.13`](https://github.com/NVIDIA/caffe/tree/caffe-0.13).
+
 ## Grab the source
 
     % cd $HOME
-    % git clone --branch caffe-0.12 https://github.com/NVIDIA/caffe.git
+    % git clone --branch caffe-0.13 https://github.com/NVIDIA/caffe.git
 
 Set an environment variable so DIGITS knows where Caffe is installed (optional):
 
@@ -15,7 +17,8 @@ Set an environment variable so DIGITS knows where Caffe is installed (optional):
 
 ## Install dependencies
 
-If you are not on Ubuntu 14.04, you can try [Caffe's installation page](http://caffe.berkeleyvision.org/installation.html). If you are, simply install these aptitude packages:
+If you are not on Ubuntu 14.04, you can try [Caffe's installation instructions](http://caffe.berkeleyvision.org/installation.html).
+If you are, simply install these aptitude packages:
 
     % sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler libatlas-base-dev
     % sudo apt-get install --no-install-recommends libboost-all-dev
@@ -43,6 +46,6 @@ If you want to install these packages *without* using a virtual environment, rep
     % make all --jobs=4
     % make py
 
-NOTE: You may need to make some changes to the `Makefile.config` to get Caffe to compile if you haven't installed CUDA or cuDNN.
+NOTE: You may need to make some changes to `Makefile.config` to get Caffe to compile if you haven't installed CUDA or cuDNN.
 
 (CMake instructions coming soon)
