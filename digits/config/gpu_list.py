@@ -43,9 +43,6 @@ class GpuListOption(config_option.Option):
         if len(digits.device_query.get_devices()) == 0:
             # Nothing to see here
             return config_option.Visibility.NEVER
-        if len(digits.device_query.get_devices()) == 1:
-            # Use just the one GPU by default
-            return config_option.Visibility.HIDDEN
         else:
             return config_option.Visibility.DEFAULT
 

@@ -25,6 +25,10 @@ from . import is_url, HTTP_TIMEOUT, errors
 #   DIGITS:
 #       image_dims -- (height, width, channels)
 
+# List of supported file extensions
+# Use like "if filename.endswith(SUPPORTED_EXTENSIONS)"
+SUPPORTED_EXTENSIONS = ('.png','.jpg','.jpeg','.bmp','.ppm')
+
 def load_image(path):
     """
     Reads a file from `path` and returns a PIL.Image with mode 'L' or 'RGB'

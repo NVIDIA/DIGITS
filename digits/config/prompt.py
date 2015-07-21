@@ -22,6 +22,8 @@ def print_section_header(title):
 def value_to_str(value):
     if value is None:
         return ''
+    elif type(value) is not str:
+        return str(value)
     elif not value.strip():
         return '<NONE>'
     else:

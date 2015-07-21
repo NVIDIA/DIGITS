@@ -3,5 +3,5 @@
 
 DIGITS_MODE_TEST=1 $(command -v python) $(command -v nosetests) \
     --no-path-adjustment -v \
-    tools/ digits/ \
+    scripts/ tools/ digits/ \
     $@

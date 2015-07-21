@@ -6,12 +6,6 @@ The recommended installation method is to use a [virtual environment](https://vi
 
 ## Install virtualenv
 
-On Ubuntu 14.04:
-
-    % sudo apt-get install python-virtualenv
-
-Elsewhere:
-
     % pip install virtualenv
 
 ## Create the environment

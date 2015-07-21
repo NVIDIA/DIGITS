@@ -1,0 +1,27 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<html>
+<head>
+<link rel="icon" href="{{url_for('static', filename='images/nvidia.ico')}}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}">
+</head>
+
+<body>
+<h2>{{title}}</h2>
+{% if message %}
+<p class="text-danger">{{message}}</p>
+{% endif %}
+{% if description %}
+<p class="text-danger">{{description}}</p>
+{% endif %}
+{% if trace %}
+<pre class="text-muted">
+{% autoescape false %}
+{{trace}}
+{% endautoescape %}
+</pre>
+{% endif %}
+
+</body>
+</html>

@@ -3,10 +3,11 @@
 Table of Contents
 =================
 * [Installation](#installation)
-* [Starting DIGITS](#starting-digits)
-* [Using DIGITS](#using-digits)
+* [Starting the server](#starting-the-server)
+* [Using the webapp](#using-the-webapp)
     * [Creating a Dataset](#creating-a-dataset)
     * [Training a Model](#training-a-model)
+* [Using the REST API](#using-the-rest-api)
 
 ## Installation
 
@@ -14,7 +15,7 @@ If you are using the web installer, check out this [installation page](WebInstal
 
 If you are installing from source, check out the [README](../README.md#installation).
 
-## Starting DIGITS
+## Starting the server
 
 If you are using the web installer use the `runme.sh` script:
 
@@ -55,7 +56,7 @@ Saved config to /home/username/digits/digits/digits.cfg
     # Advanced usage
     python -m digits.config.edit --verbose
 
-## Using DIGITS
+## Using the Webapp
 
 Now that DIGITS is running, open a browser and go to http://localhost:5000.  You should see the DIGITS home screen:
 
@@ -112,3 +113,7 @@ DIGITS will display the top five classifications and corresponding confidence va
 
 ![Classified one image](images/classified-one-image.jpg)
 
+
+## Using the REST API
+
+Use your favorite tool (`curl`, `wget`, etc.) to interact with DIGITS through the [REST API](API.md).

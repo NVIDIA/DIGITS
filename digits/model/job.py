@@ -3,6 +3,8 @@
 from digits.job import Job
 from . import tasks
 
+from digits.utils import override
+
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
 
@@ -31,6 +33,16 @@ class ModelJob(Job):
     def __setstate__(self, state):
         super(ModelJob, self).__setstate__(state)
         self.dataset = None
+
+    @override
+    def json_dict(self, verbose=False):
+        d = super(ModelJob, self).json_dict(verbose)
+
+        if verbose:
+            d.update({
+                'snapshots': [s[1] for s in self.train_task().snapshots],
+                })
+        return d
 
     def load_dataset(self):
         from digits.webapp import scheduler

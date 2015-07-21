@@ -1,0 +1,35 @@
+# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
+
+language: python
+python:
+    2.7
+compiler: gcc   # for Caffe
+sudo: required  # for Caffe
+env:
+    global:
+        # Make
+        - NUM_THREADS=4
+        # Caffe
+        - WITH_CUDA=false
+        - WITH_CMAKE=false
+before_install:
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+    - export PATH=/home/travis/miniconda/bin:$PATH
+install:
+    # Caffe
+    - pushd .
+    - ./scripts/travis/install-caffe.sh $(pwd)/deps/caffe
+
+    # DIGITS
+    - sudo apt-get install graphviz
+    # conda (fast)
+    - conda install --yes gevent greenlet
+    # pip (slow)
+    - pip install -r requirements.txt
+    - pip install -r requirements_test.txt
+before_script:
+    - export CAFFE_HOME=$(pwd)/deps/caffe
+script:
+    ./digits-test --with-coverage --cover-package=tools,digits
+after_success:
+    coveralls

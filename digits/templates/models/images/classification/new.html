@@ -83,15 +83,15 @@ $("#dataset").change(function() {
                     </div>
                 </div>
                 <div class="form-group{{' has-error' if form.use_mean.errors}}">
-                    <label for={{form.use_mean.name}}>
-                        {{form.use_mean}}
-                        {{form.use_mean.label.text}}
-                    </label>
-                    <span name="use_mean_explanation"
-                        class="explanation-tooltip glyphicon glyphicon-question-sign"
-                        data-container="body"
-                        title="Subtract the mean file for this dataset from each image."
-                        ></span>
+                    {{form.use_mean.label}}
+                    <div class="input-group">
+                        {{form.use_mean(class='form-control')}}
+                        <span name="use_mean_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Subtract the mean file for this dataset from each image."
+                            ></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -592,10 +592,10 @@ function visualizeNetwork() {
                     </div>
                 </div>
             </div>
-            {{ form.method }}
+            {{ form.method(style="display:none;") }}
             <script>
 function updateNetworkTab(method) {
-    $('input[name=method]').val(method);
+    $('select[name=method]').val(method);
 }
 $('#network-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         parts = e.target.href.split('-');

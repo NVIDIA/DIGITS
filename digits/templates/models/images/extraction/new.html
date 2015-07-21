@@ -1,0 +1,122 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+
+{% extends "layout.html" %}
+
+{% block title %}
+Feature Extraction Model
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{url_for('feature_extraction_model_new')}}">New Model</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>New Feature Extraction Model</h1>
+</div>
+
+<form id="model-form" action="{{url_for('feature_extraction_model_create')}}" enctype="multipart/form-data" method="post">
+    {{ form.hidden_tag() }}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field, errors in form.errors.items() %}
+                <li>{{ field }}
+                    <ul>
+                        {% for e in errors %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-sm-8">
+            <ul class="nav nav-tabs" id="network-tabs">
+            	<li class="active"><a href="#network-tab-custom" data-toggle="tab">Custom Network</a></li>
+            </ul>
+            <div class="tab-content well">
+            	<div id="custom-network-pane">
+                    <div class="form-group{{' has-error' if form.custom_network.errors}}">
+                        {{form.custom_network.label}}
+                        <div id="custom_network_explanation" style="display:none;">
+                            <h1>Specifying a custom network</h1>
+                            <p>
+                            You should enter a train_val network here. Some cleanup is done for you automatically:
+                            <ul>
+                                <li>
+                                The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
+                                </li>
+                                <li>
+                                Any <b>Accuracy</b> layers with <i>top_k</i> &gt;= num_labels is removed automatically.
+                                </li>
+                            </ul>
+                            </p>
+                            The deploy network will be created for you automatically. Once caffe implements their "all-in-one" nets feature, you will be able to specify which layers to include in the deploy file. Until then, these things are done automatically:
+                            <ul>
+                                <li>
+                                The last <b>SoftmaxWithLoss</b> layer is replaced with a <b>Softmax</b> layer.
+                                </li>
+                                <li>
+                                All other loss layers and accuracy layers are removed.
+                                </li>
+                            </ul>
+                            </p>
+                        </div>
+                        <a href=# onClick="bootbox.alert($('#custom_network_explanation').html()); return false;"><span class="glyphicon glyphicon-question-sign"></span></a>
+                        <div class="pull-right">
+                            <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
+                        </div>
+                        {{form.custom_network(class='form-control', rows=10)}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
+                        {{form.custom_network_snapshot.label}}
+                        <div class="input-group">
+                            {{form.custom_network_snapshot(class='form-control')}}
+                            <span name="pretrained_model_explanation"
+                                class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Path to pretrained model file. Only edit this field if you understand how fine-tuning works in caffe"
+                            ></span>
+
+                        </div>
+                    </div>
+                </div>
+            	<div>
+		            <div class="form-group{{' has-error' if form.model_name.errors}}">
+		                {{form.model_name.label}}
+		                <div class="input-group">
+		                    {{form.model_name(class='form-control')}}
+		                    <span name="model_name_explanation"
+		                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+		                        data-container="body"
+		                        title="An identifier, later used to refer to this model in the Application."
+		                    ></span>
+
+		                </div>
+		            </div>
+		            <input type="submit" name="create-model" class="btn btn-primary" value="Create">
+		        </div>
+            </div>
+            {{ form.method(style="display:none;") }}
+            <script>
+function updateNetworkTab(method) {
+    $('select[name=method]').val(method);
+}
+$('#network-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        parts = e.target.href.split('-');
+        updateNetworkTab( parts[parts.length-1] );
+        });
+$('#network-tabs a[href="#network-tab-custom"]').tab('show');
+//$('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
+            </script>
+        </div>    
+    </div>
+
+</form>
+
+{% endblock %}

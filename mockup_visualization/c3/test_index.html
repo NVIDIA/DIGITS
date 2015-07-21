@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<!--
+Created using JS Bin
+http://jsbin.com
+
+Copyright (c) 2015 by anonymous (http://jsbin.com/racizevape/1/edit)
+
+Released under the MIT license: http://jsbin.mit-license.org
+-->
+<meta name="robots" content="noindex">
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tests</title>
+  
+  <!-- Here are all the javascripts and css that you need, you can download them or linked them like here -->
+  <script type="text/javascript" src="d3/d3.js"></script>
+  <script type="text/javascript" src="c3.js"></script>
+  <link href="c3.css" rel="stylesheet" type="text/css">
+  
+</head>
+<body>
+
+<!-- You need an element with an id called "chart" to set a place where your chart will render-->
+<div id="chart"></div>
+  
+<script>
+var chart = c3.generate({
+    data: {
+        x: 'x',
+        columns: [
+            ['x', 30, 50, 100, 230, 300, 310],
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 130, 300, 200, 300, 250, 450]
+        ]
+    }
+});
+
+setTimeout(function () {
+    chart.load({
+        columns: [
+            ['data1', 100, 250, 150, 200, 100, 350]
+        ]
+    });
+}, 1000);
+
+setTimeout(function () {
+    chart.load({
+        columns: [
+            ['data3', 80, 150, 100, 180, 80, 150]
+        ]
+    });
+}, 1500);
+
+setTimeout(function () {
+    chart.unload({
+        ids: 'data2'
+    });
+}, 2000);
+</script>
+</body>
+</html>

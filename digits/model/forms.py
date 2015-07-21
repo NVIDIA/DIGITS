@@ -6,10 +6,16 @@ from google.protobuf import text_format
 from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
-from caffe.proto import caffe_pb2
+try:
+    import caffe_pb2
+except ImportError:
+    # See issue #32
+    from caffe.proto import caffe_pb2
 
 from digits.config import config_value
-from digits.device_query import get_device
+from digits.device_query import get_device, get_nvml_info
+from digits.utils import sizeof_fmt
+from digits.utils.forms import validate_required_iff
 
 class ModelForm(Form):
 
@@ -22,16 +28,6 @@ class ModelForm(Form):
                 found = True
         if not found:
             raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
-
-    def required_if_method(value):
-        def _required(form, field):
-            if form.method.data == value:
-                if not field.data or (isinstance(field.data, str) and field.data.strip() == ""):
-                    raise validators.ValidationError('This field is required.')
-            else:
-                field.errors[:] = []
-                raise validators.StopValidation()
-        return _required
 
     def validate_NetParameter(form, field):
         pb = caffe_pb2.NetParameter()
@@ -153,34 +149,35 @@ class ModelForm(Form):
 
     ### Network
 
-    method = wtforms.HiddenField('Model type',
-            validators = [
-                validators.AnyOf(
-                    ['standard', 'previous', 'custom'],
-                    message='The method you chose is not currently supported.'
-                    )
+    # Use a SelectField instead of a HiddenField so that the default value
+    # is used when nothing is provided (through the REST API)
+    method = wtforms.SelectField(u'Network type',
+            choices = [
+                ('standard', 'Standard network'),
+                ('previous', 'Previous network'),
+                ('custom', 'Custom network'),
                 ],
-            default = 'standard',
+            default='standard',
             )
 
     # The options for this get set in the view (since they are dependent on the data type)
     standard_networks = wtforms.RadioField('Standard Networks',
             validators = [
-                required_if_method('standard'),
+                validate_required_iff(method='standard'),
                 ],
             )
 
     previous_networks = wtforms.RadioField('Previous Networks',
             choices = [],
             validators = [
-                required_if_method('previous'),
+                validate_required_iff(method='previous'),
                 selection_exists_in_choices,
                 ],
             )
 
     custom_network = wtforms.TextAreaField('Custom Network',
             validators = [
-                required_if_method('custom'),
+                validate_required_iff(method='custom'),
                 validate_NetParameter,
                 ]
             )
@@ -198,7 +195,12 @@ class ModelForm(Form):
     select_gpu = wtforms.RadioField('Select which GPU you would like to use',
             choices = [('next', 'Next available')] + [(
                 index,
-                '#%s - %s' % (index, get_device(index).name),
+                '#%s - %s%s' % (
+                    index,
+                    get_device(index).name,
+                    ' (%s memory)' % sizeof_fmt(get_nvml_info(index)['memory']['total'])
+                        if 'memory' in get_nvml_info(index) else '',
+                    ),
                 ) for index in config_value('gpu_list').split(',') if index],
             default = 'next',
             )
@@ -207,7 +209,12 @@ class ModelForm(Form):
     select_gpus = wtforms.SelectMultipleField('Select which GPU[s] you would like to use',
             choices = [(
                 index,
-                '#%s - %s' % (index, get_device(index).name),
+                '#%s - %s%s' % (
+                    index,
+                    get_device(index).name,
+                    ' (%s memory)' % sizeof_fmt(get_nvml_info(index)['memory']['total'])
+                        if 'memory' in get_nvml_info(index) else '',
+                    ),
                 ) for index in config_value('gpu_list').split(',') if index]
             )
 
@@ -239,3 +246,55 @@ class ModelForm(Form):
             )
 
 
+class DummyModelForm(Form):
+
+    ### Methods
+
+    def selection_exists_in_choices(form, field):
+        found = False
+        for choice in field.choices:
+            if choice[0] == field.data:
+                found = True
+        if not found:
+            raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
+
+    def validate_NetParameter(form, field):
+        pb = caffe_pb2.NetParameter()
+        try:
+            text_format.Merge(field.data, pb)
+        except text_format.ParseError as e:
+            raise validators.ValidationError('Not a valid NetParameter: %s' % e)
+
+    ### Network
+
+    # Use a SelectField instead of a HiddenField so that the default value
+    # is used when nothing is provided (through the REST API)
+    method = wtforms.SelectField(u'Network type',
+            choices = [
+                ('custom', 'Custom network'),
+                ],
+            default='custom',
+            )
+
+    # The options for this get set in the view (since they are dependent on the data type)
+    custom_network = wtforms.TextAreaField('Custom Network',
+            validators = [
+                validate_required_iff(method='custom'),
+                validate_NetParameter,
+                ]
+            )
+
+    custom_network_snapshot = wtforms.TextField('Pretrained model')
+
+    def validate_custom_network_snapshot(form, field):
+        if form.method.data == 'custom':
+            snapshot = field.data.strip()
+            if snapshot:
+                if not os.path.exists(snapshot):
+                    raise validators.ValidationError('File does not exist')
+
+    model_name = wtforms.StringField('Model Name',
+            validators = [
+                validators.DataRequired()
+                ]
+            )

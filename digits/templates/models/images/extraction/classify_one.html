@@ -1,0 +1,95 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<div class="row">
+    <div class="col-sm-6">
+        <img src="{{image_src}}" style="width:{{image_width}}px;height:{{image_height}}px;" />
+    </div>
+
+    <div class="col-sm-6">
+        <h4>Predictions</h4>
+        <ul class="list-group">
+            {% for label, confidence in predictions %}
+            <li class="list-group-item">
+            <span class="badge">{{confidence}}%</span>
+            {{ label }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+<script type="text/javascript">
+    function drawHistogram(id, data) {
+        c3.generate({
+            bindto: id,
+            size: {height: 200},
+            data: {
+                columns: [
+                    ['Count'].concat(data[0]),
+                    ['Value'].concat(data[1]),
+                ],
+                x: 'Value',
+                type: 'area-spline',
+            },
+            axis: {
+                x: {
+                    label: {
+                        text: 'Value',
+                        position: 'outer-center',
+                    },
+                    tick: {
+                        values: data[2],
+                        format: d3.format('.3g'),
+                    },
+                    padding: {left: 0},
+                },
+                y: {
+                    padding: {bottom: 0},
+                },
+            },
+            bar: {
+               width: {ratio: 0.2}
+            },
+            padding: {left: 20, right: 20},
+            legend: {hide: true},
+        });
+    }
+</script>
+<style>
+    div.histogram .c3-axis-y .tick {
+        display: none;
+    }
+</style>
+
+{% if visualizations %}
+<table class="table">
+    <tr>
+        <th>Description</th>
+        <th width="20%">Statistics</th>
+        <th>Visualization</th>
+    </tr>
+    {% for vis in visualizations %}
+    <tr>
+        <td>
+            <h4>{{vis['name']}}</h4>
+            {{vis['type']}}
+        </td>
+        <td>
+            <b>Mean:</b> {{vis['mean']}}<br>
+            <b>Std deviation:</b> {{vis['stddev']}}<br>
+            <div id="histogram-{{loop.index}}" class="histogram"></div>
+            <script>
+                drawHistogram("#histogram-{{loop.index}}", {{vis['histogram']}});
+            </script>
+        </td>
+        <td>
+            {% if vis['image_html'] %}
+            <img style="max-width:100%" src="{{vis['image_html']}}" />
+            {% else %}
+            <i>Not shown</i>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+

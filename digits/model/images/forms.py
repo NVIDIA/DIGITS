@@ -4,6 +4,7 @@ import wtforms
 from wtforms import validators
 
 from ..forms import ModelForm
+from ..forms import DummyModelForm
 
 class ImageModelForm(ModelForm):
     """
@@ -16,7 +17,23 @@ class ImageModelForm(ModelForm):
                     validators.Optional()
                     ]
             )
-    use_mean = wtforms.BooleanField('Subtract Mean File',
-            default = True
+
+    # Can't use a BooleanField here because HTML doesn't submit anything
+    # for an unchecked checkbox. Since we want to use a REST API and have
+    # this default to True when nothing is supplied, we have to use a
+    # SelectField
+    use_mean = wtforms.SelectField('Subtract Mean File',
+            choices = [
+                (1, 'Yes'),
+                (0, 'No'),
+                ],
+            coerce=int,
+            default=1,
             )
 
+
+class DummyImageModelForm(DummyModelForm):
+    """
+    Defines the form used to create a new DummyImageModelJob
+    """
+    pass

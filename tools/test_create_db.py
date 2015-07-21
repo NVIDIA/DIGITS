@@ -30,6 +30,74 @@ class TestInit():
         """invalid db backend"""
         _.DbCreator(self.db_name, 'not-a-backend')
 
+class TestCreate():
+    @classmethod
+    def setUpClass(cls):
+        cls.db_name = tempfile.mkdtemp()
+        cls.db = _.DbCreator(cls.db_name, 'leveldb')
+        
+        fd, cls.input_file = tempfile.mkstemp()
+        os.close(fd)
+
+        # Use the example picture to construct a test input file
+        with open(cls.input_file, 'w') as f:
+            f.write('digits/static/images/mona_lisa.jpg 0')
+
+    @classmethod
+    def tearDownClass(cls):
+        os.remove(cls.input_file)
+
+        try:
+            shutil.rmtree(cls.db_name)
+        except OSError:
+            pass
+
+    def test_create_no_input_file(self):
+        """create with no image input file"""
+        assert not self.db.create('', width=0, height=0), 'database should not allow empty input file'
+
+    def test_create_bad_height_width(self):
+        """create with bad height and width for images"""
+        assert not self.db.create(
+            self.input_file,
+            width=-1,
+            height=-1,
+            resize_mode='crop'), 'database should not allow height == width == -1'
+
+    def test_create_bad_channel_count(self):
+        """create with bad channel count"""
+        assert not self.db.create(
+            self.input_file,
+            width=200,
+            height=200,
+            channels=0,
+            resize_mode='crop'), 'database should not allow channels == 0'
+
+    def test_create_bad_resize_mode(self):
+        """create with bad resize mode"""
+        assert not self.db.create(
+            self.input_file,
+            width=200,
+            height=200,
+            resize_mode='slurp'), 'database should not allow bad resize mode slurp'
+
+    def test_create_bad_image_folder(self):
+        """create with bad image folder path"""
+        assert not self.db.create(
+            self.input_file,
+            width=200,
+            height=200,
+            resize_mode='crop',
+            image_folder='/clearly/a/wrong/folder'), 'database should not allow bad image folder'
+
+    def test_create_normal(self):
+        assert self.db.create(
+            self.input_file,
+            width=200,
+            height=200,
+            resize_mode='crop'), 'database should complete building normally'
+
+
 class TestPathToDatum():
     @classmethod
     def setUpClass(cls):

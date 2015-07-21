@@ -116,7 +116,7 @@ class ConfigFile(object):
 
 class SystemConfigFile(ConfigFile):
     def __init__(self):
-        if platform.system() == 'Linux':
+        if platform.system() in ['Linux','Darwin']:
             filename = '/etc/digits.cfg'
         else:
             filename = None

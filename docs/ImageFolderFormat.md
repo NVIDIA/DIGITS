@@ -22,7 +22,7 @@ Then use `/path/to/my-images` for your "Training Images" folder. It's as simple 
 
 ### Filenames
 
-Currently, only 3 file formats are supported: JPEG, PNG and BMP. If you would like for DIGITS to support another file format, just ask! 
+Currently, only 4 file formats are supported: PNG, JPEG, BMP and PPM. If you would like for DIGITS to support another file format, just ask!
 
 File extensions are case-insensitive and the format of your file name is not important. All of the following filenames are valid:
 

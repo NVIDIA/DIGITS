@@ -184,6 +184,8 @@ class Scheduler:
         Look through self.jobs to try to find the Job
         Returns None if not found
         """
+        if job_id is None:
+            return None
         for j in self.jobs:
             if j.id() == job_id:
                 return j

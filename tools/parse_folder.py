@@ -12,8 +12,11 @@ import urllib
 
 import requests
 
-# Add path for DIGITS package
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    import digits
+except ImportError:
+    # Add path for DIGITS package
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
 digits.config.load_config()
 from digits import utils, log
@@ -101,6 +104,9 @@ def calculate_percentages(labels_file,
     Returns (percent_train, percent_val, percent_test)
     Throws exception on errors
     """
+    # reject any percentages not between 0-100
+    assert all(x is None or 0 <= x <= 100 for x in [percent_train, percent_val, percent_test]), 'all percentages must be 0-100 inclusive or not specified'
+
     # return values
     pt = None
     pv = None
@@ -200,7 +206,7 @@ def parse_web_listing(url):
             if match.group(1).endswith('/'):
                 dirs.append(match.group(1))
 
-            elif match.group(1).lower().endswith(('.jpg','.jpeg','.png', '.bmp')):
+            elif match.group(1).lower().endswith(utils.image.SUPPORTED_EXTENSIONS):
                 files.append(match.group(1))
     return (dirs, files)
 
@@ -383,7 +389,7 @@ def parse_folder(folder, labels_file,
         else:
             for dirpath, dirnames, filenames in os.walk(os.path.join(folder, subdir), followlinks=True):
                 for filename in filenames:
-                    if filename.lower().endswith(('.jpg','.jpeg','.png', '.bmp')):
+                    if filename.lower().endswith(utils.image.SUPPORTED_EXTENSIONS):
                         lines.append('%s %d' % (os.path.join(folder, subdir, dirpath, filename), label_index))
                         if max_per_category is not None and len(lines) >= max_per_category:
                             break

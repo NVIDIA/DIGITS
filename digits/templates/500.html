@@ -10,9 +10,11 @@
 <body>
 <h2>{{title}}</h2>
 {% if message %}
-<p class="text-danger">
-{{message}}
-</p>
+<p class="text-danger">{{message}}</p>
+{% endif %}
+{% if description %}
+<p class="text-danger">{{description}}</p>
+{% endif %}
 {% endif %}
 {% if trace %}
 <pre class="text-muted">
