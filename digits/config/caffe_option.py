@@ -196,7 +196,7 @@ class CaffeOption(config_option.FrameworkOption):
             self._config_dict_value = None
         else:
             if value == '<PATHS>':
-                executable = 'caffe'
+                executable = self.find_executable('caffe')
             else:
                 executable = os.path.join(value, 'build', 'tools', 'caffe')
 
