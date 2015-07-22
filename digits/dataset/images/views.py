@@ -12,7 +12,7 @@ from digits.webapp import app, autodoc
 import classification.views
 import extraction.views
 
-NAMESPACE = '/digits/digits/datasets/images'
+NAMESPACE = '/datasets/images'
 
 @app.route(NAMESPACE + '/resize-example', methods=['POST'])
 @autodoc('datasets')

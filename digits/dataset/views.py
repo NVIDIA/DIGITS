@@ -8,7 +8,7 @@ from digits.utils.routing import request_wants_json
 import images.views
 import images as dataset_images
 
-NAMESPACE = '/digits/digits/datasets/'
+NAMESPACE = '/datasets/'
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])

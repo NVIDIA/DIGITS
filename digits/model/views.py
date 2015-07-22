@@ -24,7 +24,7 @@ from digits.utils.routing import request_wants_json
 import images.views
 import images as model_images
 
-NAMESPACE = '/digits/digits/models/'
+NAMESPACE = '/models/'
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])

@@ -17,8 +17,8 @@ import model.views
 from digits.utils import errors
 from digits.utils.routing import request_wants_json
 
-@app.route('/digits/digits/index.json', methods=['GET'])
-@app.route('/digits/digits/', methods=['GET'])
+@app.route('/index.json', methods=['GET'])
+@app.route('/', methods=['GET'])
 @autodoc(['home', 'api'])
 def home():
     """
@@ -92,7 +92,7 @@ def get_job_list(cls, running):
 
 ### Jobs routes
 
-@app.route('/digits/digits/jobs/<job_id>', methods=['GET'])
+@app.route('/jobs/<job_id>', methods=['GET'])
 @autodoc('jobs')
 def show_job(job_id):
     """
@@ -109,7 +109,7 @@ def show_job(job_id):
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
-@app.route('/digits/digits/jobs/<job_id>', methods=['PUT'])
+@app.route('/jobs/<job_id>', methods=['PUT'])
 @autodoc('jobs')
 def edit_job(job_id):
     """
@@ -123,9 +123,9 @@ def edit_job(job_id):
     job._name = flask.request.form['job_name']
     return 'Changed job name from "%s" to "%s"' % (old_name, job.name())
 
-@app.route('/digits/digits/datasets/<job_id>/status', methods=['GET'])
-@app.route('/digits/digits/models/<job_id>/status', methods=['GET'])
-@app.route('/digits/digits/jobs/<job_id>/status', methods=['GET'])
+@app.route('/datasets/<job_id>/status', methods=['GET'])
+@app.route('/models/<job_id>/status', methods=['GET'])
+@app.route('/jobs/<job_id>/status', methods=['GET'])
 @autodoc('jobs')
 def job_status(job_id):
     """
@@ -142,9 +142,9 @@ def job_status(job_id):
         result['type'] = job.job_type()
     return json.dumps(result)
 
-@app.route('/digits/digits/datasets/<job_id>', methods=['DELETE'])
-@app.route('/digits/digits/models/<job_id>', methods=['DELETE'])
-@app.route('/digits/digits/jobs/<job_id>', methods=['DELETE'])
+@app.route('/datasets/<job_id>', methods=['DELETE'])
+@app.route('/models/<job_id>', methods=['DELETE'])
+@app.route('/jobs/<job_id>', methods=['DELETE'])
 @autodoc('jobs')
 def delete_job(job_id):
     """
@@ -162,9 +162,9 @@ def delete_job(job_id):
     except errors.DeleteError as e:
         raise werkzeug.exceptions.Forbidden(str(e))
 
-@app.route('/digits/digits/datasets/<job_id>/abort', methods=['POST'])
-@app.route('/digits/digits/models/<job_id>/abort', methods=['POST'])
-@app.route('/digits/digits/jobs/<job_id>/abort', methods=['POST'])
+@app.route('/datasets/<job_id>/abort', methods=['POST'])
+@app.route('/models/<job_id>/abort', methods=['POST'])
+@app.route('/jobs/<job_id>/abort', methods=['POST'])
 @autodoc('jobs')
 def abort_job(job_id):
     """
@@ -223,7 +223,7 @@ for code in HTTP_STATUS_CODES:
 
 ### File serving
 
-@app.route('/digits/digits/files/<path:path>', methods=['GET'])
+@app.route('/files/<path:path>', methods=['GET'])
 @autodoc('util')
 def serve_file(path):
     """
