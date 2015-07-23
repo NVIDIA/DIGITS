@@ -564,28 +564,27 @@ class TrainTask(Task):
             if added_column:
                 data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
 
-        if self.val_outputs and 'epoch' in self.val_outputs:
-            added_column = False
-            if cull:
-                stride = max(len(self.val_outputs['epoch'].data)/100,1)
-            else:
-                stride = 1
-            for name, output in self.val_outputs.iteritems():
-                if name not in ['epoch']:
-                    col_id = '%s-val' % name
-                    data['xs'][col_id] = 'val_epochs'
-                    data['names'][col_id] = '%s (val)' % name
-                    if 'accuracy' in output.kind.lower():
-                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
-                        data['axes'][col_id] = 'y2'
+                if self.val_outputs and 'epoch' in self.val_outputs:
+                    added_column = False
+                    if cull:
+                        stride = max(len(self.val_outputs['epoch'].data)/100,1)
                     else:
-                        data['columns'].append([col_id] + output.data[::stride])
-                    added_column = True
-            if added_column:
-                data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
-
-        if not len(data['columns']):
-            return None
-        else:
-            return data
+                        stride = 1
+                    for name, output in self.val_outputs.iteritems():
+                        if name not in ['epoch']:
+                            col_id = '%s-val' % name
+                            data['xs'][col_id] = 'val_epochs'
+                            data['names'][col_id] = '%s (val)' % name
+                            if 'accuracy' in output.kind.lower():
+                                data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                                data['axes'][col_id] = 'y2'
+                            else:
+                                data['columns'].append([col_id] + output.data[::stride])
+                            added_column = True
+                    if added_column:
+                        data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
+                        # return data if we have both training and validation data
+                        return data
+        # return None if we are missing either training or validation data
+        return None
 
