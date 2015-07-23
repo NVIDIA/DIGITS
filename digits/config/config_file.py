@@ -37,7 +37,7 @@ class ConfigFile(object):
         """
         Returns True if the file exists
         """
-        return os.path.isfile(self._filename)
+        return self._filename is not None and os.path.isfile(self._filename)
 
     def can_read(self):
         """
