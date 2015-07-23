@@ -319,7 +319,9 @@ class TrainTask(Task):
             d[name].data.append(value)
         else:
             # we might have missed one
-            d[name].data += [None] * (epoch_len - name_len - 1) + [value]
+            for _ in xrange(epoch_len - name_len - 1):
+                d[name].data.append(None)
+            d[name].data.append(value)
 
         for key in d:
             if key not in ['epoch', 'learning_rate']:
