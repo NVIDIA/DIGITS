@@ -1,6 +1,6 @@
 # REST API
 
-*Generated Jul 19, 2015*
+*Generated Jun 25, 2015*
 
 DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
 
