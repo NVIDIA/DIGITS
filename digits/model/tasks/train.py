@@ -573,7 +573,6 @@ class TrainTask(Task):
             for name, output in self.val_outputs.iteritems():
                 if name not in ['epoch']:
                     col_id = '%s-val' % name
-                    data['columns'].append([col_id] + output.data[::stride])
                     data['xs'][col_id] = 'val_epochs'
                     data['names'][col_id] = '%s (val)' % name
                     if 'accuracy' in output.kind.lower():
