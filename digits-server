@@ -1,7 +1,8 @@
 #!/bin/bash
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
+/usr/bin/pip --upgrade gunicorn
 $(command -v python) $(command -v gunicorn) \
-    --config gunicorn_config.py \
+   --reload --pythonpath /root/digits --config gunicorn_config.py \
     digits.webapp:app \
     $@
