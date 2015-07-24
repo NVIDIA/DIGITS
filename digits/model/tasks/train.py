@@ -458,11 +458,15 @@ class TrainTask(Task):
                 'names': {},
                 }
 
+        added_train_data = False
+        added_val_data = False
+
         if self.train_outputs and 'epoch' in self.train_outputs:
-            added_column = False
             if cull:
+                # max 200 data points
                 stride = max(len(self.train_outputs['epoch'].data)/100,1)
             else:
+                # return all data
                 stride = 1
             for name, output in self.train_outputs.iteritems():
                 if name not in ['epoch', 'learning_rate']:
@@ -474,31 +478,35 @@ class TrainTask(Task):
                         data['axes'][col_id] = 'y2'
                     else:
                         data['columns'].append([col_id] + output.data[::stride])
-                    added_column = True
-            if added_column:
-                data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
+                    added_train_data = True
+        if added_train_data:
+            data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
 
-                if self.val_outputs and 'epoch' in self.val_outputs:
-                    added_column = False
-                    if cull:
-                        stride = max(len(self.val_outputs['epoch'].data)/100,1)
+        if self.val_outputs and 'epoch' in self.val_outputs:
+            if cull:
+                # max 200 data points
+                stride = max(len(self.val_outputs['epoch'].data)/100,1)
+            else:
+                # return all data
+                stride = 1
+            for name, output in self.val_outputs.iteritems():
+                if name not in ['epoch']:
+                    col_id = '%s-val' % name
+                    data['xs'][col_id] = 'val_epochs'
+                    data['names'][col_id] = '%s (val)' % name
+                    if 'accuracy' in output.kind.lower():
+                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                        data['axes'][col_id] = 'y2'
                     else:
-                        stride = 1
-                    for name, output in self.val_outputs.iteritems():
-                        if name not in ['epoch']:
-                            col_id = '%s-val' % name
-                            data['xs'][col_id] = 'val_epochs'
-                            data['names'][col_id] = '%s (val)' % name
-                            if 'accuracy' in output.kind.lower():
-                                data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
-                                data['axes'][col_id] = 'y2'
-                            else:
-                                data['columns'].append([col_id] + output.data[::stride])
-                            added_column = True
-                    if added_column:
-                        data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
-                        # return data if we have both training and validation data
-                        return data
-        # return None if we are missing either training or validation data
-        return None
+                        data['columns'].append([col_id] + output.data[::stride])
+                    added_val_data = True
+        if added_val_data:
+            data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
+
+        if added_train_data:
+            return data
+        else:
+            # return None if only validation data exists
+            # helps with ordering of columns in graph
+            return None
 
