@@ -16,10 +16,12 @@ import dataset.views
 import model.views
 from digits.utils import errors
 from digits.utils.routing import request_wants_json
+from digits.decorator import login_required
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
 @autodoc(['home', 'api'])
+@login_required
 def home():
     """
     DIGITS home page
