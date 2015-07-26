@@ -11,3 +11,4 @@ gunicorn==17.5
 pydot2
 Flask-SocketIO
 lmdb
+django==1.8
