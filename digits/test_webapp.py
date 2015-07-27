@@ -457,8 +457,10 @@ class TestDatasetCreation(WebappBaseTest):
             yield self.check_create_abort_delete, image_type
             yield self.check_nonsquare_dimensions, image_type
 
+            func = self.check_textfile
             for absolute_path in (True, False):
-                yield self.check_textfile, image_type, absolute_path
+                for local in (True, False):
+                    yield func, image_type, absolute_path, local, func.__name__
 
     def check_create_json(self, image_type):
         """dataset - create w/ json"""
@@ -484,12 +486,12 @@ class TestDatasetCreation(WebappBaseTest):
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
-    def check_textfile(self, image_type, absolute_path):
+    def check_textfile(self, image_type, absolute_path, local_path, *args):
         """any image type, and absolute or relative path"""
-        job_id = self.create_from_textfiles(image_type, absolute_path=absolute_path)
+        job_id = self.create_from_textfiles(image_type, absolute_path=absolute_path, local_path=local_path)
         assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
 
-    def create_from_textfiles(self, image_type, absolute_path=True):
+    def create_from_textfiles(self, image_type, absolute_path=True, local_path=True):
         """
         Create a dataset from textfiles
 
@@ -509,19 +511,34 @@ class TestDatasetCreation(WebappBaseTest):
 
             label_id += 1
 
-        # StringIO wrapping is needed to simulate POST file upload.
-        train_upload = (StringIO(textfile_train_images), 'train.txt')
-        # Use the same list for training and validation.
-        val_upload = (StringIO(textfile_train_images), 'val.txt')
-        labels_upload = (StringIO(textfile_labels_file), 'labels.txt')
-
         data = {
                 'method': 'textfile',
-                'textfile_train_images': train_upload,
                 'textfile_use_val': 'y',
-                'textfile_val_images': val_upload,
-                'textfile_labels_file': labels_upload,
                 }
+
+        if local_path:
+            train_file = os.path.join(self.image_type_data[image_type].data_path, "local_train.txt")
+            labels_file = os.path.join(self.image_type_data[image_type].data_path, "local_labels.txt")
+            # create files in local filesystem - these will be removed in tearDownClass() function
+            with open(train_file, "w") as file:
+                file.write(textfile_train_images)
+            with open(labels_file, "w") as file:
+                file.write(textfile_labels_file)
+            data['textfile_use_local_files'] = 'True'
+            data['textfile_local_train_images'] = train_file
+            # Use the same file for training and validation.
+            data['textfile_local_val_images'] = train_file
+            data['textfile_local_labels_file'] = labels_file
+        else:
+            # StringIO wrapping is needed to simulate POST file upload.
+            train_upload = (StringIO(textfile_train_images), "train.txt")
+            # Use the same list for training and validation.
+            val_upload = (StringIO(textfile_train_images), "val.txt")
+            labels_upload = (StringIO(textfile_labels_file), "labels.txt")
+            data['textfile_train_images'] = train_upload
+            data['textfile_val_images'] = val_upload
+            data['textfile_labels_file'] = labels_upload
+
         if not absolute_path:
             data['textfile_train_folder'] = self.image_type_data[image_type].data_path
             data['textfile_val_folder'] = self.image_type_data[image_type].data_path
