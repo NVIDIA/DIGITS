@@ -7,6 +7,7 @@ import tempfile
 import time
 import unittest
 import itertools
+import urllib
 
 from gevent import monkey
 monkey.patch_all()
@@ -995,4 +996,21 @@ class TestDatasetModelInteractions(WebappBaseTest):
         assert self.delete_dataset(dataset_id) == 403, 'dataset deletion should not have succeeded'
         self.abort_dataset(dataset_id)
         self.abort_model(model_id)
+
+class TestAutocomplete(WebappBaseTest):
+    """
+    Test the path completion route
+    """
+    def test_alltests(self):
+        func = self.check_query
+        for absolute_path in (True, False):
+            yield func, absolute_path, func.__name__
+
+    def check_query(self, absolute_path, *args):
+        path = '/' if absolute_path else './'
+        url = '/autocomplete/path?query=%s' % (urllib.quote(path,safe=''))
+        rv = self.app.get(url)
+        assert rv.status_code == 200
+        status = json.loads(rv.data)
+        assert 'suggestions' in status
 
