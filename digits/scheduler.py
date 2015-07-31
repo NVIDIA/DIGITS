@@ -352,8 +352,6 @@ class Scheduler:
                                         task.status = Status.WAIT
                                     else:
                                         if self.reserve_resources(task, requested_resources):
-                                            logger.debug('%s task started.' % task.name(),
-                                                    job_id=job.id())
                                             gevent.spawn(self.run_task,
                                                     task, requested_resources)
                             elif task.status == Status.RUN:
