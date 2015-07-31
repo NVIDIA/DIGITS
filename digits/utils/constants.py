@@ -20,9 +20,3 @@ CAFFE_TRAIN_VAL_FILE = 'train_val.prototxt'
 CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
 
-# Torch
-MEAN_FILE_TORCH = 'mean.jpeg'
-TORCH_MODEL_FILE = 'model.lua'
-TORCH_TRAIN_DB = 'train_db'
-TORCH_VAL_DB = 'val_db'
-TORCH_SNAPSHOT_PREFIX = 'snapshot'
