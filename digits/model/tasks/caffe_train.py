@@ -751,8 +751,6 @@ class CaffeTrainTask(TrainTask):
         normalize -- whether to normalize the data when visualizing
         max_width -- maximum width for the vis_square
         """
-        #print 'data.shape is %s' % (data.shape,)
-
         if data.ndim == 1:
             # interpret as 1x1 grayscale images
             # (N, 1, 1)
@@ -794,16 +792,15 @@ class CaffeTrainTask(TrainTask):
         padsize = 0
         width = data.shape[2]
         if width > max_width:
-            data = data[0,:max_width,:max_width]
+            data = data[:1,:max_width,:max_width]
         else:
             if width > 1:
                 padsize = 1
                 width += 1
-            n = max_width/width
+            n = max(max_width/width,1)
             n *= n
             data = data[:n]
 
-        #print 'data.shape now %s' % (data.shape,)
         return utils.image.vis_square(data,
                 padsize     = padsize,
                 normalize   = normalize,
