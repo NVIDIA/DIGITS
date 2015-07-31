@@ -118,20 +118,25 @@ def from_files(job, form):
     Add tasks for creating a dataset by reading textfiles
     """
     ### labels
-
-    flask.request.files[form.textfile_labels_file.name].save(
-            os.path.join(job.dir(), utils.constants.LABELS_FILE)
-            )
-    job.labels_file = utils.constants.LABELS_FILE
+    if form.textfile_use_local_files.data:
+        job.labels_file = form.textfile_local_labels_file.data.strip()
+    else:
+        flask.request.files[form.textfile_labels_file.name].save(
+                os.path.join(job.dir(), utils.constants.LABELS_FILE)
+                )
+        job.labels_file = utils.constants.LABELS_FILE
 
     encoding = form.encoding.data
     shuffle = bool(form.textfile_shuffle.data)
 
     ### train
-
-    flask.request.files[form.textfile_train_images.name].save(
-            os.path.join(job.dir(), utils.constants.TRAIN_FILE)
-            )
+    if form.textfile_use_local_files.data:
+        train_file = form.textfile_local_train_images.data.strip()
+    else:
+        flask.request.files[form.textfile_train_images.name].save(
+                os.path.join(job.dir(), utils.constants.TRAIN_FILE)
+                )
+        train_file = utils.constants.TRAIN_FILE
 
     image_folder = form.textfile_train_folder.data.strip()
     if not image_folder:
@@ -140,7 +145,7 @@ def from_files(job, form):
     job.tasks.append(
             tasks.CreateDbTask(
                 job_dir     = job.dir(),
-                input_file  = utils.constants.TRAIN_FILE,
+                input_file  = train_file,
                 db_name     = utils.constants.TRAIN_DB,
                 image_dims  = job.image_dims,
                 image_folder= image_folder,
@@ -155,9 +160,13 @@ def from_files(job, form):
     ### val
 
     if form.textfile_use_val.data:
-        flask.request.files[form.textfile_val_images.name].save(
-                os.path.join(job.dir(), utils.constants.VAL_FILE)
-                )
+        if form.textfile_use_local_files.data:
+            val_file = form.textfile_local_val_images.data.strip()
+        else:
+            flask.request.files[form.textfile_val_images.name].save(
+                    os.path.join(job.dir(), utils.constants.VAL_FILE)
+                    )
+            val_file = utils.constants.VAL_FILE
 
         image_folder = form.textfile_val_folder.data.strip()
         if not image_folder:
@@ -166,7 +175,7 @@ def from_files(job, form):
         job.tasks.append(
                 tasks.CreateDbTask(
                     job_dir     = job.dir(),
-                    input_file  = utils.constants.VAL_FILE,
+                    input_file  = val_file,
                     db_name     = utils.constants.VAL_DB,
                     image_dims  = job.image_dims,
                     image_folder= image_folder,
@@ -180,9 +189,13 @@ def from_files(job, form):
     ### test
 
     if form.textfile_use_test.data:
-        flask.request.files[form.textfile_test_images.name].save(
-                os.path.join(job.dir(), utils.constants.TEST_FILE)
-                )
+        if form.textfile_use_local_files.data:
+            test_file = form.textfile_local_test_images.data.strip()
+        else:
+            flask.request.files[form.textfile_test_images.name].save(
+                    os.path.join(job.dir(), utils.constants.TEST_FILE)
+                    )
+            test_file = utils.constants.TEST_FILE
 
         image_folder = form.textfile_test_folder.data.strip()
         if not image_folder:
@@ -191,7 +204,7 @@ def from_files(job, form):
         job.tasks.append(
                 tasks.CreateDbTask(
                     job_dir     = job.dir(),
-                    input_file  = utils.constants.TEST_FILE,
+                    input_file  = test_file,
                     db_name     = utils.constants.TEST_DB,
                     image_dims  = job.image_dims,
                     image_folder= image_folder,

@@ -3,6 +3,7 @@
 import os
 import json
 import traceback
+import glob
 
 import flask
 from werkzeug import HTTP_STATUS_CODES
@@ -237,6 +238,23 @@ def serve_file(path):
         response = flask.make_response(infile.read())
         response.headers["Content-Disposition"] = "attachment; filename=%s" % os.path.basename(path)
         return response
+
+### Path Completion
+
+@app.route('/autocomplete/path', methods=['GET'])
+@autodoc('util')
+def path_autocomplete():
+    """
+    Return a list of paths matching the specified preamble
+
+    """
+    path = flask.request.args.get('query','')
+
+    result = {
+        "suggestions": glob.glob(path+"*")
+    }
+
+    return json.dumps(result)
 
 ### SocketIO functions
 

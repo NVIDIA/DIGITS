@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Jun 25, 2015*
+*Generated Jul 31, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -36,7 +36,7 @@ These are all technically RESTful, but they return HTML pages. To get JSON respo
 
 Methods: **GET**
 
-Location: [`digits/views.py@22`](../digits/views.py#L22)
+Location: [`digits/views.py@23`](../digits/views.py#L23)
 
 ## Jobs
 
@@ -48,7 +48,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@138`](../digits/views.py#L138)
+Location: [`digits/views.py@139`](../digits/views.py#L139)
 
 ### `/datasets/<job_id>/abort`
 
@@ -58,7 +58,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@158`](../digits/views.py#L158)
+Location: [`digits/views.py@159`](../digits/views.py#L159)
 
 ### `/datasets/<job_id>/status`
 
@@ -68,7 +68,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@119`](../digits/views.py#L119)
+Location: [`digits/views.py@120`](../digits/views.py#L120)
 
 ### `/jobs/<job_id>`
 
@@ -78,7 +78,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@86`](../digits/views.py#L86)
+Location: [`digits/views.py@87`](../digits/views.py#L87)
 
 ### `/jobs/<job_id>`
 
@@ -88,7 +88,7 @@ Methods: **PUT**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@103`](../digits/views.py#L103)
+Location: [`digits/views.py@104`](../digits/views.py#L104)
 
 ### `/jobs/<job_id>`
 
@@ -98,7 +98,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@138`](../digits/views.py#L138)
+Location: [`digits/views.py@139`](../digits/views.py#L139)
 
 ### `/jobs/<job_id>/abort`
 
@@ -108,7 +108,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@158`](../digits/views.py#L158)
+Location: [`digits/views.py@159`](../digits/views.py#L159)
 
 ### `/jobs/<job_id>/status`
 
@@ -118,7 +118,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@119`](../digits/views.py#L119)
+Location: [`digits/views.py@120`](../digits/views.py#L120)
 
 ### `/models/<job_id>`
 
@@ -128,7 +128,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@138`](../digits/views.py#L138)
+Location: [`digits/views.py@139`](../digits/views.py#L139)
 
 ### `/models/<job_id>/abort`
 
@@ -138,7 +138,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@158`](../digits/views.py#L158)
+Location: [`digits/views.py@159`](../digits/views.py#L159)
 
 ### `/models/<job_id>/status`
 
@@ -148,7 +148,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@119`](../digits/views.py#L119)
+Location: [`digits/views.py@120`](../digits/views.py#L120)
 
 ## Datasets
 
@@ -178,7 +178,7 @@ Location: [`digits/dataset/views.py@15`](../digits/dataset/views.py#L15)
 
 Methods: **POST**
 
-Location: [`digits/dataset/images/classification/views.py@217`](../digits/dataset/images/classification/views.py#L217)
+Location: [`digits/dataset/images/classification/views.py@230`](../digits/dataset/images/classification/views.py#L230)
 
 ### `/datasets/images/classification/new`
 
@@ -186,7 +186,7 @@ Location: [`digits/dataset/images/classification/views.py@217`](../digits/datase
 
 Methods: **GET**
 
-Location: [`digits/dataset/images/classification/views.py@207`](../digits/dataset/images/classification/views.py#L207)
+Location: [`digits/dataset/images/classification/views.py@220`](../digits/dataset/images/classification/views.py#L220)
 
 ### `/datasets/images/resize-example`
 
@@ -328,6 +328,14 @@ Location: [`digits/model/views.py@90`](../digits/model/views.py#L90)
 
 ## Util
 
+### `/autocomplete/path`
+
+> Return a list of paths matching the specified preamble
+
+Methods: **GET**
+
+Location: [`digits/views.py@245`](../digits/views.py#L245)
+
 ### `/files/<path:path>`
 
 > Return a file in the jobs directory
@@ -342,5 +350,5 @@ Methods: **GET**
 
 Arguments: `path`
 
-Location: [`digits/views.py@216`](../digits/views.py#L216)
+Location: [`digits/views.py@217`](../digits/views.py#L217)
 
