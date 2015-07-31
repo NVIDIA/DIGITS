@@ -5,7 +5,7 @@ import os
 import flask
 
 from digits import utils
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
@@ -274,6 +274,9 @@ def image_classification_dataset_create():
         elif form.method.data == 'textfile':
             from_files(job, form)
 
+        else:
+            raise ValueError('method not supported')
+
         scheduler.add_job(job)
         if request_wants_json():
             return flask.jsonify(job.json_dict())
@@ -290,4 +293,14 @@ def show(job):
     Called from digits.dataset.views.datasets_show()
     """
     return flask.render_template('datasets/images/classification/show.html', job=job)
+
+@app.route(NAMESPACE + '/summary', methods=['GET'])
+@autodoc('datasets')
+def image_classification_dataset_summary():
+    """
+    Return a short HTML summary of a DatasetJob
+    """
+    job = job_from_request()
+
+    return flask.render_template('datasets/images/classification/summary.html', dataset=job)
 

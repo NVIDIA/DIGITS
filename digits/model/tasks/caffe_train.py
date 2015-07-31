@@ -20,7 +20,6 @@ from digits.config import config_value
 from digits.status import Status
 from digits import utils, dataset
 from digits.utils import subclass, override, constants
-from digits.dataset import ImageClassificationDatasetJob
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 2
@@ -101,7 +100,9 @@ class CaffeTrainTask(TrainTask):
         super(CaffeTrainTask, self).before_run()
 
         if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            self.save_prototxt_files()
+            self.save_files_classification()
+        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
+            self.save_files_generic()
         else:
             raise NotImplementedError
 
@@ -112,11 +113,12 @@ class CaffeTrainTask(TrainTask):
         self.last_train_update = None
         return True
 
-    def save_prototxt_files(self):
+    # TODO merge these monolithic save_files functions
+    # TODO break them up into separate functions
+    def save_files_classification(self):
         """
         Save solver, train_val and deploy files to disk
         """
-
         has_val_set = self.dataset.val_db_task() is not None
 
         ### Check what has been specified in self.network
@@ -386,6 +388,247 @@ class CaffeTrainTask(TrainTask):
         return True
 
 
+    def save_files_generic(self):
+        """
+        Save solver, train_val and deploy files to disk
+        """
+        train_image_db = None
+        train_labels_db = None
+        val_image_db = None
+        val_labels_db = None
+        for task in self.dataset.tasks:
+            if task.purpose == 'Training Images':
+                train_image_db = task
+            if task.purpose == 'Training Labels':
+                train_labels_db = task
+            if task.purpose == 'Validation Images':
+                val_image_db = task
+            if task.purpose == 'Validation Labels':
+                val_labels_db = task
+
+        assert train_image_db is not None, 'Training images are required'
+
+        ### Split up train_val and deploy layers
+
+        train_image_data_layer = None
+        train_label_data_layer = None
+        val_image_data_layer = None
+        val_label_data_layer = None
+
+        train_val_layers = caffe_pb2.NetParameter()
+        deploy_layers = caffe_pb2.NetParameter()
+
+        for layer in self.network.layer:
+            assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
+            if layer.type == 'Data':
+                for rule in layer.include:
+                    if rule.phase == caffe_pb2.TRAIN:
+                        if len(layer.top) == 1 and layer.top[0] == 'data':
+                            assert train_image_data_layer is None, 'cannot specify two train image data layers'
+                            train_image_data_layer = layer
+                        elif len(layer.top) == 1 and layer.top[0] == 'label':
+                            assert train_label_data_layer is None, 'cannot specify two train label data layers'
+                            train_label_data_layer = layer
+                    elif rule.phase == caffe_pb2.TEST:
+                        if len(layer.top) == 1 and layer.top[0] == 'data':
+                            assert val_image_data_layer is None, 'cannot specify two val image data layers'
+                            val_image_data_layer = layer
+                        elif len(layer.top) == 1 and layer.top[0] == 'label':
+                            assert val_label_data_layer is None, 'cannot specify two val label data layers'
+                            val_label_data_layer = layer
+            else:
+                if layer.name.startswith('train_'):
+                    train_val_layers.layer.add().CopyFrom(layer)
+                    train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[6:]
+                elif layer.name.startswith('deploy_'):
+                    deploy_layers.layer.add().CopyFrom(layer)
+                    deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[7:]
+                else:
+                    train_val_layers.layer.add().CopyFrom(layer)
+                    deploy_layers.layer.add().CopyFrom(layer)
+
+        ### Write train_val file
+
+        train_val_network = caffe_pb2.NetParameter()
+
+        # data layers
+        train_image_data_layer = self.make_generic_data_layer(train_image_db, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
+        if train_image_data_layer is not None:
+            train_val_network.layer.add().CopyFrom(train_image_data_layer)
+        train_label_data_layer = self.make_generic_data_layer(train_labels_db, train_label_data_layer, 'label', 'label', caffe_pb2.TRAIN)
+        if train_label_data_layer is not None:
+            train_val_network.layer.add().CopyFrom(train_label_data_layer)
+
+        val_image_data_layer = self.make_generic_data_layer(val_image_db, val_image_data_layer, 'data', 'data', caffe_pb2.TEST)
+        if val_image_data_layer is not None:
+            train_val_network.layer.add().CopyFrom(val_image_data_layer)
+        val_label_data_layer = self.make_generic_data_layer(val_labels_db, val_label_data_layer, 'label', 'label', caffe_pb2.TEST)
+        if val_label_data_layer is not None:
+            train_val_network.layer.add().CopyFrom(val_label_data_layer)
+
+        # hidden layers
+        train_val_network.MergeFrom(train_val_layers)
+
+        with open(self.path(self.train_val_file), 'w') as outfile:
+            text_format.PrintMessage(train_val_network, outfile)
+
+        ### Write deploy file
+
+        deploy_network = caffe_pb2.NetParameter()
+
+        # input
+        deploy_network.input.append('data')
+        deploy_network.input_dim.append(1)
+        deploy_network.input_dim.append(train_image_db.image_channels)
+        if self.crop_size:
+            deploy_network.input_dim.append(self.crop_size)
+            deploy_network.input_dim.append(self.crop_size)
+        else:
+            deploy_network.input_dim.append(train_image_db.image_height)
+            deploy_network.input_dim.append(train_image_db.image_width)
+
+        # hidden layers
+        deploy_network.MergeFrom(deploy_layers)
+
+        with open(self.path(self.deploy_file), 'w') as outfile:
+            text_format.PrintMessage(deploy_network, outfile)
+
+        ### Write solver file
+
+        solver = caffe_pb2.SolverParameter()
+        # get enum value for solver type
+        solver.solver_type = getattr(solver, self.solver_type)
+        solver.net = self.train_val_file
+
+        # Set CPU/GPU mode
+        if config_value('caffe_root')['cuda_enabled'] and \
+                bool(config_value('gpu_list')):
+            solver.solver_mode = caffe_pb2.SolverParameter.GPU
+        else:
+            solver.solver_mode = caffe_pb2.SolverParameter.CPU
+
+        solver.snapshot_prefix = self.snapshot_prefix
+
+        # Epochs -> Iterations
+        train_iter = int(math.ceil(float(train_image_db.image_count) / train_image_data_layer.data_param.batch_size))
+        solver.max_iter = train_iter * self.train_epochs
+        snapshot_interval = self.snapshot_interval * train_iter
+        if 0 < snapshot_interval <= 1:
+            solver.snapshot = 1 # don't round down
+        elif 1 < snapshot_interval < solver.max_iter:
+            solver.snapshot = int(snapshot_interval)
+        else:
+            solver.snapshot = 0 # only take one snapshot at the end
+
+        if val_image_data_layer:
+            solver.test_iter.append(int(math.ceil(float(val_image_db.image_count) / val_image_data_layer.data_param.batch_size)))
+            val_interval = self.val_interval * train_iter
+            if 0 < val_interval <= 1:
+                solver.test_interval = 1 # don't round down
+            elif 1 < val_interval < solver.max_iter:
+                solver.test_interval = int(val_interval)
+            else:
+                solver.test_interval = solver.max_iter # only test once at the end
+
+        # Learning rate
+        solver.base_lr = self.learning_rate
+        solver.lr_policy = self.lr_policy['policy']
+        scale = float(solver.max_iter)/100.0
+        if solver.lr_policy == 'fixed':
+            pass
+        elif solver.lr_policy == 'step':
+            # stepsize = stepsize * scale
+            solver.stepsize = int(math.ceil(float(self.lr_policy['stepsize']) * scale))
+            solver.gamma = self.lr_policy['gamma']
+        elif solver.lr_policy == 'multistep':
+            for value in self.lr_policy['stepvalue']:
+                # stepvalue = stepvalue * scale
+                solver.stepvalue.append(int(math.ceil(float(value) * scale)))
+            solver.gamma = self.lr_policy['gamma']
+        elif solver.lr_policy == 'exp':
+            # gamma = gamma^(1/scale)
+            solver.gamma = math.pow(self.lr_policy['gamma'], 1.0/scale)
+        elif solver.lr_policy == 'inv':
+            # gamma = gamma / scale
+            solver.gamma = self.lr_policy['gamma'] / scale
+            solver.power = self.lr_policy['power']
+        elif solver.lr_policy == 'poly':
+            solver.power = self.lr_policy['power']
+        elif solver.lr_policy == 'sigmoid':
+            # gamma = -gamma / scale
+            solver.gamma = -1.0 * self.lr_policy['gamma'] / scale
+            # stepsize = stepsize * scale
+            solver.stepsize = int(math.ceil(float(self.lr_policy['stepsize']) * scale))
+        else:
+            raise Exception('Unknown lr_policy: "%s"' % solver.lr_policy)
+
+        # go with the suggested defaults
+        if solver.solver_type != solver.ADAGRAD:
+            solver.momentum = 0.9
+        solver.weight_decay = 0.0005
+
+        # Display 8x per epoch, or once per 5000 images, whichever is more frequent
+        solver.display = max(1, min(
+                int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
+                int(math.ceil(5000.0 / train_image_data_layer.data_param.batch_size))
+                ))
+
+        if self.random_seed is not None:
+            solver.random_seed = self.random_seed
+
+        with open(self.path(self.solver_file), 'w') as outfile:
+            text_format.PrintMessage(solver, outfile)
+        self.solver = solver # save for later
+
+        return True
+
+    def make_generic_data_layer(self, db, orig_layer, name, top, phase):
+        """
+        Utility within save_files_generic for creating a Data layer
+        Returns a LayerParameter (or None)
+
+        Arguments:
+        db -- an AnalyzeDbTask (or None)
+        orig_layer -- a LayerParameter supplied by the user (or None)
+        """
+        if db is None:
+            #TODO allow user to specify a standard data layer even if it doesn't exist in the dataset
+            return None
+        layer = caffe_pb2.LayerParameter()
+        if orig_layer is not None:
+            layer.CopyFrom(orig_layer)
+        layer.type = 'Data'
+        layer.name = name
+        layer.ClearField('top')
+        layer.top.append(top)
+        layer.ClearField('include')
+        layer.include.add(phase=phase)
+
+        # source
+        if layer.data_param.HasField('source'):
+            self.logger.warning('Ignoring data_param.source ...')
+        layer.data_param.source = db.path(db.database)
+        if layer.data_param.HasField('backend'):
+            self.logger.warning('Ignoring data_param.backend ...')
+        layer.data_param.backend = caffe_pb2.DataParameter.LMDB
+
+        # batch size
+        if not layer.data_param.HasField('batch_size'):
+            layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+        if self.batch_size:
+            layer.data_param.batch_size = self.batch_size
+
+        # mean
+        if name == 'data' and self.use_mean and self.dataset.mean_file:
+            layer.transform_param.mean_file = self.dataset.path(self.dataset.mean_file)
+
+        # crop size
+        if name == 'data' and self.crop_size:
+            max_crop_size = min(db.image_width, db.image_height)
+            assert self.crop_size <= max_crop_size, 'crop_size is larger than the image size'
+            layer.transform_param.crop_size = self.crop_size
+        return layer
+
     def iteration_to_epoch(self, it):
         return float(it * self.train_epochs) / self.solver.max_iter
 
@@ -619,14 +862,19 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def can_infer_one(self):
-        if isinstance(self.dataset, ImageClassificationDatasetJob):
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             return True
         return False
 
     @override
     def infer_one(self, data, snapshot_epoch=None, layers=None):
-        if isinstance(self.dataset, ImageClassificationDatasetJob):
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             return self.classify_one(data,
+                    snapshot_epoch=snapshot_epoch,
+                    layers=layers,
+                    )
+        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
+            return self.infer_one_generic(data,
                     snapshot_epoch=snapshot_epoch,
                     layers=layers,
                     )
@@ -670,7 +918,48 @@ class CaffeTrainTask(TrainTask):
         for i in indices:
             predictions.append( (labels[i], scores[i]) )
 
+        visualizations = self.get_layer_visualizations(net, layers)
+        return (predictions, visualizations)
 
+    def infer_one_generic(self, image, snapshot_epoch=None, layers=None):
+        """
+        Run inference on one image for a generic model
+        Returns (output, visualizations)
+            output -- an dict of string -> np.ndarray
+            visualizations -- a list of dicts for the specified layers
+        Returns (None, None) if something goes wrong
+
+        Arguments:
+        image -- an np.ndarray
+
+        Keyword arguments:
+        snapshot_epoch -- which snapshot to use
+        layers -- which layer activation[s] and weight[s] to visualize
+        """
+        net = self.get_net(snapshot_epoch)
+
+        # process image
+        if image.ndim == 2:
+            image = image[:,:,np.newaxis]
+        preprocessed = self.get_transformer().preprocess(
+                'data', image)
+
+        # reshape net input (if necessary)
+        test_shape = (1,) + preprocessed.shape
+        if net.blobs['data'].data.shape != test_shape:
+            net.blobs['data'].reshape(*test_shape)
+
+        # run inference
+        net.blobs['data'].data[...] = preprocessed
+        output = net.forward()
+
+        visualizations = self.get_layer_visualizations(net, layers)
+        return (output, visualizations)
+
+    def get_layer_visualizations(self, net, layers='all'):
+        """
+        Returns visualizations of various layers in the network
+        """
         # add visualizations
         visualizations = []
         if layers and layers != 'none':
@@ -678,68 +967,74 @@ class CaffeTrainTask(TrainTask):
                 added_activations = []
                 for layer in self.network.layer:
                     print 'Computing visualizations for "%s"...' % layer.name
-                    if not layer.type.endswith(('Data', 'Loss', 'Accuracy')):
-                        for bottom in layer.bottom:
-                            if bottom in net.blobs and bottom not in added_activations:
-                                data = net.blobs[bottom].data[0]
-                                vis = self.get_layer_visualization(data)
-                                mean, std, hist = self.get_layer_statistics(data)
-                                visualizations.append(
-                                        {
-                                            'name': str(bottom),
-                                            'type': 'Activations',
-                                            'mean': mean,
-                                            'stddev': std,
-                                            'histogram': hist,
-                                            'image_html': utils.image.embed_image_html(vis),
-                                            }
-                                        )
-                                added_activations.append(bottom)
-                        if layer.name in net.params:
-                            data = net.params[layer.name][0].data
-                            if layer.type not in ['InnerProduct']:
-                                vis = self.get_layer_visualization(data)
-                            else:
-                                vis = None
+                    for bottom in layer.bottom:
+                        if bottom in net.blobs and bottom not in added_activations:
+                            data = net.blobs[bottom].data[0]
+                            vis = self.get_layer_vis_square(data,
+                                    allow_heatmap=bool(bottom != 'data'))
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
                                     {
-                                        'name': str(layer.name),
-                                        'type': 'Weights (%s layer)' % layer.type,
+                                        'name': str(bottom),
+                                        'type': 'Activations',
+                                        'shape': data.shape,
                                         'mean': mean,
                                         'stddev': std,
                                         'histogram': hist,
                                         'image_html': utils.image.embed_image_html(vis),
                                         }
                                     )
-                        for top in layer.top:
-                            if top in net.blobs and top not in added_activations:
-                                data = net.blobs[top].data[0]
-                                normalize = True
-                                # don't normalize softmax layers
-                                if layer.type == 'Softmax':
-                                    normalize = False
-                                vis = self.get_layer_visualization(data, normalize=normalize)
-                                mean, std, hist = self.get_layer_statistics(data)
-                                visualizations.append(
-                                        {
-                                            'name': str(top),
-                                            'type': 'Activation',
-                                            'mean': mean,
-                                            'stddev': std,
-                                            'histogram': hist,
-                                            'image_html': utils.image.embed_image_html(vis),
-                                            }
-                                        )
-                                added_activations.append(top)
+                            added_activations.append(bottom)
+                    if layer.name in net.params:
+                        data = net.params[layer.name][0].data
+                        if layer.type not in ['InnerProduct']:
+                            vis = self.get_layer_vis_square(data)
+                        else:
+                            vis = None
+                        mean, std, hist = self.get_layer_statistics(data)
+                        visualizations.append(
+                                {
+                                    'name': str(layer.name),
+                                    'type': 'Weights (%s layer)' % layer.type,
+                                    'shape': data.shape,
+                                    'mean': mean,
+                                    'stddev': std,
+                                    'histogram': hist,
+                                    'image_html': utils.image.embed_image_html(vis),
+                                    }
+                                )
+                    for top in layer.top:
+                        if top in net.blobs and top not in added_activations:
+                            data = net.blobs[top].data[0]
+                            normalize = True
+                            # don't normalize softmax layers
+                            if layer.type == 'Softmax':
+                                normalize = False
+                            vis = self.get_layer_vis_square(data,
+                                    normalize = normalize,
+                                    allow_heatmap = bool(top != 'data'))
+                            mean, std, hist = self.get_layer_statistics(data)
+                            visualizations.append(
+                                    {
+                                        'name': str(top),
+                                        'type': 'Activation',
+                                        'shape': data.shape,
+                                        'mean': mean,
+                                        'stddev': std,
+                                        'histogram': hist,
+                                        'image_html': utils.image.embed_image_html(vis),
+                                        }
+                                    )
+                            added_activations.append(top)
             else:
                 raise NotImplementedError
 
-        return (predictions, visualizations)
+        return visualizations
 
-    def get_layer_visualization(self, data,
+    def get_layer_vis_square(self, data,
+            allow_heatmap = True,
             normalize = True,
-            max_width = 600,
+            max_width = 1200,
             ):
         """
         Returns a vis_square for the given layer data
@@ -748,6 +1043,7 @@ class CaffeTrainTask(TrainTask):
         data -- a np.ndarray
 
         Keyword arguments:
+        allow_heatmap -- if True, convert single channel images to heatmaps
         normalize -- whether to normalize the data when visualizing
         max_width -- maximum width for the vis_square
         """
@@ -801,6 +1097,9 @@ class CaffeTrainTask(TrainTask):
             n *= n
             data = data[:n]
 
+        if not allow_heatmap and data.ndim == 3:
+            data = data[...,np.newaxis]
+
         return utils.image.vis_square(data,
                 padsize     = padsize,
                 normalize   = normalize,
@@ -827,14 +1126,16 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def can_infer_many(self):
-        if isinstance(self.dataset, ImageClassificationDatasetJob):
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             return True
         return False
 
     @override
     def infer_many(self, data, snapshot_epoch=None):
-        if isinstance(self.dataset, ImageClassificationDatasetJob):
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             return self.classify_many(data, snapshot_epoch=snapshot_epoch)
+        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
+            return self.infer_many_generic(data, snapshot_epoch=snapshot_epoch)
         raise NotImplementedError()
 
     def classify_many(self, images, snapshot_epoch=None):
@@ -894,6 +1195,58 @@ class CaffeTrainTask(TrainTask):
 
         return (labels, scores)
 
+    def infer_many_generic(self, images, snapshot_epoch=None):
+        """
+        Returns a list of np.ndarrays, one for each image
+
+        Arguments:
+        images -- a list of np.arrays
+
+        Keyword arguments:
+        snapshot_epoch -- which snapshot to use
+        """
+        net = self.get_net(snapshot_epoch)
+
+        caffe_images = []
+        for image in images:
+            if image.ndim == 2:
+                caffe_images.append(image[:,:,np.newaxis])
+            else:
+                caffe_images.append(image)
+
+        caffe_images = np.array(caffe_images)
+
+        db_task = self.dataset.analyze_db_tasks()[0]
+
+        if self.batch_size:
+            data_shape = (self.batch_size, db_task.image_channels)
+        # TODO: grab batch_size from the TEST phase in train_val network
+        else:
+            data_shape = (constants.DEFAULT_BATCH_SIZE, db_task.image_channels)
+
+        if self.crop_size:
+            data_shape += (self.crop_size, self.crop_size)
+        else:
+            data_shape += (db_task.image_height, db_task.image_width)
+
+        outputs = None
+        for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
+            new_shape = (len(chunk),) + data_shape[1:]
+            if net.blobs['data'].data.shape != new_shape:
+                net.blobs['data'].reshape(*new_shape)
+            for index, image in enumerate(chunk):
+                net.blobs['data'].data[index] = self.get_transformer().preprocess(
+                        'data', image)
+            o = net.forward()
+            if outputs is None:
+                outputs = o
+            else:
+                for name,blob in o.iteritems():
+                    outputs[name] = np.vstack((outputs[name], blob))
+            print 'Processed %s/%s images' % (len(outputs[outputs.keys()[0]]), len(caffe_images))
+
+        return outputs
+
     def has_model(self):
         """
         Returns True if there is a model that can be used
@@ -951,36 +1304,72 @@ class CaffeTrainTask(TrainTask):
         if hasattr(self, '_transformer') and self._transformer is not None:
             return self._transformer
 
-        data_shape = (1, self.dataset.image_dims[2])
-        if self.crop_size:
-            data_shape += (self.crop_size, self.crop_size)
-        else:
-            data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
+        data_shape = None
+        channel_swap = None
+        mean_pixel = None
+
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
+            data_shape = (1, self.dataset.image_dims[2])
+            if self.crop_size:
+                data_shape += (self.crop_size, self.crop_size)
+            else:
+                data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
+
+            if self.dataset.image_dims[2] == 3 and \
+                    self.dataset.train_db_task().image_channel_order == 'BGR':
+                # XXX see issue #59
+                channel_swap = (2,1,0)
+
+            if self.use_mean:
+                with open(self.dataset.path(self.dataset.train_db_task().mean_file)) as infile:
+                    blob = caffe_pb2.BlobProto()
+                    blob.MergeFromString(infile.read())
+                    mean_pixel = np.reshape(blob.data,
+                            (
+                                self.dataset.image_dims[2],
+                                self.dataset.image_dims[0],
+                                self.dataset.image_dims[1],
+                                )
+                            ).mean(1).mean(1)
+
+        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
+            task = self.dataset.analyze_db_tasks()[0]
+            data_shape = (1, task.image_channels)
+            if self.crop_size:
+                data_shape += (self.crop_size, self.crop_size)
+            else:
+                data_shape += (task.image_height, task.image_width)
+
+            if task.image_channels == 3:
+                # XXX see issue #59
+                channel_swap = (2,1,0)
+
+            if self.dataset.mean_file:
+                with open(self.dataset.path(self.dataset.mean_file)) as infile:
+                    blob = caffe_pb2.BlobProto()
+                    blob.MergeFromString(infile.read())
+                    mean_pixel = np.reshape(blob.data,
+                            (
+                                task.image_channels,
+                                task.image_height,
+                                task.image_width,
+                                )
+                            ).mean(1).mean(1)
 
         t = caffe.io.Transformer(
                 inputs = {'data':  data_shape}
                 )
-        t.set_transpose('data', (2,0,1)) # transpose to (channels, height, width)
 
-        if self.dataset.image_dims[2] == 3 and \
-                self.dataset.train_db_task().image_channel_order == 'BGR':
-            # channel swap
-            # XXX see issue #59
-            t.set_channel_swap('data', (2,1,0))
+        # transpose to (channels, height, width)
+        t.set_transpose('data', (2,0,1))
 
-        if self.use_mean:
+        if channel_swap is not None:
+            # swap color channels
+            t.set_channel_swap('data', channel_swap)
+
+        if mean_pixel is not None:
             # set mean
-            with open(self.dataset.path(self.dataset.train_db_task().mean_file)) as f:
-                blob = caffe_pb2.BlobProto()
-                blob.MergeFromString(f.read())
-                pixel = np.reshape(blob.data,
-                        (
-                            self.dataset.image_dims[2],
-                            self.dataset.image_dims[0],
-                            self.dataset.image_dims[1],
-                            )
-                        ).mean(1).mean(1)
-                t.set_mean('data', pixel)
+            t.set_mean('data', mean_pixel)
 
         #t.set_raw_scale('data', 255) # [0,255] range instead of [0,1]
 

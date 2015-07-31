@@ -2,6 +2,7 @@
 
 from digits.webapp import app
 import classification.views
+import generic.views
 
 NAMESPACE = '/models/images'
 

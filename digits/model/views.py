@@ -45,6 +45,8 @@ def models_show(job_id):
     else:
         if isinstance(job, model_images.ImageClassificationModelJob):
             return model_images.classification.views.show(job)
+        elif isinstance(job, model_images.GenericImageModelJob):
+            return model_images.generic.views.show(job)
         else:
             raise werkzeug.exceptions.BadRequest(
                     'Invalid job type')

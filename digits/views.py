@@ -52,6 +52,11 @@ def home():
                         'id': 'image-classification',
                         'url': flask.url_for('image_classification_dataset_new'),
                         },
+                    {
+                        'title': 'Other',
+                        'id': 'image-generic',
+                        'url': flask.url_for('generic_image_dataset_new'),
+                        },
                     ])
                 ]
         new_model_options = [
@@ -60,6 +65,11 @@ def home():
                         'title': 'Classification',
                         'id': 'image-classification',
                         'url': flask.url_for('image_classification_model_new'),
+                        },
+                    {
+                        'title': 'Other',
+                        'id': 'image-generic',
+                        'url': flask.url_for('generic_image_model_new'),
                         },
                     ])
                 ]

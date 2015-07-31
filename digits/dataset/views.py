@@ -29,18 +29,8 @@ def datasets_show(job_id):
     else:
         if isinstance(job, dataset_images.ImageClassificationDatasetJob):
             return dataset_images.classification.views.show(job)
+        elif isinstance(job, dataset_images.GenericImageDatasetJob):
+            return dataset_images.generic.views.show(job)
         else:
             raise werkzeug.exceptions.BadRequest('Invalid job type')
-
-@app.route(NAMESPACE + 'summary', methods=['GET'])
-@autodoc('datasets')
-def dataset_summary():
-    """
-    Return a short HTML summary of a DatasetJob
-    """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
-
-    return flask.render_template('datasets/summary.html', dataset=job)
 

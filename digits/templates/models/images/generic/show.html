@@ -1,4 +1,4 @@
-{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% extends "job.html" %}
 
@@ -32,7 +32,7 @@
             <h4 class='text-center'>Dataset</h4>
             {% if job.dataset %}
             {% with dataset = job.dataset %}
-            {% include 'datasets/images/classification/summary.html' %}
+            {% include 'datasets/images/generic/summary.html' %}
             {% endwith %}
             {% endif %}
         </div>
@@ -44,15 +44,9 @@
         <div class="well">
             <div id="combined-graph" class="combined-graph"
                 style="height:500px;width:100%;background:white;display:none;"></div>
-            <span name="combined_graph_explanation"
-                            class="explanation-tooltip glyphicon glyphicon-question-sign combined-graph"
-                            data-container="body"
-                            title="Use bottom chart to select region of interest. Drag to pan left/right. Click outside of region to unselect."
-                            style="display:none;"
-                                ></span>
             <div class="pull-right combined-graph" style="display:none;">
                 <a class="btn btn-primary btn-sm" target="_blank"
-                    href="{{url_for('image_classification_model_large_graph', job_id=job.id())}}">
+                    href="{{url_for('generic_image_model_large_graph', job_id=job.id())}}">
                     View Large
                 </a>
             </div>
@@ -152,11 +146,11 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 title="For each layer in the network, show statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
                                 ></span>
                         </div>
-                        <button name="classify-one-btn" onClick="return classifyOne();" class="btn btn-primary">Classify One Image</button>
-                        <span name="classify-one-explanation"
+                        <button name="infer-one-btn" onClick="return inferOne();" class="btn btn-primary">Infer One Image</button>
+                        <span name="infer-one-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"
                             data-container="body"
-                            title="Classify one image and show the top 5 category predictions. Also displays weights and activations for the network."
+                            title="Infer one image and show the network output."
                             ></span>
                     </div>
                     <div class="col-sm-6">
@@ -165,44 +159,22 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <input type="file" id="image_list" name="image_list" class="form-control">
                             <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
                         </div>
-                        <button name="classify-many-btn" onClick="return classifyMany();" class="btn btn-primary">Classify Many Images</button>
-                        <span name="classify-many-explanation"
+                        <button name="infer-many-btn" onClick="return inferMany();" class="btn btn-primary">Infer Many Images</button>
+                        <span name="infer-many-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"
                             data-container="body"
-                            title="Classify a list of images and show the top 5 category predictions for each."
-                            ></span>
-                        <div class="form-group">
-                            <label for="num_test_images" class="control-label">Number of images use from the file</label>
-                            <input type="text" id="num_test_images" name="num_test_images" class="form-control" value="100" placeholder="All">
-                            <small>Leave blank to use all</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="top_n" class="control-label">Number of images to show per category</label>
-                            <input type="text" id="top_n" name="top_n" class="form-control" placeholder="9">
-                        </div>
-                        <button name="top-n-btn"
-                            formaction="{{url_for('image_classification_model_top_n', job_id=job.id())}}"
-                            formmethod="post"
-                            formenctype="multipart/form-data"
-                            formtarget="_blank"
-                            class="btn btn-primary">
-                            Top N Predictions per Category
-                        </button>
-                        <span name="top-n-explanation"
-                            class="explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="Classify a list of images and show the top N results per category by confidence."
+                            title="Infer a list of images and show the network outputs."
                             ></span>
                     </div>
                 </div>
             </form>
 
             <script>
-function classifyOne() {
+function inferOne() {
     // grab all form data
     var formData = new FormData($("#test-model-form")[0]);
 
-    $.ajax("{{url_for('image_classification_model_classify_one', job_id=job.id())}}",
+    $.ajax("{{url_for('generic_image_model_infer_one', job_id=job.id())}}",
     {
         type: "POST",
         data: formData,
@@ -224,11 +196,11 @@ function classifyOne() {
     .fail(function(data) { errorAlert(data); });
     return false;
 }
-function classifyMany() {
+function inferMany() {
     // grab all form data
     var formData = new FormData($("#test-model-form")[0]);
 
-    $.ajax("{{url_for('image_classification_model_classify_many', job_id=job.id())}}",
+    $.ajax("{{url_for('generic_image_model_infer_many', job_id=job.id())}}",
             {
                 type: "POST",
                 data: formData,

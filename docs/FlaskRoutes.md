@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Aug 05, 2015*
+*Generated Aug 06, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -48,7 +48,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@139`](../digits/views.py#L139)
+Location: [`digits/views.py@149`](../digits/views.py#L149)
 
 ### `/datasets/<job_id>/abort`
 
@@ -58,7 +58,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@159`](../digits/views.py#L159)
+Location: [`digits/views.py@169`](../digits/views.py#L169)
 
 ### `/datasets/<job_id>/status`
 
@@ -68,7 +68,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@120`](../digits/views.py#L120)
+Location: [`digits/views.py@130`](../digits/views.py#L130)
 
 ### `/jobs/<job_id>`
 
@@ -78,7 +78,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@87`](../digits/views.py#L87)
+Location: [`digits/views.py@97`](../digits/views.py#L97)
 
 ### `/jobs/<job_id>`
 
@@ -88,7 +88,7 @@ Methods: **PUT**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@104`](../digits/views.py#L104)
+Location: [`digits/views.py@114`](../digits/views.py#L114)
 
 ### `/jobs/<job_id>`
 
@@ -98,7 +98,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@139`](../digits/views.py#L139)
+Location: [`digits/views.py@149`](../digits/views.py#L149)
 
 ### `/jobs/<job_id>/abort`
 
@@ -108,7 +108,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@159`](../digits/views.py#L159)
+Location: [`digits/views.py@169`](../digits/views.py#L169)
 
 ### `/jobs/<job_id>/status`
 
@@ -118,7 +118,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@120`](../digits/views.py#L120)
+Location: [`digits/views.py@130`](../digits/views.py#L130)
 
 ### `/models/<job_id>`
 
@@ -128,7 +128,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@139`](../digits/views.py#L139)
+Location: [`digits/views.py@149`](../digits/views.py#L149)
 
 ### `/models/<job_id>/abort`
 
@@ -138,7 +138,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@159`](../digits/views.py#L159)
+Location: [`digits/views.py@169`](../digits/views.py#L169)
 
 ### `/models/<job_id>/status`
 
@@ -148,7 +148,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@120`](../digits/views.py#L120)
+Location: [`digits/views.py@130`](../digits/views.py#L130)
 
 ## Datasets
 
@@ -188,21 +188,49 @@ Methods: **GET**
 
 Location: [`digits/dataset/images/classification/views.py@235`](../digits/dataset/images/classification/views.py#L235)
 
+### `/datasets/images/classification/summary`
+
+> Return a short HTML summary of a DatasetJob
+
+Methods: **GET**
+
+Location: [`digits/dataset/images/classification/views.py@298`](../digits/dataset/images/classification/views.py#L298)
+
+### `/datasets/images/generic`
+
+> Creates a new GenericImageDatasetJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
+Methods: **POST**
+
+Location: [`digits/dataset/images/generic/views.py@27`](../digits/dataset/images/generic/views.py#L27)
+
+### `/datasets/images/generic/new`
+
+> Returns a form for a new GenericImageDatasetJob
+
+Methods: **GET**
+
+Location: [`digits/dataset/images/generic/views.py@17`](../digits/dataset/images/generic/views.py#L17)
+
+### `/datasets/images/generic/summary`
+
+> Return a short HTML summary of a DatasetJob
+
+Methods: **GET**
+
+Location: [`digits/dataset/images/generic/views.py@106`](../digits/dataset/images/generic/views.py#L106)
+
 ### `/datasets/images/resize-example`
 
 > Resizes the example image, and returns it as a string of png data
 
 Methods: **POST**
 
-Location: [`digits/dataset/images/views.py@17`](../digits/dataset/images/views.py#L17)
-
-### `/datasets/summary`
-
-> Return a short HTML summary of a DatasetJob
-
-Methods: **GET**
-
-Location: [`digits/dataset/views.py@36`](../digits/dataset/views.py#L36)
+Location: [`digits/dataset/images/views.py@18`](../digits/dataset/images/views.py#L18)
 
 ## Models
 
@@ -230,7 +258,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension` (`tar.gz`)
 
-Location: [`digits/model/views.py@158`](../digits/model/views.py#L158)
+Location: [`digits/model/views.py@160`](../digits/model/views.py#L160)
 
 ### `/models/<job_id>/download.<extension>`
 
@@ -240,7 +268,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension`
 
-Location: [`digits/model/views.py@158`](../digits/model/views.py#L158)
+Location: [`digits/model/views.py@160`](../digits/model/views.py#L160)
 
 ### `/models/customize`
 
@@ -248,7 +276,7 @@ Location: [`digits/model/views.py@158`](../digits/model/views.py#L158)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@53`](../digits/model/views.py#L53)
+Location: [`digits/model/views.py@55`](../digits/model/views.py#L55)
 
 ### `/models/images/classification`
 
@@ -310,13 +338,57 @@ Methods: **POST**
 
 Location: [`digits/model/images/classification/views.py@374`](../digits/model/images/classification/views.py#L374)
 
+### `/models/images/generic`
+
+> Create a new GenericImageModelJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
+Methods: **POST**
+
+Location: [`digits/model/images/generic/views.py@52`](../digits/model/images/generic/views.py#L52)
+
+### `/models/images/generic/infer_many`
+
+> Infer many images
+
+Methods: **GET**, **POST**
+
+Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/generic/views.py#L267)
+
+### `/models/images/generic/infer_one`
+
+> Infer one image
+
+Methods: **GET**, **POST**
+
+Location: [`digits/model/images/generic/views.py@217`](../digits/model/images/generic/views.py#L217)
+
+### `/models/images/generic/large_graph`
+
+> Show the loss/accuracy graph, but bigger
+
+Methods: **GET**
+
+Location: [`digits/model/images/generic/views.py@206`](../digits/model/images/generic/views.py#L206)
+
+### `/models/images/generic/new`
+
+> Return a form for a new GenericImageModelJob
+
+Methods: **GET**
+
+Location: [`digits/model/images/generic/views.py@32`](../digits/model/images/generic/views.py#L32)
+
 ### `/models/visualize-lr`
 
 > Returns a JSON object of data used to create the learning rate graph
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@103`](../digits/model/views.py#L103)
+Location: [`digits/model/views.py@105`](../digits/model/views.py#L105)
 
 ### `/models/visualize-network`
 
@@ -324,7 +396,7 @@ Location: [`digits/model/views.py@103`](../digits/model/views.py#L103)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@90`](../digits/model/views.py#L90)
+Location: [`digits/model/views.py@92`](../digits/model/views.py#L92)
 
 ## Util
 
@@ -334,7 +406,7 @@ Location: [`digits/model/views.py@90`](../digits/model/views.py#L90)
 
 Methods: **GET**
 
-Location: [`digits/views.py@245`](../digits/views.py#L245)
+Location: [`digits/views.py@255`](../digits/views.py#L255)
 
 ### `/files/<path:path>`
 
@@ -350,5 +422,5 @@ Methods: **GET**
 
 Arguments: `path`
 
-Location: [`digits/views.py@217`](../digits/views.py#L217)
+Location: [`digits/views.py@227`](../digits/views.py#L227)
 

@@ -73,3 +73,9 @@ class DatasetJob(Job):
                 return t
         return None
 
+    def analyze_db_tasks(self):
+        """
+        Return all AnalyzeDbTasks for this job
+        """
+        return [t for t in self.tasks if isinstance(t, tasks.AnalyzeDbTask)]
+

@@ -1,0 +1,11 @@
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<table class="table">
+    {% for path in paths %}
+    {% set output = network_outputs[loop.index0] %}
+    <tr>
+        <td>{{path}}</td>
+        <td>{{output}}</td>
+    </tr>
+    {% endfor %}
+</table>

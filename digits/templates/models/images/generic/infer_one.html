@@ -1,4 +1,4 @@
-{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
 
 <div class="row">
     <div class="col-sm-6">
@@ -6,15 +6,10 @@
     </div>
 
     <div class="col-sm-6">
-        <h4>Predictions</h4>
-        <ul class="list-group">
-            {% for label, confidence in predictions %}
-            <li class="list-group-item">
-            <span class="badge">{{confidence}}%</span>
-            {{ label }}
-            </li>
-            {% endfor %}
-        </ul>
+        {% for name, blob in network_outputs.iteritems() %}
+        <h4>{{name}}</h4>
+        {{blob}}
+        {% endfor %}
     </div>
 </div>
 <script type="text/javascript">
