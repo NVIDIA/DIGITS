@@ -226,7 +226,11 @@ class CaffeOption(config_option.FrameworkOption):
 
             if self._config_file_value != '<PATHS>':
                 # Add caffe/python to PATH
-                sys.path.insert(0, os.path.join(self._config_file_value, 'python'))
+                p = os.path.join(self._config_file_value, 'python')
+                sys.path.insert(0, p)
+                # Add caffe/python to PYTHONPATH
+                #   so that build/tools/caffe is aware of python layers there
+                os.environ['PYTHONPATH'] = '%s:%s' % (p, os.environ.get('PYTHONPATH'))
 
             try:
                 import caffe
