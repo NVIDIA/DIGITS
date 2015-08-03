@@ -20,10 +20,7 @@ from cStringIO import StringIO
 import webapp
 from config import config_value
 import device_query
-
-
-DUMMY_IMAGE_DIM = 10
-DUMMY_IMAGE_COUNT = 10 # per category
+from test_imageset_creator import create_classification_imageset, IMAGE_SIZE as DUMMY_IMAGE_SIZE, IMAGE_COUNT as DUMMY_IMAGE_COUNT
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 15
@@ -34,22 +31,11 @@ class Dataset():
         self.data_path = data_path
         self.images = images
 
-class Direction():
-    RIGHT, UP, LEFT, DOWN = range(4)
-
 class ImageType():
     TYPES = ['COLOR', 'GRAY']
     COLOR, GRAY = TYPES
 
-LABELS = {
-    'red-to-right': (0, Direction.RIGHT),
-    'green-to-left': (1, Direction.LEFT),
-    'blue-to-bottom': (2, Direction.DOWN)
-}
-
-CATEGORIES = LABELS.keys()
-
-dummy_network = \
+DUMMY_CAFFE_NETWORK = \
 """
 layer {
     name: "in"
@@ -79,50 +65,6 @@ layer {
 }
 """
 
-def create_color_direction(size, color_from, color_to, direction):
-    """
-    Make an image with a color gradient in a specific direction
-    """
-    # create gradient
-    rgb_arrays = [np.linspace(color_from[x], color_to[x], size).astype('uint8') for x in range(3)]
-    gradient = np.concatenate(rgb_arrays)
-
-    # extend to 2d
-    picture = np.repeat(gradient, size)
-    picture.shape = (3, size, size)
-
-    # make image and rotate
-    image = PIL.Image.fromarray(picture.T)
-    image = image.rotate(direction*90)
-
-    return image
-
-def build_dataset(data_path):
-    """
-    A very simple dataset - Red, Green and Blue PNGs with gradients
-    """
-    dim = DUMMY_IMAGE_DIM
-    count = DUMMY_IMAGE_COUNT
-    min_color = 200
-
-    # Stores the relative path of each image of the dataset.
-    images = {k: [] for k in CATEGORIES}
-
-    for (label, (idx, direction)) in LABELS.iteritems():
-        label_path = label
-        os.mkdir(os.path.join(data_path, label_path))
-
-        colors = np.linspace(min_color, 255, count)
-        for i in range(count):
-            pixel = [0, 0, 0]
-            pixel[idx] = colors[i]
-            pil_img = create_color_direction(dim, (0, 0, 0), pixel, direction)
-            img_path = os.path.join(label_path, str(i) + '.png')
-            pil_img.save(os.path.join(data_path, img_path))
-            images[label].append(img_path)
-
-    return images
-
 class WebappBaseTest(object):
     """
     Defines some methods useful across the different webapp test suites
@@ -133,7 +75,7 @@ class WebappBaseTest(object):
         cls.image_type_data = {}
         for image_type in ImageType.TYPES:
             data_path = tempfile.mkdtemp()
-            images = build_dataset(data_path)
+            images = create_classification_imageset(data_path)
             cls.image_type_data[image_type] = Dataset(data_path, images)
 
         # Start up the server
@@ -214,8 +156,8 @@ class WebappBaseTest(object):
                 'method': 'folder',
                 'resize_channels': channels,
                 'folder_train': cls.image_type_data[image_type].data_path,
-                'resize_width': DUMMY_IMAGE_DIM,
-                'resize_height': DUMMY_IMAGE_DIM,
+                'resize_width': DUMMY_IMAGE_SIZE,
+                'resize_height': DUMMY_IMAGE_SIZE,
                 }
         defaults.update(kwargs)
         return cls.create_dataset(**defaults)
@@ -276,7 +218,7 @@ class WebappBaseTest(object):
         defaults = {
                 'dataset': dataset_id,
                 'method': 'custom',
-                'custom_network': dummy_network,
+                'custom_network': DUMMY_CAFFE_NETWORK,
                 'batch_size': DUMMY_IMAGE_COUNT,
                 'train_epochs': 1,
                 }
@@ -550,8 +492,8 @@ class TestDatasetCreation(WebappBaseTest):
         """dataset - nonsquare dimensions"""
         job_id = self.create_quick_dataset(
                 image_type,
-                resize_width = DUMMY_IMAGE_DIM,
-                resize_height = DUMMY_IMAGE_DIM*2,
+                resize_width = DUMMY_IMAGE_SIZE,
+                resize_height = DUMMY_IMAGE_SIZE*2,
                 )
         status = self.dataset_wait_completion(job_id)
         assert status == 'Done', 'create failed "%s"' % status
@@ -561,7 +503,7 @@ class TestDatasetCreation(WebappBaseTest):
         buff = StringIO(rv.data)
         buff.seek(0)
         size = PIL.Image.open(buff).size
-        assert size == (DUMMY_IMAGE_DIM,DUMMY_IMAGE_DIM*2), 'image size is %s' % (size,)
+        assert size == (DUMMY_IMAGE_SIZE,DUMMY_IMAGE_SIZE*2), 'image size is %s' % (size,)
 
 class TestCreatedDataset(WebappBaseTest):
     """
@@ -608,8 +550,8 @@ class TestModelCreation(WebappBaseTest):
         cls.datasets = {image_type: cls.create_dataset(
                 method = 'folder',
                 folder_train = dataset.data_path,
-                resize_width = DUMMY_IMAGE_DIM,
-                resize_height = DUMMY_IMAGE_DIM,
+                resize_width = DUMMY_IMAGE_SIZE,
+                resize_height = DUMMY_IMAGE_SIZE,
                 ) for image_type, dataset in cls.image_type_data.iteritems()}
 
     def test_page_model_new(self):
@@ -621,7 +563,7 @@ class TestModelCreation(WebappBaseTest):
     def test_visualize_network(self):
         """visualize network"""
         rv = self.app.post('/models/visualize-network',
-                data = {'custom_network': dummy_network}
+                data = {'custom_network': DUMMY_CAFFE_NETWORK}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
@@ -795,7 +737,7 @@ class TestCreatedModel(WebappBaseTest):
 
     def check_classify_one(self, image_type):
         """created model - classify one"""
-        category = next(iter(LABELS))
+        category = self.image_type_data[image_type].images.keys()[0]
         image_path = self.image_type_data[image_type].images[category][0]
         image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
         with open(image_path) as infile:
@@ -818,7 +760,7 @@ class TestCreatedModel(WebappBaseTest):
 
     def check_classify_one_json(self, image_type):
         """created model - classify one JSON"""
-        category = next(iter(LABELS))
+        category = self.image_type_data[image_type].images.keys()[0]
         image_path = self.image_type_data[image_type].images[category][0]
         image_path = os.path.join(self.image_type_data[image_type].data_path, image_path)
         with open(image_path) as infile:
