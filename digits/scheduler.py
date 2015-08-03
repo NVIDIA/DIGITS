@@ -269,7 +269,7 @@ class Scheduler:
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
-    def running_model_jobs(self):
+    def completed_model_jobs(self):
         """a query utility"""
         return sorted(
                 [j for j in self.jobs if isinstance(j, ModelJob) and not j.status.is_running()],
