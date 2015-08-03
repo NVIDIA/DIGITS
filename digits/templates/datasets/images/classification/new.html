@@ -164,6 +164,30 @@ function showResizeExample()
                         </div>
                     </div>
                     <div class="row">
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_min_per_class.errors else '' }}">
+                            {{ form.folder_train_min_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_train_min_per_class(class='form-control') }}
+                                <span name="folder_train_min_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_max_per_class.errors else '' }}">
+                            {{ form.folder_train_max_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_train_max_per_class(class='form-control') }}
+                                <span name="folder_train_max_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_pct_val.errors else '' }}">
                             {{ form.folder_pct_val.label }}
                             <div class="input-group">
@@ -190,21 +214,45 @@ function showResizeExample()
                     <br>
                     {{form.has_val_folder}}
                     {{form.has_val_folder.label}}
-                    <div id="separate-val-folder" style="display:none;" class="form-group{{ ' has-error' if form.folder_val.errors else '' }}">
+                    <div style="display:none;" class="form-group{{ ' has-error' if form.folder_val.errors else '' }} cl-separate-val-folder">
                         {{ form.folder_val.label }}
                         {{ form.folder_val(class='form-control autocomplete') }}
+                    </div>
+                    <div class="row cl-separate-val-folder">
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_min_per_class.errors else '' }}">
+                            {{ form.folder_val_min_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_val_min_per_class(class='form-control') }}
+                                <span name="folder_val_min_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_max_per_class.errors else '' }}">
+                            {{ form.folder_val_max_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_val_max_per_class(class='form-control') }}
+                                <span name="folder_val_max_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
                     </div>
                     <script>
 function hasValFolderChanged() {
     if ($("#has_val_folder").prop("checked"))
     {
         $("#folder_val").prop("disabled", false);
-        $("#separate-val-folder").show();
+        $(".cl-separate-val-folder").show();
         $("#folder_pct_val").prop("disabled", true);
     }
     else
     {
-        $("#separate-val-folder").hide();
+        $(".cl-separate-val-folder").hide();
         $("#folder_val").prop("disabled", true);
         $("#folder_pct_val").prop("disabled", false);
     }
@@ -215,21 +263,45 @@ hasValFolderChanged();
                     <br>
                     {{form.has_test_folder}}
                     {{form.has_test_folder.label}}
-                    <div id="separate-test-folder" style="display:none;" class="form-group{{ ' has-error' if form.folder_test.errors else '' }}">
+                    <div style="display:none;" class="form-group{{ ' has-error' if form.folder_test.errors else '' }} cl-separate-test-folder">
                         {{ form.folder_test.label }}
                         {{ form.folder_test(class='form-control autocomplete') }}
+                    </div>
+                    <div style="display:none;" class="row cl-separate-test-folder">
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_min_per_class.errors else '' }}">
+                            {{ form.folder_test_min_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_test_min_per_class(class='form-control') }}
+                                <span name="folder_test_min_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_max_per_class.errors else '' }}">
+                            {{ form.folder_test_max_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_test_max_per_class(class='form-control') }}
+                                <span name="folder_test_max_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
                     </div>
                     <script>
 function hasTestFolderChanged() {
     if ($("#has_test_folder").prop("checked"))
     {
         $("#folder_test").prop("disabled", false);
-        $("#separate-test-folder").show();
+        $(".cl-separate-test-folder").show();
         $("#folder_pct_test").prop("disabled", true);
     }
     else
     {
-        $("#separate-test-folder").hide();
+        $(".cl-separate-test-folder").hide();
         $("#folder_test").prop("disabled", true);
         $("#folder_pct_test").prop("disabled", false);
     }

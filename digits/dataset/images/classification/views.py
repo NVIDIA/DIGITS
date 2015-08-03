@@ -31,11 +31,16 @@ def from_folders(job, form):
     if form.has_test_folder.data:
         percent_test = 0
 
+    min_per_class = form.folder_train_min_per_class.data
+    max_per_class = form.folder_train_max_per_class.data
+
     parse_train_task = tasks.ParseFolderTask(
-            job_dir         = job.dir(),
-            folder          = form.folder_train.data,
-            percent_val     = percent_val,
-            percent_test    = percent_test,
+            job_dir          = job.dir(),
+            folder           = form.folder_train.data,
+            percent_val      = percent_val,
+            percent_test     = percent_test,
+            min_per_category = min_per_class if min_per_class>0 else 1,
+            max_per_category = max_per_class if max_per_class>0 else None
             )
     job.tasks.append(parse_train_task)
 
@@ -46,23 +51,33 @@ def from_folders(job, form):
         test_parents = [parse_train_task]
 
     if form.has_val_folder.data:
+        min_per_class = form.folder_val_min_per_class.data
+        max_per_class = form.folder_val_max_per_class.data
+
         parse_val_task = tasks.ParseFolderTask(
                 job_dir         = job.dir(),
                 parents         = parse_train_task,
                 folder          = form.folder_val.data,
                 percent_val     = 100,
                 percent_test    = 0,
+                min_per_category = min_per_class if min_per_class>0 else 1,
+                max_per_category = max_per_class if max_per_class>0 else None
                 )
         job.tasks.append(parse_val_task)
         val_parents = [parse_val_task]
 
     if form.has_test_folder.data:
+        min_per_class = form.folder_test_min_per_class.data
+        max_per_class = form.folder_test_max_per_class.data
+
         parse_test_task = tasks.ParseFolderTask(
                 job_dir         = job.dir(),
                 parents         = parse_train_task,
                 folder          = form.folder_test.data,
                 percent_val     = 0,
                 percent_test    = 100,
+                min_per_category = min_per_class if min_per_class>0 else 1,
+                max_per_category = max_per_class if max_per_class>0 else None
                 )
         job.tasks.append(parse_test_task)
         test_parents = [parse_test_task]

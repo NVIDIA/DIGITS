@@ -8,7 +8,7 @@ from wtforms import validators
 
 from ..forms import ImageDatasetForm
 from digits import utils
-from digits.utils.forms import validate_required_iff
+from digits.utils.forms import validate_required_iff, validate_greater_than
 
 class ImageClassificationDatasetForm(ImageDatasetForm):
     """
@@ -72,6 +72,22 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 ]
             )
 
+    folder_train_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+            default=2,
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                ]
+            )
+
+    folder_train_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                validate_greater_than('folder_train_min_per_class'),
+                ]
+            )
+
     has_val_folder = wtforms.BooleanField('Separate validation images folder',
             default = False,
             validators=[
@@ -84,7 +100,22 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 validate_required_iff(
                     method='folder',
                     has_val_folder=True),
-                validate_folder_path,
+                ]
+            )
+
+    folder_val_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+            default=2,
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                ]
+            )
+
+    folder_val_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                validate_greater_than('folder_val_min_per_class'),
                 ]
             )
 
@@ -101,6 +132,22 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                     method='folder',
                     has_test_folder=True),
                 validate_folder_path,
+                ]
+            )
+
+    folder_test_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+            default=2,
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1)
+                ]
+            )
+
+    folder_test_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                validate_greater_than('folder_test_min_per_class'),
                 ]
             )
 

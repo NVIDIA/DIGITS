@@ -39,6 +39,10 @@ class BaseViewsTest(digits.test_views.BaseViewsTest):
         return cls.job_status(job_id, 'datasets')
 
     @classmethod
+    def dataset_info(cls, job_id):
+        return cls.job_info(job_id, 'datasets')
+
+    @classmethod
     def abort_dataset(cls, job_id):
         return cls.abort_job(job_id, job_type='datasets')
 
@@ -62,12 +66,15 @@ class BaseViewsTestWithImageset(BaseViewsTest):
     IMAGE_WIDTH     = 10
     IMAGE_CHANNELS  = 3
 
+    UNBALANCED_CATEGORY = False
+
     @classmethod
     def setUpClass(cls):
         super(BaseViewsTestWithImageset, cls).setUpClass()
         cls.imageset_folder = tempfile.mkdtemp()
         # create imageset
-        cls.imageset_paths = create_classification_imageset(cls.imageset_folder)
+        cls.imageset_paths = create_classification_imageset(cls.imageset_folder,
+                                                            add_unbalanced_category=cls.UNBALANCED_CATEGORY)
         cls.created_datasets = []
 
     @classmethod
@@ -127,6 +134,10 @@ class BaseViewsTestWithImageset(BaseViewsTest):
 
         cls.created_datasets.append(job_id)
         return job_id
+
+    @classmethod
+    def categoryCount(cls):
+        return len(cls.imageset_paths.keys())
 
 class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
     """
@@ -248,6 +259,125 @@ class TestCreation(BaseViewsTestWithImageset):
 
         job_id = self.create_dataset(**data)
         assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+
+class TestImageCount(BaseViewsTestWithImageset):
+
+    def test_image_count(self):
+        for type in ['train','val','test']:
+            yield self.check_image_count, type
+
+    def check_image_count(self, type):
+        data = {'folder_pct_val': 20,
+                'folder_pct_test': 10}
+        if type == 'val':
+            data['has_val_folder'] = 'True'
+            data['folder_val'] = self.imageset_folder
+        elif type == 'test':
+            data['has_test_folder'] = 'True'
+            data['folder_test'] = self.imageset_folder
+
+        job_id = self.create_dataset(**data)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.dataset_info(job_id)
+
+        if type == 'train':
+            assert len(info['ParseFolderTasks']) == 1, 'expected exactly one ParseFolderTasks'
+            parse_info = info['ParseFolderTasks'][0]
+            image_count = parse_info['train_count'] + parse_info['val_count'] + parse_info['test_count']
+            assert parse_info['val_count'] == 0.2 * image_count
+            assert parse_info['test_count'] == 0.1 * image_count
+        else:
+            assert len(info['ParseFolderTasks']) == 2, 'expected exactly one ParseFolderTasks'
+            parse_info = info['ParseFolderTasks'][1]
+            if type == 'val':
+                assert parse_info['train_count'] == 0
+                assert parse_info['test_count'] == 0
+                image_count = parse_info['val_count']
+            else:
+                assert parse_info['train_count'] == 0
+                assert parse_info['val_count'] == 0
+                image_count = parse_info['test_count']
+        assert self.categoryCount() == parse_info['label_count']
+        assert image_count == DUMMY_IMAGE_COUNT * parse_info['label_count'], 'image count mismatch'
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+class TestMaxPerClass(BaseViewsTestWithImageset):
+    def test_max_per_class(self):
+        for type in ['train','val','test']:
+            yield self.check_max_per_class, type
+
+    def check_max_per_class(self, type):
+        # create dataset, asking for at most DUMMY_IMAGE_COUNT/2 images per class
+        assert DUMMY_IMAGE_COUNT%2 == 0
+        max_per_class = DUMMY_IMAGE_COUNT/2
+        data = {'folder_pct_val': 0}
+        if type == 'train':
+            data['folder_train_max_per_class'] = max_per_class
+        if type == 'val':
+            data['has_val_folder'] = 'True'
+            data['folder_val'] = self.imageset_folder
+            data['folder_val_max_per_class'] = max_per_class
+        elif type == 'test':
+            data['has_test_folder'] = 'True'
+            data['folder_test'] = self.imageset_folder
+            data['folder_test_max_per_class'] = max_per_class
+
+        job_id = self.create_dataset(**data)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.dataset_info(job_id)
+
+        if type == 'train':
+            assert len(info['ParseFolderTasks']) == 1, 'expected exactly one ParseFolderTasks'
+            parse_info = info['ParseFolderTasks'][0]
+        else:
+            assert len(info['ParseFolderTasks']) == 2, 'expected exactly one ParseFolderTasks'
+            parse_info = info['ParseFolderTasks'][1]
+
+        image_count = parse_info['train_count'] + parse_info['val_count'] + parse_info['test_count']
+        assert image_count == max_per_class * parse_info['label_count'], 'image count mismatch'
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+class TestMinPerClass(BaseViewsTestWithImageset):
+
+    UNBALANCED_CATEGORY = True
+
+    def test_min_per_class(self):
+        for type in ['train','val','test']:
+            yield self.check_min_per_class, type
+
+    def check_min_per_class(self, type):
+        # create dataset, asking for one more image per class
+        # than available in the "unbalanced" category
+        min_per_class = DUMMY_IMAGE_COUNT/2+1
+        data = {'folder_pct_val': 0}
+        if type == 'train':
+            data['folder_train_min_per_class'] = min_per_class
+        if type == 'val':
+            data['has_val_folder'] = 'True'
+            data['folder_val'] = self.imageset_folder
+            data['folder_val_min_per_class'] = min_per_class
+        elif type == 'test':
+            data['has_test_folder'] = 'True'
+            data['folder_test'] = self.imageset_folder
+            data['folder_test_min_per_class'] = min_per_class
+
+        job_id = self.create_dataset(**data)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.dataset_info(job_id)
+
+        if type == 'train':
+            assert len(info['ParseFolderTasks']) == 1, 'expected exactly one ParseFolderTasks'
+            parse_info = info['ParseFolderTasks'][0]
+        else:
+            assert len(info['ParseFolderTasks']) == 2, 'expected exactly two ParseFolderTasks'
+            parse_info = info['ParseFolderTasks'][1]
+
+        assert self.categoryCount() == parse_info['label_count']+1
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
 
 class TestCreated(BaseViewsTestWithDataset):
     """

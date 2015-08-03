@@ -17,9 +17,12 @@ IMAGE_SIZE  = 10
 IMAGE_COUNT = 10 # per category
 
 
-def create_classification_imageset(folder, image_size=None, image_count=None):
+def create_classification_imageset(folder, image_size=None, image_count=None, add_unbalanced_category=False):
     """
     Creates a folder of folders of images for classification
+
+    If requested to add an unbalanced category then a category is added with
+    half the number of samples of other categories
     """
     if image_size is None:
         image_size = IMAGE_SIZE
@@ -29,11 +32,16 @@ def create_classification_imageset(folder, image_size=None, image_count=None):
     # Stores the relative path of each image of the dataset
     paths = defaultdict(list)
 
-    for class_name, pixel_index, rotation in [
-            ('red-to-right', 0, 0),
-            ('green-to-top', 1, 90),
-            ('blue-to-left', 2, 180),
-            ]:
+    config = [
+            ('red-to-right', 0, 0,   image_count),
+            ('green-to-top', 1, 90,  image_count),
+            ('blue-to-left', 2, 180, image_count),
+            ]
+
+    if add_unbalanced_category:
+        config.append( ('blue-to-bottom', 2, 270, image_count/2) )
+
+    for class_name, pixel_index, rotation, image_count in config:
         os.makedirs(os.path.join(folder, class_name))
 
         colors = np.linspace(200, 255, image_count)
