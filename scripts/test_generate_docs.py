@@ -43,14 +43,12 @@ def check_doc_file(generator, doc_filename):
                     raise RuntimeError('%s needs to be regenerated. Use scripts/generate_docs.py' % doc_filename)
 
 def test_api_md():
-    """API.md out-of-date"""
     with app.app_context():
         generator = _.ApiDocGenerator(doc)
         check_doc_file(generator,
                 os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs', 'API.md'))
 
 def test_flask_routes_md():
-    """FlaskRoutes.md out-of-date"""
     with app.app_context():
         generator = _.FlaskRoutesDocGenerator(doc)
         check_doc_file(generator,

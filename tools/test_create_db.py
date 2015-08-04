@@ -27,7 +27,6 @@ class TestInit():
 
     @raises(ValueError)
     def test_bad_backend(self):
-        """invalid db backend"""
         _.DbCreator(self.db_name, 'not-a-backend')
 
 class TestCreate():
@@ -35,7 +34,7 @@ class TestCreate():
     def setUpClass(cls):
         cls.db_name = tempfile.mkdtemp()
         cls.db = _.DbCreator(cls.db_name, 'leveldb')
-        
+
         fd, cls.input_file = tempfile.mkstemp()
         os.close(fd)
 
@@ -53,11 +52,9 @@ class TestCreate():
             pass
 
     def test_create_no_input_file(self):
-        """create with no image input file"""
         assert not self.db.create('', width=0, height=0), 'database should not allow empty input file'
 
     def test_create_bad_height_width(self):
-        """create with bad height and width for images"""
         assert not self.db.create(
             self.input_file,
             width=-1,
@@ -65,7 +62,6 @@ class TestCreate():
             resize_mode='crop'), 'database should not allow height == width == -1'
 
     def test_create_bad_channel_count(self):
-        """create with bad channel count"""
         assert not self.db.create(
             self.input_file,
             width=200,
@@ -74,7 +70,6 @@ class TestCreate():
             resize_mode='crop'), 'database should not allow channels == 0'
 
     def test_create_bad_resize_mode(self):
-        """create with bad resize mode"""
         assert not self.db.create(
             self.input_file,
             width=200,
@@ -82,7 +77,6 @@ class TestCreate():
             resize_mode='slurp'), 'database should not allow bad resize mode slurp'
 
     def test_create_bad_image_folder(self):
-        """create with bad image folder path"""
         assert not self.db.create(
             self.input_file,
             width=200,
@@ -116,7 +110,6 @@ class TestPathToDatum():
             pass
 
     def test_configs(self):
-        """path_to_datum"""
         self.db.height = 10
         self.db.width = 10
         self.db.resize_mode = 'squash'
