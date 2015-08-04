@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Jul 31, 2015*
+*Generated Aug 04, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -272,7 +272,7 @@ Location: [`digits/model/images/classification/views.py@53`](../digits/model/ima
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@287`](../digits/model/images/classification/views.py#L287)
+Location: [`digits/model/images/classification/views.py@290`](../digits/model/images/classification/views.py#L290)
 
 ### `/models/images/classification/classify_one`
 
@@ -284,7 +284,7 @@ Location: [`digits/model/images/classification/views.py@287`](../digits/model/im
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@233`](../digits/model/images/classification/views.py#L233)
+Location: [`digits/model/images/classification/views.py@236`](../digits/model/images/classification/views.py#L236)
 
 ### `/models/images/classification/large_graph`
 
@@ -292,7 +292,7 @@ Location: [`digits/model/images/classification/views.py@233`](../digits/model/im
 
 Methods: **GET**
 
-Location: [`digits/model/images/classification/views.py@222`](../digits/model/images/classification/views.py#L222)
+Location: [`digits/model/images/classification/views.py@225`](../digits/model/images/classification/views.py#L225)
 
 ### `/models/images/classification/new`
 
@@ -308,7 +308,7 @@ Location: [`digits/model/images/classification/views.py@32`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@371`](../digits/model/images/classification/views.py#L371)
+Location: [`digits/model/images/classification/views.py@374`](../digits/model/images/classification/views.py#L374)
 
 ### `/models/visualize-lr`
 

@@ -284,7 +284,7 @@ class TestCreation(BaseViewsTestWithDataset):
                 yield self.check_select_gpus, combination
 
     def check_select_gpus(self, gpu_list):
-        job_id = self.create_model(select_gpus_list=','.join(gpu_list))
+        job_id = self.create_model(select_gpus_list=','.join(gpu_list), batch_size=len(gpu_list))
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
 
     def test_retrain(self):
