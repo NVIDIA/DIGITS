@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Functions for creating temporary datasets
-Used in the test suite
+Used in test_views
 """
 
 import os
