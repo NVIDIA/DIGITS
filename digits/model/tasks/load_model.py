@@ -147,9 +147,6 @@ class LoadModelTask(Task):
                 layers.append(layer)
 
         lastLayer = layers[-1]
-        print lastLayer
-        print "~~~~~~~~~~~~~~~~~~~~"
-        print lastLayer.inner_product_param
         try:
             nCategories = int(lastLayer.inner_product_param.num_output)
             for i in range(nCategories):
