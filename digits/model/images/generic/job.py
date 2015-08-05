@@ -38,14 +38,15 @@ class GenericImageModelJob(ImageModelJob):
         if not snapshot_filename:
             raise ValueError('Invalid epoch')
 
-        return [
+        files = [
                 (self.path(task.deploy_file),
                     os.path.basename(task.deploy_file)),
-                (task.dataset.path(task.dataset.labels_file),
-                    os.path.basename(task.dataset.labels_file)),
-                (task.dataset.path(task.dataset.train_db_task().mean_file),
-                    os.path.basename(task.dataset.train_db_task().mean_file)),
                 (snapshot_filename,
                     os.path.basename(snapshot_filename)),
                 ]
+        if task.dataset.mean_file:
+            files.append((
+                task.dataset.path(task.dataset.mean_file),
+                os.path.basename(task.dataset.mean_file)))
+        return files
 

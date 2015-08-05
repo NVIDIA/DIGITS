@@ -45,25 +45,22 @@ class BaseViewsTest(digits.test_views.BaseViewsTest):
     CAFFE_NETWORK = \
 """
 layer {
-    name: "in"
+    name: "hidden"
     type: 'InnerProduct'
     bottom: "data"
-    top: "in"
-    inner_product_param {
-        num_output: 3
-    }
+    top: "output"
 }
 layer {
     name: "loss"
     type: "SoftmaxWithLoss"
-    bottom: "in"
+    bottom: "output"
     bottom: "label"
     top: "loss"
 }
 layer {
     name: "accuracy"
     type: "Accuracy"
-    bottom: "in"
+    bottom: "output"
     bottom: "label"
     top: "accuracy"
     include {
@@ -193,9 +190,6 @@ class TestViews(BaseViewsTest):
         assert 'New Image Classification Model' in rv.data, 'unexpected page format'
 
     def test_nonexistent_model(self):
-        assert not self.model_exists('foo'), "model shouldn't exist"
-
-    def test_invalid_model(self):
         assert not self.model_exists('foo'), "model shouldn't exist"
 
     def test_visualize_network(self):
