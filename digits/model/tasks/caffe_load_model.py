@@ -550,7 +550,7 @@ class CaffeLoadModelTask(LoadModelTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        labels = self.get_labels()
+        labels = self.get_labels() 
         net = self.get_net(snapshot_epoch)
 
         # process image
@@ -572,7 +572,6 @@ class CaffeLoadModelTask(LoadModelTask):
         predictions = []
         for i in indices:
             predictions.append( (labels[i], scores[i]) )
-
 
         # add visualizations
         visualizations = []

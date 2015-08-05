@@ -29,14 +29,10 @@
         <div class="well">
         	{% set task = job.load_model_task() %}
             <hr>
-            {{ task.has_model() }}
             <form id="test-model-form"
                 enctype="multipart/form-data"
                 method="post"
                 onkeypress="return event.keyCode != 13;" {# Disable enter to submit #}
-                {% if not task.has_model() %}
-                style="display:none;"
-                {% endif %}
                 >
                 <div class="row">
                     <div class="col-sm-12">

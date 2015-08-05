@@ -123,6 +123,7 @@ class Scheduler:
                 if not exists:
                     try:
                         try:
+                            # TODO : Suggest a better way of storing Jobs. So that we can know while loading itself what sort of a model are we looking at.
                             job = Job.load(dir_name)
                             if not job:
                                 job = PretrainedJob.load(dir_name)

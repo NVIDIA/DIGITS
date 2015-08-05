@@ -36,7 +36,7 @@ class LoadModelTask(Task):
         """
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.crop_size = kwargs.pop('crop_size', None)
-        self.channels = kwargs.pop('channels', 3)
+        self.channels = kwargs.pop('channels', 3) # Would be reset once we obtain the actual number of channels from the .prototxt
 
         super(LoadModelTask, self).__init__(**kwargs)
         self.pickver_task_loadmodel = PICKLE_VERSION
@@ -143,10 +143,13 @@ class LoadModelTask(Task):
         layers = []
         for layer in self.network.layer:
             assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
-            if layer.type!='Data' and layer.type!='SoftmaxWithLoss' and layer.type!='Accuracy':
+            if layer.type!='Data' and layer.type!='SoftmaxWithLoss' and layer.type!='Accuracy' and layer.type!='Softmax':
                 layers.append(layer)
 
         lastLayer = layers[-1]
+        print lastLayer
+        print "~~~~~~~~~~~~~~~~~~~~"
+        print lastLayer.inner_product_param
         try:
             nCategories = int(lastLayer.inner_product_param.num_output)
             for i in range(nCategories):
