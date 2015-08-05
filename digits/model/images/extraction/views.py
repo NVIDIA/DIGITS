@@ -23,9 +23,8 @@ from digits.config import config_value
 from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
-from digits.dataset import ImageClassificationDatasetJob
 from digits.model import tasks
-from forms import DummyFeatureExtractionModelForm
+from forms import PretrainedFeatureExtractionModelForm
 from job import FeatureExtractionModelJob
 from digits.status import Status
 
@@ -35,9 +34,9 @@ NAMESPACE   = '/models/images/extraction'
 @autodoc('models')
 def feature_extraction_model_new():
     """
-    Return a form for a new ImageClassificationModelJob for feature extraction.
+    Return a form for a new FeatureExtractionModelJob for feature extraction.
     """
-    form = DummyFeatureExtractionModelForm()
+    form = PretrainedFeatureExtractionModelForm()
     return flask.render_template('models/images/extraction/new.html',
             form = form,
             )
@@ -47,11 +46,11 @@ def feature_extraction_model_new():
 @autodoc(['models', 'api'])
 def feature_extraction_model_create():
     """
-    Create a new ImageClassificationModelJob for feature extraction using pretrained model.
+    Create a new FeatureExtractionModelJob for feature extraction using pretrained model.
 
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
-    form = DummyFeatureExtractionModelForm()
+    form = PretrainedFeatureExtractionModelForm()
 
     if not form.validate_on_submit():
         if request_wants_json():
@@ -61,16 +60,10 @@ def feature_extraction_model_create():
                     form = form,
                     ), 400
 
-    datasetJob = scheduler.get_job(get_dummy_dataset_id())
-    if not datasetJob:
-        raise werkzeug.exceptions.BadRequest(
-                'Unknown dataset job_id "%s"' % get_dummy_dataset_id())
-
     job = None
     try:
         job = FeatureExtractionModelJob(
-                name        = form.model_name.data,
-                dataset_id  = datasetJob.id(),
+                name = form.model_name.data,
                 )
 
         network = caffe_pb2.NetParameter()
@@ -83,26 +76,14 @@ def feature_extraction_model_create():
             raise werkzeug.exceptions.BadRequest(
                     'Unrecognized method: "%s"' % form.method.data)
 
-        policy = {'policy': 'fixed'}
         
         job.tasks.append(
-                tasks.CaffeTrainTask(
+                tasks.CaffeLoadModelTask(
                     job_dir         = job.dir(),
-                    dataset         = datasetJob,
-                    train_epochs    = 1,
-                    snapshot_interval   = 1,
-                    learning_rate   = 0,
-                    lr_policy       = policy,
-                    gpu_count       = None,
-                    selected_gpus   = None,
-                    batch_size      = None,
-                    val_interval    = 1,
                     pretrained_model= pretrained_model,
                     crop_size       = None,
-                    use_mean        = False,
+                    channels        = None,
                     network         = network,
-                    random_seed     = None,
-                    solver_type     = 'SGD',
                     )
                 )
 
@@ -154,16 +135,19 @@ def feature_extraction_model_classify_one():
     else:
         raise werkzeug.exceptions.BadRequest('Must provide image_url or image_file')
 
+    # TODO : This needs to be looked into with detail. See how to get the crop size parameters.
+
     # resize image
-    db_task = job.train_task().dataset.train_db_task()
-    height = db_task.image_dims[0]
-    width = db_task.image_dims[1]
-    if job.train_task().crop_size:
-        height = job.train_task().crop_size
-        width = job.train_task().crop_size
+    model_task = job.load_model_task()
+    if model_task.crop_size:
+        height = model_task.crop_size
+        width = model_task.crop_size
+    else:
+        raise werkzeug.exceptions.BadRequest('Failed to extract crop_size from network')
     image = utils.image.resize_image(image, height, width,
-            channels = db_task.image_dims[2],
-            resize_mode = db_task.resize_mode,
+            #TODO : Get channels elegantly.
+            channels = 3,
+            resize_mode = None,
             )
 
     epoch = None
@@ -201,8 +185,8 @@ def feature_extraction_model_classify_one():
         job_id = flask.request.args['job_id']
     else:
         raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')
-
-    predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
+    
+    predictions, visualizations = model_task.infer_one(image, snapshot_epoch=epoch, layers=layers)
     # take top 5
     predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
@@ -261,7 +245,6 @@ def feature_extraction_model_classify_many():
 
     paths = []
     images = []
-    dataset = job.train_task().dataset
 
     for line in image_list.readlines():
         line = line.strip()
@@ -279,9 +262,10 @@ def feature_extraction_model_classify_many():
         try:
             image = utils.image.load_image(path)
             image = utils.image.resize_image(image,
-                    dataset.image_dims[0], dataset.image_dims[1],
-                    channels    = dataset.image_dims[2],
-                    resize_mode = dataset.resize_mode,
+                    job.load_model_task().crop_size, job.load_model_task().crop_size,
+                    # TODO : get channels elegantly.
+                    channels    = 3,
+                    resize_mode = None,
                     )
             paths.append(path)
             images.append(image)
@@ -322,7 +306,7 @@ def feature_extraction_model_classify_many():
     else:
         raise werkzeug.exceptions.BadRequest('job_id is a necessary parameter, not found.')
 
-    labels, scores, visualizations = job.train_task().infer_many(images, snapshot_epoch=epoch, layers=layers)
+    labels, scores, visualizations = job.load_model_task().infer_many(images, snapshot_epoch=epoch, layers=layers)
     
     if scores is None:
         raise werkzeug.exceptions.BadRequest('An error occured while processing the images')
@@ -426,14 +410,14 @@ def extraction_model_top_n():
     random.shuffle(paths)
 
     images = []
-    dataset = job.train_task().dataset
     for path in paths:
         try:
             image = utils.image.load_image(path)
             image = utils.image.resize_image(image,
-                    dataset.image_dims[0], dataset.image_dims[1],
-                    channels    = dataset.image_dims[2],
-                    resize_mode = dataset.resize_mode,
+                    job.load_model_task().crop_size, job.load_model_task().crop_size,
+                    #TODO : get channels elegantly.
+                    channels    = 3,
+                    resize_mode = None,
                     )
             images.append(image)
             if num_images and len(images) >= num_images:
@@ -445,7 +429,7 @@ def extraction_model_top_n():
         raise werkzeug.exceptions.BadRequest(
                 'Unable to load any images from the file')
 
-    labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
+    labels, scores = job.load_model_task().infer_many(images, snapshot_epoch=epoch)
     if scores is None:
         raise RuntimeError('An error occured while processing the images')
 
@@ -467,6 +451,3 @@ def extraction_model_top_n():
             results=results,
             )
 
-def get_dummy_dataset_id():
-    # Hack : Hardcoding this value. Need to change to something better.
-    return '20150624-230823-df97'

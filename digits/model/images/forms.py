@@ -4,7 +4,7 @@ import wtforms
 from wtforms import validators
 
 from ..forms import ModelForm
-from ..forms import DummyModelForm
+from ..forms import PretrainedModelForm
 
 class ImageModelForm(ModelForm):
     """
@@ -32,8 +32,8 @@ class ImageModelForm(ModelForm):
             )
 
 
-class DummyImageModelForm(DummyModelForm):
+class PretrainedImageModelForm(PretrainedModelForm):
     """
-    Defines the form used to create a new DummyImageModelJob
+    Defines the form used to create a new PretrainedImageModelJob
     """
     pass

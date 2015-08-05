@@ -3,13 +3,13 @@
 import os.path
 
 from digits.utils import subclass, override
-from ..job import ImageModelJob
+from ..job import ImagePretrainedModelJob
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
 
 @subclass
-class FeatureExtractionModelJob(ImageModelJob):
+class FeatureExtractionModelJob(ImagePretrainedModelJob):
     """
     A Job that creates an image model for a feature extraction network
     """
@@ -24,7 +24,7 @@ class FeatureExtractionModelJob(ImageModelJob):
 
     @override
     def download_files(self, epoch=-1):
-        task = self.train_task()
+        task = self.load_model_task()
 
         snapshot_filename = None
         if epoch == -1 and len(task.snapshots):
@@ -41,10 +41,6 @@ class FeatureExtractionModelJob(ImageModelJob):
         return [
                 (self.path(task.deploy_file),
                     os.path.basename(task.deploy_file)),
-                (task.dataset.path(task.dataset.labels_file),
-                    os.path.basename(task.dataset.labels_file)),
-                (task.dataset.path(task.dataset.train_db_task().mean_file),
-                    os.path.basename(task.dataset.train_db_task().mean_file)),
                 (snapshot_filename,
                     os.path.basename(snapshot_filename)),
                 ]

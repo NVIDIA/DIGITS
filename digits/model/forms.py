@@ -246,7 +246,7 @@ class ModelForm(Form):
             )
 
 
-class DummyModelForm(Form):
+class PretrainedModelForm(Form):
 
     ### Methods
 

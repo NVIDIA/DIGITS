@@ -36,7 +36,9 @@ def home():
     running_datasets    = get_job_list(dataset.DatasetJob, True)
     completed_datasets  = get_job_list(dataset.DatasetJob, False)
     running_models      = get_job_list(model.ModelJob, True)
+    running_models     += get_job_list(model.PretrainedModelJob, True)
     completed_models    = get_job_list(model.ModelJob, False)
+    completed_models   += get_job_list(model.PretrainedModelJob, False)
 
     if request_wants_json():
         return flask.jsonify({

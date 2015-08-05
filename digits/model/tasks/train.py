@@ -17,6 +17,7 @@ PICKLE_VERSION = 2
 # Used to store network outputs
 NetworkOutput = namedtuple('NetworkOutput', ['kind', 'data'])
 
+
 class TrainTask(Task):
     """
     Defines required methods for child classes

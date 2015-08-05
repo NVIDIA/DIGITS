@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-from digits.job import Job
+from digits.job import Job, PretrainedJob
 from . import tasks
 
 from digits.utils import override
@@ -62,3 +62,41 @@ class ModelJob(Job):
         These files get added to an archive when this job is downloaded
         """
         return NotImplementedError()
+
+class PretrainedModelJob(PretrainedJob):
+    """
+    A Job that loads a neural network pretrained model.
+    """
+
+    def __init__(self, **kwargs):
+        super(PretrainedModelJob, self).__init__(**kwargs)
+
+    def __getstate__(self):
+        state = super(PretrainedModelJob, self).__getstate__()
+        return state
+
+    def __setstate__(self, state):
+        super(PretrainedModelJob, self).__setstate__(state)
+
+    def download_files(self):
+        """
+        Returns a list of tuples: [(path, filename)...]
+        These files get added to an archive when this job is downloaded
+        """
+        return NotImplementedError()
+
+    @override
+    def json_dict(self, verbose=False):
+        d = super(PretrainedModelJob, self).json_dict(verbose)
+
+        if verbose:
+            d.update({
+                'snapshots': [s[1] for s in self.load_model_task().snapshots],
+                })
+        return d
+
+    def load_model_task(self):
+        """
+        Return the first LoadModelTask for this job.
+        """
+        return [t for t in self.tasks if isinstance(t, tasks.LoadModelTask)][0]
