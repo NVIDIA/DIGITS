@@ -40,5 +40,13 @@ def print_time_diff(diff):
         return '1 second'
     return '%s seconds' % seconds
 
+def print_time_diff_nosuffixes(diff):
+    if diff is None:
+        return '?'
+
+    hours, rem = divmod(diff, 3600)
+    minutes, seconds = divmod(rem, 60)
+    return '{:02d}:{:02d}:{:02d}'.format(int(hours), int(minutes), int(seconds))
+
 def print_time_since(t):
     return print_time_diff(time.time() - t)

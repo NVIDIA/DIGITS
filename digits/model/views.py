@@ -7,6 +7,8 @@ import json
 import math
 import tarfile
 import zipfile
+from collections import OrderedDict
+from datetime import timedelta
 
 import flask
 import werkzeug.exceptions
@@ -20,11 +22,69 @@ import caffe.draw
 
 import digits
 from digits.webapp import app, scheduler, autodoc
+from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
+from . import ModelJob
+import forms
 import images.views
 import images as model_images
 
 NAMESPACE = '/models/'
+
+@app.route(NAMESPACE, methods=['GET'])
+@autodoc(['models'])
+def models_all():
+    column_attrs = list(get_column_attrs())
+    raw_jobs = [j for j in scheduler.jobs if isinstance(j, ModelJob)]
+
+    column_types = [
+        ColumnType('latest', False, lambda outs: outs[-1]),
+        ColumnType('max', True, lambda outs: max(outs)),
+        ColumnType('min', True, lambda outs: min(outs))
+    ]
+
+    jobs = []
+    for rjob in raw_jobs:
+        train_outs = rjob.train_task().train_outputs
+        val_outs = rjob.train_task().val_outputs
+        history = rjob.status_history
+
+        # update column attribute set
+        keys = set(train_outs.keys() + val_outs.keys())
+
+        # build job dict
+        job_info = JobBasicInfo(
+            rjob.name(),
+            rjob.id(),
+            rjob.status,
+            time_filters.print_time_diff_nosuffixes(history[-1][1] - history[0][1])
+        )
+
+        # build a dictionary of each attribute of a job. If an attribute is
+        # present, add all different column types.
+        job_attrs = {}
+        for cattr in column_attrs:
+            if cattr in train_outs:
+                out_list = train_outs[cattr].data
+            elif cattr in val_outs:
+                out_list = val_outs[cattr].data
+            else:
+                continue
+
+            job_attrs[cattr] = {ctype.name: ctype.find_from_list(out_list)
+                for ctype in column_types}
+
+        job = (job_info, job_attrs)
+        jobs.append(job)
+
+    attrs_and_labels = []
+    for cattr in column_attrs:
+        for ctype in column_types:
+            attrs_and_labels.append((cattr, ctype, ctype.label(cattr)))
+
+    return flask.render_template('results.html',
+        jobs=jobs,
+        attrs_and_labels=attrs_and_labels)
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])
@@ -211,4 +271,27 @@ def models_download(job_id, extension):
     response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)
     return response
 
+class JobBasicInfo(object):
+    def __init__(self, name, ID, status, time):
+        self.name = name
+        self.id = ID
+        self.status = status
+        self.time = time
 
+class ColumnType(object):
+    def __init__(self, name, has_suffix, find_fn):
+        self.name = name
+        self.has_suffix = has_suffix
+        self.find_from_list = find_fn
+
+    def label(self, attr):
+        if self.has_suffix:
+            return '{} {}'.format(attr, self.name)
+        else:
+            return attr
+
+def get_column_attrs():
+    job_outs = [set(j.train_task().train_outputs.keys() + j.train_task().val_outputs.keys())
+        for j in scheduler.jobs if isinstance(j, ModelJob)]
+
+    return reduce(lambda acc, j: acc.union(j), job_outs, set())

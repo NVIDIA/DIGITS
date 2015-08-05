@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Aug 17, 2015*
+*Generated Aug 20, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -234,6 +234,12 @@ Location: [`digits/dataset/images/views.py@18`](../digits/dataset/images/views.p
 
 ## Models
 
+### `/models/`
+
+Methods: **GET**
+
+Location: [`digits/model/views.py@35`](../digits/model/views.py#L35)
+
 ### `/models/<job_id>`
 
 > Show a ModelJob
@@ -248,7 +254,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/model/views.py@31`](../digits/model/views.py#L31)
+Location: [`digits/model/views.py@91`](../digits/model/views.py#L91)
 
 ### `/models/<job_id>/download`
 
@@ -258,7 +264,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension` (`tar.gz`)
 
-Location: [`digits/model/views.py@160`](../digits/model/views.py#L160)
+Location: [`digits/model/views.py@220`](../digits/model/views.py#L220)
 
 ### `/models/<job_id>/download.<extension>`
 
@@ -268,7 +274,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension`
 
-Location: [`digits/model/views.py@160`](../digits/model/views.py#L160)
+Location: [`digits/model/views.py@220`](../digits/model/views.py#L220)
 
 ### `/models/customize`
 
@@ -276,7 +282,7 @@ Location: [`digits/model/views.py@160`](../digits/model/views.py#L160)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@55`](../digits/model/views.py#L55)
+Location: [`digits/model/views.py@115`](../digits/model/views.py#L115)
 
 ### `/models/images/classification`
 
@@ -388,7 +394,7 @@ Location: [`digits/model/images/generic/views.py@30`](../digits/model/images/gen
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@105`](../digits/model/views.py#L105)
+Location: [`digits/model/views.py@165`](../digits/model/views.py#L165)
 
 ### `/models/visualize-network`
 
@@ -396,7 +402,7 @@ Location: [`digits/model/views.py@105`](../digits/model/views.py#L105)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@92`](../digits/model/views.py#L92)
+Location: [`digits/model/views.py@152`](../digits/model/views.py#L152)
 
 ## Util
 
