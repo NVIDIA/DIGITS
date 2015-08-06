@@ -67,6 +67,17 @@ class BaseViewsTest(object):
         return status['status']
 
     @classmethod
+    def job_info(cls, job_id, job_type='jobs'):
+        """
+        Get job information (full JSON response)
+        """
+        url = '/%s/%s.json' % (job_type, job_id)
+        rv = cls.app.get(url)
+        assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+        info = json.loads(rv.data)
+        return info
+
+    @classmethod
     def abort_job(cls, job_id, job_type='jobs'):
         """
         Abort a job
