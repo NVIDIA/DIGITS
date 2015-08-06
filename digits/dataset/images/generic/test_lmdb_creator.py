@@ -16,6 +16,12 @@ import numpy as np
 import PIL.Image
 import lmdb
 
+if __name__ == '__main__':
+    dirname = os.path.dirname(os.path.realpath(__file__))
+    sys.path.append(os.path.join(dirname,'..','..','..','..'))
+    from digits.config.load  import load_config
+    load_config()
+
 try:
     import caffe_pb2
 except ImportError:
