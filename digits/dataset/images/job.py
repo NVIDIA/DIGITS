@@ -10,17 +10,17 @@ class ImageDatasetJob(DatasetJob):
     A Job that creates an image dataset
     """
 
-    def __init__(self, image_dims, resize_mode, **kwargs):
+    def __init__(self, **kwargs):
         """
-        Arguments:
+        Keyword arguments:
         image_dims -- (height, width, channels)
         resize_mode -- used in utils.image.resize_image()
         """
+        self.image_dims = kwargs.pop('image_dims', None)
+        self.resize_mode = kwargs.pop('resize_mode', None)
+
         super(ImageDatasetJob, self).__init__(**kwargs)
         self.pickver_job_dataset_image = PICKLE_VERSION
-
-        self.image_dims = image_dims
-        self.resize_mode = resize_mode
 
     @staticmethod
     def resize_mode_choices():

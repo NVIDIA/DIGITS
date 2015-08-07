@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 import re
 import os
@@ -27,7 +27,7 @@ except ImportError:
 
 import digits.webapp
 import digits.test_views
-import digits.dataset.images.classification.test_views
+import digits.dataset.images.generic.test_views
 from digits.config import config_value
 
 # May be too short on a slow system
@@ -45,27 +45,29 @@ class BaseViewsTest(digits.test_views.BaseViewsTest):
     CAFFE_NETWORK = \
 """
 layer {
-    name: "hidden"
-    type: 'InnerProduct'
-    bottom: "data"
-    top: "output"
+  name: "scale"
+  type: "Power"
+  bottom: "data"
+  top: "scale"
+  power_param {
+    scale: 0.004
+  }
 }
 layer {
-    name: "loss"
-    type: "SoftmaxWithLoss"
-    bottom: "output"
-    bottom: "label"
-    top: "loss"
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scale"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
 }
 layer {
-    name: "accuracy"
-    type: "Accuracy"
-    bottom: "output"
-    bottom: "label"
-    top: "accuracy"
-    include {
-        phase: TEST
-    }
+  name: "train_loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
 }
 """
 
@@ -94,7 +96,7 @@ layer {
 
 
 class BaseViewsTestWithDataset(BaseViewsTest,
-        digits.dataset.images.classification.test_views.BaseViewsTestWithDataset):
+        digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
     """
     Provides a dataset
     """
@@ -130,14 +132,14 @@ class BaseViewsTestWithDataset(BaseViewsTest,
                 'method':           'custom',
                 'custom_network':   cls.CAFFE_NETWORK,
                 'batch_size':       10,
-                'train_epochs':     1,
+                'train_epochs':     3,
                 }
         if cls.CROP_SIZE is not None:
             data['crop_size'] = cls.CROP_SIZE
         data.update(kwargs)
 
         request_json = data.pop('json', False)
-        url = '/models/images/classification'
+        url = '/models/images/generic'
         if request_json:
             url += '.json'
 
@@ -185,9 +187,9 @@ class TestViews(BaseViewsTest):
     Tests which don't require a dataset or a model
     """
     def test_page_model_new(self):
-        rv = self.app.get('/models/images/classification/new')
+        rv = self.app.get('/models/images/generic/new')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        assert 'New Image Classification Model' in rv.data, 'unexpected page format'
+        assert 'New Image Model' in rv.data, 'unexpected page format'
 
     def test_nonexistent_model(self):
         assert not self.model_exists('foo'), "model shouldn't exist"
@@ -334,16 +336,14 @@ class TestCreated(BaseViewsTestWithModel):
         assert content['id'] == self.model_id, 'expected different job_id'
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
-    def test_classify_one(self):
-        category = self.imageset_paths.keys()[0]
-        image_path = self.imageset_paths[category][0]
-        image_path = os.path.join(self.imageset_folder, image_path)
+    def test_infer_one(self):
+        image_path = os.path.join(self.imageset_folder, self.test_image)
         with open(image_path) as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-                '/models/images/classification/classify_one?job_id=%s' % self.model_id,
+                '/models/images/generic/infer_one?job_id=%s' % self.model_id,
                 data = {
                     'image_file': image_upload,
                     'show_visualizations': 'y',
@@ -352,94 +352,55 @@ class TestCreated(BaseViewsTestWithModel):
         s = BeautifulSoup(rv.data)
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-        # gets an array of arrays [[confidence, label],...]
-        predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
-        assert predictions[0][1] == category, 'image misclassified'
 
-    def test_classify_one_json(self):
-        category = self.imageset_paths.keys()[0]
-        image_path = self.imageset_paths[category][0]
-        image_path = os.path.join(self.imageset_folder, image_path)
+    def test_infer_one_json(self):
+        image_path = os.path.join(self.imageset_folder, self.test_image)
         with open(image_path) as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-                '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
+                '/models/images/generic/infer_one.json?job_id=%s' % self.model_id,
                 data = {
                     'image_file': image_upload,
-                    'show_visualizations': 'y',
                     }
                 )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
-        assert data['predictions'][0][0] == category, 'image misclassified'
+        assert data['outputs']['output'][0][0] > 0 and \
+                data['outputs']['output'][0][1] > 0, \
+                'image regression result is wrong: %s' % data['outputs']['output']
 
-    def test_classify_many(self):
-        textfile_images = ''
-        label_id = 0
-        for label, images in self.imageset_paths.iteritems():
-            for image in images:
-                image_path = image
-                image_path = os.path.join(self.imageset_folder, image_path)
-                textfile_images += '%s %d\n' % (image_path, label_id)
-            label_id += 1
+    def test_infer_many(self):
+        textfile_images = '%s\n' % self.test_image
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+                '/models/images/generic/infer_many?job_id=%s' % self.model_id,
                 data = {'image_list': file_upload}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        headers = s.select('table.table th')
+        assert headers is not None, 'unrecognized page format'
 
-    def test_classify_many_json(self):
-        textfile_images = ''
-        label_id = 0
-        for label, images in self.imageset_paths.iteritems():
-            for image in images:
-                image_path = image
-                image_path = os.path.join(self.imageset_folder, image_path)
-                textfile_images += '%s %d\n' % (image_path, label_id)
-            label_id += 1
+    def test_infer_many_json(self):
+        textfile_images = '%s\n' % self.test_image
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many.json?job_id=%s' % self.model_id,
+                '/models/images/generic/infer_many.json?job_id=%s' % self.model_id,
                 data = {'image_list': file_upload}
                 )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
-        assert 'classifications' in data, 'invalid response'
+        assert 'outputs' in data, 'invalid response'
 
-    def test_top_n(self):
-        textfile_images = ''
-        label_id = 0
-        for label, images in self.imageset_paths.iteritems():
-            for image in images:
-                image_path = image
-                image_path = os.path.join(self.imageset_folder, image_path)
-                textfile_images += '%s %d\n' % (image_path, label_id)
-            label_id += 1
-
-        # StringIO wrapping is needed to simulate POST file upload.
-        file_upload = (StringIO(textfile_images), 'images.txt')
-
-        rv = self.app.post(
-                '/models/images/classification/top_n?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
-        s = BeautifulSoup(rv.data)
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-        keys = self.imageset_paths.keys()
-        for key in keys:
-            assert key in rv.data, '"%s" not found in the response'
 
 class TestDatasetModelInteractions(BaseViewsTestWithDataset):
     """
@@ -506,15 +467,6 @@ class TestDatasetModelInteractions(BaseViewsTestWithDataset):
         self.abort_model(model_id)
 
 
-class TestCreatedWide(TestCreated):
-    IMAGE_WIDTH = 20
-
-class TestCreatedTall(TestCreated):
-    IMAGE_HEIGHT = 20
-
-class TestCreatedCropInForm(TestCreated):
-    CROP_SIZE = 8
-
 class TestCreatedCropInNetwork(TestCreated):
     CAFFE_NETWORK = \
 """
@@ -522,7 +474,6 @@ layer {
   name: "data"
   type: "Data"
   top: "data"
-  top: "label"
   include {
     phase: TRAIN
   }
@@ -534,7 +485,6 @@ layer {
   name: "data"
   type: "Data"
   top: "data"
-  top: "label"
   include {
     phase: TEST
   }
@@ -543,27 +493,32 @@ layer {
   }
 }
 layer {
-    name: "hidden"
-    type: 'InnerProduct'
-    bottom: "data"
-    top: "output"
+  name: "scale"
+  type: "Power"
+  bottom: "data"
+  top: "scale"
+  power_param {
+    scale: 0.004
+  }
 }
 layer {
-    name: "loss"
-    type: "SoftmaxWithLoss"
-    bottom: "output"
-    bottom: "label"
-    top: "loss"
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scale"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
 }
 layer {
-    name: "accuracy"
-    type: "Accuracy"
-    bottom: "output"
-    bottom: "label"
-    top: "accuracy"
-    include {
-        phase: TEST
-    }
+  name: "train_loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
 }
 """
+
+class TestCreatedCropInForm(TestCreated):
+    CROP_SIZE = 8
 

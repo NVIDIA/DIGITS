@@ -1,6 +1,6 @@
 # REST API
 
-*Generated Aug 05, 2015*
+*Generated Aug 06, 2015*
 
 DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
 
@@ -33,6 +33,18 @@ Location: [`digits/dataset/views.py@15`](../digits/dataset/views.py#L15)
 Methods: **POST**
 
 Location: [`digits/dataset/images/classification/views.py@245`](../digits/dataset/images/classification/views.py#L245)
+
+### `/datasets/images/generic.json`
+
+> Creates a new GenericImageDatasetJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
+Methods: **POST**
+
+Location: [`digits/dataset/images/generic/views.py@27`](../digits/dataset/images/generic/views.py#L27)
 
 ### `/index.json`
 
@@ -107,4 +119,32 @@ Location: [`digits/model/images/classification/views.py@290`](../digits/model/im
 Methods: **POST**
 
 Location: [`digits/model/images/classification/views.py@236`](../digits/model/images/classification/views.py#L236)
+
+### `/models/images/generic.json`
+
+> Create a new GenericImageModelJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
+Methods: **POST**
+
+Location: [`digits/model/images/generic/views.py@52`](../digits/model/images/generic/views.py#L52)
+
+### `/models/images/generic/infer_many.json`
+
+> Infer many images
+
+Methods: **POST**
+
+Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/generic/views.py#L267)
+
+### `/models/images/generic/infer_one.json`
+
+> Infer one image
+
+Methods: **POST**
+
+Location: [`digits/model/images/generic/views.py@217`](../digits/model/images/generic/views.py#L217)
 

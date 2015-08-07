@@ -1,0 +1,18 @@
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+<table class="table">
+    <tr>
+        <th>Image</th>
+        {% for key in network_outputs.keys() %}
+        <th>{{key}}</th>
+        {% endfor %}
+    </tr>
+    {% for path in paths %}
+    <tr>
+        <td>{{path}}</td>
+        {% for key, val in network_outputs.iteritems() %}
+        <td>{{network_outputs[key][loop.index0]}}</td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>

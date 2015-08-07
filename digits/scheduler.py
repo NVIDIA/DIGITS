@@ -96,6 +96,7 @@ class Scheduler:
                 # TODO: break this into CPU cores, memory usage, IO usage, etc.
                 'parse_folder_task_pool': [Resource()],
                 'create_db_task_pool': [Resource(max_value=2)],
+                'analyze_db_task_pool': [Resource(max_value=4)],
                 'gpus': [Resource(identifier=index)
                     for index in gpu_list.split(',')] if gpu_list else [],
                 }
