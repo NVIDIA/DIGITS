@@ -36,7 +36,7 @@ These are all technically RESTful, but they return HTML pages. To get JSON respo
 
 Methods: **GET**
 
-Location: [`digits/views.py@23`](../digits/views.py#L23)
+Location: [`digits/views.py@22`](../digits/views.py#L22)
 
 ## Jobs
 
@@ -48,7 +48,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@149`](../digits/views.py#L149)
+Location: [`digits/views.py@148`](../digits/views.py#L148)
 
 ### `/datasets/<job_id>/abort`
 
@@ -58,7 +58,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@169`](../digits/views.py#L169)
+Location: [`digits/views.py@168`](../digits/views.py#L168)
 
 ### `/datasets/<job_id>/status`
 
@@ -68,7 +68,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@130`](../digits/views.py#L130)
+Location: [`digits/views.py@129`](../digits/views.py#L129)
 
 ### `/jobs/<job_id>`
 
@@ -78,7 +78,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@97`](../digits/views.py#L97)
+Location: [`digits/views.py@96`](../digits/views.py#L96)
 
 ### `/jobs/<job_id>`
 
@@ -88,7 +88,7 @@ Methods: **PUT**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@114`](../digits/views.py#L114)
+Location: [`digits/views.py@113`](../digits/views.py#L113)
 
 ### `/jobs/<job_id>`
 
@@ -98,7 +98,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@149`](../digits/views.py#L149)
+Location: [`digits/views.py@148`](../digits/views.py#L148)
 
 ### `/jobs/<job_id>/abort`
 
@@ -108,7 +108,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@169`](../digits/views.py#L169)
+Location: [`digits/views.py@168`](../digits/views.py#L168)
 
 ### `/jobs/<job_id>/status`
 
@@ -118,7 +118,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@130`](../digits/views.py#L130)
+Location: [`digits/views.py@129`](../digits/views.py#L129)
 
 ### `/models/<job_id>`
 
@@ -128,7 +128,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@149`](../digits/views.py#L149)
+Location: [`digits/views.py@148`](../digits/views.py#L148)
 
 ### `/models/<job_id>/abort`
 
@@ -138,7 +138,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@169`](../digits/views.py#L169)
+Location: [`digits/views.py@168`](../digits/views.py#L168)
 
 ### `/models/<job_id>/status`
 
@@ -148,7 +148,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@130`](../digits/views.py#L130)
+Location: [`digits/views.py@129`](../digits/views.py#L129)
 
 ## Datasets
 
@@ -206,7 +206,7 @@ Location: [`digits/dataset/images/classification/views.py@298`](../digits/datase
 
 Methods: **POST**
 
-Location: [`digits/dataset/images/generic/views.py@27`](../digits/dataset/images/generic/views.py#L27)
+Location: [`digits/dataset/images/generic/views.py@24`](../digits/dataset/images/generic/views.py#L24)
 
 ### `/datasets/images/generic/new`
 
@@ -214,7 +214,7 @@ Location: [`digits/dataset/images/generic/views.py@27`](../digits/dataset/images
 
 Methods: **GET**
 
-Location: [`digits/dataset/images/generic/views.py@17`](../digits/dataset/images/generic/views.py#L17)
+Location: [`digits/dataset/images/generic/views.py@14`](../digits/dataset/images/generic/views.py#L14)
 
 ### `/datasets/images/generic/summary`
 
@@ -222,7 +222,7 @@ Location: [`digits/dataset/images/generic/views.py@17`](../digits/dataset/images
 
 Methods: **GET**
 
-Location: [`digits/dataset/images/generic/views.py@106`](../digits/dataset/images/generic/views.py#L106)
+Location: [`digits/dataset/images/generic/views.py@103`](../digits/dataset/images/generic/views.py#L103)
 
 ### `/datasets/images/resize-example`
 
@@ -348,7 +348,7 @@ Location: [`digits/model/images/classification/views.py@374`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/images/generic/views.py@52`](../digits/model/images/generic/views.py#L52)
+Location: [`digits/model/images/generic/views.py@49`](../digits/model/images/generic/views.py#L49)
 
 ### `/models/images/generic/infer_many`
 
@@ -356,7 +356,7 @@ Location: [`digits/model/images/generic/views.py@52`](../digits/model/images/gen
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/generic/views.py#L267)
+Location: [`digits/model/images/generic/views.py@264`](../digits/model/images/generic/views.py#L264)
 
 ### `/models/images/generic/infer_one`
 
@@ -364,7 +364,7 @@ Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/ge
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/generic/views.py@217`](../digits/model/images/generic/views.py#L217)
+Location: [`digits/model/images/generic/views.py@214`](../digits/model/images/generic/views.py#L214)
 
 ### `/models/images/generic/large_graph`
 
@@ -372,7 +372,7 @@ Location: [`digits/model/images/generic/views.py@217`](../digits/model/images/ge
 
 Methods: **GET**
 
-Location: [`digits/model/images/generic/views.py@206`](../digits/model/images/generic/views.py#L206)
+Location: [`digits/model/images/generic/views.py@203`](../digits/model/images/generic/views.py#L203)
 
 ### `/models/images/generic/new`
 
@@ -380,7 +380,7 @@ Location: [`digits/model/images/generic/views.py@206`](../digits/model/images/ge
 
 Methods: **GET**
 
-Location: [`digits/model/images/generic/views.py@32`](../digits/model/images/generic/views.py#L32)
+Location: [`digits/model/images/generic/views.py@29`](../digits/model/images/generic/views.py#L29)
 
 ### `/models/visualize-lr`
 
@@ -406,7 +406,7 @@ Location: [`digits/model/views.py@92`](../digits/model/views.py#L92)
 
 Methods: **GET**
 
-Location: [`digits/views.py@241`](../digits/views.py#L241)
+Location: [`digits/views.py@240`](../digits/views.py#L240)
 
 ### `/files/<path:path>`
 
@@ -422,5 +422,5 @@ Methods: **GET**
 
 Arguments: `path`
 
-Location: [`digits/views.py@227`](../digits/views.py#L227)
+Location: [`digits/views.py@226`](../digits/views.py#L226)
 

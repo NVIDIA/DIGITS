@@ -1,10 +1,7 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os
-
 import flask
 
-from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks

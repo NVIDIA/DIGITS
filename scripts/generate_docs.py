@@ -4,7 +4,6 @@
 import sys
 import os.path
 import time
-from pprint import pprint
 from collections import defaultdict
 
 # requires a custom version of Flask-Autodoc:
