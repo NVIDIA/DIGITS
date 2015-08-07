@@ -7,6 +7,8 @@ from nose.tools import assert_raises
 import mock
 import PIL.Image
 import numpy as np
+import os
+import platform
 
 from . import image as _, errors
 
@@ -52,9 +54,19 @@ class TestLoadImage():
         orig_mode, suffix, pixel, new_mode = args
 
         orig = PIL.Image.new(orig_mode, (10,10), pixel)
-        with tempfile.NamedTemporaryFile(suffix='.' + suffix) as tmp:
-            orig.save(tmp.name)
-            new = _.load_image(tmp.name)
+
+        # temp files cause permission errors so just generate the name
+        tmp = tempfile.mkstemp(suffix='.' + suffix)
+        orig.save(tmp[1])
+        new = _.load_image(tmp[1])
+        try:
+            # sometimes on windows the file is not closed yet
+            # which can cause an exception
+            os.close(tmp[0])
+            os.remove(tmp[1])
+        except:
+            pass
+
         assert new is not None, 'load_image should never return None'
         assert new.mode == new_mode, 'Image mode should be "%s", not "%s\nargs - %s' % (new_mode, new.mode, args)
 
@@ -94,15 +106,20 @@ class TestLoadImage():
         corrupted = encoded[:size/2] + encoded[size/2:][::-1]
 
         # Save the corrupted image to a temporary file.
-        f = tempfile.NamedTemporaryFile(delete=False)
+        fname = tempfile.mkstemp(suffix='.bin')
+        f = os.fdopen(fname[0],'wb')
+        fname = fname[1]
+        
         f.write(corrupted)
         f.close()
 
         assert_raises(
                 errors.LoadImageError,
                 _.load_image,
-                f.name,
+                fname,
                 )
+
+        os.remove(fname)
 
 class TestResizeImage():
 

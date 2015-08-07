@@ -37,7 +37,7 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                         import numpy as np
 
                         old_blob = caffe_pb2.BlobProto()
-                        with open(task.path(task.mean_file)) as infile:
+                        with open(task.path(task.mean_file),'rb') as infile:
                             old_blob.ParseFromString(infile.read())
                         data = np.array(old_blob.data).reshape(
                                 old_blob.channels,
@@ -48,7 +48,7 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                         new_blob.num = 1
                         new_blob.channels, new_blob.height, new_blob.width = data.shape
                         new_blob.data.extend(data.astype(float).flat)
-                        with open(task.path(task.mean_file), 'w') as outfile:
+                        with open(task.path(task.mean_file), 'wb') as outfile:
                             outfile.write(new_blob.SerializeToString())
                 else:
                     print '\tSetting "%s" status to ERROR because it was created with RGB channels' % self.name()

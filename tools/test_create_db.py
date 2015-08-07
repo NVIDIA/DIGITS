@@ -36,7 +36,7 @@ class TestCreate(object):
         os.close(fd)
 
         # Use the example picture to construct a test input file
-        with open(cls.input_file, 'w') as f:
+        with open(cls.input_file, 'wb') as f:
             f.write('digits/static/images/mona_lisa.jpg 0')
 
     @classmethod
@@ -96,7 +96,7 @@ class TestPathToDatum(object):
         cls.db_name = tempfile.mkdtemp(dir=cls.tmpdir)
         cls.db = _.DbCreator(cls.db_name)
         _handle, cls.image_path = tempfile.mkstemp(dir=cls.tmpdir, suffix='.jpg')
-        with open(cls.image_path, 'w') as outfile:
+        with open(cls.image_path, 'wb') as outfile:
             PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8)).save(outfile, format='JPEG', quality=100)
 
     @classmethod
@@ -151,7 +151,7 @@ class TestMapSize(object):
         # create textfile
         fd, input_file = tempfile.mkstemp()
         os.close(fd)
-        with open(input_file, 'w') as f:
+        with open(input_file, 'wb') as f:
             f.write('digits/static/images/mona_lisa.jpg 0')
 
         # create DbCreator object

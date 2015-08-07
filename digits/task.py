@@ -15,6 +15,8 @@ import digits.log
 from config import config_value
 from status import Status, StatusCls
 
+import platform
+
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 1
 
@@ -128,7 +130,7 @@ class Task(StatusCls):
             path = os.path.join(self.job_dir, filename)
         if relative:
             path = os.path.relpath(path, config_value('jobs_dir'))
-        return str(path)
+        return str(path).replace("\\","/")
 
     def ready_to_queue(self):
         """
@@ -193,7 +195,7 @@ class Task(StatusCls):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=self.job_dir,
-                close_fds=True,
+                close_fds=False if platform.system() == 'Windows' else True,
                 )
 
         try:

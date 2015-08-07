@@ -233,7 +233,7 @@ class CaffeTrainTask(TrainTask):
             val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
         if self.use_mean:
             mean_pixel = None
-            with open(self.dataset.path(self.dataset.train_db_task().mean_file)) as f:
+            with open(self.dataset.path(self.dataset.train_db_task().mean_file),'rb') as f:
                 blob = caffe_pb2.BlobProto()
                 blob.MergeFromString(f.read())
                 mean = np.reshape(blob.data,
@@ -1312,7 +1312,7 @@ class CaffeTrainTask(TrainTask):
                 channel_swap = (2,1,0)
 
             if self.use_mean:
-                with open(self.dataset.path(self.dataset.train_db_task().mean_file)) as infile:
+                with open(self.dataset.path(self.dataset.train_db_task().mean_file),'rb') as infile:
                     blob = caffe_pb2.BlobProto()
                     blob.MergeFromString(infile.read())
                     mean_pixel = np.reshape(blob.data,
@@ -1331,7 +1331,7 @@ class CaffeTrainTask(TrainTask):
                 channel_swap = (2,1,0)
 
             if self.dataset.mean_file:
-                with open(self.dataset.path(self.dataset.mean_file)) as infile:
+                with open(self.dataset.path(self.dataset.mean_file),'rb') as infile:
                     blob = caffe_pb2.BlobProto()
                     blob.MergeFromString(infile.read())
                     mean_pixel = np.reshape(blob.data,

@@ -338,7 +338,7 @@ class TestCreated(BaseViewsTestWithModel):
         category = self.imageset_paths.keys()[0]
         image_path = self.imageset_paths[category][0]
         image_path = os.path.join(self.imageset_folder, image_path)
-        with open(image_path) as infile:
+        with open(image_path,'rb') as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
@@ -360,7 +360,7 @@ class TestCreated(BaseViewsTestWithModel):
         category = self.imageset_paths.keys()[0]
         image_path = self.imageset_paths[category][0]
         image_path = os.path.join(self.imageset_folder, image_path)
-        with open(image_path) as infile:
+        with open(image_path,'rb') as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 

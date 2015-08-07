@@ -1,6 +1,6 @@
 # REST API
 
-*Generated Aug 10, 2015*
+*Generated Aug 13, 2015*
 
 DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
 
@@ -94,7 +94,7 @@ Location: [`digits/model/views.py@31`](../digits/model/views.py#L31)
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@53`](../digits/model/images/classification/views.py#L53)
+Location: [`digits/model/images/classification/views.py@54`](../digits/model/images/classification/views.py#L54)
 
 ### `/models/images/classification/classify_many.json`
 
@@ -106,7 +106,7 @@ Location: [`digits/model/images/classification/views.py@53`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@290`](../digits/model/images/classification/views.py#L290)
+Location: [`digits/model/images/classification/views.py@293`](../digits/model/images/classification/views.py#L293)
 
 ### `/models/images/classification/classify_one.json`
 
@@ -118,7 +118,7 @@ Location: [`digits/model/images/classification/views.py@290`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@236`](../digits/model/images/classification/views.py#L236)
+Location: [`digits/model/images/classification/views.py@237`](../digits/model/images/classification/views.py#L237)
 
 ### `/models/images/generic.json`
 
@@ -130,7 +130,7 @@ Location: [`digits/model/images/classification/views.py@236`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/images/generic/views.py@49`](../digits/model/images/generic/views.py#L49)
+Location: [`digits/model/images/generic/views.py@50`](../digits/model/images/generic/views.py#L50)
 
 ### `/models/images/generic/infer_many.json`
 
@@ -138,7 +138,7 @@ Location: [`digits/model/images/generic/views.py@49`](../digits/model/images/gen
 
 Methods: **POST**
 
-Location: [`digits/model/images/generic/views.py@264`](../digits/model/images/generic/views.py#L264)
+Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/generic/views.py#L267)
 
 ### `/models/images/generic/infer_one.json`
 
@@ -146,5 +146,5 @@ Location: [`digits/model/images/generic/views.py@264`](../digits/model/images/ge
 
 Methods: **POST**
 
-Location: [`digits/model/images/generic/views.py@214`](../digits/model/images/generic/views.py#L214)
+Location: [`digits/model/images/generic/views.py@215`](../digits/model/images/generic/views.py#L215)
 

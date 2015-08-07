@@ -65,7 +65,7 @@ def get_transformer(deploy_file, mean_file=None):
 
     if mean_file:
         # set mean pixel
-        with open(mean_file) as infile:
+        with open(mean_file,'rb') as infile:
             blob = caffe_pb2.BlobProto()
             blob.MergeFromString(infile.read())
             if blob.HasField('shape'):

@@ -4,6 +4,7 @@ import os
 import tempfile
 import shutil
 import itertools
+import platform
 
 from nose.tools import raises, assert_raises
 import mock
@@ -25,7 +26,10 @@ class TestValidateFolder():
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(cls.tmpdir)
+        try:
+            shutil.rmtree(cls.tmpdir)
+        except:
+            pass
 
     def test_dir(self):
         assert _.validate_folder(self.tmpdir) == True
@@ -47,7 +51,10 @@ class TestValidateOutputFile():
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(cls.tmpdir)
+        try:
+            shutil.rmtree(cls.tmpdir)
+        except:
+            pass
 
     def test_missing_file(self):
         assert _.validate_output_file(None) == True, 'all new files should be valid'

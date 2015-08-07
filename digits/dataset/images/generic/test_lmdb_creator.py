@@ -158,7 +158,7 @@ def _save_mean(mean, filename):
         blob.channels = 1
         blob.height, blob.width = mean.shape
         blob.data.extend(mean.astype(float).flat)
-        with open(filename, 'w') as outfile:
+        with open(filename, 'wb') as outfile:
             outfile.write(blob.SerializeToString())
 
     elif filename.endswith(('.jpg', '.jpeg', '.png')):

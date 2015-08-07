@@ -66,6 +66,8 @@ class CaffeOption(config_option.FrameworkOption):
             # Find the executable
             executable = cls.find_executable('caffe')
             if not executable:
+                executable = cls.find_executable('caffe.exe')
+            if not executable:
                 raise config_option.BadValue('caffe binary not found in PATH')
             cls.validate_version(executable)
 
@@ -187,6 +189,9 @@ class CaffeOption(config_option.FrameworkOption):
         elif platform.system() == 'Darwin':
             # XXX: guess and let the user figure out errors later
             return (0,11,0)
+        elif platform.system() == 'Windows':
+            # XXX: guess and let the user figure out errors later
+            return (0,11,0)
         else:
             print 'WARNING: platform "%s" not supported' % platform.system()
             return None
@@ -197,6 +202,8 @@ class CaffeOption(config_option.FrameworkOption):
         else:
             if value == '<PATHS>':
                 executable = self.find_executable('caffe')
+                if not executable:
+                    executable = self.find_executable('caffe.exe')
             else:
                 executable = os.path.join(value, 'build', 'tools', 'caffe')
 
@@ -238,7 +245,7 @@ class CaffeOption(config_option.FrameworkOption):
                 print 'Did you forget to "make pycaffe"?'
                 raise
 
-            if platform.system() == 'Darwin':
+            if platform.system() == 'Darwin' or platform.system() == 'Windows':
                 # Strange issue with protocol buffers and pickle - see issue #32
                 sys.path.insert(0, os.path.join(
                     os.path.dirname(caffe.__file__), 'proto'))
