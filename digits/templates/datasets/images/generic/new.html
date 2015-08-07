@@ -55,19 +55,19 @@ New Image Dataset
                             <tr>
                                 <td><b>Training</b></td>
                                 <td class="form-group{{' has-error' if form.prebuilt_train_images.errors}}">
-                                    {{ form.prebuilt_train_images(class='form-control') }}
+                                    {{ form.prebuilt_train_images(class='form-control autocomplete_path') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.prebuilt_train_labels.errors}}">
-                                    {{ form.prebuilt_train_labels(class='form-control') }}
+                                    {{ form.prebuilt_train_labels(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                             <tr>
                                 <td><b>Validation</b></td>
                                 <td class="form-group{{' has-error' if form.prebuilt_val_images.errors}}">
-                                    {{ form.prebuilt_val_images(class='form-control') }}
+                                    {{ form.prebuilt_val_images(class='form-control autocomplete_path') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.prebuilt_val_labels.errors}}">
-                                    {{ form.prebuilt_val_labels(class='form-control') }}
+                                    {{ form.prebuilt_val_labels(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                         </table>
@@ -77,7 +77,7 @@ New Image Dataset
                             <div class="form-group{{ ' has-error' if form.prebuilt_mean_file.errors else '' }}">
                                 {{ form.prebuilt_mean_file.label }}
                                 <div class="input-group">
-                                    {{ form.prebuilt_mean_file(class='form-control') }}
+                                    {{ form.prebuilt_mean_file(class='form-control autocomplete_path') }}
                                     <span name="prebuilt_mean_file_explanation"
                                         class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                                         data-container="body"

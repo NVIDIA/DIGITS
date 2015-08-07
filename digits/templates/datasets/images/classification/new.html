@@ -14,17 +14,6 @@ New Image Classification Dataset
 
 {% block content %}
 
-<style type="text/css">
-.autocomplete-suggestions { border: 1px solid #999; background: #FFF; overflow: auto; }
-.autocomplete-suggestion { padding: 2px 5px; white-space: nowrap; overflow: hidden; }
-.autocomplete-selected { background: #F0F0F0; }
-.autocomplete-suggestions strong { font-weight: normal; color: #3399FF; }
-.autocomplete-group { padding: 2px 5px; }
-.autocomplete-group strong { display: block; border-bottom: 1px solid #000; }
-</style>
-
-<script src="{{ url_for('static', filename='js/jquery.autocomplete.min.js') }}"></script>
-
 <div class="page-header">
     <h1>New Image Classification Dataset</h1>
 </div>
@@ -149,7 +138,7 @@ function showResizeExample()
                     <div class="form-group{{ ' has-error' if form.folder_train.errors else '' }}">
                         {{ form.folder_train.label }}
                         <div class="input-group">
-                            {{ form.folder_train(class='form-control autocomplete', placeholder='folder or URL')}}
+                            {{ form.folder_train(class='form-control autocomplete_path', placeholder='folder or URL')}}
                             <span name="folder_train_explanation"
                                 class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                                 data-container="body"
@@ -216,7 +205,7 @@ function showResizeExample()
                     {{form.has_val_folder.label}}
                     <div style="display:none;" class="form-group{{ ' has-error' if form.folder_val.errors else '' }} cl-separate-val-folder">
                         {{ form.folder_val.label }}
-                        {{ form.folder_val(class='form-control autocomplete') }}
+                        {{ form.folder_val(class='form-control autocomplete_path') }}
                     </div>
                     <div class="row cl-separate-val-folder">
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_min_per_class.errors else '' }}">
@@ -265,7 +254,7 @@ hasValFolderChanged();
                     {{form.has_test_folder.label}}
                     <div style="display:none;" class="form-group{{ ' has-error' if form.folder_test.errors else '' }} cl-separate-test-folder">
                         {{ form.folder_test.label }}
-                        {{ form.folder_test(class='form-control autocomplete') }}
+                        {{ form.folder_test(class='form-control autocomplete_path') }}
                     </div>
                     <div style="display:none;" class="row cl-separate-test-folder">
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_min_per_class.errors else '' }}">
@@ -350,10 +339,10 @@ hasTestFolderChanged();
                                     {{ form.textfile_train_images(class='form-control') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.textfile_local_train_images.errors}} cl-local-files">
-                                    {{ form.textfile_local_train_images(class='form-control autocomplete',placeholder='enter path') }}
+                                    {{ form.textfile_local_train_images(class='form-control autocomplete_path',placeholder='enter path') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.textfile_train_folder.errors}}">
-                                    {{ form.textfile_train_folder(class='form-control autocomplete') }}
+                                    {{ form.textfile_train_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                             <tr>
@@ -367,10 +356,10 @@ hasTestFolderChanged();
                                     {{ form.textfile_val_images(class='form-control') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.textfile_local_val_images.errors}} cl-local-files">
-                                    {{ form.textfile_local_val_images(class='form-control autocomplete',placeholder='enter path') }}
+                                    {{ form.textfile_local_val_images(class='form-control autocomplete_path',placeholder='enter path') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.textfile_val_folder.errors}}">
-                                    {{ form.textfile_val_folder(class='form-control autocomplete') }}
+                                    {{ form.textfile_val_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                             <tr>
@@ -384,10 +373,10 @@ hasTestFolderChanged();
                                     {{ form.textfile_test_images(class='form-control') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.textfile_local_test_images.errors}} cl-local-files">
-                                    {{ form.textfile_local_test_images(class='form-control autocomplete',placeholder='enter path') }}
+                                    {{ form.textfile_local_test_images(class='form-control autocomplete_path',placeholder='enter path') }}
                                 </td>
                                 <td class="form-group{{' has-error' if form.textfile_test_folder.errors}}">
-                                    {{ form.textfile_test_folder(class='form-control autocomplete') }}
+                                    {{ form.textfile_test_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                         </table>
@@ -419,7 +408,7 @@ hasTestFolderChanged();
                             <div class="form-group{{ ' has-error' if form.textfile_local_labels_file.errors else '' }} cl-local-files">
                                 {{ form.textfile_local_labels_file.label }}
                                 <div class="input-group">
-                                    {{ form.textfile_local_labels_file(class='form-control autocomplete',placeholder='enter path') }}
+                                    {{ form.textfile_local_labels_file(class='form-control autocomplete_path',placeholder='enter path') }}
                                     <span name="textfile_labels_file_explanation"
                                         class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                                         data-container="body"
@@ -477,9 +466,6 @@ $('#db-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         });
 $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
 
-$('.autocomplete').autocomplete({
-    serviceUrl: '/autocomplete/path'
-});
     </script>
 
     <div class="row">
