@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Aug 06, 2015*
+*Generated Aug 07, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -406,7 +406,7 @@ Location: [`digits/model/views.py@92`](../digits/model/views.py#L92)
 
 Methods: **GET**
 
-Location: [`digits/views.py@255`](../digits/views.py#L255)
+Location: [`digits/views.py@241`](../digits/views.py#L241)
 
 ### `/files/<path:path>`
 
