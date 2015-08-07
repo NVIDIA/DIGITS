@@ -420,7 +420,13 @@ class CaffeTrainTask(TrainTask):
 
         for layer in self.network.layer:
             assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
-            if layer.type == 'Data':
+            if layer.name.startswith('train_'):
+                train_val_layers.layer.add().CopyFrom(layer)
+                train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[6:]
+            elif layer.name.startswith('deploy_'):
+                deploy_layers.layer.add().CopyFrom(layer)
+                deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[7:]
+            elif layer.type == 'Data':
                 for rule in layer.include:
                     if rule.phase == caffe_pb2.TRAIN:
                         if len(layer.top) == 1 and layer.top[0] == 'data':
@@ -436,16 +442,15 @@ class CaffeTrainTask(TrainTask):
                         elif len(layer.top) == 1 and layer.top[0] == 'label':
                             assert val_label_data_layer is None, 'cannot specify two val label data layers'
                             val_label_data_layer = layer
+            elif 'loss' in layer.type.lower():
+                # Don't add it to the deploy network
+                train_val_layers.layer.add().CopyFrom(layer)
+            elif 'accuracy' in layer.type.lower():
+                # Don't add it to the deploy network
+                train_val_layers.layer.add().CopyFrom(layer)
             else:
-                if layer.name.startswith('train_'):
-                    train_val_layers.layer.add().CopyFrom(layer)
-                    train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[6:]
-                elif layer.name.startswith('deploy_'):
-                    deploy_layers.layer.add().CopyFrom(layer)
-                    deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[7:]
-                else:
-                    train_val_layers.layer.add().CopyFrom(layer)
-                    deploy_layers.layer.add().CopyFrom(layer)
+                train_val_layers.layer.add().CopyFrom(layer)
+                deploy_layers.layer.add().CopyFrom(layer)
 
         ### Write train_val file
 
