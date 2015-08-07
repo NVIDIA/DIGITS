@@ -1,6 +1,5 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os
 import json
 import traceback
 import glob
@@ -257,14 +256,14 @@ def path_autocomplete():
 ## /home
 
 @socketio.on('connect', namespace='/home')
-def on_connect():
+def on_connect_home():
     """
     Somebody connected to the homepage
     """
     pass
 
 @socketio.on('disconnect', namespace='/home')
-def on_disconnect():
+def on_disconnect_home():
     """
     Somebody disconnected from the homepage
     """
@@ -273,20 +272,21 @@ def on_disconnect():
 ## /jobs
 
 @socketio.on('connect', namespace='/jobs')
-def on_connect():
+def on_connect_jobs():
     """
     Somebody connected to a jobs page
     """
+    pass
 
 @socketio.on('disconnect', namespace='/jobs')
-def on_disconnect():
+def on_disconnect_jobs():
     """
     Somebody disconnected from a jobs page
     """
     pass
 
 @socketio.on('join', namespace='/jobs')
-def on_join(data):
+def on_join_jobs(data):
     """
     Somebody joined a room
     """
@@ -295,7 +295,7 @@ def on_join(data):
     flask.session['room'] = room
 
 @socketio.on('leave', namespace='/jobs')
-def on_leave():
+def on_leave_jobs():
     """
     Somebody left a room
     """

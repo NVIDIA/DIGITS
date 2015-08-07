@@ -1,9 +1,5 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os.path
-
-from digits.dataset import tasks
-from digits import utils
 from digits.utils import subclass, override
 from digits.status import Status
 from ..job import ImageDatasetJob

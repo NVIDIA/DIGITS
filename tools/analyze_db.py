@@ -16,7 +16,7 @@ except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
 digits.config.load_config()
-from digits import utils, log
+from digits import log
 
 # must call digits.config.load_config() before caffe to set the path
 try:
@@ -122,7 +122,7 @@ def analyze_db(database,
         unique_dims[d] += 1
 
         if force_dimensions and len(unique_dims.keys()) > 1:
-            logger.error("Images with different sizes found: %s and %s" % tuple(sizes.keys()))
+            logger.error("Images with different sizes found: %s and %s" % tuple(unique_dims.keys()))
             return False
 
         count += 1

@@ -44,7 +44,7 @@ Location: [`digits/dataset/images/classification/views.py@245`](../digits/datase
 
 Methods: **POST**
 
-Location: [`digits/dataset/images/generic/views.py@27`](../digits/dataset/images/generic/views.py#L27)
+Location: [`digits/dataset/images/generic/views.py@24`](../digits/dataset/images/generic/views.py#L24)
 
 ### `/index.json`
 
@@ -66,7 +66,7 @@ Location: [`digits/dataset/images/generic/views.py@27`](../digits/dataset/images
 
 Methods: **GET**
 
-Location: [`digits/views.py@23`](../digits/views.py#L23)
+Location: [`digits/views.py@22`](../digits/views.py#L22)
 
 ### `/models/<job_id>.json`
 
@@ -130,7 +130,7 @@ Location: [`digits/model/images/classification/views.py@236`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/images/generic/views.py@52`](../digits/model/images/generic/views.py#L52)
+Location: [`digits/model/images/generic/views.py@49`](../digits/model/images/generic/views.py#L49)
 
 ### `/models/images/generic/infer_many.json`
 
@@ -138,7 +138,7 @@ Location: [`digits/model/images/generic/views.py@52`](../digits/model/images/gen
 
 Methods: **POST**
 
-Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/generic/views.py#L267)
+Location: [`digits/model/images/generic/views.py@264`](../digits/model/images/generic/views.py#L264)
 
 ### `/models/images/generic/infer_one.json`
 
@@ -146,5 +146,5 @@ Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/ge
 
 Methods: **POST**
 
-Location: [`digits/model/images/generic/views.py@217`](../digits/model/images/generic/views.py#L217)
+Location: [`digits/model/images/generic/views.py@214`](../digits/model/images/generic/views.py#L214)
 

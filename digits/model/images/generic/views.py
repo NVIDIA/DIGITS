@@ -3,11 +3,9 @@
 import os
 import re
 import tempfile
-import random
 
 import flask
 import werkzeug.exceptions
-import numpy as np
 from google.protobuf import text_format
 try:
     import caffe_pb2
@@ -15,7 +13,6 @@ except ImportError:
     # See issue #32
     from caffe.proto import caffe_pb2
 
-import digits
 from digits.config import config_value
 from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
@@ -281,7 +278,6 @@ def generic_image_model_infer_many():
 
     paths = []
     images = []
-    dataset = job.train_task().dataset
 
     db_task = job.train_task().dataset.analyze_db_tasks()[0]
     height = db_task.image_height

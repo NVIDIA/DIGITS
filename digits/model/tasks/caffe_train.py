@@ -724,13 +724,6 @@ class CaffeTrainTask(TrainTask):
             self.saving_snapshot = True
             return True
 
-        # memory requirement
-        match = re.match(r'Memory required for data:\s+(\d+)', message)
-        if match:
-            bytes_required = int(match.group(1))
-            #self.logger.debug('memory required: %s' % utils.sizeof_fmt(bytes_required))
-            return True
-
         if level in ['error', 'critical']:
             self.logger.error('%s: %s' % (self.name(), message))
             self.exception = message
