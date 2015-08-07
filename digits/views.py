@@ -233,21 +233,7 @@ def serve_file(path):
     and this path will never be used
     """
     jobs_dir = config_value('jobs_dir')
-    path = os.path.normpath(os.path.join(jobs_dir, path))
-
-    # Don't allow path manipulation
-    if not os.path.commonprefix([path, jobs_dir]).startswith(jobs_dir):
-        raise werkzeug.exceptions.Forbidden('Path manipulation not allowed')
-
-    if not os.path.exists(path):
-        raise werkzeug.exceptions.NotFound('File not found')
-    if os.path.isdir(path):
-        raise werkzeug.exceptions.Forbidden('Folder cannot be served')
-
-    with open(path, 'r') as infile:
-        response = flask.make_response(infile.read())
-        response.headers["Content-Disposition"] = "attachment; filename=%s" % os.path.basename(path)
-        return response
+    return flask.send_from_directory(jobs_dir, path)
 
 ### Path Completion
 
