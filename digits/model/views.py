@@ -20,6 +20,7 @@ import caffe.draw
 
 import digits
 from digits.webapp import app, scheduler, autodoc
+from digits.utils.session import session_required
 from digits.utils.routing import request_wants_json
 import images.views
 import images as model_images
@@ -28,6 +29,7 @@ NAMESPACE = '/models/'
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])
+@session_required
 @autodoc(['models', 'api'])
 def models_show(job_id):
     """
@@ -52,6 +54,7 @@ def models_show(job_id):
                     'Invalid job type')
 
 @app.route(NAMESPACE + 'customize', methods=['POST'])
+@session_required
 @autodoc('models')
 def models_customize():
     """
@@ -89,6 +92,7 @@ def models_customize():
         })
 
 @app.route(NAMESPACE + 'visualize-network', methods=['POST'])
+@session_required
 @autodoc('models')
 def models_visualize_network():
     """
@@ -102,6 +106,7 @@ def models_visualize_network():
     return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
 
 @app.route(NAMESPACE + 'visualize-lr', methods=['POST'])
+@session_required
 @autodoc('models')
 def models_visualize_lr():
     """
@@ -157,6 +162,7 @@ def models_visualize_lr():
         defaults={'extension': 'tar.gz'})
 @app.route(NAMESPACE + '<job_id>/download.<extension>',
         methods=['GET', 'POST'])
+@session_required
 @autodoc('models')
 def models_download(job_id, extension):
     """

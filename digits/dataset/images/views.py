@@ -8,6 +8,7 @@ import PIL.Image
 
 import digits
 from digits import utils
+from digits.utils.session import session_required
 from digits.webapp import app, autodoc
 import classification.views
 import generic.views
@@ -15,6 +16,7 @@ import generic.views
 NAMESPACE = '/datasets/images'
 
 @app.route(NAMESPACE + '/resize-example', methods=['POST'])
+@session_required
 @autodoc('datasets')
 def image_dataset_resize_example():
     """

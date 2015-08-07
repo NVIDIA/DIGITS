@@ -1,0 +1,53 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "layout.html" %}
+
+{% block title %}
+Login
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Login</h1>
+</div>
+
+<form action="{{ url_for('login') }}" enctype="multipart/form-data" method='post'>
+    {{ form.hidden_tag() }}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field, errors in form.errors.items() %}
+                <li>{{ field }}
+                    <ul>
+                        {% for e in errors %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-sm-4 well">
+            <div class="row">
+                <div class="form-group{{ ' has-error' if form.username.errors else '' }}">
+                    {{ form.username.label }}
+                    <div class="input-group">
+                        {{ form.username(class='form-control') }}
+                        <span name="username_explanation"
+                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                            data-container="body"
+                            title="Username to tag future datasets and models with."
+                            ></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="submit" name="login" class="btn btn-primary" value="Login">
+</form>
+
+{% endblock %}

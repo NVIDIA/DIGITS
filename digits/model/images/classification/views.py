@@ -18,6 +18,7 @@ except ImportError:
 import digits
 from digits.config import config_value
 from digits import utils
+from digits.utils.session import session_required
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
@@ -30,6 +31,7 @@ import platform
 NAMESPACE   = '/models/images/classification'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@session_required
 @autodoc('models')
 def image_classification_model_new():
     """
@@ -51,6 +53,7 @@ def image_classification_model_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
+@session_required
 @autodoc(['models', 'api'])
 def image_classification_model_create():
     """
@@ -223,6 +226,7 @@ def show(job):
     return flask.render_template('models/images/classification/show.html', job=job)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
+@session_required
 @autodoc('models')
 def image_classification_model_large_graph():
     """
@@ -234,6 +238,7 @@ def image_classification_model_large_graph():
 
 @app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
+@session_required
 @autodoc(['models', 'api'])
 def image_classification_model_classify_one():
     """
@@ -291,6 +296,7 @@ def image_classification_model_classify_one():
 
 @app.route(NAMESPACE + '/classify_many.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_many', methods=['POST', 'GET'])
+@session_required
 @autodoc(['models', 'api'])
 def image_classification_model_classify_many():
     """
@@ -375,6 +381,7 @@ def image_classification_model_classify_many():
                 )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
+@session_required
 @autodoc('models')
 def image_classification_model_top_n():
     """

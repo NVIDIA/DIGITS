@@ -15,6 +15,7 @@ except ImportError:
 
 from digits.config import config_value
 from digits import utils
+from digits.utils.session import session_required
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import GenericImageDatasetJob
@@ -27,6 +28,7 @@ import platform
 NAMESPACE   = '/models/images/generic'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@session_required
 @autodoc('models')
 def generic_image_model_new():
     """
@@ -47,6 +49,7 @@ def generic_image_model_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
+@session_required
 @autodoc(['models', 'api'])
 def generic_image_model_create():
     """
@@ -201,6 +204,7 @@ def show(job):
     return flask.render_template('models/images/generic/show.html', job=job)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
+@session_required
 @autodoc('models')
 def generic_image_model_large_graph():
     """
@@ -212,6 +216,7 @@ def generic_image_model_large_graph():
 
 @app.route(NAMESPACE + '/infer_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/infer_one', methods=['POST', 'GET'])
+@session_required
 @autodoc(['models', 'api'])
 def generic_image_model_infer_one():
     """
@@ -265,6 +270,7 @@ def generic_image_model_infer_one():
 
 @app.route(NAMESPACE + '/infer_many.json', methods=['POST'])
 @app.route(NAMESPACE + '/infer_many', methods=['POST', 'GET'])
+@session_required
 @autodoc(['models', 'api'])
 def generic_image_model_infer_many():
     """

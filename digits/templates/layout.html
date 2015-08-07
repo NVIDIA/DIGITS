@@ -36,6 +36,10 @@
                 {% if server_name %}
                 <li><a>{{server_name}}</a></li>
                 {% endif %}
+                {% if session.username %}
+                <li><a>{{ session.username }}</a></li>
+                <li><a href="{{ url_for('logout') }}">logout</a></li>
+                {% endif %}
             </ul>
         </div>
     </div>
