@@ -548,7 +548,7 @@ function visualizeNetwork() {
                     <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
                         {{form.custom_network_snapshot.label}}
                         <div class="input-group">
-                            {{form.custom_network_snapshot(class='form-control')}}
+                            {{form.custom_network_snapshot(class='form-control autocomplete_path')}}
                             <span name="pretrained_model_explanation"
                                 class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                                 data-container="body"
