@@ -466,3 +466,59 @@ class TestDatasetModelInteractions(BaseViewsTestWithDataset):
         self.abort_dataset(dataset_id)
         self.abort_model(model_id)
 
+
+class TestCreatedCropInNetwork(TestCreated):
+    CAFFE_NETWORK = \
+"""
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    crop_size: 8
+  }
+}
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    crop_size: 8
+  }
+}
+layer {
+  name: "scale"
+  type: "Power"
+  bottom: "data"
+  top: "scale"
+  power_param {
+    scale: 0.004
+  }
+}
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scale"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
+}
+layer {
+  name: "train_loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+}
+"""
+
+class TestCreatedCropInForm(TestCreated):
+    CROP_SIZE = 8
+

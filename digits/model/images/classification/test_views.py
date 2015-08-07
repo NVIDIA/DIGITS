@@ -512,8 +512,58 @@ class TestCreatedWide(TestCreated):
 class TestCreatedTall(TestCreated):
     IMAGE_HEIGHT = 20
 
-class TestCreatedCrop(TestCreated):
+class TestCreatedCropInForm(TestCreated):
     CROP_SIZE = 8
-    # TODO: add a test to detect the cropped size
 
+class TestCreatedCropInNetwork(TestCreated):
+    CAFFE_NETWORK = \
+"""
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    crop_size: 8
+  }
+}
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    crop_size: 8
+  }
+}
+layer {
+    name: "hidden"
+    type: 'InnerProduct'
+    bottom: "data"
+    top: "output"
+}
+layer {
+    name: "loss"
+    type: "SoftmaxWithLoss"
+    bottom: "output"
+    bottom: "label"
+    top: "loss"
+}
+layer {
+    name: "accuracy"
+    type: "Accuracy"
+    bottom: "output"
+    bottom: "label"
+    top: "accuracy"
+    include {
+        phase: TEST
+    }
+}
+"""
 

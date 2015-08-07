@@ -485,9 +485,11 @@ class CaffeTrainTask(TrainTask):
         deploy_network.input.append('data')
         deploy_network.input_dim.append(1)
         deploy_network.input_dim.append(train_image_db.image_channels)
-        if self.crop_size:
-            deploy_network.input_dim.append(self.crop_size)
-            deploy_network.input_dim.append(self.crop_size)
+        if train_image_data_layer.transform_param.HasField('crop_size'):
+            deploy_network.input_dim.append(
+                    train_image_data_layer.transform_param.crop_size)
+            deploy_network.input_dim.append(
+                    train_image_data_layer.transform_param.crop_size)
         else:
             deploy_network.input_dim.append(train_image_db.image_height)
             deploy_network.input_dim.append(train_image_db.image_width)
@@ -1172,16 +1174,13 @@ class CaffeTrainTask(TrainTask):
 
         caffe_images = np.array(caffe_images)
 
+        data_shape = tuple(self.get_transformer().inputs['data'])
+
         if self.batch_size:
-            data_shape = (self.batch_size, self.dataset.image_dims[2])
+            data_shape = (self.batch_size,) + data_shape
         # TODO: grab batch_size from the TEST phase in train_val network
         else:
-            data_shape = (constants.DEFAULT_BATCH_SIZE, self.dataset.image_dims[2])
-
-        if self.crop_size:
-            data_shape += (self.crop_size, self.crop_size)
-        else:
-            data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
+            data_shape = (constants.DEFAULT_BATCH_SIZE,) + data_shape
 
         scores = None
         for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
@@ -1221,18 +1220,13 @@ class CaffeTrainTask(TrainTask):
 
         caffe_images = np.array(caffe_images)
 
-        db_task = self.dataset.analyze_db_tasks()[0]
+        data_shape = tuple(self.get_transformer().inputs['data'])
 
         if self.batch_size:
-            data_shape = (self.batch_size, db_task.image_channels)
+            data_shape = (self.batch_size,) + data_shape
         # TODO: grab batch_size from the TEST phase in train_val network
         else:
-            data_shape = (constants.DEFAULT_BATCH_SIZE, db_task.image_channels)
-
-        if self.crop_size:
-            data_shape += (self.crop_size, self.crop_size)
-        else:
-            data_shape += (db_task.image_height, db_task.image_width)
+            data_shape = (constants.DEFAULT_BATCH_SIZE,) + data_shape
 
         outputs = None
         for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
@@ -1313,13 +1307,12 @@ class CaffeTrainTask(TrainTask):
         channel_swap = None
         mean_pixel = None
 
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            data_shape = (1, self.dataset.image_dims[2])
-            if self.crop_size:
-                data_shape += (self.crop_size, self.crop_size)
-            else:
-                data_shape += (self.dataset.image_dims[0], self.dataset.image_dims[1])
+        network = caffe_pb2.NetParameter()
+        with open(self.path(self.deploy_file)) as infile:
+            text_format.Merge(infile.read(), network)
+        data_shape = network.input_dim
 
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             if self.dataset.image_dims[2] == 3 and \
                     self.dataset.train_db_task().image_channel_order == 'BGR':
                 # XXX see issue #59
@@ -1339,11 +1332,6 @@ class CaffeTrainTask(TrainTask):
 
         elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
             task = self.dataset.analyze_db_tasks()[0]
-            data_shape = (1, task.image_channels)
-            if self.crop_size:
-                data_shape += (self.crop_size, self.crop_size)
-            else:
-                data_shape += (task.image_height, task.image_width)
 
             if task.image_channels == 3:
                 # XXX see issue #59
