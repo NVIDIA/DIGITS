@@ -4,29 +4,32 @@ import wtforms
 from wtforms import validators
 
 from ..forms import ModelForm
+from digits import utils
 
 class ImageModelForm(ModelForm):
     """
     Defines the form used to create a new ImageModelJob
     """
 
-    crop_size = wtforms.IntegerField('Crop Size',
+    crop_size = utils.forms.IntegerField('Crop Size',
             validators = [
                     validators.NumberRange(min=1),
                     validators.Optional()
-                    ]
+                    ],
+            tooltip = "If specified, during training a random square crop will be taken from the input image before using as input for the network."
             )
 
     # Can't use a BooleanField here because HTML doesn't submit anything
     # for an unchecked checkbox. Since we want to use a REST API and have
     # this default to True when nothing is supplied, we have to use a
     # SelectField
-    use_mean = wtforms.SelectField('Subtract Mean File',
+    use_mean = utils.forms.SelectField('Subtract Mean File',
             choices = [
                 (1, 'Yes'),
                 (0, 'No'),
                 ],
             coerce=int,
             default=1,
+            tooltip = "Subtract the mean file for this dataset from each image."
             )
 

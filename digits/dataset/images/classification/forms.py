@@ -49,43 +49,48 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
 
     ### Method - folder
 
-    folder_train = wtforms.StringField(u'Training Images',
+    folder_train = utils.forms.StringField(u'Training Images',
             validators=[
                 validate_required_iff(method='folder'),
                 validate_folder_path,
-                ]
+                ],
+            tooltip = "Indicate a folder which holds subfolders full of images. Each subfolder should be named according to the desired label for the images that it holds. Can also be a URL for an apache/nginx auto-indexed folder."
             )
 
-    folder_pct_val = wtforms.IntegerField(u'% for validation',
+    folder_pct_val = utils.forms.IntegerField(u'% for validation',
             default=25,
             validators=[
                 validate_required_iff(method='folder'),
                 validators.NumberRange(min=0, max=100)
-                ]
+                ],
+            tooltip = "You can choose to set apart a certain percentage of images from the training images for the validation set."
             )
 
-    folder_pct_test = wtforms.IntegerField(u'% for testing',
+    folder_pct_test = utils.forms.IntegerField(u'% for testing',
             default=0,
             validators=[
                 validate_required_iff(method='folder'),
                 validators.NumberRange(min=0, max=100)
-                ]
+                ],
+            tooltip = "You can choose to set apart a certain percentage of images from the training images for the test set."
             )
 
-    folder_train_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+    folder_train_min_per_class = utils.forms.IntegerField(u'Minimum samples per class',
             default=2,
             validators=[
                 validators.Optional(),
                 validators.NumberRange(min=1),
-                ]
+                ],
+            tooltip = "You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
             )
 
-    folder_train_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+    folder_train_max_per_class = utils.forms.IntegerField(u'Maximum samples per class',
             validators=[
                 validators.Optional(),
                 validators.NumberRange(min=1),
                 validate_greater_than('folder_train_min_per_class'),
-                ]
+                ],
+            tooltip = "You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
             )
 
     has_val_folder = wtforms.BooleanField('Separate validation images folder',
@@ -103,20 +108,22 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 ]
             )
 
-    folder_val_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+    folder_val_min_per_class = utils.forms.IntegerField(u'Minimum samples per class',
             default=2,
             validators=[
                 validators.Optional(),
                 validators.NumberRange(min=1),
-                ]
+                ],
+            tooltip = "You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
             )
 
-    folder_val_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+    folder_val_max_per_class = utils.forms.IntegerField(u'Maximum samples per class',
             validators=[
                 validators.Optional(),
                 validators.NumberRange(min=1),
                 validate_greater_than('folder_val_min_per_class'),
-                ]
+                ],
+            tooltip = "You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
             )
 
     has_test_folder = wtforms.BooleanField('Separate test images folder',
@@ -135,20 +142,22 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 ]
             )
 
-    folder_test_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+    folder_test_min_per_class = utils.forms.IntegerField(u'Minimum samples per class',
             default=2,
             validators=[
                 validators.Optional(),
                 validators.NumberRange(min=1)
-                ]
+                ],
+            tooltip = "You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
             )
 
-    folder_test_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+    folder_test_max_per_class = utils.forms.IntegerField(u'Maximum samples per class',
             validators=[
                 validators.Optional(),
                 validators.NumberRange(min=1),
                 validate_greater_than('folder_test_min_per_class'),
-                ]
+                ],
+            tooltip = "You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
             )
 
     ### Method - textfile
@@ -255,26 +264,29 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
     # for an unchecked checkbox. Since we want to use a REST API and have
     # this default to True when nothing is supplied, we have to use a
     # SelectField
-    textfile_shuffle = wtforms.SelectField('Shuffle lines',
+    textfile_shuffle = utils.forms.SelectField('Shuffle lines',
             choices = [
                 (1, 'Yes'),
                 (0, 'No'),
                 ],
             coerce=int,
             default=1,
+            tooltip = "Shuffle the list[s] of images before creating the database."
             )
 
-    textfile_labels_file = wtforms.FileField(u'Labels',
+    textfile_labels_file = utils.forms.FileField(u'Labels',
             validators=[
                 validate_required_iff(method='textfile',
                                       textfile_use_local_files=False)
-                ]
+                ],
+            tooltip = "The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
             )
 
-    textfile_local_labels_file = wtforms.StringField(u'Labels',
+    textfile_local_labels_file = utils.forms.StringField(u'Labels',
             validators=[
                 validate_required_iff(method='textfile',
                                       textfile_use_local_files=True)
-                ]
+                ],
+            tooltip = "The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
             )
 
