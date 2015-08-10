@@ -30,7 +30,6 @@ class CreateDbTask(Task):
         resize_mode -- used in utils.image.resize_image()
         encoding -- 'none', 'png' or 'jpg'
         mean_file -- save mean file to this location
-        backend -- type of database to use
         labels_file -- used to print category distribution
         """
         # Take keyword arguments out of kwargs
@@ -39,7 +38,6 @@ class CreateDbTask(Task):
         self.resize_mode = kwargs.pop('resize_mode' , None)
         self.encoding = kwargs.pop('encoding', None)
         self.mean_file = kwargs.pop('mean_file', None)
-        self.backend = kwargs.pop('backend', None)
         self.labels_file = kwargs.pop('labels_file', None)
 
         super(CreateDbTask, self).__init__(**kwargs)
