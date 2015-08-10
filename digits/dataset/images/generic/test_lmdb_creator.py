@@ -65,18 +65,11 @@ def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
             ('train', train_image_count),
             ('val', val_image_count)]:
         image_db = lmdb.open(os.path.join(folder, '%s_images' % phase),
-                map_size=1024**4, # 1TB
                 map_async=True,
                 max_dbs=0)
         label_db = lmdb.open(os.path.join(folder, '%s_labels' % phase),
-                map_size=1024**4, # 1TB
                 map_async=True,
                 max_dbs=0)
-
-        write_batch_size = 10
-
-        image_txn = image_db.begin(write=True)
-        label_txn = label_db.begin(write=True)
 
         image_sum = np.zeros((image_height, image_width), 'float64')
 
@@ -101,19 +94,13 @@ def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
             pil_img.save(s, format='PNG')
             image_datum.data = s.getvalue()
             image_datum.encoded = True
-            image_txn.put(str(i), image_datum.SerializeToString())
+            _write_to_lmdb(image_db, str(i), image_datum.SerializeToString())
 
             # create label Datum
             label_datum = caffe_pb2.Datum()
             label_datum.channels, label_datum.height, label_datum.width = 1, 1, 2
             label_datum.float_data.extend(np.array([xslope, yslope]).flat)
-            label_txn.put(str(i), label_datum.SerializeToString())
-
-            if ((i+1)%write_batch_size) == 0:
-                image_txn.commit()
-                image_txn = image_db.begin(write=True)
-                label_txn.commit()
-                label_txn = label_db.begin(write=True)
+            _write_to_lmdb(label_db, str(i), label_datum.SerializeToString())
 
         # close databases
         image_db.close()
@@ -136,6 +123,26 @@ def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
     pil_img.save(test_image_filename)
 
     return test_image_filename
+
+def _write_to_lmdb(db, key, value):
+    """
+    Write (key,value) to db
+    """
+    success = False
+    while not success:
+        txn = db.begin(write=True)
+        try:
+            txn.put(key, value)
+            txn.commit()
+            success = True
+        except lmdb.MapFullError:
+            txn.abort()
+
+            # double the map_size
+            curr_limit = db.info()['map_size']
+            new_limit = curr_limit*2
+            print '>>> Doubling LMDB map size to %sMB ...' % (new_limit>>20,)
+            db.set_mapsize(new_limit) # double it
 
 def _save_mean(mean, filename):
     """
