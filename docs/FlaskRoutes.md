@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Aug 07, 2015*
+*Generated Aug 10, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -48,7 +48,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@148`](../digits/views.py#L148)
+Location: [`digits/views.py@150`](../digits/views.py#L150)
 
 ### `/datasets/<job_id>/abort`
 
@@ -58,7 +58,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@168`](../digits/views.py#L168)
+Location: [`digits/views.py@170`](../digits/views.py#L170)
 
 ### `/datasets/<job_id>/status`
 
@@ -68,7 +68,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@129`](../digits/views.py#L129)
+Location: [`digits/views.py@131`](../digits/views.py#L131)
 
 ### `/jobs/<job_id>`
 
@@ -78,7 +78,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@96`](../digits/views.py#L96)
+Location: [`digits/views.py@98`](../digits/views.py#L98)
 
 ### `/jobs/<job_id>`
 
@@ -88,7 +88,7 @@ Methods: **PUT**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@113`](../digits/views.py#L113)
+Location: [`digits/views.py@115`](../digits/views.py#L115)
 
 ### `/jobs/<job_id>`
 
@@ -98,7 +98,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@148`](../digits/views.py#L148)
+Location: [`digits/views.py@150`](../digits/views.py#L150)
 
 ### `/jobs/<job_id>/abort`
 
@@ -108,7 +108,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@168`](../digits/views.py#L168)
+Location: [`digits/views.py@170`](../digits/views.py#L170)
 
 ### `/jobs/<job_id>/status`
 
@@ -118,7 +118,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@129`](../digits/views.py#L129)
+Location: [`digits/views.py@131`](../digits/views.py#L131)
 
 ### `/models/<job_id>`
 
@@ -128,7 +128,7 @@ Methods: **DELETE**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@148`](../digits/views.py#L148)
+Location: [`digits/views.py@150`](../digits/views.py#L150)
 
 ### `/models/<job_id>/abort`
 
@@ -138,7 +138,7 @@ Methods: **POST**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@168`](../digits/views.py#L168)
+Location: [`digits/views.py@170`](../digits/views.py#L170)
 
 ### `/models/<job_id>/status`
 
@@ -148,7 +148,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/views.py@129`](../digits/views.py#L129)
+Location: [`digits/views.py@131`](../digits/views.py#L131)
 
 ## Datasets
 
@@ -406,7 +406,7 @@ Location: [`digits/model/views.py@92`](../digits/model/views.py#L92)
 
 Methods: **GET**
 
-Location: [`digits/views.py@240`](../digits/views.py#L240)
+Location: [`digits/views.py@242`](../digits/views.py#L242)
 
 ### `/files/<path:path>`
 
@@ -422,5 +422,5 @@ Methods: **GET**
 
 Arguments: `path`
 
-Location: [`digits/views.py@226`](../digits/views.py#L226)
+Location: [`digits/views.py@228`](../digits/views.py#L228)
 
