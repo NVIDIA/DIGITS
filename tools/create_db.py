@@ -23,7 +23,6 @@ from digits import utils, log
 
 import numpy as np
 import PIL.Image
-import leveldb
 import lmdb
 from cStringIO import StringIO
 # must call digits.config.load_config() before caffe to set the path
@@ -41,13 +40,10 @@ class DbCreator:
     Creates a database for a neural network imageset
     """
 
-    def __init__(self, db_path, backend='lmdb'):
+    def __init__(self, db_path):
         """
         Arguments:
         db_path -- where should the database be created
-
-        Keyword arguments:
-        backend -- 'lmdb' or 'leveldb'
         """
         # Can have trailing slash or not
         self.output_path = os.path.dirname(os.path.join(db_path, ''))
@@ -58,17 +54,10 @@ class DbCreator:
             logger.warning('removing existing database %s' % self.output_path)
             rmtree(self.output_path, ignore_errors=True)
 
-        if backend == 'lmdb':
-            self.backend = 'lmdb'
-            self.db = lmdb.open(self.output_path,
-                    map_size=1000000000000, # ~1TB
-                    map_async=True,
-                    max_dbs=0)
-        elif backend == 'leveldb':
-            self.backend = 'leveldb'
-            self.db = leveldb.LevelDB(self.output_path, error_if_exists=True)
-        else:
-            raise ValueError('unknown backend: "%s"' % backend)
+        self.db = lmdb.open(self.output_path,
+                map_size=1000000000000, # ~1TB
+                map_async=True,
+                max_dbs=0)
 
         self.shutdown = threading.Event()
         self.keys_lock = threading.Lock()
@@ -457,19 +446,10 @@ class DbCreator:
         batch -- an array of Datums
         """
         keys = self.get_keys(len(batch))
-        if self.backend == 'lmdb':
-            lmdb_txn = self.db.begin(write=True)
-            for i, datum in enumerate(batch):
-                lmdb_txn.put('%08d_%d' % (keys[i], datum.label), datum.SerializeToString())
-            lmdb_txn.commit()
-        elif self.backend == 'leveldb':
-            leveldb_batch = leveldb.WriteBatch()
-            for i, datum in enumerate(batch):
-                leveldb_batch.Put('%08d_%d' % (keys[i], datum.label), datum.SerializeToString())
-            self.db.Write(leveldb_batch)
-        else:
-            logger.error('unsupported backend')
-            return False
+        lmdb_txn = self.db.begin(write=True)
+        for i, datum in enumerate(batch):
+            lmdb_txn.put('%08d_%d' % (keys[i], datum.label), datum.SerializeToString())
+        lmdb_txn.commit()
 
     def get_keys(self, num):
         """
@@ -524,10 +504,6 @@ if __name__ == '__main__':
             action='store_true',
             help='Shuffle images before saving'
             )
-    parser.add_argument('-b', '--backend',
-            default='lmdb',
-            help='db backend [default=lmdb]'
-            )
     parser.add_argument('-e', '--encoding',
             default = 'none',
             help = 'Choose encoding format ("jpg", "png" or "none" [default])'
@@ -535,8 +511,7 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
 
-    db = DbCreator(args['db_name'],
-            backend=args['backend'])
+    db = DbCreator(args['db_name'])
 
     if db.create(args['input_file'], args['width'], args['height'],
             channels        = args['channels'],

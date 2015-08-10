@@ -25,15 +25,11 @@ class TestInit():
         except OSError:
             pass
 
-    @raises(ValueError)
-    def test_bad_backend(self):
-        _.DbCreator(self.db_name, 'not-a-backend')
-
 class TestCreate():
     @classmethod
     def setUpClass(cls):
         cls.db_name = tempfile.mkdtemp()
-        cls.db = _.DbCreator(cls.db_name, 'leveldb')
+        cls.db = _.DbCreator(cls.db_name)
 
         fd, cls.input_file = tempfile.mkstemp()
         os.close(fd)
@@ -97,7 +93,7 @@ class TestPathToDatum():
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp()
         cls.db_name = tempfile.mkdtemp(dir=cls.tmpdir)
-        cls.db = _.DbCreator(cls.db_name, 'lmdb')
+        cls.db = _.DbCreator(cls.db_name)
         _handle, cls.image_path = tempfile.mkstemp(dir=cls.tmpdir, suffix='.jpg')
         with open(cls.image_path, 'w') as outfile:
             PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8)).save(outfile, format='JPEG', quality=100)
