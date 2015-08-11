@@ -80,6 +80,8 @@ def home():
                 new_model_options   = new_model_options,
                 running_models      = running_models,
                 completed_models    = completed_models,
+                total_gpu_count     = len(scheduler.resources['gpus']),
+                remaining_gpu_count = sum(r.remaining() for r in scheduler.resources['gpus']),
                 )
 
 def get_job_list(cls, running):
