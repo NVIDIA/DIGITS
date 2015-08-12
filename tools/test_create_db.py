@@ -4,16 +4,17 @@ import os.path
 import tempfile
 import shutil
 from cStringIO import StringIO
+import unittest
+import platform
 
 from nose.tools import raises, assert_raises
 import mock
-import unittest
 import PIL.Image
 import numpy as np
 
 from . import create_db as _
 
-class TestInit():
+class TestInit(object):
     @classmethod
     def setUpClass(cls):
         cls.db_name = tempfile.mkdtemp()
@@ -25,7 +26,7 @@ class TestInit():
         except OSError:
             pass
 
-class TestCreate():
+class TestCreate(object):
     @classmethod
     def setUpClass(cls):
         cls.db_name = tempfile.mkdtemp()
@@ -88,7 +89,7 @@ class TestCreate():
             resize_mode='crop'), 'database should complete building normally'
 
 
-class TestPathToDatum():
+class TestPathToDatum(object):
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp()
@@ -128,5 +129,42 @@ class TestPathToDatum():
         else:
             assert d.encoded, 'datum should be encoded when encoding="%s"' % e
 
-class TestSaveMean():
-    pass
+
+class TestMapSize(object):
+    """
+    Tests regarding the LMDB map_size argument
+    """
+
+    def test_default_mapsize(self):
+        db_name = tempfile.mkdtemp()
+        db = _.DbCreator(db_name)
+        assert db.db.info()['map_size'] == (10<<20), 'Default map_size %s != 10MB' % db.db.info()['map_size']
+
+    @unittest.skipIf(platform.system() != 'Linux',
+            'This test fails on non-Linux systems')
+    def test_huge_mapsize(self):
+        db_name = tempfile.mkdtemp()
+        mapsize_mb = 1024**2 # 1TB should be no problem
+        db = _.DbCreator(db_name, lmdb_map_size=mapsize_mb)
+
+    def test_set_mapsize(self):
+        # create textfile
+        fd, input_file = tempfile.mkstemp()
+        os.close(fd)
+        with open(input_file, 'w') as f:
+            f.write('digits/static/images/mona_lisa.jpg 0')
+
+        # create DbCreator object
+        db_name = tempfile.mkdtemp()
+        mapsize_mb = 1
+        db = _.DbCreator(db_name, lmdb_map_size=mapsize_mb)
+
+        # create db
+        image_size = 1000 # big enough to trigger a MapFullError
+        assert db.create(
+            input_file,
+            width=image_size,
+            height=image_size,
+            ), 'create failed'
+
+

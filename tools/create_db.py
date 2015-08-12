@@ -35,19 +35,26 @@ except ImportError:
 
 logger = logging.getLogger('digits.tools.create_db')
 
-class DbCreator:
+class DbCreator(object):
     """
     Creates a database for a neural network imageset
     """
 
-    def __init__(self, db_path):
+    def __init__(self, db_path, lmdb_map_size=None):
         """
         Arguments:
         db_path -- where should the database be created
+
+        Keyword arguments:
+        lmdb_map_size -- the initial LMDB map size
         """
         # Can have trailing slash or not
         self.output_path = os.path.dirname(os.path.join(db_path, ''))
         self.name = os.path.basename(self.output_path)
+
+        if lmdb_map_size:
+            # convert from MB to B
+            lmdb_map_size <<= 20
 
         if os.path.exists(self.output_path):
             # caffe throws an error instead
@@ -55,7 +62,7 @@ class DbCreator:
             rmtree(self.output_path, ignore_errors=True)
 
         self.db = lmdb.open(self.output_path,
-                map_size=1000000000000, # ~1TB
+                map_size=lmdb_map_size,
                 map_async=True,
                 max_dbs=0)
 
@@ -105,7 +112,7 @@ class DbCreator:
             logger.error('unsupported number of channels')
             return False
         self.channels = channels
-        if resize_mode not in ['crop', 'squash', 'fill', 'half_crop']:
+        if resize_mode not in [None, 'crop', 'squash', 'fill', 'half_crop']:
             logger.error('unsupported resize_mode')
             return False
         self.resize_mode = resize_mode
@@ -138,10 +145,9 @@ class DbCreator:
             #XXX This is the only way to preserve order for now
             # This obviously hurts performance considerably
             read_threads = 1
-            write_threads = 1
         else:
             read_threads = 10
-            write_threads = 10
+        write_threads = 1
         batch_size = 100
 
         total_images_added = 0
@@ -448,7 +454,21 @@ class DbCreator:
         keys = self.get_keys(len(batch))
         lmdb_txn = self.db.begin(write=True)
         for i, datum in enumerate(batch):
-            lmdb_txn.put('%08d_%d' % (keys[i], datum.label), datum.SerializeToString())
+            try:
+                key = '%08d_%d' % (keys[i], datum.label)
+                lmdb_txn.put(key, datum.SerializeToString())
+            except lmdb.MapFullError:
+                lmdb_txn.abort()
+
+                # double the map_size
+                curr_limit = self.db.info()['map_size']
+                new_limit = curr_limit*2
+                logger.debug('Doubling LMDB map size to %sMB ...' % (new_limit>>20,))
+                self.db.set_mapsize(new_limit) # double it
+
+                # try again
+                self.write_batch(batch)
+                return
         lmdb_txn.commit()
 
     def get_keys(self, num):
@@ -493,7 +513,6 @@ if __name__ == '__main__':
             help='channels of resized images (1 for grayscale, 3 for color [default])'
             )
     parser.add_argument('-r', '--resize_mode',
-            default='squash',
             help='resize mode for images (must be "crop", "squash" [default], "fill" or "half_crop")'
             )
     parser.add_argument('-m', '--mean_file', action='append',
@@ -508,10 +527,14 @@ if __name__ == '__main__':
             default = 'none',
             help = 'Choose encoding format ("jpg", "png" or "none" [default])'
             )
+    parser.add_argument('--lmdb_map_size',
+            type=int,
+            help = 'The initial map size for LMDB (in MB)')
 
     args = vars(parser.parse_args())
 
-    db = DbCreator(args['db_name'])
+    db = DbCreator(args['db_name'],
+            lmdb_map_size = args['lmdb_map_size'])
 
     if db.create(args['input_file'], args['width'], args['height'],
             channels        = args['channels'],
