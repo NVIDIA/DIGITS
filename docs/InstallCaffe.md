@@ -4,6 +4,8 @@ To use Caffe in DIGITS, you must use [NVIDIA's fork](https://github.com/NVIDIA/c
 
 To enable multi-GPU training, install version [`0.12`](https://github.com/NVIDIA/caffe/tree/caffe-0.12).
 
+For cuDNN v3, install version [`0.13`](https://github.com/NVIDIA/caffe/tree/caffe-0.12).
+
 ## Grab the source
 
     % cd $HOME
@@ -39,6 +41,28 @@ If you want to install these packages *without* using a virtual environment, rep
 
 ## Build Caffe
 
+#### Using CMake
+
+You can use [CMake](http://www.cmake.org/) to configure your build for you.
+It will try to find the correct paths to every library needed to build Caffe.
+
+    % cd $CAFFE_HOME
+    % mkdir build
+    % cd build
+    % cmake ..
+    % make --jobs=4
+
+If you are using [cuDNN](https://developer.nvidia.com/cudnn) (for faster performance) and [CNMeM](https://github.com/NVIDIA/cnmem) (better GPU memory utilization for faster performance and fewer out-of-memory-errors), then you may want to configure CMake like this:
+
+    % cmake \
+      -DCUDNN_INCLUDE=$CUDNN_HOME/include -DCUDNN_INCLUDE=$CUDNN_HOME/lib64/libcudnn.so \
+      -DCNMEM_INCLUDE=$CNMEM_HOME/include -DCNMEM_INCLUDE=$CNMEM_HOME/lib64/libcudnn.so \
+      ..
+
+#### Using Make
+
+You can also use Make directly.
+
     % cd $CAFFE_HOME
     % cp Makefile.config.example Makefile.config
     % make all --jobs=4
@@ -46,4 +70,3 @@ If you want to install these packages *without* using a virtual environment, rep
 
 NOTE: You may need to make some changes to `Makefile.config` to get Caffe to compile if you haven't installed CUDA or cuDNN.
 
-(CMake instructions coming soon)
