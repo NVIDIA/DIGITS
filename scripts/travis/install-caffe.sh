@@ -2,6 +2,7 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 set -e
+set -x
 
 if [ "$#" -ne 1 ];
 then
@@ -22,6 +23,7 @@ cd $INSTALL_DIR
 sudo -E ./scripts/travis/travis_install.sh
 # change permissions for installed python packages
 sudo chown travis:travis -R /home/travis/miniconda
+sudo chown travis:travis -R /home/travis/.cache
 
 # Build source
 cp Makefile.config.example Makefile.config
@@ -34,5 +36,7 @@ make --jobs=$NUM_THREADS pycaffe
 # conda (fast)
 conda install --yes cython nose ipython h5py pandas python-gflags
 # pip (slow)
-for req in $(cat python/requirements.txt); do pip install $req; done
+for req in $(cat python/requirements.txt); do
+    pip install $req
+done
 
