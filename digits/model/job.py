@@ -37,6 +37,7 @@ class ModelJob(Job):
     @override
     def json_dict(self, verbose=False):
         d = super(ModelJob, self).json_dict(verbose)
+        d['dataset_id'] = self.dataset_id
 
         if verbose:
             d.update({

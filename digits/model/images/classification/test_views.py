@@ -331,7 +331,8 @@ class TestCreated(BaseViewsTestWithModel):
         rv = self.app.get('/models/%s.json' % self.model_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
-        assert content['id'] == self.model_id, 'expected different job_id'
+        assert content['id'] == self.model_id, 'id %s != %s' % (content['id'], self.model_id)
+        assert content['dataset_id'] == self.dataset_id, 'dataset_id %s != %s' % (content['dataset_id'], self.dataset_id)
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
     def test_classify_one(self):
