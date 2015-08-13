@@ -9,6 +9,7 @@ import time
 import logging
 import random
 import urllib
+import itertools
 
 import requests
 
@@ -282,6 +283,7 @@ def parse_folder(folder, labels_file,
         test_file=None, percent_test=None,
         min_per_category=2,
         max_per_category=None,
+        split_by_subfolder=False
         ):
     """
     Parses a folder of images into three textfiles
@@ -300,6 +302,7 @@ def parse_folder(folder, labels_file,
     percent_test -- percentage of images to use in the test set
     min_per_category -- minimum number of images per category
     max_per_category -- maximum number of images per category
+    split_by_subfolder -- split images grouped by sub-folders instead of individually
     """
     create_labels = (percent_train > 0)
     labels = []
@@ -378,8 +381,11 @@ def parse_folder(folder, labels_file,
 
         logger.debug('Category - %s' % label_name)
 
-        lines = []
-
+        if split_by_subfolder:
+            lines = {}
+        else:
+            lines = []
+        
         ### Read all images in the folder
 
         if folder_is_url:
@@ -390,7 +396,13 @@ def parse_folder(folder, labels_file,
             for dirpath, dirnames, filenames in os.walk(os.path.join(folder, subdir), followlinks=True):
                 for filename in filenames:
                     if filename.lower().endswith(utils.image.SUPPORTED_EXTENSIONS):
-                        lines.append('%s %d' % (os.path.join(folder, subdir, dirpath, filename), label_index))
+                        groupdir = os.path.split(dirpath)[1]
+                        if split_by_subfolder:
+                            if not groupdir in lines:
+                                lines[groupdir] = []
+                            lines[groupdir].append('%s %d' % (os.path.join(folder, subdir, dirpath, filename), label_index))
+                        else:
+                            lines.append('%s %d' % (os.path.join(folder, subdir, dirpath, filename), label_index))
                         if max_per_category is not None and len(lines) >= max_per_category:
                             break
                 if max_per_category is not None and len(lines) >= max_per_category:
@@ -415,11 +427,18 @@ def parse_folder(folder, labels_file,
             logger.warning('Not enough images for this category')
             labels.pop()
         else:
+            if split_by_subfolder:
+                lines = list(lines.values())
             random.shuffle(lines)
             a, b = three_way_split_indices(len(lines), percent_val, percent_test)
-            train_lines = lines[:a]
-            val_lines = lines[a:b]
-            test_lines = lines[b:]
+            if split_by_subfolder:
+                train_lines = list(itertools.chain.from_iterable(lines[:a]))
+                val_lines = list(itertools.chain.from_iterable(lines[a:b]))
+                test_lines = list(itertools.chain.from_iterable(lines[b:]))
+            else:
+                train_lines = lines[:a]
+                val_lines = lines[a:b]
+                test_lines = lines[b:]
 
         if train_lines:
             train_outfile.write('\n'.join(train_lines) + '\n')
@@ -502,6 +521,10 @@ if __name__ == '__main__':
             metavar='MAX_PER_CATEGORY',
             help='What is the maximum limit of images per category? (categories which exceed this limit will be trimmed down) [default=None]'
             )
+    parser.add_argument('--split_by_subfolder',
+            help='Splitting randomly by sub-folder instead of image instances [default=False]',
+            action='store_true'
+            )
 
     args = vars(parser.parse_args())
 
@@ -539,6 +562,7 @@ if __name__ == '__main__':
             percent_test    = percent_test,
             min_per_category= args['min'],
             max_per_category= args['max'],
+            split_by_subfolder = args['split_by_subfolder']
             ):
         logger.info('Done after %d seconds.' % (time.time() - start_time))
         sys.exit(0)
