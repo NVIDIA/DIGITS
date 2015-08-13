@@ -25,6 +25,7 @@ from digits.model import tasks
 from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
+import platform
 
 NAMESPACE   = '/models/images/classification'
 
@@ -246,9 +247,11 @@ def image_classification_model_classify_one():
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
         image = utils.image.load_image(flask.request.form['image_url'])
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
-        with tempfile.NamedTemporaryFile() as outfile:
-            flask.request.files['image_file'].save(outfile.name)
-            image = utils.image.load_image(outfile.name)
+        outfile = tempfile.mkstemp(suffix='.bin')
+        flask.request.files['image_file'].save(outfile[1])
+        image = utils.image.load_image(outfile[1])
+        os.close(outfile[0])
+        os.remove(outfile[1])
     else:
         raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
 

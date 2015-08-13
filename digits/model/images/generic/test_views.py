@@ -338,7 +338,7 @@ class TestCreated(BaseViewsTestWithModel):
 
     def test_infer_one(self):
         image_path = os.path.join(self.imageset_folder, self.test_image)
-        with open(image_path) as infile:
+        with open(image_path,'rb') as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
@@ -355,7 +355,7 @@ class TestCreated(BaseViewsTestWithModel):
 
     def test_infer_one_json(self):
         image_path = os.path.join(self.imageset_folder, self.test_image)
-        with open(image_path) as infile:
+        with open(image_path,'rb') as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 

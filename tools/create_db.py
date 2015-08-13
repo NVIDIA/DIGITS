@@ -281,7 +281,7 @@ class DbCreator(object):
                     blob.channels, blob.height, blob.width = data.shape
                     blob.data.extend(data.astype(float).flat)
 
-                    with open(mean_file, 'w') as outfile:
+                    with open(mean_file, 'wb') as outfile:
                         outfile.write(blob.SerializeToString())
                 elif mean_file.lower().endswith(('.jpg', '.jpeg', '.png')):
                     image = PIL.Image.fromarray(mean)
