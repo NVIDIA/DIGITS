@@ -1,6 +1,7 @@
 {# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
 
 {% extends "layout.html" %}
 
@@ -20,19 +21,7 @@ New Image Model
 <form id="model-form" action="{{url_for('generic_image_model_create')}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
-    {% if form.errors %}
-        <div class="alert alert-danger">
-            {% for field, errors in form.errors.items() %}
-                <li>{{ field }}
-                    <ul>
-                        {% for e in errors %}
-                            <li>{{ e }}</li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            {% endfor %}
-        </div>
-    {% endif %}
+    {{ print_errors(form) }}
 
     <div class="row">
         <div class="col-sm-4">
