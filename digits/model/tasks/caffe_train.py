@@ -5,6 +5,7 @@ import re
 import time
 import math
 import subprocess
+import operator
 
 import numpy as np
 from google.protobuf import text_format
@@ -966,7 +967,7 @@ class CaffeTrainTask(TrainTask):
             if layers == 'all':
                 added_activations = []
                 for layer in self.network.layer:
-                    print 'Computing visualizations for "%s"...' % layer.name
+                    print 'Computing visualizations for "%s" ...' % layer.name
                     for bottom in layer.bottom:
                         if bottom in net.blobs and bottom not in added_activations:
                             data = net.blobs[bottom].data[0]
@@ -976,12 +977,14 @@ class CaffeTrainTask(TrainTask):
                             visualizations.append(
                                     {
                                         'name': str(bottom),
-                                        'type': 'Activations',
-                                        'shape': data.shape,
-                                        'mean': mean,
-                                        'stddev': std,
-                                        'histogram': hist,
+                                        'vis_type': 'Activation',
                                         'image_html': utils.image.embed_image_html(vis),
+                                        'data_stats': {
+                                            'shape': data.shape,
+                                            'mean': mean,
+                                            'stddev': std,
+                                            'histogram': hist,
+                                            },
                                         }
                                     )
                             added_activations.append(bottom)
@@ -992,15 +995,22 @@ class CaffeTrainTask(TrainTask):
                         else:
                             vis = None
                         mean, std, hist = self.get_layer_statistics(data)
+                        weight_count = reduce(operator.mul, net.params[layer.name][0].data.shape, 1)
+                        bias_count = reduce(operator.mul, net.params[layer.name][1].data.shape, 1)
+                        parameter_count = weight_count + bias_count
                         visualizations.append(
                                 {
                                     'name': str(layer.name),
-                                    'type': 'Weights (%s layer)' % layer.type,
-                                    'shape': data.shape,
-                                    'mean': mean,
-                                    'stddev': std,
-                                    'histogram': hist,
+                                    'vis_type': 'Weights',
+                                    'layer_type': layer.type,
+                                    'param_count': parameter_count,
                                     'image_html': utils.image.embed_image_html(vis),
+                                    'data_stats': {
+                                        'shape':data.shape,
+                                        'mean': mean,
+                                        'stddev': std,
+                                        'histogram': hist,
+                                        },
                                     }
                                 )
                     for top in layer.top:
@@ -1017,12 +1027,14 @@ class CaffeTrainTask(TrainTask):
                             visualizations.append(
                                     {
                                         'name': str(top),
-                                        'type': 'Activation',
-                                        'shape': data.shape,
-                                        'mean': mean,
-                                        'stddev': std,
-                                        'histogram': hist,
+                                        'vis_type': 'Activation',
                                         'image_html': utils.image.embed_image_html(vis),
+                                        'data_stats': {
+                                            'shape': data.shape,
+                                            'mean': mean,
+                                            'stddev': std,
+                                            'histogram': hist,
+                                            },
                                         }
                                     )
                             added_activations.append(top)
