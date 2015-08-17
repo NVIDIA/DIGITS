@@ -17,7 +17,7 @@ import model.views
 from digits.utils import errors
 from digits.utils.routing import request_wants_json
 from flask import Flask, request, render_template
-# from digits.decorator import login_required
+from workspaces import get_workspace
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
@@ -34,12 +34,13 @@ def home():
             models: [{id, name, status},...]
         }
     """
-    running_datasets    = get_job_list(dataset.DatasetJob, True)
-    completed_datasets  = get_job_list(dataset.DatasetJob, False)
-    running_models      = get_job_list(model.ModelJob, True)
-    running_models     += get_job_list(model.PretrainedModelJob, True)
-    completed_models    = get_job_list(model.ModelJob, False)
-    completed_models   += get_job_list(model.PretrainedModelJob, False)
+    workspace = get_workspace(flask.request.url)
+    running_datasets    = get_job_list(dataset.DatasetJob, True, workspace)
+    completed_datasets  = get_job_list(dataset.DatasetJob, False, workspace)
+    running_models      = get_job_list(model.ModelJob, True, workspace)
+    running_models     += get_job_list(model.PretrainedModelJob, True, workspace)
+    completed_models    = get_job_list(model.ModelJob, False, workspace)
+    completed_models   += get_job_list(model.PretrainedModelJob, False, workspace)
 
     if request_wants_json():
         return flask.jsonify({
@@ -85,11 +86,16 @@ def home():
                 new_model_options   = new_model_options,
                 running_models      = running_models,
                 completed_models    = completed_models,
+                workspace = workspace,
                 )
 
-def get_job_list(cls, running):
+def get_job_list(cls, running, *args):
+    scheduler_jobs = [j._id for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running]
+    workspace_dir = os.path.join(config_value('jobs_dir'), args[0])
+    workspace_jobs = next(os.walk(workspace_dir))[1]
+    workspace_scheduled_jobs = list(set(workspace_jobs) & set(scheduler_jobs))
     return sorted(
-            [j for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running],
+            [j for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running and j._id in workspace_scheduled_jobs],
             key=lambda j: j.status_history[0][1],
             reverse=True,
             )
