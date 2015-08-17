@@ -16,6 +16,7 @@ import dataset.views
 import model.views
 from digits.utils import errors
 from digits.utils.routing import request_wants_json
+from flask import Flask, request, render_template
 # from digits.decorator import login_required
 
 @app.route('/index.json', methods=['GET'])
@@ -306,3 +307,28 @@ def on_leave():
         #print '>>> Somebody left room %s' % room
         leave_room(room)
 
+@app.route('/workspaces', methods=['GET'])
+def show_workspaces():
+    """
+    Lists the current workspaces in DIGITS
+    """
+    jobs_dir = config_value('jobs_dir')
+    workspaces = next(os.walk(jobs_dir))[1]
+    print workspaces
+    return render_template('workspaces.html', workspaces = workspaces)
+
+@app.route('/workspaces', methods=['POST'])
+def create_workspaces():
+    """
+    Creates a new Workspace in DIGITS
+    """
+    error = False
+    new_workspace=request.form['name']
+    jobs_dir = config_value('jobs_dir')
+    if new_workspace in next(os.walk(jobs_dir))[1]:
+        error  = True
+    else:
+        _dir = os.path.join(config_value('jobs_dir'), new_workspace)
+        os.mkdir(_dir)
+    workspaces = next(os.walk(jobs_dir))[1]
+    return render_template('workspaces.html', workspaces = workspaces, error = error)
