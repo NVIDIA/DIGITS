@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Aug 13, 2015*
+*Generated Aug 14, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -300,7 +300,7 @@ Location: [`digits/model/images/classification/views.py@54`](../digits/model/ima
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@293`](../digits/model/images/classification/views.py#L293)
+Location: [`digits/model/images/classification/views.py@294`](../digits/model/images/classification/views.py#L294)
 
 ### `/models/images/classification/classify_one`
 
@@ -336,7 +336,7 @@ Location: [`digits/model/images/classification/views.py@33`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@377`](../digits/model/images/classification/views.py#L377)
+Location: [`digits/model/images/classification/views.py@378`](../digits/model/images/classification/views.py#L378)
 
 ### `/models/images/generic`
 
@@ -356,7 +356,7 @@ Location: [`digits/model/images/generic/views.py@50`](../digits/model/images/gen
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/generic/views.py#L267)
+Location: [`digits/model/images/generic/views.py@268`](../digits/model/images/generic/views.py#L268)
 
 ### `/models/images/generic/infer_one`
 
