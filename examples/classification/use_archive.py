@@ -12,7 +12,7 @@ import zipfile
 import tarfile
 import tempfile
 
-from use_files import classify
+from example import classify
 
 def unzip_archive(archive):
     """

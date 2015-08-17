@@ -2,7 +2,7 @@
 
 <div class="row">
     <div class="col-sm-6">
-        <img src="{{image_src}}" style="width:{{image_width}}px;height:{{image_height}}px;" />
+        <img src="{{image_src}}" style="max-width:100%;" />
     </div>
 
     <div class="col-sm-6">
@@ -72,6 +72,8 @@
         <td>
             <h4>{{vis['name']}}</h4>
             {{vis['type']}}
+            <br>
+            {{vis['shape']}}
         </td>
         <td>
             <b>Mean:</b> {{vis['mean']}}<br>

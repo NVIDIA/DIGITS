@@ -2,3 +2,4 @@
 
 from parse_folder import ParseFolderTask
 from create_db import CreateDbTask
+from analyze_db import AnalyzeDbTask

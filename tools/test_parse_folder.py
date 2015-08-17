@@ -4,6 +4,7 @@ import os
 import tempfile
 import shutil
 import itertools
+import platform
 
 from nose.tools import raises, assert_raises
 import mock
@@ -25,7 +26,10 @@ class TestValidateFolder():
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(cls.tmpdir)
+        try:
+            shutil.rmtree(cls.tmpdir)
+        except:
+            pass
 
     def test_dir(self):
         assert _.validate_folder(self.tmpdir) == True
@@ -47,7 +51,10 @@ class TestValidateOutputFile():
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(cls.tmpdir)
+        try:
+            shutil.rmtree(cls.tmpdir)
+        except:
+            pass
 
     def test_missing_file(self):
         assert _.validate_output_file(None) == True, 'all new files should be valid'
@@ -206,15 +213,13 @@ class TestCalculatePercentages():
 class TestParseWebListing():
 
     def test_non_url(self):
-        """parse_web_listing with bad url"""
         for url in ['not-a-url', 'http://not-a-url', 'https://not-a-url']:
             yield self.check_url_raises, url
 
     def check_url_raises(self, url):
         assert_raises(Exception, _.parse_web_listing, url)
 
-    def test_parse_web_listing(self):
-        """parse_web_listing check output"""
+    def test_mock_url(self):
         for content, dirs, files in [
                 # Nothing
                 ('', [], []),
@@ -273,3 +278,4 @@ class TestSplitIndices():
 
         assert abs(ideala-idxa) <= 2, 'split should be close to {}, is {}'.format(ideala, idxa)
         assert abs(idealb-idxb) <= 2, 'split should be close to {}, is {}'.format(idealb, idxb)
+

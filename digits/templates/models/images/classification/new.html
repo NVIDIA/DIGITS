@@ -1,6 +1,7 @@
 {# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
 
 {% extends "layout.html" %}
 
@@ -20,19 +21,7 @@ New Image Classification Model
 <form id="model-form" action="{{url_for('image_classification_model_create')}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
-    {% if form.errors %}
-        <div class="alert alert-danger">
-            {% for field, errors in form.errors.items() %}
-                <li>{{ field }}
-                    <ul>
-                        {% for e in errors %}
-                            <li>{{ e }}</li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            {% endfor %}
-        </div>
-    {% endif %}
+    {{ print_errors(form) }}
 
     <div class="row">
         <div class="col-sm-4">
@@ -50,7 +39,7 @@ New Image Classification Model
         </div>
         <script>
 $("#dataset").change(function() {
-        $.ajax("/datasets/summary?job_id=" + $(this).val(),
+        $.ajax("/datasets/images/classification/summary?job_id=" + $(this).val(),
             {
                 type: "GET",
                 }
@@ -104,19 +93,7 @@ $("#dataset").change(function() {
             <div class="well">
                 <h4>Solver Options</h4>
 
-                </br>
                 <!-- Length -->
-                <div class="form-group{{' has-error' if form.shuffle.errors}}" id="shuffle-data" style="display:none;">
-                    <label for={{form.shuffle.name}}>
-                        {{form.shuffle}}
-                        {{form.shuffle.label.text}}
-                    </label>
-                    <span name="shuffle_explanation"
-                        class="explanation-tooltip glyphicon glyphicon-question-sign"
-                        data-container="body"
-                        title="For every epoch, shuffle the data before training."
-                        ></span>
-                </div>
 
                 <div class="form-group{{' has-error' if form.train_epochs.errors}}">
                     {{form.train_epochs.label}}
@@ -486,40 +463,59 @@ function customizeNetwork(network, snapshot_list, framework) {
 
                 </div>
                 <div id="network-tab-previous" class="tab-pane">
-                    <table class="table">
-                        <tr>
-                            <th>Network</th>
-                            <th>Pretrained Model</th>
-                            <th></th>
-                        </tr>
-                        {% for network in form.previous_networks %}
-                        {% set each_previous_network = previous_networks_fullinfo[loop.index0] %}
-                        <tr>
-                            <td>
 
-                                {{network}}
-                                {{network.label}}
-                                <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
-				                <span class="badge">{{each_previous_network.train_task().framework_name()}}</span>
-                            </td>
-                            <td>
-                                {% set snapshot_list = previous_network_snapshots[loop.index0] %}
-                                {% if snapshot_list|length %}
-                                <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
-                                    {% for each_epoch in snapshot_list %}
-                                    <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
-                                    {% endfor %}
-                                </select>
-                                {% endif %}
-                            </td>
-                            <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{each_previous_network.train_task().framework_name()}}' );">Customize</a></td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td><i>None</i></td>
-                        </tr>
+                    <div class="tab-content">
+                        {% for batch in form.previous_networks|batch(10) %}
+                        <div class="tab-pane{{' active' if loop.index==1}}" id="previous_networks-page-{{loop.index}}">
+
+                            <table class="table">
+                                <tr>
+                                    <th>Network</th>
+                                    <th>Pretrained Model</th>
+                                    <th></th>
+                                </tr>
+                                {% for network in batch %}
+                                {% set each_previous_network = previous_networks_fullinfo[loop.index0] %}
+                                <tr>
+                                    <td>
+                                        {{network}}
+                                        {{network.label}}
+                                        <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
+                                        <span class="badge">{{each_previous_network.train_task().framework_name()}}</span>
+                                    </td>
+                                    <td>
+                                        {% set snapshot_list = previous_network_snapshots[loop.index0] %}
+                                        {% if snapshot_list|length %}
+                                        <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
+                                            {% for each_epoch in snapshot_list %}
+                                            <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% endif %}
+                                    </td>
+                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{each_previous_network.train_task().framework_name()}}' );">Customize</a></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td><i>None</i></td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+
+                        </div>
                         {% endfor %}
-                    </table>
+                    </div>
+
+                    {% if form.previous_networks.choices|length > 10 %}
+                    <div class="text-center">
+                        <ul class="pagination">
+                            {% for i in range((form.previous_networks.choices|length/10)|round(0,'ceil')|int) %}
+                            <li class="{{'active' if i==0}}"><a href="#previous_networks-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
                 </div>
                 <script>
                     // hide some buttons and form elements
@@ -542,7 +538,7 @@ function customizeNetwork(network, snapshot_list, framework) {
                             $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
                             $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
                         }
-			var framework_badge = $(this).parents('td').find(".badge").text();
+                        var framework_badge = $(this).parents('td').find(".badge").text();
                         $('#framework').val(framework_badge);  //sets the framework value based on the job selected in previous networks tab.
                         if(framework_badge == "torch")
                             $("#shuffle-data").show();
@@ -567,6 +563,7 @@ function customizeNetwork(network, snapshot_list, framework) {
 
                 </script>
                 <div id="network-tab-custom" class="tab-pane">
+                    <script>
 
                     <ul class="nav nav-tabs" id="customFramework">
                         <li id="caffe" class="active"><a href="#caffe_custom" data-toggle="tab">Caffe</a></li>
@@ -585,6 +582,7 @@ function customizeNetwork(network, snapshot_list, framework) {
                     </script>
 
                     <script>
+
 function visualizeNetwork() {
     framework = $('#framework').val();
     $.ajax("{{url_for('models_visualize_network')}}",
@@ -605,31 +603,30 @@ function visualizeNetwork() {
     return false;
 }
                     </script>
-
-                        <div class="tab-content" id="custom_textareas">
+                       <div class="tab-content" id="custom_textareas">
                             <div class="tab-pane" id="caffe_custom">
                                 <div class="form-group{{' has-error' if form.caffe_custom_network.errors}}">
                                     {{form.caffe_custom_network.label}}
                                     <div id="caffe_custom_network_explanation" style="display:none;">
                                         <h1>Specifying a custom network</h1>
                                         <p>
-                                            You should enter a train_val network here. Some cleanup is done for you automatically:
+                                        You should enter a train_val network here. Some cleanup is done for you automatically:
                                         <ul>
                                             <li>
-                                                The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
+                                            The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
                                             </li>
                                             <li>
-                                                Any <b>Accuracy</b> layers with <i>top_k</i> &gt;= num_labels is removed automatically.
+                                            Any <b>Accuracy</b> layers with <i>top_k</i> &gt;= num_labels is removed automatically.
                                             </li>
                                         </ul>
                                         </p>
                                         The deploy network will be created for you automatically. Once caffe implements their "all-in-one" nets feature, you will be able to specify which layers to include in the deploy file. Until then, these things are done automatically:
                                         <ul>
                                             <li>
-                                                The last <b>SoftmaxWithLoss</b> layer is replaced with a <b>Softmax</b> layer.
+                                            The last <b>SoftmaxWithLoss</b> layer is replaced with a <b>Softmax</b> layer.
                                             </li>
                                             <li>
-                                                All other loss layers and accuracy layers are removed.
+                                            All other loss layers and accuracy layers are removed.
                                             </li>
                                         </ul>
                                         </p>
@@ -652,11 +649,10 @@ function visualizeNetwork() {
                         <script>$(this).addClass('active');
                             $('#custom_textareas div:first').addClass('tab-pane active') // Select first tab
                         </script>
-
                     <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
                         {{form.custom_network_snapshot.label}}
                         <div class="input-group">
-                            {{form.custom_network_snapshot(class='form-control')}}
+                            {{form.custom_network_snapshot(class='form-control autocomplete_path')}}
                             <span name="pretrained_model_explanation"
                                 class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                                 data-container="body"
@@ -671,19 +667,19 @@ function visualizeNetwork() {
             <script>
 function updateNetworkTab(method) {
     $('select[name=method]').val(method);
+    if (parts[parts.length-1] == "previous" || $('#framework').val() != "torch")
+    {
+        if(parts[parts.length-1] == "previous" && $("input:radio[name=previous_networks]").is(":checked") && $("input:radio[name=previous_networks]:checked").parents('td').find(".badge").text()=="torch")
+            $("#shuffle-data").show();
+        else
+            $("#shuffle-data").hide();
+    }
+    else
+        $("#shuffle-data").show();
 }
 $('#network-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         parts = e.target.href.split('-');
         updateNetworkTab( parts[parts.length-1] );
-        if (parts[parts.length-1] == "previous" || $('#framework').val() != "torch")
-        {
-            if(parts[parts.length-1] == "previous" && $("input:radio[name=previous_networks]").is(":checked") && $("input:radio[name=previous_networks]:checked").parents('td').find(".badge").text()=="torch")
-                $("#shuffle-data").show();
-            else
-                $("#shuffle-data").hide();
-        }
-        else
-            $("#shuffle-data").show();
         });
 $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </script>
@@ -743,6 +739,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
     </div>
 
 </form>
+
 <script>
 if($("input:radio[name=previous_networks]").is(":checked")) {
     if($prevtab_prev_clicked_tr.find(".badge").text()=="torch")

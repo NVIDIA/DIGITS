@@ -1,5 +1,5 @@
 Pillow>=2.3.0
-numpy>=1.7
+numpy>=1.8.2
 scipy>=0.13.3
 protobuf>=2.5.0
 six>=1.5.2
@@ -8,6 +8,6 @@ gevent>=1.0
 Flask>=0.10.1
 Flask-WTF>=0.11
 gunicorn==17.5
+lmdb>=0.87
 pydot2
 Flask-SocketIO
-lmdb

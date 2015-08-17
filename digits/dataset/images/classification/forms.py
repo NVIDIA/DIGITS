@@ -8,7 +8,7 @@ from wtforms import validators
 
 from ..forms import ImageDatasetForm
 from digits import utils
-from digits.utils.forms import validate_required_iff
+from digits.utils.forms import validate_required_iff, validate_greater_than
 
 class ImageClassificationDatasetForm(ImageDatasetForm):
     """
@@ -72,6 +72,22 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 ]
             )
 
+    folder_train_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+            default=2,
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                ]
+            )
+
+    folder_train_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                validate_greater_than('folder_train_min_per_class'),
+                ]
+            )
+
     has_val_folder = wtforms.BooleanField('Separate validation images folder',
             default = False,
             validators=[
@@ -84,7 +100,22 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 validate_required_iff(
                     method='folder',
                     has_val_folder=True),
-                validate_folder_path,
+                ]
+            )
+
+    folder_val_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+            default=2,
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                ]
+            )
+
+    folder_val_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                validate_greater_than('folder_val_min_per_class'),
                 ]
             )
 
@@ -104,11 +135,37 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 ]
             )
 
+    folder_test_min_per_class = wtforms.IntegerField(u'Minimum samples per class',
+            default=2,
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1)
+                ]
+            )
+
+    folder_test_max_per_class = wtforms.IntegerField(u'Maximum samples per class',
+            validators=[
+                validators.Optional(),
+                validators.NumberRange(min=1),
+                validate_greater_than('folder_test_min_per_class'),
+                ]
+            )
+
     ### Method - textfile
+
+    textfile_use_local_files = wtforms.BooleanField(u'Use local files',
+        default=False)
 
     textfile_train_images = wtforms.FileField(u'Training images',
             validators=[
-                validate_required_iff(method='textfile')
+                validate_required_iff(method='textfile',
+                                      textfile_use_local_files=False)
+                ]
+            )
+    textfile_local_train_images = wtforms.StringField(u'Training images',
+            validators=[
+                validate_required_iff(method='textfile',
+                                      textfile_use_local_files=True)
                 ]
             )
     textfile_train_folder = wtforms.StringField(u'Training images folder')
@@ -134,7 +191,16 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
             validators=[
                 validate_required_iff(
                     method='textfile',
-                    textfile_use_val=True)
+                    textfile_use_val=True,
+                    textfile_use_local_files=False)
+                ]
+            )
+    textfile_local_val_images = wtforms.StringField(u'Validation images',
+            validators=[
+                validate_required_iff(
+                    method='textfile',
+                    textfile_use_val=True,
+                    textfile_use_local_files=True)
                 ]
             )
     textfile_val_folder = wtforms.StringField(u'Validation images folder')
@@ -160,7 +226,16 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
             validators=[
                 validate_required_iff(
                     method='textfile',
-                    textfile_use_test=True)
+                    textfile_use_test=True,
+                    textfile_use_local_files=False)
+                ]
+            )
+    textfile_local_test_images = wtforms.StringField(u'Test images',
+            validators=[
+                validate_required_iff(
+                    method='textfile',
+                    textfile_use_test=True,
+                    textfile_use_local_files=True)
                 ]
             )
     textfile_test_folder = wtforms.StringField(u'Test images folder')
@@ -191,7 +266,15 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
 
     textfile_labels_file = wtforms.FileField(u'Labels',
             validators=[
-                validate_required_iff(method='textfile')
+                validate_required_iff(method='textfile',
+                                      textfile_use_local_files=False)
+                ]
+            )
+
+    textfile_local_labels_file = wtforms.StringField(u'Labels',
+            validators=[
+                validate_required_iff(method='textfile',
+                                      textfile_use_local_files=True)
                 ]
             )
 

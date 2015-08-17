@@ -2,3 +2,4 @@
 
 from job import ImageDatasetJob
 from classification import *
+from generic import *

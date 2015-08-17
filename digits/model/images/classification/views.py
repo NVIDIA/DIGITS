@@ -18,13 +18,14 @@ except ImportError:
 import digits
 from digits.config import config_value
 from digits import utils
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
 from digits.model import tasks
 from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
+import platform
 from digits.utils import errors
 
 NAMESPACE   = '/models/images/classification'
@@ -93,7 +94,7 @@ def image_classification_model_create():
         network = caffe_pb2.NetParameter()
         pretrained_model = None
         if form.method.data == 'standard':
-            found = False 
+            found = False
             networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', form.framework.data)
 
             # Torch's GoogLeNet and AlexNet models are placed in sub folder
@@ -195,12 +196,15 @@ def image_classification_model_create():
                     'Invalid learning rate policy')
 
         if config_value('caffe_root')['multi_gpu']:
-            if form.select_gpu_count.data:
+            if form.select_gpus.data:
+                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
+                gpu_count = None
+            elif form.select_gpu_count.data:
                 gpu_count = form.select_gpu_count.data
                 selected_gpus = None
             else:
-                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
-                gpu_count = None
+                gpu_count = 1
+                selected_gpus = None
         else:
             if form.select_gpu.data == 'next':
                 gpu_count = 1
@@ -278,9 +282,7 @@ def image_classification_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
     return flask.render_template('models/images/classification/large_graph.html', job=job)
 
@@ -293,19 +295,19 @@ def image_classification_model_classify_one():
 
     Returns JSON when requested: {predictions: {category: confidence,...}}
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
     image = None
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
         image = utils.image.load_image(flask.request.form['image_url'])
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
-        with tempfile.NamedTemporaryFile() as outfile:
-            flask.request.files['image_file'].save(outfile.name)
-            image = utils.image.load_image(outfile.name)
+        outfile = tempfile.mkstemp(suffix='.bin')
+        flask.request.files['image_file'].save(outfile[1])
+        image = utils.image.load_image(outfile[1])
+        os.close(outfile[0])
+        os.remove(outfile[1])
     else:
-        raise werkzeug.exceptions.BadRequest('No image given')
+        raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
 
     # resize image
     db_task = job.train_task().dataset.train_db_task()
@@ -361,13 +363,11 @@ def image_classification_model_classify_many():
 
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
-    image_list = flask.request.files['image_list']
+    image_list = flask.request.files.get('image_list')
     if not image_list:
-        raise werkzeug.exceptions.BadRequest('File upload not found')
+        raise werkzeug.exceptions.BadRequest('image_list is a required field')
 
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
@@ -375,6 +375,7 @@ def image_classification_model_classify_many():
 
     paths = []
     images = []
+    ground_truths = []
     dataset = job.train_task().dataset
     for line in image_list.readlines():
         line = line.strip()
@@ -382,11 +383,14 @@ def image_classification_model_classify_many():
             continue
         path = None
         # might contain a numerical label at the end
-        match = re.match(r'(.*\S)\s+\d+$', line)
+        match = re.match(r'(.*\S)\s+(\d+)$', line)
         if match:
             path = match.group(1)
+            ground_truth = int(match.group(2))
         else:
             path = line
+            ground_truth = None
+
         try:
             image = utils.image.load_image(path)
             image = utils.image.resize_image(image,
@@ -396,6 +400,7 @@ def image_classification_model_classify_many():
                     )
             paths.append(path)
             images.append(image)
+            ground_truths.append(ground_truth)
         except utils.errors.LoadImageError as e:
             print e
 
@@ -433,6 +438,9 @@ def image_classification_model_classify_many():
             result.append((labels[i], round(100.0*scores[image_index, i],2)))
         classifications.append(result)
 
+    # replace ground truth indices with labels
+    ground_truths = [labels[x] if x is not None else None for x in ground_truths]
+
     if request_wants_json():
         joined = dict(zip(paths, classifications))
         return flask.jsonify({'classifications': joined})
@@ -440,6 +448,8 @@ def image_classification_model_classify_many():
         return flask.render_template('models/images/classification/classify_many.html',
                 paths=paths,
                 classifications=classifications,
+                show_ground_truth=not(ground_truths == [None]*len(ground_truths)),
+                ground_truths=ground_truths
                 )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
@@ -448,9 +458,7 @@ def image_classification_model_top_n():
     """
     Classify many images and show the top N images per category by confidence
     """
-    job = scheduler.get_job(flask.request.args['job_id'])
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    job = job_from_request()
 
     image_list = flask.request.files['image_list']
     if not image_list:

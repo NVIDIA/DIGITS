@@ -66,6 +66,8 @@ class CaffeOption(config_option.FrameworkOption):
             # Find the executable
             executable = cls.find_executable('caffe')
             if not executable:
+                executable = cls.find_executable('caffe.exe')
+            if not executable:
                 raise config_option.BadValue('caffe binary not found in PATH')
             cls.validate_version(executable)
 
@@ -187,6 +189,9 @@ class CaffeOption(config_option.FrameworkOption):
         elif platform.system() == 'Darwin':
             # XXX: guess and let the user figure out errors later
             return (0,11,0)
+        elif platform.system() == 'Windows':
+            # XXX: guess and let the user figure out errors later
+            return (0,11,0)
         else:
             print 'WARNING: platform "%s" not supported' % platform.system()
             return None
@@ -196,7 +201,9 @@ class CaffeOption(config_option.FrameworkOption):
             self._config_dict_value = None
         else:
             if value == '<PATHS>':
-                executable = 'caffe'
+                executable = self.find_executable('caffe')
+                if not executable:
+                    executable = self.find_executable('caffe.exe')
             else:
                 executable = os.path.join(value, 'build', 'tools', 'caffe')
 
@@ -226,7 +233,11 @@ class CaffeOption(config_option.FrameworkOption):
 
             if self._config_file_value != '<PATHS>':
                 # Add caffe/python to PATH
-                sys.path.append(os.path.join(self._config_file_value, 'python'))
+                p = os.path.join(self._config_file_value, 'python')
+                sys.path.insert(0, p)
+                # Add caffe/python to PYTHONPATH
+                #   so that build/tools/caffe is aware of python layers there
+                os.environ['PYTHONPATH'] = '%s:%s' % (p, os.environ.get('PYTHONPATH'))
 
             try:
                 import caffe
@@ -234,9 +245,9 @@ class CaffeOption(config_option.FrameworkOption):
                 print 'Did you forget to "make pycaffe"?'
                 raise
 
-            if platform.system() == 'Darwin':
+            if platform.system() == 'Darwin' or platform.system() == 'Windows':
                 # Strange issue with protocol buffers and pickle - see issue #32
-                sys.path.append(os.path.join(
+                sys.path.insert(0, os.path.join(
                     os.path.dirname(caffe.__file__), 'proto'))
 
             # Turn GLOG output back on for subprocess calls

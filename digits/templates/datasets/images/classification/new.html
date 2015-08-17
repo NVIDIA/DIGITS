@@ -1,6 +1,7 @@
 {# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
 
 {% extends "layout.html" %}
 
@@ -13,6 +14,7 @@ New Image Classification Dataset
 {% endblock %}
 
 {% block content %}
+
 <div class="page-header">
     <h1>New Image Classification Dataset</h1>
 </div>
@@ -20,19 +22,7 @@ New Image Classification Dataset
 <form action="{{url_for('image_classification_dataset_create')}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
-    {% if form.errors %}
-        <div class="alert alert-danger">
-            {% for field, errors in form.errors.items() %}
-                <li>{{ field }}
-                    <ul>
-                        {% for e in errors %}
-                            <li>{{ e }}</li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            {% endfor %}
-        </div>
-    {% endif %}
+    {{ print_errors(form) }}
 
     <div class="row">
         <div class="col-sm-4 well">
@@ -127,7 +117,7 @@ function showResizeExample()
             <!-- Nav tabs -->
             <ul class="nav nav-tabs" id="db-tabs" role="tablist">
                 <li><a href="#db-folder" role="tab" data-toggle="tab">Use Image Folder</a></li>
-                <li><a href="#db-textfile" role="tab" data-toggle="tab">Upload Text Files</a></li>
+                <li><a href="#db-textfile" role="tab" data-toggle="tab">Use Text Files</a></li>
             </ul>
 
             <!-- Tab panes -->
@@ -137,7 +127,7 @@ function showResizeExample()
                     <div class="form-group{{ ' has-error' if form.folder_train.errors else '' }}">
                         {{ form.folder_train.label }}
                         <div class="input-group">
-                            {{ form.folder_train(class='form-control', placeholder='folder or URL')}}
+                            {{ form.folder_train(class='form-control autocomplete_path', placeholder='folder or URL')}}
                             <span name="folder_train_explanation"
                                 class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                                 data-container="body"
@@ -149,6 +139,30 @@ function showResizeExample()
                         <div class="col-sm-10 col-sm-offset-1">
                             <small>
                             </small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_min_per_class.errors else '' }}">
+                            {{ form.folder_train_min_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_train_min_per_class(class='form-control') }}
+                                <span name="folder_train_min_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_max_per_class.errors else '' }}">
+                            {{ form.folder_train_max_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_train_max_per_class(class='form-control') }}
+                                <span name="folder_train_max_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -178,21 +192,45 @@ function showResizeExample()
                     <br>
                     {{form.has_val_folder}}
                     {{form.has_val_folder.label}}
-                    <div id="separate-val-folder" style="display:none;" class="form-group{{ ' has-error' if form.folder_val.errors else '' }}">
+                    <div style="display:none;" class="form-group{{ ' has-error' if form.folder_val.errors else '' }} cl-separate-val-folder">
                         {{ form.folder_val.label }}
-                        {{ form.folder_val(class='form-control') }}
+                        {{ form.folder_val(class='form-control autocomplete_path') }}
+                    </div>
+                    <div class="row cl-separate-val-folder">
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_min_per_class.errors else '' }}">
+                            {{ form.folder_val_min_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_val_min_per_class(class='form-control') }}
+                                <span name="folder_val_min_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_max_per_class.errors else '' }}">
+                            {{ form.folder_val_max_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_val_max_per_class(class='form-control') }}
+                                <span name="folder_val_max_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
                     </div>
                     <script>
 function hasValFolderChanged() {
     if ($("#has_val_folder").prop("checked"))
     {
         $("#folder_val").prop("disabled", false);
-        $("#separate-val-folder").show();
+        $(".cl-separate-val-folder").show();
         $("#folder_pct_val").prop("disabled", true);
     }
     else
     {
-        $("#separate-val-folder").hide();
+        $(".cl-separate-val-folder").hide();
         $("#folder_val").prop("disabled", true);
         $("#folder_pct_val").prop("disabled", false);
     }
@@ -203,21 +241,45 @@ hasValFolderChanged();
                     <br>
                     {{form.has_test_folder}}
                     {{form.has_test_folder.label}}
-                    <div id="separate-test-folder" style="display:none;" class="form-group{{ ' has-error' if form.folder_test.errors else '' }}">
+                    <div style="display:none;" class="form-group{{ ' has-error' if form.folder_test.errors else '' }} cl-separate-test-folder">
                         {{ form.folder_test.label }}
-                        {{ form.folder_test(class='form-control') }}
+                        {{ form.folder_test(class='form-control autocomplete_path') }}
+                    </div>
+                    <div style="display:none;" class="row cl-separate-test-folder">
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_min_per_class.errors else '' }}">
+                            {{ form.folder_test_min_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_test_min_per_class(class='form-control') }}
+                                <span name="folder_test_min_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
+                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_max_per_class.errors else '' }}">
+                            {{ form.folder_test_max_per_class.label }}
+                            <div class="input-group">
+                                {{ form.folder_test_max_per_class(class='form-control') }}
+                                <span name="folder_test_max_per_class_explanation"
+                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                    data-container="body"
+                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
+                                    ></span>
+                            </div>
+                        </div>
                     </div>
                     <script>
 function hasTestFolderChanged() {
     if ($("#has_test_folder").prop("checked"))
     {
         $("#folder_test").prop("disabled", false);
-        $("#separate-test-folder").show();
+        $(".cl-separate-test-folder").show();
         $("#folder_pct_test").prop("disabled", true);
     }
     else
     {
-        $("#separate-test-folder").hide();
+        $(".cl-separate-test-folder").hide();
         $("#folder_test").prop("disabled", true);
         $("#folder_pct_test").prop("disabled", false);
     }
@@ -234,7 +296,7 @@ hasTestFolderChanged();
                                 <th>Set</th>
 
                                 <th>Text file <span name="text_file_explanation"
-                                    class="explanation-tooltip glyphicon glyphicon-question-sign"
+                          class="explanation-tooltip glyphicon glyphicon-question-sign"
                                     data-container="body"
                                     title="Each line in the file should be formatted as '<PATH> <LABEL>' where <PATH> specifies image path either on the local filesystem or a URL, and the <LABEL> is a numeric label that matches the uploaded labels file"
                                 ></span></th>
@@ -246,12 +308,30 @@ hasTestFolderChanged();
                                 ></span></th>
                             </tr>
                             <tr>
+                                <td></td>
+                                <td>
+                                    <label for="{{form.textfile_use_local_files.name}}">
+                                        {{form.textfile_use_local_files}}
+                                        Use local paths on server
+                                    </label>
+                                    <span name="text_file_explanation"
+                                          class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                          data-container="body"
+                                          title="Check to use local paths on server, uncheck to upload files from client machine"
+                                    ></span>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
                                 <td><b>Training</b></td>
-                                <td class="form-group{{' has-error' if form.textfile_train_images.errors}}">
+                                <td class="form-group{{' has-error' if form.textfile_train_images.errors}} cl-upload-files">
                                     {{ form.textfile_train_images(class='form-control') }}
                                 </td>
+                                <td class="form-group{{' has-error' if form.textfile_local_train_images.errors}} cl-local-files">
+                                    {{ form.textfile_local_train_images(class='form-control autocomplete_path',placeholder='enter path') }}
+                                </td>
                                 <td class="form-group{{' has-error' if form.textfile_train_folder.errors}}">
-                                    {{ form.textfile_train_folder(class='form-control') }}
+                                    {{ form.textfile_train_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                             <tr>
@@ -261,11 +341,14 @@ hasTestFolderChanged();
                                         Validation
                                     </label>
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_val_images.errors}}">
+                                <td class="form-group{{' has-error' if form.textfile_val_images.errors}} cl-upload-files">
                                     {{ form.textfile_val_images(class='form-control') }}
                                 </td>
+                                <td class="form-group{{' has-error' if form.textfile_local_val_images.errors}} cl-local-files">
+                                    {{ form.textfile_local_val_images(class='form-control autocomplete_path',placeholder='enter path') }}
+                                </td>
                                 <td class="form-group{{' has-error' if form.textfile_val_folder.errors}}">
-                                    {{ form.textfile_val_folder(class='form-control') }}
+                                    {{ form.textfile_val_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                             <tr>
@@ -275,35 +358,18 @@ hasTestFolderChanged();
                                         Test
                                     </label>
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_test_images.errors}}">
+                                <td class="form-group{{' has-error' if form.textfile_test_images.errors}} cl-upload-files">
                                     {{ form.textfile_test_images(class='form-control') }}
                                 </td>
+                                <td class="form-group{{' has-error' if form.textfile_local_test_images.errors}} cl-local-files">
+                                    {{ form.textfile_local_test_images(class='form-control autocomplete_path',placeholder='enter path') }}
+                                </td>
                                 <td class="form-group{{' has-error' if form.textfile_test_folder.errors}}">
-                                    {{ form.textfile_test_folder(class='form-control') }}
+                                    {{ form.textfile_test_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                         </table>
                     </div>
-                    <script>
-// Disable form fields according to the checkboxes
-function textfile_image_sets_disabled() {
-    var value = $("#textfile_use_val").prop("checked");
-    $("#textfile_val_images").prop("disabled", !value);
-    $("#textfile_val_folder").prop("disabled", !value);
-    value = $("#textfile_use_test").prop("checked");
-    $("#textfile_test_images").prop("disabled", !value);
-    $("#textfile_test_folder").prop("disabled", !value);
-}
-
-$("#textfile_use_val").click(function() {
-        textfile_image_sets_disabled();
-        });
-$("#textfile_use_test").click(function() {
-        textfile_image_sets_disabled();
-        });
-textfile_image_sets_disabled();
-                    </script>
-
                     <div class="row">
                         <div class="col-sm-6 col-sm-offset-1">
                             <div class="form-group{{ ' has-error' if form.textfile_shuffle.errors else '' }}">
@@ -317,10 +383,21 @@ textfile_image_sets_disabled();
                                         ></span>
                                 </div>
                             </div>
-                            <div class="form-group{{ ' has-error' if form.textfile_labels_file.errors else '' }}">
+                            <div class="form-group{{ ' has-error' if form.textfile_labels_file.errors else '' }} cl-upload-files">
                                 {{ form.textfile_labels_file.label }}
                                 <div class="input-group">
                                     {{ form.textfile_labels_file(class='form-control') }}
+                                    <span name="textfile_labels_file_explanation"
+                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
+                                        data-container="body"
+                                        title="The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
+                                        ></span>
+                                </div>
+                            </div>
+                            <div class="form-group{{ ' has-error' if form.textfile_local_labels_file.errors else '' }} cl-local-files">
+                                {{ form.textfile_local_labels_file.label }}
+                                <div class="input-group">
+                                    {{ form.textfile_local_labels_file(class='form-control autocomplete_path',placeholder='enter path') }}
                                     <span name="textfile_labels_file_explanation"
                                         class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
                                         data-container="body"
@@ -337,6 +414,38 @@ textfile_image_sets_disabled();
     </div>
     {{ form.method(style="display:none;") }}
     <script>
+// Disable form fields according to the checkboxes
+function textfile_image_sets_disabled() {
+    var value = $("#textfile_use_val").prop("checked");
+    var useLocalFiles = $("#textfile_use_local_files").prop("checked");
+    if (useLocalFiles) {
+        $(".cl-upload-files").hide();
+        $(".cl-local-files").show();
+    }
+    else{
+        $(".cl-upload-files").show();
+        $(".cl-local-files").hide();
+    }
+    $("#textfile_val_images").prop("disabled", !value);
+    $("#textfile_local_val_images").prop("disabled", !value);
+    $("#textfile_val_folder").prop("disabled", !value);
+    value = $("#textfile_use_test").prop("checked");
+    $("#textfile_test_images").prop("disabled", !value);
+    $("#textfile_local_test_images").prop("disabled", !value);
+    $("#textfile_test_folder").prop("disabled", !value);
+}
+
+$("#textfile_use_val").click(function() {
+        textfile_image_sets_disabled();
+        });
+$("#textfile_use_test").click(function() {
+        textfile_image_sets_disabled();
+        });
+$("#textfile_use_local_files").click(function() {
+        textfile_image_sets_disabled();
+        });
+textfile_image_sets_disabled();
+
 function update_db_tab(tabName) {
     $('select[name=method]').val( tabName );
 }

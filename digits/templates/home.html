@@ -28,6 +28,12 @@ function deleteJob(job_id) {
 }
 </script>
 <div class="page-header">
+    {% if total_gpu_count %}
+    <div class="pull-right">
+        {{remaining_gpu_count}}/{{total_gpu_count}}
+        GPU{{'s' if total_gpu_count != 1 }} available
+    </div>
+    {% endif %}
     <h1>Home</h1>
 </div>
 

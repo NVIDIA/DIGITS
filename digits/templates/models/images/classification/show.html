@@ -41,7 +41,7 @@
             <h4 class='text-center'>Dataset</h4>
             {% if job.dataset %}
             {% with dataset = job.dataset %}
-            {% include 'datasets/summary.html' %}
+            {% include 'datasets/images/classification/summary.html' %}
             {% endwith %}
             {% endif %}
         </div>
@@ -53,6 +53,12 @@
         <div class="well">
             <div id="combined-graph" class="combined-graph"
                 style="height:500px;width:100%;background:white;display:none;"></div>
+            <span name="combined_graph_explanation"
+                            class="explanation-tooltip glyphicon glyphicon-question-sign combined-graph"
+                            data-container="body"
+                            title="Use bottom chart to select region of interest. Drag to pan left/right. Click outside of region to unselect."
+                            style="display:none;"
+                                ></span>
             <div class="pull-right combined-graph" style="display:none;">
                 <a class="btn btn-primary btn-sm" target="_blank"
                     href="{{url_for('image_classification_model_large_graph', job_id=job.id())}}">

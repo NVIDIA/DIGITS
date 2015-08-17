@@ -30,6 +30,6 @@ install:
 before_script:
     - export CAFFE_HOME=$(pwd)/deps/caffe
 script:
-    ./digits-test --with-coverage --cover-package=tools,digits
+    ./digits-test -v --with-coverage --cover-package=digits,tools,scripts
 after_success:
     coveralls

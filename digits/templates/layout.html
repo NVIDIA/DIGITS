@@ -15,6 +15,7 @@
     <script src="{{ url_for('static', filename='js/digits.js') }}"></script>
     <script src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/c3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.autocomplete.min.js') }}"></script>
 
     {% block head %}
     {% endblock %}
@@ -29,13 +30,14 @@
             {% block nav %}
             {% endblock %}
         </ul>
-        {% if server_name %}
         <div class="navbar-right">
             <ul class="nav navbar-nav">
+                <li><a>Version {{server_version}}</a></li>
+                {% if server_name %}
                 <li><a>{{server_name}}</a></li>
+                {% endif %}
             </ul>
         </div>
-        {% endif %}
     </div>
 </div>
 
@@ -45,6 +47,13 @@
 </div>
 <script>
 $(".explanation-tooltip").tooltip();
+
+window.onload = function () {
+    $('.autocomplete_path').autocomplete({
+    serviceUrl: '/autocomplete/path'
+}); };
+
 </script>
+
 
 </body>

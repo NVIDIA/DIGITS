@@ -5,6 +5,7 @@ import re
 import time
 import logging
 import subprocess
+import signal
 
 import flask
 import gevent.event
@@ -13,6 +14,8 @@ from . import utils
 import digits.log
 from config import config_value
 from status import Status, StatusCls
+
+import platform
 
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 1
@@ -133,7 +136,7 @@ class Task(StatusCls):
             path = os.path.join(self.job_dir, filename)
         if relative:
             path = os.path.relpath(path, config_value('jobs_dir'))
-        return str(path)
+        return str(path).replace("\\","/")
 
     def ready_to_queue(self):
         """
@@ -198,15 +201,20 @@ class Task(StatusCls):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=self.job_dir,
-                close_fds=True,
+                close_fds=False if platform.system() == 'Windows' else True,
                 )
 
         try:
+            sigterm_time = None # When was the SIGTERM signal sent
+            sigterm_timeout = 2 # When should the SIGKILL signal be sent
             while p.poll() is None:
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
-                        p.terminate()
-                        self.status = Status.ABORT
+                        if sigterm_time is None:
+                            # Attempt graceful shutdown
+                            p.send_signal(signal.SIGTERM)
+                            sigterm_time = time.time()
+                            self.status = Status.ABORT
                         break
 
                     if line is not None:
@@ -218,6 +226,10 @@ class Task(StatusCls):
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
+                if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+                    p.send_signal(signal.SIGKILL)
+                    self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
+                    time.sleep(0.1)
         except:
             p.terminate()
             self.after_run()

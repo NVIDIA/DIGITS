@@ -115,7 +115,9 @@ class ParseFolderTask(Task):
 
     @override
     def task_arguments(self, resources):
-        args = [sys.executable, os.path.join(os.path.dirname(os.path.dirname(digits.__file__)), 'tools', 'parse_folder.py'),
+        args = [sys.executable, os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(digits.__file__))),
+            'tools', 'parse_folder.py'),
                 self.folder,
                 self.path(utils.constants.LABELS_FILE),
                 '--min=%s' % self.min_per_category,

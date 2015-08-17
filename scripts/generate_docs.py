@@ -4,7 +4,6 @@
 import sys
 import os.path
 import time
-from pprint import pprint
 from collections import defaultdict
 
 # requires a custom version of Flask-Autodoc:
@@ -158,10 +157,10 @@ class DocGenerator(object):
                     )
             filename = os.path.normpath(route['location']['filename'])
             if filename.startswith(digits_root):
-                filename = os.path.relpath(filename, digits_root)
+                filename = os.path.relpath(filename, digits_root).replace("\\","/")
                 self.w('Location: [`%s@%s`](%s#L%s)' % (
                     filename, route['location']['line'],
-                    os.path.join('..', filename), route['location']['line'],
+                    os.path.join('..', filename).replace("\\","/"), route['location']['line'],
                     ))
                 self.w()
 

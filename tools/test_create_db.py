@@ -4,16 +4,17 @@ import os.path
 import tempfile
 import shutil
 from cStringIO import StringIO
+import unittest
+import platform
 
 from nose.tools import raises, assert_raises
 import mock
-import unittest
 import PIL.Image
 import numpy as np
 
 from . import create_db as _
 
-class TestInit():
+class TestInit(object):
     @classmethod
     def setUpClass(cls):
         cls.db_name = tempfile.mkdtemp()
@@ -25,22 +26,17 @@ class TestInit():
         except OSError:
             pass
 
-    @raises(ValueError)
-    def test_bad_backend(self):
-        """invalid db backend"""
-        _.DbCreator(self.db_name, 'not-a-backend')
-
-class TestCreate():
+class TestCreate(object):
     @classmethod
     def setUpClass(cls):
         cls.db_name = tempfile.mkdtemp()
-        cls.db = _.DbCreator(cls.db_name, 'leveldb')
+        cls.db = _.DbCreator(cls.db_name)
 
         fd, cls.input_file = tempfile.mkstemp()
         os.close(fd)
 
         # Use the example picture to construct a test input file
-        with open(cls.input_file, 'w') as f:
+        with open(cls.input_file, 'wb') as f:
             f.write('digits/static/images/mona_lisa.jpg 0')
 
     @classmethod
@@ -53,11 +49,9 @@ class TestCreate():
             pass
 
     def test_create_no_input_file(self):
-        """create with no image input file"""
         assert not self.db.create('', width=0, height=0), 'database should not allow empty input file'
 
     def test_create_bad_height_width(self):
-        """create with bad height and width for images"""
         assert not self.db.create(
             self.input_file,
             width=-1,
@@ -65,7 +59,6 @@ class TestCreate():
             resize_mode='crop'), 'database should not allow height == width == -1'
 
     def test_create_bad_channel_count(self):
-        """create with bad channel count"""
         assert not self.db.create(
             self.input_file,
             width=200,
@@ -74,7 +67,6 @@ class TestCreate():
             resize_mode='crop'), 'database should not allow channels == 0'
 
     def test_create_bad_resize_mode(self):
-        """create with bad resize mode"""
         assert not self.db.create(
             self.input_file,
             width=200,
@@ -82,7 +74,6 @@ class TestCreate():
             resize_mode='slurp'), 'database should not allow bad resize mode slurp'
 
     def test_create_bad_image_folder(self):
-        """create with bad image folder path"""
         assert not self.db.create(
             self.input_file,
             width=200,
@@ -98,14 +89,14 @@ class TestCreate():
             resize_mode='crop'), 'database should complete building normally'
 
 
-class TestPathToDatum():
+class TestPathToDatum(object):
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp()
         cls.db_name = tempfile.mkdtemp(dir=cls.tmpdir)
-        cls.db = _.DbCreator(cls.db_name, 'lmdb')
+        cls.db = _.DbCreator(cls.db_name)
         _handle, cls.image_path = tempfile.mkstemp(dir=cls.tmpdir, suffix='.jpg')
-        with open(cls.image_path, 'w') as outfile:
+        with open(cls.image_path, 'wb') as outfile:
             PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8)).save(outfile, format='JPEG', quality=100)
 
     @classmethod
@@ -116,7 +107,6 @@ class TestPathToDatum():
             pass
 
     def test_configs(self):
-        """path_to_datum"""
         self.db.height = 10
         self.db.width = 10
         self.db.resize_mode = 'squash'
@@ -139,5 +129,42 @@ class TestPathToDatum():
         else:
             assert d.encoded, 'datum should be encoded when encoding="%s"' % e
 
-class TestSaveMean():
-    pass
+
+class TestMapSize(object):
+    """
+    Tests regarding the LMDB map_size argument
+    """
+
+    def test_default_mapsize(self):
+        db_name = tempfile.mkdtemp()
+        db = _.DbCreator(db_name)
+        assert db.db.info()['map_size'] == (10<<20), 'Default map_size %s != 10MB' % db.db.info()['map_size']
+
+    @unittest.skipIf(platform.system() != 'Linux',
+            'This test fails on non-Linux systems')
+    def test_huge_mapsize(self):
+        db_name = tempfile.mkdtemp()
+        mapsize_mb = 1024**2 # 1TB should be no problem
+        db = _.DbCreator(db_name, lmdb_map_size=mapsize_mb)
+
+    def test_set_mapsize(self):
+        # create textfile
+        fd, input_file = tempfile.mkstemp()
+        os.close(fd)
+        with open(input_file, 'wb') as f:
+            f.write('digits/static/images/mona_lisa.jpg 0')
+
+        # create DbCreator object
+        db_name = tempfile.mkdtemp()
+        mapsize_mb = 1
+        db = _.DbCreator(db_name, lmdb_map_size=mapsize_mb)
+
+        # create db
+        image_size = 1000 # big enough to trigger a MapFullError
+        assert db.create(
+            input_file,
+            width=image_size,
+            height=image_size,
+            ), 'create failed'
+
+

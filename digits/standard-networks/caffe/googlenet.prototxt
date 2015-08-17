@@ -942,7 +942,7 @@ layer {
   type: "SoftmaxWithLoss"
   bottom: "loss1/classifier"
   bottom: "label"
-  top: "loss1/loss1"
+  top: "loss1/loss"
   loss_weight: 0.3
 }
 layer {
@@ -950,7 +950,7 @@ layer {
   type: "Accuracy"
   bottom: "loss1/classifier"
   bottom: "label"
-  top: "loss1/top-1"
+  top: "loss1/accuracy"
   include {
     phase: TEST
   }
@@ -960,7 +960,7 @@ layer {
   type: "Accuracy"
   bottom: "loss1/classifier"
   bottom: "label"
-  top: "loss1/top-5"
+  top: "loss1/accuracy-top5"
   include {
     phase: TEST
   }
@@ -1725,7 +1725,7 @@ layer {
   type: "SoftmaxWithLoss"
   bottom: "loss2/classifier"
   bottom: "label"
-  top: "loss2/loss1"
+  top: "loss2/loss"
   loss_weight: 0.3
 }
 layer {
@@ -1733,7 +1733,7 @@ layer {
   type: "Accuracy"
   bottom: "loss2/classifier"
   bottom: "label"
-  top: "loss2/top-1"
+  top: "loss2/accuracy"
   include {
     phase: TEST
   }
@@ -1743,7 +1743,7 @@ layer {
   type: "Accuracy"
   bottom: "loss2/classifier"
   bottom: "label"
-  top: "loss2/top-5"
+  top: "loss2/accuracy-top5"
   include {
     phase: TEST
   }
@@ -2451,11 +2451,11 @@ layer {
   }
 }
 layer {
-  name: "loss3/loss3"
+  name: "loss3/loss"
   type: "SoftmaxWithLoss"
   bottom: "loss3/classifier"
   bottom: "label"
-  top: "loss3/loss3"
+  top: "loss"
   loss_weight: 1
 }
 layer {
@@ -2463,7 +2463,7 @@ layer {
   type: "Accuracy"
   bottom: "loss3/classifier"
   bottom: "label"
-  top: "loss3/top-1"
+  top: "accuracy"
   include {
     phase: TEST
   }
@@ -2473,7 +2473,7 @@ layer {
   type: "Accuracy"
   bottom: "loss3/classifier"
   bottom: "label"
-  top: "loss3/top-5"
+  top: "accuracy-top5"
   include {
     phase: TEST
   }

@@ -6,7 +6,6 @@ from . import config_file as _
 
 class TestConfigFile():
     def test_write_and_read(self):
-        """write/read config file"""
         for args in [
                 ('name', 'value'),
                 ('blank', ''),

@@ -64,11 +64,19 @@ def get_transformer(deploy_file, mean_file=None):
         t.set_channel_swap('data', (2,1,0))
 
     if mean_file:
-        # set mean
-        with open(mean_file) as infile:
+        # set mean pixel
+        with open(mean_file,'rb') as infile:
             blob = caffe_pb2.BlobProto()
             blob.MergeFromString(infile.read())
-            pixel = np.reshape(blob.data, dims[1:]).mean(1).mean(1)
+            if blob.HasField('shape'):
+                blob_dims = blob.shape
+                assert len(blob_dims) == 4, 'Shape should have 4 dimensions - shape is "%s"' % blob.shape
+            elif blob.HasField('num') and blob.HasField('channels') and \
+                    blob.HasField('height') and blob.HasField('width'):
+                blob_dims = (blob.num, blob.channels, blob.height, blob.width)
+            else:
+                raise ValueError('blob does not provide shape or 4d dimensions')
+            pixel = np.reshape(blob.data, blob_dims[1:]).mean(1).mean(1)
             t.set_mean('data', pixel)
 
     return t

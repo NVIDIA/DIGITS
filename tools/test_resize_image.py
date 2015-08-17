@@ -18,11 +18,6 @@ class TestOutputValidation():
         with tempfile.NamedTemporaryFile('r') as f:
             assert not _.validate_output_file(f.name), 'validation should not pass on unwritable file'
 
-    def test_local(self):
-        with tempfile.NamedTemporaryFile('r', dir='.') as f:
-            name = os.path.basename(f.name)
-            assert _.validate_output_file(name), 'validation should pass on temporary file'
-
     def test_normal(self):
         with tempfile.NamedTemporaryFile('r') as f:
             assert _.validate_output_file(f.name), 'validation should pass on temporary file'

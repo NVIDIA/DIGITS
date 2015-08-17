@@ -1,10 +1,11 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os
 import json
 import traceback
+import glob
 
 import flask
+from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
@@ -50,6 +51,11 @@ def home():
                         'id': 'image-classification',
                         'url': flask.url_for('image_classification_dataset_new'),
                         },
+                    {
+                        'title': 'Other',
+                        'id': 'image-generic',
+                        'url': flask.url_for('generic_image_dataset_new'),
+                        },
                     ])
                 ]
         new_model_options = [
@@ -58,6 +64,11 @@ def home():
                         'title': 'Classification',
                         'id': 'image-classification',
                         'url': flask.url_for('image_classification_model_new'),
+                        },
+                    {
+                        'title': 'Other',
+                        'id': 'image-generic',
+                        'url': flask.url_for('generic_image_model_new'),
                         },
                     ])
                 ]
@@ -69,6 +80,8 @@ def home():
                 new_model_options   = new_model_options,
                 running_models      = running_models,
                 completed_models    = completed_models,
+                total_gpu_count     = len(scheduler.resources['gpus']),
+                remaining_gpu_count = sum(r.remaining() for r in scheduler.resources['gpus']),
                 )
 
 def get_job_list(cls, running):
@@ -171,12 +184,18 @@ def abort_job(job_id):
 ### Error handling
 
 @app.errorhandler(Exception)
-def handle_exception(e, status_code=500):
-    if 'DIGITS_MODE_TEST' in os.environ:
-        raise
+def handle_error(e):
+    """
+    Handle errors, formatting them as JSON if requested
+    """
     error_type = type(e).__name__
     message = str(e)
     trace = None
+    description = None
+    status_code = 500
+    if isinstance(e, werkzeug.exceptions.HTTPException):
+        status_code = e.code
+        description = e.description
     if app.debug:
         trace = traceback.format_exc()
 
@@ -185,15 +204,23 @@ def handle_exception(e, status_code=500):
                 'message': message,
                 'type': error_type,
                 }
+        if description is not None:
+            details['description'] = description
         if trace is not None:
             details['trace'] = trace.split('\n')
         return flask.jsonify({'error': details}), status_code
     else:
-        return flask.render_template('500.html',
-                title   = error_type,
-                message = message,
-                trace   = trace,
+        return flask.render_template('error.html',
+                title       = error_type,
+                message     = message,
+                description = description,
+                trace       = trace,
                 ), status_code
+
+# Register this handler for all error codes
+# Necessary for flask<=0.10.1
+for code in HTTP_STATUS_CODES:
+    app.register_error_handler(code, handle_error)
 
 ### File serving
 
@@ -207,35 +234,38 @@ def serve_file(path):
     and this path will never be used
     """
     jobs_dir = config_value('jobs_dir')
-    path = os.path.normpath(os.path.join(jobs_dir, path))
+    return flask.send_from_directory(jobs_dir, path)
 
-    # Don't allow path manipulation
-    if not os.path.commonprefix([path, jobs_dir]).startswith(jobs_dir):
-        raise werkzeug.exceptions.Forbidden('Path manipulation not allowed')
+### Path Completion
 
-    if not os.path.exists(path):
-        raise werkzeug.exceptions.NotFound('File not found')
-    if os.path.isdir(path):
-        raise werkzeug.exceptions.Forbidden('Folder cannot be served')
+@app.route('/autocomplete/path', methods=['GET'])
+@autodoc('util')
+def path_autocomplete():
+    """
+    Return a list of paths matching the specified preamble
 
-    with open(path, 'r') as infile:
-        response = flask.make_response(infile.read())
-        response.headers["Content-Disposition"] = "attachment; filename=%s" % os.path.basename(path)
-        return response
+    """
+    path = flask.request.args.get('query','')
+
+    result = {
+        "suggestions": glob.glob(path+"*")
+    }
+
+    return json.dumps(result)
 
 ### SocketIO functions
 
 ## /home
 
 @socketio.on('connect', namespace='/home')
-def on_connect():
+def on_connect_home():
     """
     Somebody connected to the homepage
     """
     pass
 
 @socketio.on('disconnect', namespace='/home')
-def on_disconnect():
+def on_disconnect_home():
     """
     Somebody disconnected from the homepage
     """
@@ -244,20 +274,21 @@ def on_disconnect():
 ## /jobs
 
 @socketio.on('connect', namespace='/jobs')
-def on_connect():
+def on_connect_jobs():
     """
     Somebody connected to a jobs page
     """
+    pass
 
 @socketio.on('disconnect', namespace='/jobs')
-def on_disconnect():
+def on_disconnect_jobs():
     """
     Somebody disconnected from a jobs page
     """
     pass
 
 @socketio.on('join', namespace='/jobs')
-def on_join(data):
+def on_join_jobs(data):
     """
     Somebody joined a room
     """
@@ -266,7 +297,7 @@ def on_join(data):
     flask.session['room'] = room
 
 @socketio.on('leave', namespace='/jobs')
-def on_leave():
+def on_leave_jobs():
     """
     Somebody left a room
     """

@@ -1,7 +1,6 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
-import shutil
 import platform
 import ConfigParser
 from collections import OrderedDict
@@ -37,7 +36,7 @@ class ConfigFile(object):
         """
         Returns True if the file exists
         """
-        return os.path.isfile(self._filename)
+        return self._filename is not None and os.path.isfile(self._filename)
 
     def can_read(self):
         """
@@ -126,13 +125,6 @@ class UserConfigFile(ConfigFile):
     def __init__(self):
         if 'HOME' in os.environ:
             filename = os.path.join(os.environ['HOME'], '.digits.cfg')
-            old_filename = os.path.join(os.environ['HOME'], '.digits', 'digits.cfg')
-            if not os.path.exists(filename) and os.path.exists(old_filename):
-                try:
-                    shutil.copyfile(old_filename, filename)
-                    print 'Copied file at "%s" to "%s".' % (old_filename, filename)
-                except (IOError, OSError):
-                    pass
         else:
             filename = None
         super(UserConfigFile, self).__init__(filename)

@@ -1,6 +1,6 @@
 # REST API
 
-*Generated Jun 15, 2015*
+*Generated Aug 18, 2015*
 
 DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
 
@@ -32,7 +32,19 @@ Location: [`digits/dataset/views.py@15`](../digits/dataset/views.py#L15)
 
 Methods: **POST**
 
-Location: [`digits/dataset/images/classification/views.py@217`](../digits/dataset/images/classification/views.py#L217)
+Location: [`digits/dataset/images/classification/views.py@245`](../digits/dataset/images/classification/views.py#L245)
+
+### `/datasets/images/generic.json`
+
+> Creates a new GenericImageDatasetJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
+Methods: **POST**
+
+Location: [`digits/dataset/images/generic/views.py@24`](../digits/dataset/images/generic/views.py#L24)
 
 ### `/index.json`
 
@@ -54,7 +66,7 @@ Location: [`digits/dataset/images/classification/views.py@217`](../digits/datase
 
 Methods: **GET**
 
-Location: [`digits/views.py@21`](../digits/views.py#L21)
+Location: [`digits/views.py@22`](../digits/views.py#L22)
 
 ### `/models/<job_id>.json`
 
@@ -82,7 +94,7 @@ Location: [`digits/model/views.py@32`](../digits/model/views.py#L32)
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@55`](../digits/model/images/classification/views.py#L55)
+Location: [`digits/model/images/classification/views.py@56`](../digits/model/images/classification/views.py#L56)
 
 ### `/models/images/classification/classify_many.json`
 
@@ -94,7 +106,7 @@ Location: [`digits/model/images/classification/views.py@55`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@357`](../digits/model/images/classification/views.py#L357)
+Location: [`digits/model/images/classification/views.py@359`](../digits/model/images/classification/views.py#L359)
 
 ### `/models/images/classification/classify_one.json`
 
@@ -106,5 +118,33 @@ Location: [`digits/model/images/classification/views.py@357`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@289`](../digits/model/images/classification/views.py#L289)
+Location: [`digits/model/images/classification/views.py@291`](../digits/model/images/classification/views.py#L291)
+
+### `/models/images/generic.json`
+
+> Create a new GenericImageModelJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
+Methods: **POST**
+
+Location: [`digits/model/images/generic/views.py@50`](../digits/model/images/generic/views.py#L50)
+
+### `/models/images/generic/infer_many.json`
+
+> Infer many images
+
+Methods: **POST**
+
+Location: [`digits/model/images/generic/views.py@267`](../digits/model/images/generic/views.py#L267)
+
+### `/models/images/generic/infer_one.json`
+
+> Infer one image
+
+Methods: **POST**
+
+Location: [`digits/model/images/generic/views.py@215`](../digits/model/images/generic/views.py#L215)
 
