@@ -7,7 +7,7 @@
 {% if error %}
 <div class="alert alert-danger">
   <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-  <strong>Workspace with this name already exists! </strong> Please choose another name.
+  {{ error }}
 </div>
 {% endif %}
 	<div class="row">

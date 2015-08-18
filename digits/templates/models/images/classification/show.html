@@ -13,13 +13,13 @@
         <div class="well">
             <dl>
                 <dt>Solver</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{{task.solver_file}}</a></dd>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}?workspace={{ workspace }}">{{task.solver_file}}</a></dd>
                 <dt>Network (train/val)</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{{task.train_val_file}}</a></dd>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}?workspace={{ workspace }}">{{task.train_val_file}}</a></dd>
                 <dt>Network (deploy)</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}?workspace={{ workspace }}">{{task.deploy_file}}</a></dd>
                 <dt>Raw caffe output</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}">{{task.caffe_log_file}}</a></dd>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}?workspace={{ workspace }}">{{task.caffe_log_file}}</a></dd>
                 {% if task.pretrained_model %}
                 <dt>Pretrained Model</dt>
                 <dd>{{task.pretrained_model}}</dd>
@@ -112,7 +112,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             </script>
                         </div>
                         <button
-                            formaction="{{url_for('models_download', job_id=job.id())}}"
+                            formaction="{{url_for('models_download', job_id=job.id())}}?workspace={{ workspace }}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             class="btn btn-info">
@@ -280,7 +280,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <input type="text" id="top_n" name="top_n" class="form-control" placeholder="9">
                         </div>
                         <button name="top-n-btn"
-                            formaction="{{url_for('image_classification_model_top_n', job_id=job.id())}}"
+                            formaction="{{url_for('image_classification_model_top_n', job_id=job.id())}}{{ workspace }}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             formtarget="_blank"
@@ -327,7 +327,7 @@ function classifyMany() {
     // grab all form data
     var formData = new FormData($("#test-model-form")[0]);
 
-    $.ajax("{{url_for('image_classification_model_classify_many', job_id=job.id())}}",
+    $.ajax("{{url_for('image_classification_model_classify_many', job_id=job.id())}}{{ workspace }}",
             {
                 type: "POST",
                 data: formData,

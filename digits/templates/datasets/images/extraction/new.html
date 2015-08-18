@@ -9,7 +9,7 @@ New Feature Extraction Dataset
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{url_for('feature_extraction_dataset_new')}}">New Dataset</a></li>
+<li class="active"><a href="{{url_for('feature_extraction_dataset_new')}}?workspace={{ workspace }}">New Dataset</a></li>
 {% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@ New Feature Extraction Dataset
     <h1>New Feature Extraction Dataset</h1>
 </div>
 
-<form action="{{url_for('feature_extraction_dataset_create')}}" enctype="multipart/form-data" method="post">
+<form action="{{url_for('feature_extraction_dataset_create')}}?workspace={{ workspace }}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {% if form.errors %}
@@ -104,7 +104,7 @@ New Feature Extraction Dataset
 function showResizeExample()
 {
     $.post(
-            "{{url_for('image_dataset_resize_example')}}",
+            "{{url_for('image_dataset_resize_example')}}?workspace={{ workspace }}",
             {
                 "channels": $("#resize_channels").val(),
                 "width":    $("#resize_width").val(),

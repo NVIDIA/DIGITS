@@ -23,7 +23,7 @@
 <div class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
         <div class="navbar-header">
-            <a class="navbar-brand" href="/">DIGITS</a>
+            <a class="navbar-brand" href="/?workspace={{ workspace }}">DIGITS</a>
         </div>
         <ul class="nav navbar-nav">
             {% block nav %}
@@ -36,6 +36,11 @@
             </ul>
         </div>
         {% endif %}
+        <div class="navbar-right">
+            <ul class="nav navbar-nav">
+                <li><a href="/workspaces">My Workspaces</a></li>
+            </ul>
+        </div>
     </div>
 </div>
 

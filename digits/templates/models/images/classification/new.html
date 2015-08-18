@@ -9,7 +9,7 @@ New Image Classification Model
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{url_for('image_classification_model_new')}}">New Model</a></li>
+<li class="active"><a href="{{url_for('image_classification_model_new')}}?workspace={{ workspace }}">New Model</a></li>
 {% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@ New Image Classification Model
     <h1>New Image Classification Model</h1>
 </div>
 
-<form id="model-form" action="{{url_for('image_classification_model_create')}}" enctype="multipart/form-data" method="post">
+<form id="model-form" action="{{url_for('image_classification_model_create')}}?workspace={{ workspace }}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {% if form.errors %}
@@ -50,7 +50,7 @@ New Image Classification Model
         </div>
         <script>
 $("#dataset").change(function() {
-        $.ajax("/datasets/summary?job_id=" + $(this).val(),
+        $.ajax("/datasets/summary?job_id=" + $(this).val()?workspace={{ workspace }},
             {
                 type: "GET",
                 }

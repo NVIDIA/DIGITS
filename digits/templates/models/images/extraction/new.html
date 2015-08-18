@@ -9,7 +9,7 @@ Feature Extraction Model
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{url_for('feature_extraction_model_new')}}">New Model</a></li>
+<li class="active"><a href="{{url_for('feature_extraction_model_new')}}?workspace={{ workspace }}">New Model</a></li>
 {% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@ Feature Extraction Model
     <h1>New Feature Extraction Model</h1>
 </div>
 
-<form id="model-form" action="{{url_for('feature_extraction_model_create')}}" enctype="multipart/form-data" method="post">
+<form id="model-form" action="{{url_for('feature_extraction_model_create')}}?workspace={{ workspace }}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {% if form.errors %}
@@ -68,6 +68,9 @@ Feature Extraction Model
                             </p>
                         </div>
                         <a href=# onClick="bootbox.alert($('#custom_network_explanation').html()); return false;"><span class="glyphicon glyphicon-question-sign"></span></a>
+                        <div class="pull-right">
+                            <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
+                        </div>
                         {{form.custom_network(class='form-control', rows=10)}}
                     </div>
                     <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
