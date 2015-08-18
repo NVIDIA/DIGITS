@@ -9,7 +9,7 @@ import digits.scheduler
 
 ### Create Flask, Scheduler and SocketIO objects
 
-app = flask.Flask(__name__, static_url_path = "/digits_static")
+app = flask.Flask(__name__)
 app.config['DEBUG'] = False
 # Disable CSRF checking in WTForms
 app.config['WTF_CSRF_ENABLED'] = False
