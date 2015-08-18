@@ -18,6 +18,7 @@ from digits.utils import errors
 from digits.utils.routing import request_wants_json
 from flask import Flask, request, render_template
 from workspaces import get_workspace
+import shutil
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
@@ -109,14 +110,15 @@ def show_job(job_id):
     """
     Redirects to the appropriate /datasets/ or /models/ page
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
     if isinstance(job, dataset.DatasetJob):
-        return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
+        return flask.redirect(flask.url_for('datasets_show', job_id=job_id)+'?workspace='+workspace)
     if isinstance(job, model.ModelJob):
-        return flask.redirect(flask.url_for('models_show', job_id=job_id))
+        return flask.redirect(flask.url_for('models_show', job_id=job_id)+'?workspace='+workspace)
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
@@ -161,6 +163,7 @@ def delete_job(job_id):
     """
     Deletes a job
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
@@ -197,6 +200,7 @@ def handle_error(e):
     """
     Handles errors, formatting them as JSON if requested
     """
+    workspace = get_workspace(flask.request.url)
     error_type = type(e).__name__
     message = str(e)
     trace = None
@@ -224,6 +228,7 @@ def handle_error(e):
                 message     = message,
                 description = description,
                 trace       = trace,
+                workspace = workspace,
                 ), status_code
 
 # Register this handler for all error codes
@@ -337,4 +342,35 @@ def create_workspaces():
         _dir = os.path.join(config_value('jobs_dir'), new_workspace)
         os.mkdir(_dir)
     workspaces = next(os.walk(jobs_dir))[1]
-    return render_template('workspaces.html', workspaces = workspaces, error = error)
+    return render_template('workspaces.html', workspaces = workspaces, error = 'Workspace with this name already exists! Please choose another name.')
+
+@app.route('/workspace/edit/<workspace>', methods=['POST'])
+def edit_workspace_name(workspace):
+    """
+    Edit the name of a Workspace
+    """
+
+    jobs_dir = config_value('jobs_dir')
+    workspaces = next(os.walk(jobs_dir))[1]
+    old_workspace_name = workspace
+    new_workspace_name = request.form['workspace_name']
+    if old_workspace_name == "Default":
+        return render_template('workspaces.html', workspaces = workspaces, error = "Cannot modify the Default workspace of DIGITS")
+    elif not os.path.exists(jobs_dir+"/"+new_workspace_name):
+        os.rename(jobs_dir+"/"+old_workspace_name, jobs_dir+"/"+new_workspace_name)
+    else:
+        return render_template('workspaces.html', workspaces = workspaces, error = "A workspace already exist with this name")
+    workspaces = next(os.walk(jobs_dir))[1]
+    return render_template('workspaces.html', workspaces = workspaces, error = None)
+
+@app.route('/workspace/delete', methods = ['DELETE'])
+def delete_workspace():
+    workspace = get_workspace(flask.request.url)
+    jobs_dir = config_value('jobs_dir')
+    workspaces = next(os.walk(jobs_dir))[1]
+    if workspace == "Default":
+        return render_template('workspaces.html', workspaces = workspaces, error = "Cannot Delete the Default workspace of DIGITS")
+    else:
+        shutil.rmtree(jobs_dir+'/'+workspace)
+        return render_template('workspaces.html', workspaces = workspaces, success = "Successfully deleted the workspace %s" % workspace)
+
