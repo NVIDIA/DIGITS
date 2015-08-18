@@ -341,12 +341,12 @@ def create_workspaces():
     new_workspace=request.form['name']
     jobs_dir = config_value('jobs_dir')
     if new_workspace in next(os.walk(jobs_dir))[1]:
-        error  = True
+        error  = 'Workspace with this name already exists! Please choose another name.'
     else:
         _dir = os.path.join(config_value('jobs_dir'), new_workspace)
         os.mkdir(_dir)
     workspaces = next(os.walk(jobs_dir))[1]
-    return render_template('workspaces.html', workspaces = workspaces, error = 'Workspace with this name already exists! Please choose another name.')
+    return render_template('workspaces.html', workspaces = workspaces, error = error)
 
 @app.route('/workspace/edit/<workspace>', methods=['POST'])
 def edit_workspace_name(workspace):
