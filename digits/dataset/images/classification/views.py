@@ -10,6 +10,7 @@ from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
 from job import ImageClassificationDatasetJob
+from digits.workspaces import get_workspace
 
 NAMESPACE = '/datasets/images/classification'
 
@@ -209,8 +210,10 @@ def image_classification_dataset_new():
     """
     Returns a form for a new ImageClassificationDatasetJob
     """
+    workspace = get_workspace(flask.request.url)
+    print "workspace is ", workspace
     form = ImageClassificationDatasetForm()
-    return flask.render_template('datasets/images/classification/new.html', form=form)
+    return flask.render_template('datasets/images/classification/new.html', form=form, workspace = workspace)
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
@@ -221,12 +224,13 @@ def image_classification_dataset_create():
 
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
+    workspace = get_workspace(flask.request.url)
     form = ImageClassificationDatasetForm()
     if not form.validate_on_submit():
         if request_wants_json():
             return flask.jsonify({'errors': form.errors}), 400
         else:
-            return flask.render_template('datasets/images/classification/new.html', form=form), 400
+            return flask.render_template('datasets/images/classification/new.html', form=form, workspace = workspace), 400
 
     job = None
     try:
@@ -237,7 +241,8 @@ def image_classification_dataset_create():
                     int(form.resize_width.data),
                     int(form.resize_channels.data),
                     ),
-                resize_mode = form.resize_mode.data
+                resize_mode = form.resize_mode.data,
+                workspace = workspace,
                 )
 
         if form.method.data == 'folder':
@@ -250,16 +255,17 @@ def image_classification_dataset_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('datasets_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('datasets_show', job_id=job.id())+'?workspace='+workspace)
 
     except:
         if job:
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, *args):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    return flask.render_template('datasets/images/classification/show.html', job=job)
+    workspace = args[0]
+    return flask.render_template('datasets/images/classification/show.html', job=job, workspace = workspace)
 

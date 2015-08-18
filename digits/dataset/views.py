@@ -7,6 +7,7 @@ from digits.webapp import app, scheduler, autodoc
 from digits.utils.routing import request_wants_json
 import images.views
 import images as dataset_images
+from digits.workspaces import get_workspace
 
 NAMESPACE = '/datasets/'
 
@@ -20,6 +21,7 @@ def datasets_show(job_id):
     Returns JSON when requested:
         {id, name, directory, status}
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
@@ -28,9 +30,9 @@ def datasets_show(job_id):
         return flask.jsonify(job.json_dict(True))
     else:
         if isinstance(job, dataset_images.ImageClassificationDatasetJob):
-            return dataset_images.classification.views.show(job)
+            return dataset_images.classification.views.show(job, workspace)
         elif isinstance(job, dataset_images.FeatureExtractionDatasetJob):
-            return dataset_images.extraction.views.show(job)
+            return dataset_images.extraction.views.show(job, workspace)
         else:
             raise werkzeug.exceptions.BadRequest('Invalid job type')
 
@@ -40,9 +42,10 @@ def dataset_summary():
     """
     Return a short HTML summary of a DatasetJob
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(flask.request.args['job_id'])
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
-    return flask.render_template('datasets/summary.html', dataset=job)
+    return flask.render_template('datasets/summary.html', dataset=job, workspace = workspace)
 
