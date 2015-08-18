@@ -6,9 +6,11 @@ import os.path
 import time
 import argparse
 import logging
-from re import match as re_match
-from shutil import rmtree
+import re
+import shutil
+import math
 import random
+from collections import Counter
 import threading
 import Queue
 
@@ -24,6 +26,7 @@ from digits import utils, log
 import numpy as np
 import PIL.Image
 import lmdb
+import h5py
 from cStringIO import StringIO
 # must call digits.config.load_config() before caffe to set the path
 import caffe.io
@@ -35,457 +38,426 @@ except ImportError:
 
 logger = logging.getLogger('digits.tools.create_db')
 
-class DbCreator(object):
+class Error(Exception):
+    pass
+
+class BadInputFileError(Error):
+    """Input file is empty"""
+    pass
+
+class ParseLineError(Error):
+    """Failed to parse a line in the input file"""
+    pass
+
+class LoadError(Error):
+    """Failed to load image[s]"""
+    pass
+
+class WriteError(Error):
+    """Failed to write image[s]"""
+    pass
+
+def create_db(input_file, output_file,
+        image_width, image_height, image_channels,
+        backend,
+        resize_mode     = None,
+        image_folder    = None,
+        shuffle         = True,
+        mean_files      = None,
+        **kwargs):
     """
-    Creates a database for a neural network imageset
+    Create a database of images from a list of image paths
+    Raises exceptions on errors
+
+    Arguments:
+    input_file -- a textfile containing labelled image paths
+    output_file -- the location to store the created database
+    image_width -- image resize width
+    image_height -- image resize height
+    image_channels -- image channels
+    backend -- the DB format (lmdb/hdf5)
+
+    Keyword arguments:
+    resize_mode -- passed to utils.image.resize_image()
+    shuffle -- if True, shuffle the images in the list before creating
+    mean_files -- a list of mean files to save
     """
+    ### Validate arguments
 
-    def __init__(self, db_path, lmdb_map_size=None):
-        """
-        Arguments:
-        db_path -- where should the database be created
-
-        Keyword arguments:
-        lmdb_map_size -- the initial LMDB map size
-        """
-        # Can have trailing slash or not
-        self.output_path = os.path.dirname(os.path.join(db_path, ''))
-        self.name = os.path.basename(self.output_path)
-
-        if lmdb_map_size:
-            # convert from MB to B
-            lmdb_map_size <<= 20
-
-        if os.path.exists(self.output_path):
-            # caffe throws an error instead
-            logger.warning('removing existing database %s' % self.output_path)
-            rmtree(self.output_path, ignore_errors=True)
-
-        self.db = lmdb.open(self.output_path,
-                map_size=lmdb_map_size,
-                map_async=True,
-                max_dbs=0)
-
-        self.shutdown = threading.Event()
-        self.keys_lock = threading.Lock()
-        self.key_index = 0
-
-    def create(self, input_file, width, height,
-            channels    = 3,
-            resize_mode = None,
-            image_folder= None,
-            shuffle     = True,
-            mean_files  = None,
-            encoding    = 'none',
-            ):
-        """
-        Read an input file and create a database from the specified image/label pairs
-        Returns True on success
-
-        Arguments:
-        input_file -- gives paths to images and their label (e.g. "path/to/image1.jpg 0\npath/to/image2.jpg 3")
-        width -- width of resized images
-        height -- width of resized images
-
-        Keyword arguments:
-        channels -- channels of resized images
-        resize_mode -- can be crop, squash, fill or half_crop
-        image_folder -- folder in which the images can be found
-        shuffle -- shuffle images before saving
-        mean_files -- an array of mean files to save (can be empty)
-        encoding -- 'none', 'png' or 'jpg'
-        """
-        ### Validate input
-
-        if not os.path.exists(input_file):
-            logger.error('input_file does not exist')
-            return False
-        if height <= 0:
-            logger.error('unsupported image height')
-            return False
-        self.height = height
-        if width <= 0:
-            logger.error('unsupported image width')
-            return False
-        self.width = width
-        if channels not in [1,3]:
-            logger.error('unsupported number of channels')
-            return False
-        self.channels = channels
-        if resize_mode not in [None, 'crop', 'squash', 'fill', 'half_crop']:
-            logger.error('unsupported resize_mode')
-            return False
-        self.resize_mode = resize_mode
-        if image_folder is not None and not os.path.exists(image_folder):
-            logger.error('image_folder does not exist')
-            return False
-        self.image_folder = image_folder
-        if mean_files:
-            for mean_file in mean_files:
-                if os.path.exists(mean_file):
-                    logger.warning('overwriting existing mean file "%s"!' % mean_file)
-                else:
-                    dirname = os.path.dirname(mean_file)
-                    if not dirname:
-                        dirname = '.'
-                    if not os.path.exists(dirname):
-                        logger.error('Cannot save mean file at "%s"' % mean_file)
-                        return False
-        self.compute_mean = (mean_files and len(mean_files) > 0)
-        if encoding not in ['none', 'png', 'jpg']:
-            raise ValueError('Unsupported encoding format "%s"' % encoding)
-        self.encoding = encoding
-
-        ### Start working
-
-        start = time.time()
-
-        # TODO: adjust these values in real-time based on system load
-        if not shuffle:
-            #XXX This is the only way to preserve order for now
-            # This obviously hurts performance considerably
-            read_threads = 1
+    if not os.path.exists(input_file):
+        raise ValueError('input_file does not exist')
+    if os.path.exists(output_file):
+        logger.warning('removing existing database')
+        if os.path.isdir(output_file):
+            shutil.rmtree(output_file, ignore_errors=True)
         else:
-            read_threads = 10
-        write_threads = 1
-        batch_size = 100
-
-        total_images_added = 0
-        total_image_sum = None
-
-        # NOTE: The data could really stack up in these queues
-        self.read_queue = Queue.Queue()
-        self.write_queue = Queue.Queue(2*batch_size)
-
-        # Tells read threads that if read_queue is empty, they can stop
-        self.read_queue_built = threading.Event()
-        self.read_thread_results = Queue.Queue()
-        # Tells write threads that if write_queue is empty, they can stop
-        self.write_queue_built = threading.Event()
-        self.write_thread_results = Queue.Queue()
-
-        # Read input_file and produce items to read_queue
-        # NOTE This secion should be very efficient, because no progress about the job gets reported until after the read/write threads start
-        lines_read = 0
-        lines_per_category = {}
-        with open(input_file, 'r') as f:
-            lines = f.readlines()
-            if shuffle:
-                random.shuffle(lines)
-            for line in lines:
-                # Expect format - [/]path/to/file.jpg 123
-                match = re_match(r'(.+)\s+(\d+)\s*$', line)
-                if match is not None:
-                    path = match.group(1)
-                    label = int(match.group(2))
-                    self.read_queue.put( (path, label) )
-                    if label not in lines_per_category:
-                        lines_per_category[label] = 1
-                    else:
-                        lines_per_category[label] += 1
-                    lines_read += 1
-        self.read_queue_built.set()
-
-        if lines_read > 0:
-            logger.info('Input images: %d' % lines_read)
-        else:
-            logger.error('no lines in input_file')
-            return False
-
-        for key in sorted(lines_per_category):
-            logger.debug('Category %s has %d images.' % (key, lines_per_category[key]))
-
-        # Start read threads
-        for i in xrange(read_threads):
-            p = threading.Thread(target=self.read_thread)
-            p.daemon = True
-            p.start()
-
-        # Start write threads
-        for i in xrange(write_threads):
-            first_batch = int(batch_size * (i+1)/write_threads)
-            p = threading.Thread(target=self.write_thread, args=(batch_size, first_batch))
-            p.daemon = True
-            p.start()
-
-        # Wait for threads to finish
-        wait_time = time.time()
-        read_threads_done = 0
-        write_threads_done = 0
-        total_images_written = 0
-        while write_threads_done < write_threads:
-            if self.shutdown.is_set():
-                # Die immediately
-                return False
-
-            # Send update every 2 seconds
-            if time.time() - wait_time > 2:
-                logger.debug('Processed %d/%d' % (lines_read - self.read_queue.qsize(), lines_read))
-                #print '\tRead queue size: %d' % self.read_queue.qsize()
-                #print '\tWrite queue size: %d' % self.write_queue.qsize()
-                #print '\tRead threads done: %d' % read_threads_done
-                #print '\tWrite threads done: %d' % write_threads_done
-                wait_time = time.time()
-
-            if not self.write_queue_built.is_set() and read_threads_done == read_threads:
-                self.write_queue_built.set()
-
-            while not self.read_thread_results.empty():
-                images_added, image_sum = self.read_thread_results.get()
-                total_images_added += images_added
-                # Update total_image_sum
-                if self.compute_mean and images_added > 0 and image_sum is not None:
-                    if total_image_sum is None:
-                        total_image_sum = image_sum
-                    else:
-                        total_image_sum += image_sum
-                read_threads_done += 1
-
-            while not self.write_thread_results.empty():
-                result = self.write_thread_results.get()
-                total_images_written += result
-                write_threads_done += 1
-
-            try:
-                time.sleep(0.2)
-            except KeyboardInterrupt:
-                self.shutdown.set()
-                return False
-
-        if total_images_added == 0:
-            logger.error('no images added')
-            return False
-
-        # Compute image mean
-        if self.compute_mean and total_image_sum is not None:
-            mean = np.around(total_image_sum / total_images_added).astype(np.uint8)
-            for mean_file in mean_files:
-                if mean_file.lower().endswith('.npy'):
-                    np.save(mean_file, mean)
-                elif mean_file.lower().endswith('.binaryproto'):
-                    data = mean
-                    # Transform to caffe's format requirements
-                    if data.ndim == 3:
-                        # Transpose to (channels, height, width)
-                        data = data.transpose((2,0,1))
-                        if data.shape[0] == 3:
-                            # channel swap
-                            # XXX see issue #59
-                            data = data[[2,1,0],...]
-                    elif mean.ndim == 2:
-                        # Add a channels axis
-                        data = data[np.newaxis,:,:]
-
-                    blob = caffe_pb2.BlobProto()
-                    blob.num = 1
-                    blob.channels, blob.height, blob.width = data.shape
-                    blob.data.extend(data.astype(float).flat)
-
-                    with open(mean_file, 'wb') as outfile:
-                        outfile.write(blob.SerializeToString())
-                elif mean_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-                    image = PIL.Image.fromarray(mean)
-                    image.save(mean_file)
-                else:
-                    logger.warning('Unrecognized file extension for mean file: "%s"' % mean_file)
-                    continue
-
-                logger.info('Mean saved at "%s"' % mean_file)
-
-        logger.info('Database created after %d seconds.' % (time.time() - start))
-        logger.info('Total images added: %d' % total_images_written)
-
-        self.shutdown.set()
-        return True
-
-
-    def read_thread(self):
-        """
-        Consumes items in read_queue which are lines from input_file
-        Produces items to write_queue which are Datums
-        """
-        images_added = 0
-        image_sum = self.initial_image_sum()
-
-        while not self.read_queue_built.is_set() or not self.read_queue.empty():
-
-            if self.shutdown.is_set():
-                # Die immediately
-                return
-
-            try:
-                path, label = self.read_queue.get(True, 0.05)
-            except Queue.Empty:
-                continue
-
-            try:
-                datum = self.path_to_datum(path, label, image_sum)
-                if datum is not None:
-                    self.write_queue.put(datum)
-                    images_added += 1
-            except Exception as e:
-                # This could be a ton of warnings
-                logger.warning('[%s] DbCreator.read_thread caught %s: %s' % (path, type(e).__name__, e) )
-                # TODO: count number of errors and abort if too many encountered
-
-        self.read_thread_results.put( (images_added, image_sum) )
-        return True
-
-    def initial_image_sum(self):
-        """
-        Returns an array of zeros that will be used to store the accumulated sum of images
-        """
-        if self.compute_mean:
-            if self.channels == 1:
-                return np.zeros((self.height, self.width), np.float64)
+            os.remove(output_file)
+    if image_width <= 0:
+        raise ValueError('invalid image width')
+    if image_height <= 0:
+        raise ValueError('invalid image height')
+    if image_channels not in [1,3]:
+        raise ValueError('invalid number of channels')
+    if resize_mode not in [None, 'crop', 'squash', 'fill', 'half_crop']:
+        raise ValueError('invalid resize_mode')
+    if image_folder is not None and not os.path.exists(image_folder):
+        raise ValueError('image_folder does not exist')
+    if mean_files:
+        for mean_file in mean_files:
+            if os.path.exists(mean_file):
+                logger.warning('overwriting existing mean file "%s"!' % mean_file)
             else:
-                return np.zeros((self.height, self.width, self.channels), np.float64)
+                dirname = os.path.dirname(mean_file)
+                if not dirname:
+                    dirname = '.'
+                if not os.path.exists(dirname):
+                    raise ValueError('Cannot save mean file at "%s"' % mean_file)
+    compute_mean = bool(mean_files)
+
+    ### Load lines from input_file into a load_queue
+
+    load_queue = Queue.Queue()
+    image_count = _fill_load_queue(input_file, load_queue, shuffle)
+
+    # Start some load threads
+
+    batch_size = _calculate_batch_size(image_count)
+    num_threads = _calculate_num_threads(batch_size, shuffle)
+    write_queue = Queue.Queue(2*batch_size)
+    summary_queue = Queue.Queue()
+
+    for i in xrange(num_threads):
+        p = threading.Thread(target=_load_thread,
+                args=(load_queue, write_queue, summary_queue,
+                    image_width, image_height, image_channels,
+                    resize_mode, image_folder, compute_mean)
+                )
+        p.daemon = True
+        p.start()
+
+    start = time.time()
+
+    if backend == 'lmdb':
+        _create_lmdb(image_count, write_queue, batch_size, output_file,
+                summary_queue, num_threads,
+                mean_files, **kwargs)
+    elif backend == 'hdf5':
+        raise NotImplementedError
+    else:
+        raise ValueError('invalid backend')
+
+    logger.info('Database created after %d seconds.' % (time.time() - start))
+
+def _create_lmdb(image_count, write_queue, batch_size, output_file,
+        summary_queue, num_threads,
+        mean_files      = None,
+        encoding        = None,
+        lmdb_map_size   = None,
+        **kwargs):
+    """
+    Create an LMDB
+
+    Keyword arguments:
+    encoding -- image encoding format
+    lmdb_map_size -- the initial LMDB map size
+    """
+    wait_time = time.time()
+    threads_done = 0
+    images_loaded = 0
+    images_written = 0
+    image_sum = None
+    batch = []
+    compute_mean = bool(mean_files)
+
+    db = lmdb.open(output_file,
+            map_size=lmdb_map_size,
+            map_async=True,
+            max_dbs=0)
+
+    while (threads_done < num_threads) or not write_queue.empty():
+
+        # Send update every 2 seconds
+        if time.time() - wait_time > 2:
+            logger.debug('Processed %d/%d' % (images_written, image_count))
+            wait_time = time.time()
+
+        processed_something = False
+
+        if not summary_queue.empty():
+            result_count, result_sum = summary_queue.get()
+            images_loaded += result_count
+            # Update total_image_sum
+            if compute_mean and result_count > 0 and result_sum is not None:
+                if image_sum is None:
+                    image_sum = result_sum
+                else:
+                    image_sum += result_sum
+            threads_done += 1
+            processed_something = True
+
+        if not write_queue.empty():
+            image, label = write_queue.get()
+            datum = _array_to_datum(image, label, encoding)
+            batch.append(datum)
+
+            if len(batch) == batch_size:
+                _write_batch_lmdb(db, batch, images_written)
+                images_written += len(batch)
+                batch = []
+            processed_something = True
+
+        if not processed_something:
+            time.sleep(0.2)
+
+    if len(batch) > 0:
+        _write_batch_lmdb(db, batch, images_written)
+        images_written += len(batch)
+
+    if images_loaded == 0:
+        raise LoadError('no images loaded from input file')
+    logger.debug('%s images loaded' % images_loaded)
+
+    if images_written == 0:
+        raise WriteError('no images written to database')
+    logger.info('%s images written to database' % images_written)
+
+    if compute_mean:
+        _save_means(image_sum, images_written, mean_files)
+
+    db.close()
+
+def _fill_load_queue(filename, queue, shuffle):
+    """
+    Fill the queue with data from the input file
+    Print the category distribution
+    Returns the number of lines added to the queue
+
+    NOTE: This can be slow on a large input file, but we need the total image
+        count in order to report the progress, so we might as well read it all
+    """
+    total_lines = 0
+    valid_lines = 0
+    distribution = Counter()
+
+    with open(filename) as infile:
+        if shuffle:
+            lines = infile.readlines() # less memory efficient
+            random.shuffle(lines)
+            for line in lines:
+                total_lines += 1
+                try:
+                    result = _parse_line(line, distribution)
+                    valid_lines += 1
+                    queue.put(result)
+                except ParseLineError:
+                    pass
         else:
-            return None
+            for line in infile: # more memory efficient
+                total_lines += 1
+                try:
+                    result = _parse_line(line, distribution)
+                    valid_lines += 1
+                    queue.put(result)
+                except ParseLineError:
+                    pass
 
-    def path_to_datum(self, path, label,
-            image_sum = None):
-        """
-        Creates a Datum from a path and a label
-        May also update image_sum, if computing mean
+    logger.debug('%s total lines in file' % total_lines)
+    if valid_lines == 0:
+        raise BadInputFileError('No valid lines in input file')
+    logger.info('%s valid lines in file' % valid_lines)
 
-        Arguments:
-        path -- path to the image (filesystem path or URL)
-        label -- numeric label for this image's category
+    for key in sorted(distribution):
+        logger.debug('Category %s has %d images.' % (key, distribution[key]))
 
-        Keyword arguments:
-        image_sum -- numpy array that stores a running sum of added images
-        """
+    return valid_lines
+
+def _parse_line(line, distribution):
+    """
+    Parse a line in the input file into (path, label)
+    """
+    line = line.strip()
+    if not line:
+        raise ParseLineError
+
+    # Expect format - [/]path/to/file.jpg 123
+    match = re.match(r'(.+)\s+(\d+)\s*$', line)
+    if match is None:
+        raise ParseLineError
+
+    path = match.group(1)
+    label = int(match.group(2))
+
+    distribution[label] += 1
+
+    return path, label
+
+def _calculate_batch_size(image_count):
+    """
+    Calculates an appropriate batch size for creating this database
+    """
+    return min(100, image_count)
+
+def _calculate_num_threads(batch_size, shuffle):
+    """
+    Calculates an appropriate number of threads for creating this database
+    """
+    if shuffle:
+        return min(10, int(round(math.sqrt(batch_size))))
+    else:
+        #XXX This is the only way to preserve order for now
+        # This obviously hurts performance considerably
+        return 1
+
+def _load_thread(load_queue, write_queue, summary_queue,
+        image_width, image_height, image_channels,
+        resize_mode, image_folder, compute_mean):
+    """
+    Consumes items in load_queue
+    Produces items to write_queue
+    Stores cumulative results in summary_queue
+    """
+    images_added = 0
+    if compute_mean:
+        image_sum = _initial_image_sum(image_width, image_height, image_channels)
+    else:
+        image_sum = None
+
+    while not load_queue.empty():
+        try:
+            path, label = load_queue.get(True, 0.05)
+        except Queue.Empty:
+            continue
+
         # prepend path with image_folder, if appropriate
-        if not utils.is_url(path) and self.image_folder and not os.path.isabs(path):
-            path = os.path.join(self.image_folder, path)
+        if not utils.is_url(path) and image_folder and not os.path.isabs(path):
+            path = os.path.join(image_folder, path)
 
-        image = utils.image.load_image(path)
+        try:
+            image = utils.image.load_image(path)
+        except utils.errors.LoadImageError:
+            logger.warning('[%s] %s: %s' % (path, type(e).__name__, e) )
+            continue
+
         image = utils.image.resize_image(image,
-                self.height, self.width,
-                channels    = self.channels,
-                resize_mode = self.resize_mode,
+                image_height, image_width,
+                channels    = image_channels,
+                resize_mode = resize_mode,
                 )
 
-        if self.compute_mean and image_sum is not None:
+        if compute_mean:
             image_sum += image
 
-        if not self.encoding or self.encoding == 'none':
+        write_queue.put((image, label))
+        images_added += 1
+
+    summary_queue.put((images_added, image_sum))
+
+def _initial_image_sum(width, height, channels):
+    """
+    Returns an array of zeros that will be used to store the accumulated sum of images
+    """
+    if channels == 1:
+        return np.zeros((height, width), np.float64)
+    else:
+        return np.zeros((height, width, channels), np.float64)
+
+def _array_to_datum(image, label, encoding):
+    """
+    Create a caffe Datum from a numpy.ndarray
+    """
+    if not encoding:
+        # Transform to caffe's format requirements
+        if image.ndim == 3:
+            # Transpose to (channels, height, width)
+            image = image.transpose((2,0,1))
+            if image.shape[0] == 3:
+                # channel swap
+                # XXX see issue #59
+                image = image[[2,1,0],...]
+        elif image.ndim == 2:
+            # Add a channels axis
+            image = image[np.newaxis,:,:]
+        else:
+            raise Exception('Image has unrecognized shape: "%s"' % image.shape)
+        datum = caffe.io.array_to_datum(image, label)
+    else:
+        datum = caffe_pb2.Datum()
+        if image.ndim == 3:
+            datum.channels = image.shape[2]
+        else:
+            datum.channels = 1
+        datum.height = image.shape[0]
+        datum.width = image.shape[1]
+        datum.label = label
+
+        s = StringIO()
+        if encoding == 'png':
+            PIL.Image.fromarray(image).save(s, format='PNG')
+        elif encoding == 'jpg':
+            PIL.Image.fromarray(image).save(s, format='JPEG', quality=90)
+        else:
+            raise ValueError('Invalid encoding type')
+        datum.data = s.getvalue()
+        datum.encoded = True
+    return datum
+
+def _write_batch_lmdb(db, batch, image_count):
+    """
+    Write a batch to an LMDB database
+    """
+    try:
+        with db.begin(write=True) as lmdb_txn:
+            for i, datum in enumerate(batch):
+                key = '%08d_%d' % (image_count + i, datum.label)
+                lmdb_txn.put(key, datum.SerializeToString())
+
+    except lmdb.MapFullError:
+        # double the map_size
+        curr_limit = db.info()['map_size']
+        new_limit = curr_limit*2
+        logger.debug('Doubling LMDB map size to %sMB ...' % (new_limit>>20,))
+        db.set_mapsize(new_limit) # double it
+        # try again
+        _write_batch_lmdb(db, batch, image_count)
+
+def _save_means(image_sum, image_count, mean_files):
+    """
+    Save mean[s] to file
+    """
+    mean = np.around(image_sum / image_count).astype(np.uint8)
+    for mean_file in mean_files:
+        if mean_file.lower().endswith('.npy'):
+            np.save(mean_file, mean)
+        elif mean_file.lower().endswith('.binaryproto'):
+            data = mean
             # Transform to caffe's format requirements
-            if image.ndim == 3:
+            if data.ndim == 3:
                 # Transpose to (channels, height, width)
-                image = image.transpose((2,0,1))
-                if image.shape[0] == 3:
+                data = data.transpose((2,0,1))
+                if data.shape[0] == 3:
                     # channel swap
                     # XXX see issue #59
-                    image = image[[2,1,0],...]
-            elif image.ndim == 2:
+                    data = data[[2,1,0],...]
+            elif mean.ndim == 2:
                 # Add a channels axis
-                image = image[np.newaxis,:,:]
-            else:
-                raise Exception('Image has unrecognized shape: "%s"' % image.shape)
-            datum = caffe.io.array_to_datum(image, label)
+                data = data[np.newaxis,:,:]
+
+            blob = caffe_pb2.BlobProto()
+            blob.num = 1
+            blob.channels, blob.height, blob.width = data.shape
+            blob.data.extend(data.astype(float).flat)
+
+            with open(mean_file, 'wb') as outfile:
+                outfile.write(blob.SerializeToString())
+        elif mean_file.lower().endswith(('.jpg', '.jpeg', '.png')):
+            image = PIL.Image.fromarray(mean)
+            image.save(mean_file)
         else:
-            datum = caffe_pb2.Datum()
-            if image.ndim == 3:
-                datum.channels = image.shape[2]
-            else:
-                datum.channels = 1
-            datum.height = image.shape[0]
-            datum.width = image.shape[1]
-            datum.label = label
+            logger.warning('Unrecognized file extension for mean file: "%s"' % mean_file)
+            continue
 
-            s = StringIO()
-            if self.encoding == 'png':
-                PIL.Image.fromarray(image).save(s, format='PNG')
-            elif self.encoding == 'jpg':
-                PIL.Image.fromarray(image).save(s, format='JPEG', quality=90)
-            datum.data = s.getvalue()
-            datum.encoded = True
-        return datum
+        logger.info('Mean saved at "%s"' % mean_file)
 
-    def write_thread(self, batch_size, batch_extra):
-        """
-        Consumes items in write_queue which are Datums
-        Writes the image data to the database in batches
-
-        Arguments:
-        batch_size -- how many records to add to the database at a time
-        batch_extra -- how many extra entries to include with the first batch (used for staging write batches)
-        """
-        if not batch_size > 0:
-            logger.error('batch_size must be positive')
-            return False
-
-        batch = []
-
-        images_added = 0
-        while not self.write_queue_built.is_set() or not self.write_queue.empty():
-            if self.shutdown.is_set():
-                # Die immediately
-                return
-
-            try:
-                datum = self.write_queue.get(True, 0.05)
-            except Queue.Empty:
-                continue
-
-            batch.append(datum)
-            images_added += 1
-            if (batch_extra and len(batch) == batch_extra) or (len(batch) == batch_size):
-                self.write_batch(batch)
-                batch_extra = 0
-                batch = []
-
-        # Write last batch
-        if len(batch):
-            self.write_batch(batch)
-
-        self.write_thread_results.put(images_added)
-        return True
-
-    def write_batch(self, batch):
-        """
-        Write a batch to the database
-
-        Arguments:
-        batch -- an array of Datums
-        """
-        keys = self.get_keys(len(batch))
-        lmdb_txn = self.db.begin(write=True)
-        for i, datum in enumerate(batch):
-            try:
-                key = '%08d_%d' % (keys[i], datum.label)
-                lmdb_txn.put(key, datum.SerializeToString())
-            except lmdb.MapFullError:
-                lmdb_txn.abort()
-
-                # double the map_size
-                curr_limit = self.db.info()['map_size']
-                new_limit = curr_limit*2
-                logger.debug('Doubling LMDB map size to %sMB ...' % (new_limit>>20,))
-                self.db.set_mapsize(new_limit) # double it
-
-                # try again
-                self.write_batch(batch)
-                return
-        lmdb_txn.commit()
-
-    def get_keys(self, num):
-        """
-        Return a range of keys to be used for a write batch
-
-        Arguments:
-        num -- how many keys
-        """
-        i = None
-        self.keys_lock.acquire()
-        try:
-            i = self.key_index
-            self.key_index += num
-        finally:
-            self.keys_lock.release()
-        return range(i, i+num)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create-Db tool - DIGITS')
@@ -494,7 +466,7 @@ if __name__ == '__main__':
 
     parser.add_argument('input_file',
             help='An input file of labeled images')
-    parser.add_argument('db_name',
+    parser.add_argument('output_file',
             help='Path to the output database')
     parser.add_argument('width',
             type=int,
@@ -524,27 +496,37 @@ if __name__ == '__main__':
             help='Shuffle images before saving'
             )
     parser.add_argument('-e', '--encoding',
-            default = 'none',
-            help = 'Choose encoding format ("jpg", "png" or "none" [default])'
+            help = 'Image encoding format (jpg/png)'
             )
+    parser.add_argument('-C', '--compression',
+            help = 'Database compression format (gzip/lzf)'
+            )
+    parser.add_argument('-b', '--backend',
+            default='lmdb',
+            help = 'The database backend - lmdb[default] or hdf5')
     parser.add_argument('--lmdb_map_size',
             type=int,
             help = 'The initial map size for LMDB (in MB)')
 
     args = vars(parser.parse_args())
 
-    db = DbCreator(args['db_name'],
-            lmdb_map_size = args['lmdb_map_size'])
+    if args['lmdb_map_size']:
+        # convert from MB to B
+        args['lmdb_map_size'] <<= 20
 
-    if db.create(args['input_file'], args['width'], args['height'],
-            channels        = args['channels'],
-            resize_mode     = args['resize_mode'],
-            image_folder    = args['image_folder'],
-            shuffle         = args['shuffle'],
-            mean_files      = args['mean_file'],
-            encoding        = args['encoding'],
-            ):
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    try:
+        create_db(args['input_file'], args['output_file'],
+                args['width'], args['height'], args['channels'],
+                args['backend'],
+                resize_mode     = args['resize_mode'],
+                image_folder    = args['image_folder'],
+                shuffle         = args['shuffle'],
+                mean_files      = args['mean_file'],
+                encoding        = args['compression'],
+                compression     = args['compression'],
+                lmdb_map_size   = args['lmdb_map_size']
+                )
+    except Exception as e:
+        logger.error('%s: %s' % (type(e).__name__, e.message))
+        raise
 
