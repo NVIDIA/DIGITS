@@ -35,6 +35,10 @@ def home():
             models: [{id, name, status},...]
         }
     """
+    jobs_dir = config_value('jobs_dir')
+    default_workspace = jobs_dir+"/"+"Default"
+    if not os.path.exists(default_workspace):
+        os.makedirs(default_workspace)
     workspace = get_workspace(flask.request.url)
     running_datasets    = get_job_list(dataset.DatasetJob, True, workspace)
     completed_datasets  = get_job_list(dataset.DatasetJob, False, workspace)
