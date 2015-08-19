@@ -12,14 +12,18 @@
         <dd>{{ job.dir() }}</dd>
     </dl>
     <dl>
-        <dt>Image Type</dt>
-        <dd>{{'Color' if job.image_dims[2] == 3 else 'Grayscale'}}</dd>
-        <dt>Image Encoding</dt>
-        <dd>{{job.train_db_task().encoding}}</dd>
         <dt>Image Dimensions</dt>
         <dd>{{job.image_dims[1]}}x{{job.image_dims[0]}}</dd>
+        <dt>Image Type</dt>
+        <dd>{{'Color' if job.image_dims[2] == 3 else 'Grayscale'}}</dd>
         <dt>Resize Transformation</dt>
         <dd>{{ job.resize_mode_name() }}</dd>
+        <dt>DB Backend</dt>
+        <dd>{{job.train_db_task().backend}}</dd>
+        <dt>Image Encoding</dt>
+        <dd>{{job.train_db_task().encoding}}</dd>
+        <dt>DB Compression</dt>
+        <dd>{{job.train_db_task().compression}}</dd>
     </dl>
 </div>
 {% endmacro %}

@@ -28,6 +28,7 @@ def image_dataset_resize_example():
         height = int(flask.request.form['height'])
         channels = int(flask.request.form['channels'])
         resize_mode = flask.request.form['resize_mode']
+        backend = flask.request.form['backend']
         encoding = flask.request.form['encoding']
 
         image = utils.image.resize_image(image, height, width,
@@ -35,7 +36,7 @@ def image_dataset_resize_example():
                 resize_mode=resize_mode,
                 )
 
-        if encoding == 'none':
+        if backend != 'lmdb' or encoding == 'none':
             length = len(image.tostring())
         else:
             s = StringIO()
