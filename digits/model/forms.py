@@ -218,11 +218,13 @@ class ModelForm(Form):
                 ) for index in config_value('gpu_list').split(',') if index]
             )
 
+    # XXX For testing
+    # The Flask test framework can't handle SelectMultipleFields correctly
+    select_gpus_list = wtforms.StringField('Select which GPU[s] you would like to use (comma separated)')
+
     def validate_select_gpus(form, field):
-        # XXX For testing
-        # The Flask test framework can't handle SelectMultipleFields correctly
-        if hasattr(form, 'select_gpus_list'):
-            field.data = form.select_gpus_list.split(',')
+        if form.select_gpus_list.data:
+            field.data = form.select_gpus_list.data.split(',')
 
     # Use next available N GPUs
     select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
@@ -244,5 +246,4 @@ class ModelForm(Form):
                 validators.DataRequired()
                 ]
             )
-
 

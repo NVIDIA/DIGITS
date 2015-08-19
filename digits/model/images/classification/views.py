@@ -25,6 +25,7 @@ from digits.model import tasks
 from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
+import platform
 
 NAMESPACE   = '/models/images/classification'
 
@@ -166,12 +167,15 @@ def image_classification_model_create():
                     'Invalid learning rate policy')
 
         if config_value('caffe_root')['multi_gpu']:
-            if form.select_gpu_count.data:
+            if form.select_gpus.data:
+                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
+                gpu_count = None
+            elif form.select_gpu_count.data:
                 gpu_count = form.select_gpu_count.data
                 selected_gpus = None
             else:
-                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
-                gpu_count = None
+                gpu_count = 1
+                selected_gpus = None
         else:
             if form.select_gpu.data == 'next':
                 gpu_count = 1
@@ -243,9 +247,11 @@ def image_classification_model_classify_one():
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
         image = utils.image.load_image(flask.request.form['image_url'])
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
-        with tempfile.NamedTemporaryFile() as outfile:
-            flask.request.files['image_file'].save(outfile.name)
-            image = utils.image.load_image(outfile.name)
+        outfile = tempfile.mkstemp(suffix='.bin')
+        flask.request.files['image_file'].save(outfile[1])
+        image = utils.image.load_image(outfile[1])
+        os.close(outfile[0])
+        os.remove(outfile[1])
     else:
         raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
 
@@ -280,6 +286,7 @@ def image_classification_model_classify_one():
                 image_src       = utils.image.embed_image_html(image),
                 predictions     = predictions,
                 visualizations  = visualizations,
+                total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
                 )
 
 @app.route(NAMESPACE + '/classify_many.json', methods=['POST'])

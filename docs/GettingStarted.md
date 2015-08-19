@@ -89,7 +89,7 @@ When the data set has completed training, go back to the home page, by clicking 
 
 ### Training a Model
 
-In the Models section on the left side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Model" page.  For this example, do the following:
+In the Models section on the right side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Model" page.  For this example, do the following:
 * Choose the MNIST dataset in the "Select Dataset" field
 * Choose the `LeNet` network in the "Standard Networks" tab
 * Give the model a name

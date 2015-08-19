@@ -32,3 +32,20 @@ def validate_required_iff(**kwargs):
 
     return _validator
 
+def validate_greater_than(fieldname):
+    """
+    Compares the value of two fields the value of self is to be greater than the supplied field.
+
+    :param fieldname:
+        The name of the other field to compare to.
+    """
+    def _validator(form, field):
+        try:
+            other = form[fieldname]
+        except KeyError:
+            raise validators.ValidationError(field.gettext(u"Invalid field name '%s'.") % fieldname)
+        if field.data != '' and field.data < other.data:
+            message = field.gettext(u'Field must be greater than %s.' % fieldname)
+            raise validators.ValidationError(message)
+    return _validator
+

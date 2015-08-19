@@ -94,7 +94,6 @@ class StatusCls(object):
             return self.status_history[-1][0]
         else:
             return Status.INIT
-        pass
 
     @status.setter
     def status(self, value):

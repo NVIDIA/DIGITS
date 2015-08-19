@@ -30,7 +30,6 @@ class CreateDbTask(Task):
         resize_mode -- used in utils.image.resize_image()
         encoding -- 'none', 'png' or 'jpg'
         mean_file -- save mean file to this location
-        backend -- type of database to use
         labels_file -- used to print category distribution
         """
         # Take keyword arguments out of kwargs
@@ -39,7 +38,6 @@ class CreateDbTask(Task):
         self.resize_mode = kwargs.pop('resize_mode' , None)
         self.encoding = kwargs.pop('encoding', None)
         self.mean_file = kwargs.pop('mean_file', None)
-        self.backend = kwargs.pop('backend', None)
         self.labels_file = kwargs.pop('labels_file', None)
 
         super(CreateDbTask, self).__init__(**kwargs)
@@ -55,9 +53,13 @@ class CreateDbTask(Task):
 
         self.entries_count = None
         self.distribution = None
+        self.create_db_log_file = "create_%s.log" % db_name
 
     def __getstate__(self):
         d = super(CreateDbTask, self).__getstate__()
+        if 'create_db_log' in d:
+            # don't save file handle
+            del d['create_db_log']
         if 'labels' in d:
             del d['labels']
         return d
@@ -95,6 +97,11 @@ class CreateDbTask(Task):
             return 'Create DB (test)'
         else:
             return 'Create DB (%s)' % self.db_name
+
+    @override
+    def before_run(self):
+        super(CreateDbTask, self).before_run()
+        self.create_db_log = open(self.path(self.create_db_log_file), 'a')
 
     @override
     def html_id(self):
@@ -146,6 +153,9 @@ class CreateDbTask(Task):
     @override
     def process_output(self, line):
         from digits.webapp import socketio
+
+        self.create_db_log.write('%s\n' % line)
+        self.create_db_log.flush()
 
         timestamp, level, message = self.preprocess_output_digits(line)
         if not message:
@@ -204,6 +214,11 @@ class CreateDbTask(Task):
             return True
 
         return True
+
+    @override
+    def after_run(self):
+        super(CreateDbTask, self).after_run()
+        self.create_db_log.close()
 
     def get_labels(self):
         """

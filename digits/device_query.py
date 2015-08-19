@@ -111,11 +111,23 @@ def get_library(name):
             return ctypes.cdll.LoadLibrary('%s.so' % name)
         elif platform.system() == 'Darwin':
             return ctypes.cdll.LoadLibrary('%s.dylib' % name)
+        elif platform.system() == 'Windows':
+            return ctypes.windll.LoadLibrary('%s.dll' % name)
     except OSError:
         pass
     return None
 
 devices = None
+
+def get_cudart():
+    if not platform.system() == 'Windows':
+        return get_library('libcudart')
+    
+    arch = platform.architecture()[0]
+    for ver in range(90,50,-5):
+        cudart = get_library('cudart%s_%d' % (arch[:2], ver))
+        if not cudart is None:
+            return cudart
 
 def get_devices(force_reload=False):
     """
@@ -131,7 +143,7 @@ def get_devices(force_reload=False):
         return devices
     devices = []
 
-    cudart = get_library('libcudart')
+    cudart = get_cudart()
     if cudart is None:
         return []
 
@@ -180,7 +192,9 @@ def get_nvml_info(device_id):
 
     nvml = get_library('libnvidia-ml')
     if nvml is None:
-        return None
+        nvml = get_library('nvml')
+        if nvml is None:
+            return None
 
     rc = nvml.nvmlInit()
     if rc != 0:

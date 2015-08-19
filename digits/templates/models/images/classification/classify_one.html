@@ -2,7 +2,7 @@
 
 <div class="row">
     <div class="col-sm-6">
-        <img src="{{image_src}}" style="width:{{image_width}}px;height:{{image_height}}px;" />
+        <img src="{{image_src}}" style="max-width:100%;" />
     </div>
 
     <div class="col-sm-6">
@@ -70,15 +70,26 @@
     {% for vis in visualizations %}
     <tr>
         <td>
-            <h4>{{vis['name']}}</h4>
-            {{vis['type']}}
+            <h3>"{{vis['name']}}"</h3>
+            <p>
+            {{vis['vis_type']}}
+            {% if 'layer_type' in vis %}
+            <small><i>({{vis['layer_type']}} layer)</i></small>
+            {% endif %}
+            </p>
+            {% if 'param_count' in vis %}
+            <p>
+            {{'{:,}'.format(vis['param_count'])}} learned parameters
+            </p>
+            {% endif %}
         </td>
         <td>
-            <b>Mean:</b> {{vis['mean']}}<br>
-            <b>Std deviation:</b> {{vis['stddev']}}<br>
+            <b>Data shape:</b> {{vis['data_stats']['shape']}}<br>
+            <b>Mean:</b> {{vis['data_stats']['mean']}}<br>
+            <b>Std deviation:</b> {{vis['data_stats']['stddev']}}<br>
             <div id="histogram-{{loop.index}}" class="histogram"></div>
             <script>
-                drawHistogram("#histogram-{{loop.index}}", {{vis['histogram']}});
+                drawHistogram("#histogram-{{loop.index}}", {{vis['data_stats']['histogram']}});
             </script>
         </td>
         <td>
@@ -90,6 +101,13 @@
         </td>
     </tr>
     {% endfor %}
+    <tr>
+        <td><i>Totals</i></td>
+        <td>
+            <b>Total learned parameters:</b>
+            {{'{:,}'.format(total_parameters)}}
+        </td>
+    </tr>
 </table>
 {% endif %}
 

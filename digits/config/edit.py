@@ -60,7 +60,7 @@ def print_config(verbose=False):
         row_format += ' | %%-%ds' % width
 
     # print header row
-    print row_format % (('',) + tuple([t for t, f in levels]))
+    print row_format % (('',) + tuple([level[0] for level in levels]))
 
     # print option rows
     for i, row in enumerate(row_data):

@@ -314,6 +314,10 @@ def vis_square(images,
     tiles = padded.reshape( (ny, nx) + padded.shape[1:]).transpose( (0,2,1,3) + tuple(range(4, padded.ndim + 1)))
     tiles = tiles.reshape((ny * tiles.shape[1], nx * tiles.shape[3]) + tiles.shape[4:])
 
+    if tiles.shape[-1] == 1:
+        # grayscale to color
+        tiles = np.dstack([tiles.squeeze()] * 3)
+
     return tiles
 
 def get_color_map(name):

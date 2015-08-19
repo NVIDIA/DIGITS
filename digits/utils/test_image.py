@@ -7,13 +7,14 @@ from nose.tools import assert_raises
 import mock
 import PIL.Image
 import numpy as np
+import os
+import platform
 
 from . import image as _, errors
 
 class TestLoadImage():
 
     def test_bad_path(self):
-        """load_image with bad path"""
         for path in [
                 'some string',
                 '/tmp/not-a-file',
@@ -29,7 +30,6 @@ class TestLoadImage():
                 )
 
     def test_good_file(self):
-        """load_image file"""
         for args in [
                 # created mode, file extension, pixel value, loaded mode (expected)
                 # Grayscale
@@ -54,9 +54,19 @@ class TestLoadImage():
         orig_mode, suffix, pixel, new_mode = args
 
         orig = PIL.Image.new(orig_mode, (10,10), pixel)
-        with tempfile.NamedTemporaryFile(suffix='.' + suffix) as tmp:
-            orig.save(tmp.name)
-            new = _.load_image(tmp.name)
+
+        # temp files cause permission errors so just generate the name
+        tmp = tempfile.mkstemp(suffix='.' + suffix)
+        orig.save(tmp[1])
+        new = _.load_image(tmp[1])
+        try:
+            # sometimes on windows the file is not closed yet
+            # which can cause an exception
+            os.close(tmp[0])
+            os.remove(tmp[1])
+        except:
+            pass
+
         assert new is not None, 'load_image should never return None'
         assert new.mode == new_mode, 'Image mode should be "%s", not "%s\nargs - %s' % (new_mode, new.mode, args)
 
@@ -64,7 +74,6 @@ class TestLoadImage():
     @mock.patch('digits.utils.image.cStringIO')
     @mock.patch('digits.utils.image.requests')
     def test_good_url(self, mock_requests, mock_cStringIO, mock_Image):
-        """load_image with good url"""
         # requests
         response = mock.Mock()
         response.status_code = mock_requests.codes.ok
@@ -84,7 +93,6 @@ class TestLoadImage():
         mock_Image.open.assert_called_with('an object')
 
     def test_corrupted_file(self):
-        """load_image with corrupted file"""
         image = PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8))
 
         # Save image to a JPEG buffer.
@@ -98,15 +106,20 @@ class TestLoadImage():
         corrupted = encoded[:size/2] + encoded[size/2:][::-1]
 
         # Save the corrupted image to a temporary file.
-        f = tempfile.NamedTemporaryFile(delete=False)
+        fname = tempfile.mkstemp(suffix='.bin')
+        f = os.fdopen(fname[0],'wb')
+        fname = fname[1]
+        
         f.write(corrupted)
         f.close()
 
         assert_raises(
                 errors.LoadImageError,
                 _.load_image,
-                f.name,
+                fname,
                 )
+
+        os.remove(fname)
 
 class TestResizeImage():
 
@@ -118,7 +131,6 @@ class TestResizeImage():
         cls.pil_color = PIL.Image.fromarray(cls.np_color)
 
     def test_configs(self):
-        """resize_image"""
         # lots of configs tested here
         for h in [10, 15]:
             for w in [10, 16]:
@@ -142,7 +154,7 @@ class TestResizeImage():
                             yield self.verify_np, (h, w, c, m, t, s)
 
     def verify_pil(self, args):
-        """pass a PIL.Image to resize_image and check the returned dimensions"""
+        # pass a PIL.Image to resize_image and check the returned dimensions
         h, w, c, m, t, s = args
         if t == 'gray':
             i = self.pil_gray
@@ -153,7 +165,7 @@ class TestResizeImage():
         assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
 
     def verify_np(self, args):
-        """pass a numpy.ndarray to resize_image and check the returned dimensions"""
+        # pass a numpy.ndarray to resize_image and check the returned dimensions
         h, w, c, m, t, s = args
         if t == 'gray':
             i = self.np_gray

@@ -96,6 +96,7 @@ class Scheduler:
                 # TODO: break this into CPU cores, memory usage, IO usage, etc.
                 'parse_folder_task_pool': [Resource()],
                 'create_db_task_pool': [Resource(max_value=2)],
+                'analyze_db_task_pool': [Resource(max_value=4)],
                 'gpus': [Resource(identifier=index)
                     for index in gpu_list.split(',')] if gpu_list else [],
                 }
@@ -269,7 +270,7 @@ class Scheduler:
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
-    def running_model_jobs(self):
+    def completed_model_jobs(self):
         """a query utility"""
         return sorted(
                 [j for j in self.jobs if isinstance(j, ModelJob) and not j.status.is_running()],
@@ -352,8 +353,6 @@ class Scheduler:
                                         task.status = Status.WAIT
                                     else:
                                         if self.reserve_resources(task, requested_resources):
-                                            logger.debug('%s task started.' % task.name(),
-                                                    job_id=job.id())
                                             gevent.spawn(self.run_task,
                                                     task, requested_resources)
                             elif task.status == Status.RUN:
