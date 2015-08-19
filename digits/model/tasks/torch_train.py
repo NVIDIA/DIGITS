@@ -445,14 +445,14 @@ class TorchTrainTask(TrainTask):
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
 		'--image=%s' % temp_image_path,
                 '--network=%s' % self.model_file.split(".")[0],
-                '--epoch=%d' % int(snapshot_epoch) if snapshot_epoch else 1,
                 '--networkDirectory=%s' % self.job_dir,
                 '--load=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file)
                 ]
-
+        if snapshot_epoch:
+            args.append('--epoch=%d' % int(snapshot_epoch))
         if constants.TORCH_USE_MEAN_PIXEL:
             args.append('--useMeanPixel=yes')
 
@@ -623,7 +623,6 @@ class TorchTrainTask(TrainTask):
 		'--image=%s' % str(image_file),
                 '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
                 '--network=%s' % self.model_file.split(".")[0],
-                '--epoch=%d' % int(snapshot_epoch) if snapshot_epoch else 1,
                 '--networkDirectory=%s' % self.job_dir,
                 '--load=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
@@ -631,6 +630,8 @@ class TorchTrainTask(TrainTask):
 		'--pythonPrefix=%s' % sys.executable,
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file)
                 ]
+        if snapshot_epoch:
+            args.append('--epoch=%d' % int(snapshot_epoch))
         if constants.TORCH_USE_MEAN_PIXEL:
             args.append('--useMeanPixel=yes')
 
