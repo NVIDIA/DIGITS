@@ -142,7 +142,10 @@ def create_db(input_file, output_file,
                 summary_queue, num_threads,
                 mean_files, **kwargs)
     elif backend == 'hdf5':
-        raise NotImplementedError
+        _create_hdf5(image_count, write_queue, batch_size, output_file,
+                image_width, image_height, image_channels,
+                summary_queue, num_threads,
+                mean_files, **kwargs)
     else:
         raise ValueError('invalid backend')
 
@@ -225,6 +228,83 @@ def _create_lmdb(image_count, write_queue, batch_size, output_file,
         _save_means(image_sum, images_written, mean_files)
 
     db.close()
+
+def _create_hdf5(image_count, write_queue, batch_size, output_file,
+        image_width, image_height, image_channels,
+        summary_queue, num_threads,
+        mean_files      = None,
+        compression     = None,
+        **kwargs):
+    """
+    Create an HDF5 file
+
+    Keyword arguments:
+    compression -- dataset compression format
+    """
+    wait_time = time.time()
+    threads_done = 0
+    images_loaded = 0
+    images_written = 0
+    image_sum = None
+    batch = []
+    compute_mean = bool(mean_files)
+
+    db = h5py.File(output_file, 'w')
+    data_dset = db.create_dataset('data', (0,image_channels,image_height,image_width), maxshape=(None,image_channels,image_height,image_width),
+            chunks=True, compression=compression, dtype='float32')
+    label_dset = db.create_dataset('label', (0,), maxshape=(None,),
+            chunks=True, compression=compression, dtype='float32')
+
+    while (threads_done < num_threads) or not write_queue.empty():
+
+        # Send update every 2 seconds
+        if time.time() - wait_time > 2:
+            logger.debug('Processed %d/%d' % (images_written, image_count))
+            wait_time = time.time()
+
+        processed_something = False
+
+        if not summary_queue.empty():
+            result_count, result_sum = summary_queue.get()
+            images_loaded += result_count
+            # Update total_image_sum
+            if compute_mean and result_count > 0 and result_sum is not None:
+                if image_sum is None:
+                    image_sum = result_sum
+                else:
+                    image_sum += result_sum
+            threads_done += 1
+            processed_something = True
+
+        if not write_queue.empty():
+            batch.append(write_queue.get())
+
+            if len(batch) == batch_size:
+                _write_batch_hdf5(batch, data_dset, label_dset)
+                images_written += len(batch)
+                batch = []
+            processed_something = True
+
+        if not processed_something:
+            time.sleep(0.2)
+
+    if len(batch) > 0:
+        _write_batch_hdf5(batch, data_dset, label_dset)
+        images_written += len(batch)
+
+    if images_loaded == 0:
+        raise LoadError('no images loaded from input file')
+    logger.debug('%s images loaded' % images_loaded)
+
+    if images_written == 0:
+        raise WriteError('no images written to database')
+    logger.info('%s images written to database' % images_written)
+
+    if compute_mean:
+        _save_means(image_sum, images_written, mean_files)
+
+    db.close()
+
 
 def _fill_load_queue(filename, queue, shuffle):
     """
@@ -420,6 +500,29 @@ def _write_batch_lmdb(db, batch, image_count):
         # try again
         _write_batch_lmdb(db, batch, image_count)
 
+def _write_batch_hdf5(batch, data_dset, label_dset):
+    """
+    Write a batch to an HDF5 database
+    """
+    if batch[0][0].ndim == 2:
+        data_batch = np.array([i[0][...,np.newaxis] for i in batch])
+    else:
+        data_batch = np.array([i[0] for i in batch])
+    # Transpose to (channels, height, width)
+    data_batch = data_batch.transpose((0,3,1,2))
+    label_batch = np.array([i[1] for i in batch])
+
+    # resize dataset
+    if data_dset.len() == 0:
+        data_dset.resize(data_batch.shape)
+        label_dset.resize(label_batch.shape)
+    else:
+        data_dset.resize(data_dset.len()+len(batch),axis=0)
+        label_dset.resize(label_dset.len()+len(batch),axis=0)
+
+    data_dset[-len(batch):] = data_batch
+    label_dset[-len(batch):] = label_batch
+
 def _save_means(image_sum, image_count, mean_files):
     """
     Save mean[s] to file
@@ -522,7 +625,7 @@ if __name__ == '__main__':
                 image_folder    = args['image_folder'],
                 shuffle         = args['shuffle'],
                 mean_files      = args['mean_file'],
-                encoding        = args['compression'],
+                encoding        = args['encoding'],
                 compression     = args['compression'],
                 lmdb_map_size   = args['lmdb_map_size']
                 )

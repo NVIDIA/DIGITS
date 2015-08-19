@@ -226,3 +226,6 @@ class BaseCreationTest(BaseTest):
 class TestLmdbCreation(BaseCreationTest):
     BACKEND = 'lmdb'
 
+class TestHdf5Creation(BaseCreationTest):
+    BACKEND = 'hdf5'
+
