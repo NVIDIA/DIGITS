@@ -7,6 +7,7 @@ from wtforms import validators
 
 from ..forms import ImageDatasetForm
 from digits.utils.forms import validate_required_iff
+from digits import utils
 
 class GenericImageDatasetForm(ImageDatasetForm):
     """
@@ -62,9 +63,10 @@ class GenericImageDatasetForm(ImageDatasetForm):
                 ]
             )
 
-    prebuilt_mean_file = wtforms.StringField('Mean Image',
+    prebuilt_mean_file = utils.forms.StringField('Mean Image',
             validators=[
                 validate_file_path,
-                ]
+                ],
+            tooltip = "Path to a .binaryproto file on the server"
             )
 

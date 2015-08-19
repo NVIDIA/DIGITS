@@ -65,14 +65,8 @@ New Image Dataset
                         <div class="col-sm-6 col-sm-offset-3">
                             <div class="form-group{{ ' has-error' if form.prebuilt_mean_file.errors else '' }}">
                                 {{ form.prebuilt_mean_file.label }}
-                                <div class="input-group">
-                                    {{ form.prebuilt_mean_file(class='form-control autocomplete_path') }}
-                                    <span name="prebuilt_mean_file_explanation"
-                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                        data-container="body"
-                                        title="Path to a .binaryproto file on the server"
-                                        ></span>
-                                </div>
+                                {{ form.prebuilt_mean_file.tooltip }}
+                                {{ form.prebuilt_mean_file(class='form-control autocomplete_path') }}
                             </div>
                         </div>
                     </div>

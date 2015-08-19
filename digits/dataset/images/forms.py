@@ -5,6 +5,7 @@ from wtforms import validators
 
 from ..forms import DatasetForm
 from job import ImageDatasetJob
+from digits import utils
 
 class ImageDatasetForm(DatasetForm):
     """
@@ -12,20 +13,22 @@ class ImageDatasetForm(DatasetForm):
     (abstract class)
     """
 
-    encoding = wtforms.SelectField('Image Encoding',
+    encoding = utils.forms.SelectField('Image Encoding',
             default = 'png',
             choices = [
                 ('none', 'None'),
                 ('png', 'PNG (lossless)'),
                 ('jpg', 'JPEG (lossy, 90% quality)'),
                 ],
+            tooltip = "Using either of these compression formats can save disk space, but can also require marginally more time for training."
             )
 
     ### Image resize
 
-    resize_channels = wtforms.SelectField(u'Image Type',
+    resize_channels = utils.forms.SelectField(u'Image Type',
             default='3',
-            choices=[('1', 'Grayscale'), ('3', 'Color')]
+            choices=[('1', 'Grayscale'), ('3', 'Color')],
+            tooltip = "Color is 3-channel RGB. Grayscale is single channel monochrome."
             )
     resize_width = wtforms.IntegerField(u'Resize Width',
             default=256,
@@ -35,7 +38,8 @@ class ImageDatasetForm(DatasetForm):
             default=256,
             validators=[validators.DataRequired()]
             )
-    resize_mode = wtforms.SelectField(u'Resize Transformation',
+    resize_mode = utils.forms.SelectField(u'Resize Transformation',
             default='squash',
-            choices=ImageDatasetJob.resize_mode_choices()
+            choices=ImageDatasetJob.resize_mode_choices(),
+            tooltip = "Options for dealing with aspect ratio changes during resize. See examples below."
             )
