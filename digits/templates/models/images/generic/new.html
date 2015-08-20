@@ -82,6 +82,7 @@ $("#dataset").change(function() {
                 <div class="form-group{{' has-error' if form.train_epochs.errors}}">
                     {{form.train_epochs.label}}
                     {{form.train_epochs.tooltip}}
+                    {{form.train_epochs(class='form-control')}}
                 </div>
                 <div class="form-group{{' has-error' if form.snapshot_interval.errors}}">
                     {{form.snapshot_interval.label}}
