@@ -430,17 +430,17 @@ class CaffeTrainTask(TrainTask):
             elif layer.type == 'Data':
                 for rule in layer.include:
                     if rule.phase == caffe_pb2.TRAIN:
-                        if len(layer.top) == 1 and layer.top[0] == 'data':
+                        if 'data' in layer.top:
                             assert train_image_data_layer is None, 'cannot specify two train image data layers'
                             train_image_data_layer = layer
-                        elif len(layer.top) == 1 and layer.top[0] == 'label':
+                        elif 'label' in layer.top:
                             assert train_label_data_layer is None, 'cannot specify two train label data layers'
                             train_label_data_layer = layer
                     elif rule.phase == caffe_pb2.TEST:
-                        if len(layer.top) == 1 and layer.top[0] == 'data':
+                        if 'data' in layer.top:
                             assert val_image_data_layer is None, 'cannot specify two val image data layers'
                             val_image_data_layer = layer
-                        elif len(layer.top) == 1 and layer.top[0] == 'label':
+                        elif 'label' in layer.top:
                             assert val_label_data_layer is None, 'cannot specify two val label data layers'
                             val_label_data_layer = layer
             elif 'loss' in layer.type.lower():
@@ -607,8 +607,9 @@ class CaffeTrainTask(TrainTask):
             layer.CopyFrom(orig_layer)
         layer.type = 'Data'
         layer.name = name
-        layer.ClearField('top')
-        layer.top.append(top)
+        if top not in layer.top:
+            layer.ClearField('top')
+            layer.top.append(top)
         layer.ClearField('include')
         layer.include.add(phase=phase)
 
