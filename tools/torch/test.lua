@@ -9,6 +9,7 @@ require 'cutorch'
 require 'image'
 require 'cudnn'
 require 'lfs'
+require 'hdf5'
 
 package.path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
 
@@ -29,8 +30,9 @@ opt = lapp[[
 -i,--image              (string)                 the value to this parameter depends on "testMany" parameter. If testMany is 'no' then this parameter specifies single image that needs to be classified or else this parameter specifies the location of file which contains paths of multiple images that needs to be classified. Provide full path, if the image (or) images file is in different directory.
 -s,--mean               (string)                 train images mean (saved as .jpg file)
 -y,--ccn2               (default no)             should be 'yes' if ccn2 is used in network. Default : false
+-s,--save               (default .)              save directory
 
---testMany		(default no)             If this option is 'yes', then "image" input parameter should specify the file with all the images to be tested
+--testMany              (default no)             If this option is 'yes', then "image" input parameter should specify the file with all the images to be tested
 --testUntil             (default -1)             specifies how many images in the "image" file to be tested. This parameter is only valid when testMany is set to "yes"
 --crop                  (default no)             If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter
 --croplen               (default 0)              crop length. This is required parameter when crop option is provided
@@ -40,13 +42,18 @@ opt = lapp[[
 --snapshotPrefix        (default '')             prefix of the weights/snapshots
 --networkDirectory      (default '')             directory in which network exists
 --pythonPrefix        	(default 'python')       python version
---allPredictions        (default no)       	 If 'yes', displays all the predictions of an image instead of formatted topN results
+--allPredictions        (default no)       	     If 'yes', displays all the predictions of an image instead of formatted topN results
+--visualization         (default no)             Create HDF5 database with layers weights and activations. Depends on --testMany~=yes
 ]]
 
 
 torch.setnumthreads(opt.threads)
 cutorch.setDevice(opt.devid)
 
+if opt.testMany=='yes' and opt.visualization=='yes' then
+    logmessage.display(1,'testMany==yes => disabling visualizations')
+    opt.visualization = 'no'
+end
 
 local snapshot_prefix = ''
 
@@ -261,5 +268,27 @@ else
   end
   counter = 1      -- here counter is set, so that predictBatch() method displays only the predictions of first image
   predictBatch(inputs)
+  if opt.visualization=='yes' then
+    local filename = paths.concat(opt.save, 'vis.h5')
+    logmessage.display(0,'Saving visualization to ' .. filename)
+    local vis_db = hdf5.open(filename, 'w')
+    for i,layer in ipairs(model:listModules()) do
+      local activations = layer.output
+      local weights = layer.weight
+      name = tostring(layer)
+      -- convert 'name' string to Tensor as torch.hdf5 only
+      -- accepts Tensor objects
+      tname = torch.CharTensor(string.len(name))
+      for j=1,string.len(name) do
+        tname[j] = string.byte(name,j)
+      end
+      vis_db:write('/layers/'..i..'/name', tname )
+      vis_db:write('/layers/'..i..'/activations', activations:float())
+      if weights ~= nil then
+        vis_db:write('/layers/'..i..'/weights', weights:float())
+      end
+    end
+    vis_db:close()
+  end
 end
 

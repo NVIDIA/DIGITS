@@ -12,6 +12,7 @@ To use Torch in DIGITS, you need to install a few extra dependencies.
     % luarocks install inn
     % luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
     % luarocks install ccn2
+    % luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
 
 ## LMDB and lightningmdb
 

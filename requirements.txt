@@ -11,3 +11,4 @@ gunicorn==17.5
 lmdb>=0.87
 pydot2
 Flask-SocketIO
+h5py

@@ -10,6 +10,8 @@ import sys
 
 import numpy as np
 
+import h5py
+
 import tempfile
 import PIL.Image
 import digits
@@ -443,7 +445,7 @@ class TorchTrainTask(TrainTask):
 
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
-		'--image=%s' % temp_image_path,
+		        '--image=%s' % temp_image_path,
                 '--network=%s' % self.model_file.split(".")[0],
                 '--networkDirectory=%s' % self.job_dir,
                 '--load=%s' % self.job_dir,
@@ -465,16 +467,20 @@ class TorchTrainTask(TrainTask):
         else:
             args.append('--subtractMean=no')
 
+        if layers=='all':
+            args.append('--visualization=yes')
+            args.append('--save=%s' % self.job_dir)
+
         # Convert them all to strings
         args = [str(x) for x in args]
-
-        #print args
 
         regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
         self.logger.info('%s classify one task started.' % self.framework_name())
 
         unrecognized_output = []
-	predictions = []
+        predictions = []
+        self.visualization_file = None
+
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -526,8 +532,161 @@ class TorchTrainTask(TrainTask):
         else:
             self.logger.info('%s classify one task completed.' % self.framework_name())
 
-        #TODO: implement visualization
-	return (predictions,None)
+
+        visualizations = []
+
+        if layers=='all' and self.visualization_file:
+            vis_db = h5py.File(self.visualization_file, 'r')
+            # the HDF5 database is organized as follows:
+            # <root>
+            # |- layers
+            #    |- 1
+            #    |  |- name
+            #    |  |- activations
+            #    |  |- weights
+            #    |- 2
+            for layer_id,layer in vis_db['layers'].items():
+                layer_desc = layer['name'][...].tostring()
+                if 'Sequential' in layer_desc or 'Parallel' in layer_desc:
+                    # ignore containers
+                    continue
+                idx = int(layer_id)
+                # activations
+                data = np.array(layer['activations'][...][0])
+                vis = self.get_layer_vis_square(data)
+                mean, std, hist = self.get_layer_statistics(data)
+                visualizations.append(
+                                           {
+                                               'id':         idx,
+                                               'name':       layer_desc,
+                                               'type':       'Activations',
+                                               'shape':      data.shape,
+                                               'mean':       mean,
+                                               'stddev':     std,
+                                               'histogram':  hist,
+                                               'image_html': utils.image.embed_image_html(vis),
+                                               }
+                                           )
+                # weights
+                if 'weights' in layer:
+                    data = np.array(layer['weights'][...])
+                    if 'Linear' not in layer_desc:
+                        vis = self.get_layer_vis_square(data)
+                    else:
+                        # Linear (inner product) layers have too many weights
+                        # to display
+                        vis = None
+                    mean, std, hist = self.get_layer_statistics(data)
+                    visualizations.append(
+                                           {
+                                               'id':         idx,
+                                               'name':       layer_desc,
+                                               'type':       'Weights',
+                                               'shape':      data.shape,
+                                               'mean':       mean,
+                                               'stddev':     std,
+                                               'histogram':  hist,
+                                               'image_html': utils.image.embed_image_html(vis),
+                                               }
+                                           )
+            # sort by layer ID
+            visualizations = sorted(visualizations,key=lambda x:x['id'])
+        return (predictions,visualizations)
+
+    def get_layer_vis_square(self, data,
+            allow_heatmap = True,
+            normalize = True,
+            max_width = 1200,
+            ):
+        """
+        Returns a vis_square for the given layer data
+
+        Arguments:
+        data -- a np.ndarray
+
+        Keyword arguments:
+        allow_heatmap -- if True, convert single channel images to heatmaps
+        normalize -- whether to normalize the data when visualizing
+        max_width -- maximum width for the vis_square
+        """
+        if data.ndim == 1:
+            # interpret as 1x1 grayscale images
+            # (N, 1, 1)
+            data = data[:, np.newaxis, np.newaxis]
+        elif data.ndim == 2:
+            # interpret as 1x1 grayscale images
+            # (N, 1, 1)
+            data = data.reshape((data.shape[0]*data.shape[1], 1, 1))
+        elif data.ndim == 3:
+            if data.shape[0] == 3:
+                # interpret as a color image
+                # (1, H, W,3)
+                data = data[[2,1,0],...] # BGR to RGB (see issue #59)
+                data = data.transpose(1,2,0)
+                data = data[np.newaxis,...]
+            else:
+                # interpret as grayscale images
+                # (N, H, W)
+                pass
+        elif data.ndim == 4:
+            if data.shape[0] == 3:
+                # interpret as HxW color images
+                # (N, H, W, 3)
+                data = data.transpose(1,2,3,0)
+                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
+            elif data.shape[1] == 3:
+                # interpret as HxW color images
+                # (N, H, W, 3)
+                data = data.transpose(0,2,3,1)
+                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
+            else:
+                # interpret as HxW grayscale images
+                # (N, H, W)
+                data = data.reshape((data.shape[0]*data.shape[1], data.shape[2], data.shape[3]))
+        else:
+            raise RuntimeError('unrecognized data shape: %s' % (data.shape,))
+
+        # chop off data so that it will fit within max_width
+        padsize = 0
+        width = data.shape[2]
+        if width > max_width:
+            data = data[:1,:max_width,:max_width]
+        else:
+            if width > 1:
+                padsize = 1
+                width += 1
+            n = max(max_width/width,1)
+            n *= n
+            data = data[:n]
+
+        if not allow_heatmap and data.ndim == 3:
+            data = data[...,np.newaxis]
+
+        return utils.image.vis_square(data,
+                padsize     = padsize,
+                normalize   = normalize,
+                )
+
+
+    def get_layer_statistics(self, data):
+        """
+        Returns statistics for the given layer data:
+            (mean, standard deviation, histogram)
+                histogram -- [y, x, ticks]
+
+        Arguments:
+        data -- a np.ndarray
+        """
+        # XXX These calculations can be super slow
+        mean = np.mean(data)
+        std = np.std(data)
+        y, x = np.histogram(data, bins=20)
+        y = list(y)
+        ticks = x[[0,len(x)/2,-1]]
+        x = [(x[i]+x[i+1])/2.0 for i in xrange(len(x)-1)]
+        ticks = list(ticks)
+        return (mean, std, [y, x, ticks])
+
 
     def after_test_run(self, temp_image_path):
         try:
@@ -565,6 +724,12 @@ class TorchTrainTask(TrainTask):
         if match:
             values = match.group(1).strip().split(" ")
 	    predictions.append(map(float, values))
+            return True
+
+        # path to visualization file
+        match = re.match(r'Saving visualization to (.*)', message)
+        if match:
+            self.visualization_file = match.group(1).strip()
             return True
 
         # displaying info and warn messages as we aren't maintaining seperate log file for model testing
