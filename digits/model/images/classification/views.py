@@ -352,6 +352,7 @@ def image_classification_model_classify_one():
                 image_src       = utils.image.embed_image_html(image),
                 predictions     = predictions,
                 visualizations  = visualizations,
+                total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
                 )
 
 @app.route(NAMESPACE + '/classify_many.json', methods=['POST'])

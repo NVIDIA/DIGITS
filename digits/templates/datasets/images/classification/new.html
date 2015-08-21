@@ -29,57 +29,39 @@ New Image Classification Dataset
             <div class="row">
                 <div class="form-group{{ ' has-error' if form.resize_channels.errors else '' }}">
                     {{ form.resize_channels.label }}
-                    <div class="input-group">
-                        {{ form.resize_channels(class='form-control') }}
-                        <span name="resize_channels_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="Color is 3-channel RGB. Grayscale is single channel monochrome."
-                            ></span>
-                    </div>
+                    {{ form.resize_channels.tooltip }}
+                    {{ form.resize_channels(class='form-control') }}
                 </div>
             </div>
             <div class="row">
                 <div class="form-group{{ ' has-error' if form.encoding.errors else '' }}">
                     <div class="form-group{{' has-error' if form.encoding.errors}}">
                         {{form.encoding.label}}
-                        <div class="input-group">
-                            {{form.encoding(class='form-control')}}
-                            <span name="encoding_explanation"
-                                class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                data-container="body"
-                                title="Using either of these compression formats can save disk space, but can also require marginally more time for training."
-                                ></span>
-                        </div>
+                        {{form.encoding.tooltip}}
+                        {{form.encoding(class='form-control')}}
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="form-group{{ ' has-error' if form.resize_width.errors or form.resize_height.errors else '' }}">
                     <label>Image size</label>
+                    <span name="resize_dims_explanation"
+                          class="explanation-tooltip glyphicon glyphicon-question-sign"
+                          data-container="body"
+                          title="Input images will be resized to fit."
+                          ></span>
                     <div class="input-group">
                         {{ form.resize_width(size=4, placeholder='width', class='form-control') }}
                         <span class="input-group-addon">x</span>
                         {{ form.resize_height(size=4, placeholder='height', class='form-control') }}
-                        <span name="resize_dims_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="Input images will be resized to fit."
-                            ></span>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="form-group{{ ' has-error' if form.resize_mode.errors else '' }}">
                     {{ form.resize_mode.label }}
-                    <div class="input-group">
-                        {{ form.resize_mode(class='form-control') }}
-                        <span name="resize_mode_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="Options for dealing with aspect ratio changes during resize. See examples below."
-                            ></span>
-                    </div>
+                    {{ form.resize_mode.tooltip }}
+                    {{ form.resize_mode(class='form-control') }}
                 </div>
             </div>
             <div class="row">
@@ -126,14 +108,8 @@ function showResizeExample()
                 <div class="tab-pane" id="db-folder">
                     <div class="form-group{{ ' has-error' if form.folder_train.errors else '' }}">
                         {{ form.folder_train.label }}
-                        <div class="input-group">
-                            {{ form.folder_train(class='form-control autocomplete_path', placeholder='folder or URL')}}
-                            <span name="folder_train_explanation"
-                                class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                data-container="body"
-                                title="Indicate a folder which holds subfolders full of images. Each subfolder should be named according to the desired label for the images that it holds. Can also be a URL for an apache/nginx auto-indexed folder."
-                                ></span>
-                        </div>
+                        {{ form.folder_train.tooltip }}
+                        {{ form.folder_train(class='form-control autocomplete_path', placeholder='folder or URL')}}
                     </div>
                     <div class="row">
                         <div class="col-sm-10 col-sm-offset-1">
@@ -144,49 +120,25 @@ function showResizeExample()
                     <div class="row">
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_min_per_class.errors else '' }}">
                             {{ form.folder_train_min_per_class.label }}
-                            <div class="input-group">
-                                {{ form.folder_train_min_per_class(class='form-control') }}
-                                <span name="folder_train_min_per_class_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
-                                    ></span>
-                            </div>
+                            {{ form.folder_train_min_per_class.tooltip }}
+                            {{ form.folder_train_min_per_class(class='form-control') }}
                         </div>
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_max_per_class.errors else '' }}">
                             {{ form.folder_train_max_per_class.label }}
-                            <div class="input-group">
-                                {{ form.folder_train_max_per_class(class='form-control') }}
-                                <span name="folder_train_max_per_class_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
-                                    ></span>
-                            </div>
+                            {{ form.folder_train_max_per_class.tooltip }}
+                            {{ form.folder_train_max_per_class(class='form-control') }}
                         </div>
                     </div>
                     <div class="row">
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_pct_val.errors else '' }}">
                             {{ form.folder_pct_val.label }}
-                            <div class="input-group">
-                                {{ form.folder_pct_val(class='form-control') }}
-                                <span name="folder_pct_val_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to set apart a certain percentage of images from the training images for the validation set."
-                                    ></span>
-                            </div>
+                            {{ form.folder_pct_val.tooltip }}
+                            {{ form.folder_pct_val(class='form-control') }}
                         </div>
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_pct_test.errors else '' }}">
                             {{ form.folder_pct_test.label }}
-                            <div class="input-group">
-                                {{ form.folder_pct_test(class='form-control') }}
-                                <span name="folder_pct_test_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to set apart a certain percentage of images from the training images for the test set."
-                                    ></span>
-                            </div>
+                            {{ form.folder_pct_test.tooltip }}
+                            {{ form.folder_pct_test(class='form-control') }}
                         </div>
                     </div>
                     <br>
@@ -199,25 +151,13 @@ function showResizeExample()
                     <div class="row cl-separate-val-folder">
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_min_per_class.errors else '' }}">
                             {{ form.folder_val_min_per_class.label }}
-                            <div class="input-group">
-                                {{ form.folder_val_min_per_class(class='form-control') }}
-                                <span name="folder_val_min_per_class_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
-                                    ></span>
-                            </div>
+                            {{ form.folder_val_min_per_class.tooltip }}
+                            {{ form.folder_val_min_per_class(class='form-control') }}
                         </div>
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_max_per_class.errors else '' }}">
                             {{ form.folder_val_max_per_class.label }}
-                            <div class="input-group">
-                                {{ form.folder_val_max_per_class(class='form-control') }}
-                                <span name="folder_val_max_per_class_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
-                                    ></span>
-                            </div>
+                            {{ form.folder_val_max_per_class.tooltip }}
+                            {{ form.folder_val_max_per_class(class='form-control') }}
                         </div>
                     </div>
                     <script>
@@ -248,25 +188,13 @@ hasValFolderChanged();
                     <div style="display:none;" class="row cl-separate-test-folder">
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_min_per_class.errors else '' }}">
                             {{ form.folder_test_min_per_class.label }}
-                            <div class="input-group">
-                                {{ form.folder_test_min_per_class(class='form-control') }}
-                                <span name="folder_test_min_per_class_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to specify a minimum number of samples per class. If a class has fewer samples than the specified amount it will be ignored. Leave blank to ignore this feature."
-                                    ></span>
-                            </div>
+                            {{ form.folder_test_min_per_class.tooltip }}
+                            {{ form.folder_test_min_per_class(class='form-control') }}
                         </div>
                         <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_max_per_class.errors else '' }}">
                             {{ form.folder_test_max_per_class.label }}
-                            <div class="input-group">
-                                {{ form.folder_test_max_per_class(class='form-control') }}
-                                <span name="folder_test_max_per_class_explanation"
-                                    class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                    data-container="body"
-                                    title="You can choose to specify a maximum number of samples per class. If a class has more samples than the specified amount extra samples will be ignored. Leave blank to ignore this feature."
-                                    ></span>
-                            </div>
+                            {{ form.folder_test_max_per_class.tooltip }}
+                            {{ form.folder_test_max_per_class(class='form-control') }}
                         </div>
                     </div>
                     <script>
@@ -374,36 +302,18 @@ hasTestFolderChanged();
                         <div class="col-sm-6 col-sm-offset-1">
                             <div class="form-group{{ ' has-error' if form.textfile_shuffle.errors else '' }}">
                                 {{ form.textfile_shuffle.label }}
-                                <div class="input-group">
-                                    {{ form.textfile_shuffle(class='form-control') }}
-                                    <span name="textfile_shuffle_explanation"
-                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                        data-container="body"
-                                        title="Shuffle the list[s] of images before creating the database."
-                                        ></span>
-                                </div>
+                                {{ form.textfile_shuffle.tooltip }}
+                                {{ form.textfile_shuffle(class='form-control') }}
                             </div>
                             <div class="form-group{{ ' has-error' if form.textfile_labels_file.errors else '' }} cl-upload-files">
                                 {{ form.textfile_labels_file.label }}
-                                <div class="input-group">
-                                    {{ form.textfile_labels_file(class='form-control') }}
-                                    <span name="textfile_labels_file_explanation"
-                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                        data-container="body"
-                                        title="The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
-                                        ></span>
-                                </div>
+                                {{ form.textfile_labels_file.tooltip }}
+                                {{ form.textfile_labels_file(class='form-control') }}
                             </div>
                             <div class="form-group{{ ' has-error' if form.textfile_local_labels_file.errors else '' }} cl-local-files">
                                 {{ form.textfile_local_labels_file.label }}
-                                <div class="input-group">
-                                    {{ form.textfile_local_labels_file(class='form-control autocomplete_path',placeholder='enter path') }}
-                                    <span name="textfile_labels_file_explanation"
-                                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                        data-container="body"
-                                        title="The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
-                                        ></span>
-                                </div>
+                                {{ form.textfile_local_labels_file.tooltip }}
+                                {{ form.textfile_local_labels_file(class='form-control autocomplete_path',placeholder='enter path') }}
                             </div>
                         </div>
                     </div>

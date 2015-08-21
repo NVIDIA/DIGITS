@@ -1,0 +1,23 @@
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+
+<h1>Specifying a custom network</h1>
+
+<p>
+    You should enter a train_val network here. Some cleanup is done for you automatically:
+</p>
+
+<ul>
+    <li>Data layers for the LMDBs in your dataset are created for you automatically</li>
+    <li>If you provide a Data layer here and leave the <code>data_param.source</code> blank, it will be filled in for you with the appropriate path</li>
+</ul>
+
+<p>
+    The deploy network will be created for you automatically. Once caffe implements their "all-in-one" nets feature, you will be able to specify which layers to include in the deploy file. Until then, these things are done automatically:
+</p>
+
+<ul>
+    <li>All loss layers and accuracy layers are removed from the deploy file</li>
+    <li>Layers with names starting with <code>train_</code> are <strong>not included</strong> in the deploy file</li>
+    <li>Layers with names starting with <code>deploy_</code> are <strong>only included</strong> in the deploy file</li>
+</ul>

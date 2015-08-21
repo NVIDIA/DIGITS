@@ -556,17 +556,19 @@ class TorchTrainTask(TrainTask):
                 vis = self.get_layer_vis_square(data)
                 mean, std, hist = self.get_layer_statistics(data)
                 visualizations.append(
-                                           {
-                                               'id':         idx,
-                                               'name':       layer_desc,
-                                               'type':       'Activations',
-                                               'shape':      data.shape,
-                                               'mean':       mean,
-                                               'stddev':     std,
-                                               'histogram':  hist,
-                                               'image_html': utils.image.embed_image_html(vis),
-                                               }
-                                           )
+                                         {
+                                             'id':         idx,
+                                             'name':       layer_desc,
+                                             'vis_type':   'Activations',
+                                             'image_html': utils.image.embed_image_html(vis),
+                                             'data_stats': {
+                                                              'shape':      data.shape,
+                                                              'mean':       mean,
+                                                              'stddev':     std,
+                                                              'histogram':  hist,
+                                             }
+                                         }
+                                     )
                 # weights
                 if 'weights' in layer:
                     data = np.array(layer['weights'][...])
@@ -579,16 +581,19 @@ class TorchTrainTask(TrainTask):
                     mean, std, hist = self.get_layer_statistics(data)
                     visualizations.append(
                                            {
-                                               'id':         idx,
-                                               'name':       layer_desc,
-                                               'type':       'Weights',
-                                               'shape':      data.shape,
-                                               'mean':       mean,
-                                               'stddev':     std,
-                                               'histogram':  hist,
-                                               'image_html': utils.image.embed_image_html(vis),
+                                               'id':          idx,
+                                               'name':        layer_desc,
+                                               'vis_type':    'Weights',
+                                               'image_html':  utils.image.embed_image_html(vis),
+                                               'param_count': 0,
+                                               'data_stats': {
+                                                                 'shape':      data.shape,
+                                                                 'mean':       mean,
+                                                                 'stddev':     std,
+                                                                 'histogram':  hist,
                                                }
-                                           )
+                                           }
+                                         )
             # sort by layer ID
             visualizations = sorted(visualizations,key=lambda x:x['id'])
         return (predictions,visualizations)

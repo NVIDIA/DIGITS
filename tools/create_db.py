@@ -325,7 +325,7 @@ class DbCreator(object):
                     images_added += 1
             except Exception as e:
                 # This could be a ton of warnings
-                logger.warning('DbCreator.read_thread caught %s: %s' % (type(e).__name__, e) )
+                logger.warning('[%s] DbCreator.read_thread caught %s: %s' % (path, type(e).__name__, e) )
                 # TODO: count number of errors and abort if too many encountered
 
         self.read_thread_results.put( (images_added, image_sum) )

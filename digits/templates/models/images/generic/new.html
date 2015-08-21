@@ -28,11 +28,7 @@ New Image Model
             <div class="well">
                 <div class="form-group{{' has-error' if form.dataset.errors}}">
                     {{form.dataset.label}}
-                    <span name="dataset_explanation"
-                        class="explanation-tooltip glyphicon glyphicon-question-sign"
-                        data-container="body"
-                        title="Choose the dataset to use for this model."
-                        ></span>
+                    {{form.dataset.tooltip}}
                     {{form.dataset(class='form-control', size=5)}}
                 </div>
             </div>
@@ -62,25 +58,13 @@ $("#dataset").change(function() {
                 <h4>Data Transformations</h4>
                 <div class="form-group{{' has-error' if form.crop_size.errors}}">
                     {{form.crop_size.label}}
-                    <div class="input-group">
-                        {{form.crop_size(class='form-control', placeholder='none')}}
-                        <span name="crop_size_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="If specified, during training a random square crop will be taken from the input image before using as input for the network."
-                            ></span>
-                    </div>
+                    {{form.crop_size.tooltip}}
+                    {{form.crop_size(class='form-control', placeholder='none')}}
                 </div>
                 <div class="form-group{{' has-error' if form.use_mean.errors}}">
                     {{form.use_mean.label}}
-                    <div class="input-group">
-                        {{form.use_mean(class='form-control')}}
-                        <span name="use_mean_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="Subtract the mean file for this dataset from each image."
-                            ></span>
-                    </div>
+                    {{form.use_mean.tooltip}}
+                    {{form.use_mean(class='form-control')}}
                 </div>
             </div>
         </div>
@@ -97,81 +81,39 @@ $("#dataset").change(function() {
 
                 <div class="form-group{{' has-error' if form.train_epochs.errors}}">
                     {{form.train_epochs.label}}
-                    <div class="input-group">
-                        {{form.train_epochs(class='form-control')}}
-                        <span name="train_epochs_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="How many passes through the training data?"
-                            ></span>
-                    </div>
+                    {{form.train_epochs.tooltip}}
+                    {{form.train_epochs(class='form-control')}}
                 </div>
                 <div class="form-group{{' has-error' if form.snapshot_interval.errors}}">
                     {{form.snapshot_interval.label}}
-                    <div class="input-group">
-                        {{form.snapshot_interval(class='form-control')}}
-                        <span name="snapshot_interval_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="How many epochs of training between taking a snapshot?"
-                            ></span>
-                    </div>
+                    {{form.snapshot_interval.tooltip}}
+                    {{form.snapshot_interval(class='form-control')}}
                 </div>
                 <div class="form-group{{' has-error' if form.val_interval.errors}}">
                     {{form.val_interval.label}}
-                    <div class="input-group">
-                        {{form.val_interval(class='form-control')}}
-                        <span name="val_interval_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="How many epochs of training between running through one pass of the validation data?"
-                            ></span>
-                    </div>
+                    {{form.val_interval.tooltip}}
+                    {{form.val_interval(class='form-control')}}
                 </div>
                 {# TODO: neat progress bar #}
                 <div class="form-group{{' has-error' if form.random_seed.errors}}">
                     {{form.random_seed.label}}
-                    <div class="input-group">
-                        {{form.random_seed(class='form-control', placeholder='[none]')}}
-                        <span name="random_seed_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="If you provide a random seed, then back-to-back runs with the same model and dataset should give identical results."
-                            ></span>
-                    </div>
+                    {{form.random_seed.tooltip}}
+                    {{form.random_seed(class='form-control', placeholder='[none]')}}
                 </div>
                 <div class="form-group{{' has-error' if form.batch_size.errors}}">
                     {{form.batch_size.label}}
-                    <div class="input-group">
-                        {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
-                        <span name="batch_size_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="How many images to process at once. If blank, values are used from the network definition."
-                            ></span>
-                    </div>
+                    {{form.batch_size.tooltip}}
+                    {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
                 </div>
                 <div class="form-group{{' has-error' if form.solver_type.errors}}">
                     {{form.solver_type.label}}
-                    <div class="input-group">
-                        {{form.solver_type(class='form-control')}}
-                        <span name="solver_type_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="What type of solver will be used??"
-                            ></span>
-                    </div>
+                    {{form.solver_type.tooltip}}
+                    {{form.solver_type(class='form-control')}}
                 </div>
                 <div class="form-group{{' has-error' if form.learning_rate.errors}}">
                     {{form.learning_rate.label}}
-                    <div class="input-group">
-                        {{form.learning_rate(class='form-control learning-rate-option')}}
-                        <span name="learning_rate_explanation"
-                            class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="Affects how quickly the network learns. If you are getting NaN for your loss, you probably need to lower this value."
-                            ></span>
-                    </div>
+                    {{form.learning_rate.tooltip}}
+                    {{form.learning_rate(class='form-control learning-rate-option')}}
                 </div>
 
                 <p>
@@ -504,31 +446,7 @@ function visualizeNetwork() {
                     </script>
                     <div class="form-group{{' has-error' if form.caffe_custom_network.errors}}">
                         {{form.caffe_custom_network.label}}
-                        <div id="custom_network_explanation" style="display:none;">
-                            <h1>Specifying a custom network</h1>
-                            <p>
-                            You should enter a train_val network here. Some cleanup is done for you automatically:
-                            <ul>
-                                <li>
-                                The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
-                                </li>
-                                <li>
-                                Any <b>Accuracy</b> layers with <i>top_k</i> &gt;= num_labels is removed automatically.
-                                </li>
-                            </ul>
-                            </p>
-                            The deploy network will be created for you automatically. Once caffe implements their "all-in-one" nets feature, you will be able to specify which layers to include in the deploy file. Until then, these things are done automatically:
-                            <ul>
-                                <li>
-                                The last <b>SoftmaxWithLoss</b> layer is replaced with a <b>Softmax</b> layer.
-                                </li>
-                                <li>
-                                All other loss layers and accuracy layers are removed.
-                                </li>
-                            </ul>
-                            </p>
-                        </div>
-                        <a href=# onClick="bootbox.alert($('#custom_network_explanation').html()); return false;"><span class="glyphicon glyphicon-question-sign"></span></a>
+                        {{form.caffe_custom_network.explanation(file='/models/images/generic/custom_network_explanation.html')}}
                         <div class="pull-right">
                             <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
                         </div>
@@ -536,15 +454,8 @@ function visualizeNetwork() {
                     </div>
                     <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
                         {{form.custom_network_snapshot.label}}
-                        <div class="input-group">
-                            {{form.custom_network_snapshot(class='form-control autocomplete_path')}}
-                            <span name="pretrained_model_explanation"
-                                class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                                data-container="body"
-                                title="Path to pretrained model file. Only edit this field if you understand how fine-tuning works in caffe"
-                            ></span>
-
-                        </div>
+                        {{form.custom_network_snapshot.tooltip}}
+                        {{form.custom_network_snapshot(class='form-control autocomplete_path')}}
                     </div>
                 </div>
             </div>
@@ -585,11 +496,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             <p class="text-center"><i>or</i></p>
             <div class="form-group{{' has-error' if form.select_gpus.errors}}">
                 {{form.select_gpus.label}}
-                <span name="select_gpus_explanation"
-                    class="explanation-tooltip glyphicon glyphicon-question-sign"
-                    data-container="body"
-                    title="The job won't start until all of the chosen GPUs are available."
-                    ></span>
+                {{form.select_gpus.tooltip}}
                 {{form.select_gpus(class='form-control', size=4)}}
             </div>
             <script type="text/javascript">
@@ -600,15 +507,8 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             {% endif %}
             <div class="form-group{{' has-error' if form.model_name.errors}}">
                 {{form.model_name.label}}
-                <div class="input-group">
-                    {{form.model_name(class='form-control')}}
-                    <span name="model_name_explanation"
-                        class="input-group-addon explanation-tooltip glyphicon glyphicon-question-sign"
-                        data-container="body"
-                        title="An identifier, later used to refer to this model in the Application."
-                    ></span>
-
-                </div>
+                {{form.model_name.tooltip}}
+                {{form.model_name(class='form-control')}}
             </div>
             <input type="submit" name="create-model" class="btn btn-primary" value="Create">
         </div>

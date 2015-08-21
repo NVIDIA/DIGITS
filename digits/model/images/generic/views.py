@@ -260,6 +260,7 @@ def generic_image_model_infer_one():
                 image_src       = utils.image.embed_image_html(image),
                 network_outputs = outputs,
                 visualizations  = visualizations,
+                total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
                 )
 
 @app.route(NAMESPACE + '/infer_many.json', methods=['POST'])

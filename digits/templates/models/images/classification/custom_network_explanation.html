@@ -1,0 +1,25 @@
+{# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+
+<h1>Specifying a custom network</h1>
+<p>
+    You should enter a train_val network here. Some cleanup is done for you automatically:
+    <ul>
+        <li>
+            The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
+        </li>
+        <li>
+            Any <b>Accuracy</b> layers with <i>top_k</i> &gt;= num_labels is removed automatically.
+        </li>
+    </ul>
+</p>
+The deploy network will be created for you automatically. Once caffe implements their "all-in-one" nets feature, you will be able to specify which layers to include in the deploy file. Until then, these things are done automatically:
+<ul>
+    <li>
+        The last <b>SoftmaxWithLoss</b> layer is replaced with a <b>Softmax</b> layer.
+    </li>
+    <li>
+        All other loss layers and accuracy layers are removed.
+    </li>
+</ul>
+</p>
