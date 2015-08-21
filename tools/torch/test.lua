@@ -275,6 +275,7 @@ else
     for i,layer in ipairs(model:listModules()) do
       local activations = layer.output
       local weights = layer.weight
+      local bias = layer.bias
       name = tostring(layer)
       -- convert 'name' string to Tensor as torch.hdf5 only
       -- accepts Tensor objects
@@ -286,6 +287,9 @@ else
       vis_db:write('/layers/'..i..'/activations', activations:float())
       if weights ~= nil then
         vis_db:write('/layers/'..i..'/weights', weights:float())
+      end
+      if bias ~= nil then
+        vis_db:write('/layers/'..i..'/bias', bias:float())
       end
     end
     vis_db:close()

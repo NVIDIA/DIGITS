@@ -7,6 +7,7 @@ import time
 import math
 import subprocess
 import sys
+import operator
 
 import numpy as np
 
@@ -579,13 +580,17 @@ class TorchTrainTask(TrainTask):
                         # to display
                         vis = None
                     mean, std, hist = self.get_layer_statistics(data)
+                    parameter_count = reduce(operator.mul, data.shape, 1)
+                    if 'bias' in layer:
+                        bias = np.array(layer['bias'][...])
+                        parameter_count += reduce(operator.mul, bias.shape, 1)
                     visualizations.append(
                                            {
                                                'id':          idx,
                                                'name':        layer_desc,
                                                'vis_type':    'Weights',
                                                'image_html':  utils.image.embed_image_html(vis),
-                                               'param_count': 0,
+                                               'param_count': parameter_count,
                                                'data_stats': {
                                                                  'shape':      data.shape,
                                                                  'mean':       mean,
