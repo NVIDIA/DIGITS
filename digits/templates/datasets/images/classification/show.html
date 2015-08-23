@@ -89,7 +89,7 @@
         {% endautoescape %}
         );
     </script>
-    {% if task.mean_file %}
+    {% if task.status=='D' and task.mean_file %}
     <b>Image Mean:</b>
     <img src="{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}" />
     {% endif %}
