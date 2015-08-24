@@ -1180,7 +1180,7 @@ class CaffeTrainTask(TrainTask):
 
         caffe_images = np.array(caffe_images)
 
-        data_shape = tuple(self.get_transformer().inputs['data'])
+        data_shape = tuple(self.get_transformer().inputs['data'])[1:]
 
         if self.batch_size:
             data_shape = (self.batch_size,) + data_shape
@@ -1226,7 +1226,7 @@ class CaffeTrainTask(TrainTask):
 
         caffe_images = np.array(caffe_images)
 
-        data_shape = tuple(self.get_transformer().inputs['data'])
+        data_shape = tuple(self.get_transformer().inputs['data'])[1:]
 
         if self.batch_size:
             data_shape = (self.batch_size,) + data_shape
