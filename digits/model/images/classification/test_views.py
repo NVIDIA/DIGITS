@@ -629,6 +629,16 @@ class TestTorchCreated(BaseTestCreated):
 class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'torch'
 
+class TestCaffeLeNet(TestCaffeCreated):
+    IMAGE_WIDTH = 28
+    IMAGE_HEIGHT = 28
+
+    CAFFE_NETWORK=open(
+            os.path.join(
+                os.path.dirname(digits.__file__),
+                'standard-networks', 'caffe', 'lenet.prototxt')
+            ).read()
+
 
 
 
