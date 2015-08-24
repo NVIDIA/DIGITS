@@ -568,3 +568,13 @@ layer {
 }
 """
 
+class TestLeNet(TestCreated):
+    IMAGE_WIDTH = 28
+    IMAGE_HEIGHT = 28
+
+    CAFFE_NETWORK=open(
+            os.path.join(
+                os.path.dirname(digits.__file__),
+                'standard-networks', 'lenet.prototxt')
+            ).read()
+
