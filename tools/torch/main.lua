@@ -29,9 +29,9 @@ Usage details:
 -d,--devid              (default 1)              device ID (if using CUDA)
 -e,--epoch              (number)                 number of epochs to train -1 for unbounded
 -f,--shuffle            (default no)             shuffle records before train
--g,--mirror             (default no)             If this option is 'yes', then some of the images are randomly mirrored                                   
+-g,--mirror             (default no)             If this option is 'yes', then some of the images are randomly mirrored
 -i,--interval           (default 1)              number of train epochs to complete, to perform one validation
--k,--crop               (default no)             If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter 
+-k,--crop               (default no)             If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter
 -l,--croplen            (default 0)              crop length. This is required parameter when crop option is provided
 -m,--momentum           (default 0.9)            momentum
 -n,--network	        (string)                 Model - must return valid network. Available - {lenet, googlenet, alexnet}
@@ -39,9 +39,9 @@ Usage details:
 -p,--type               (default cuda)           float or cuda
 -r,--learningRate       (default 0.001)          learning rate
 -s,--save               (default results)        save directory
--t,--train              (string)                 location in which train db exists. 
+-t,--train              (string)                 location in which train db exists.
 -v,--validation         (default '')             location in which validation db exists.
--w,--weightDecay        (default 1e-4)           L2 penalty on the weights 
+-w,--weightDecay        (default 1e-4)           L2 penalty on the weights
 
 --seed                  (default '')             fixed input seed for repeatable experiments
 --weights               (default '')             filename for weights of a model to use for fine-tuning
@@ -57,10 +57,10 @@ Usage details:
 --snapshotInterval      (default 1)              specifies the training epochs to be completed before taking a snapshot
 --useMeanPixel          (default 'no')           by default pixel-wise subtraction is done using the full mean matrix. If this option is 'yes' then mean pixel will be used instead of mean matrix
 
--q,--policy             (default torch_sgd)      Learning Rate Policy. Valid policies : fixed, step, exp, inv, multistep, poly, sigmoid and torch_sgd. Note: when power value is -1, then "inv" policy with "gamma" is similar to "torch_sgd" with "learningRateDecay".              
--h,--gamma              (default -1)             Required to calculate learning rate, when any of the following learning rate policies are used:  step, exp, inv, multistep & sigmoid                        
--j,--power              (default inf)            Required to calculate learning rate, when any of the following learning rate policies are used:  inv & poly  
--x,--stepvalues         (default '')             Required to calculate stepsize for the following learning rate policies:  step, multistep & sigmoid. Note: if it is 'step' or 'sigmoid' policy, then this parameter expects single value, if it is 'multistep' policy, then this parameter expects a string which has all the step values delimited by comma (ex: "10,25,45,80") 
+-q,--policy             (default torch_sgd)      Learning Rate Policy. Valid policies : fixed, step, exp, inv, multistep, poly, sigmoid and torch_sgd. Note: when power value is -1, then "inv" policy with "gamma" is similar to "torch_sgd" with "learningRateDecay".
+-h,--gamma              (default -1)             Required to calculate learning rate, when any of the following learning rate policies are used:  step, exp, inv, multistep & sigmoid
+-j,--power              (default inf)            Required to calculate learning rate, when any of the following learning rate policies are used:  inv & poly
+-x,--stepvalues         (default '')             Required to calculate stepsize for the following learning rate policies:  step, multistep & sigmoid. Note: if it is 'step' or 'sigmoid' policy, then this parameter expects single value, if it is 'multistep' policy, then this parameter expects a string which has all the step values delimited by comma (ex: "10,25,45,80")
 ]]
 
 -----------------------------------------------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ if opt.policy == 'fixed' or opt.policy == 'step' or opt.policy == 'exp' or opt.p
     end
   end
 
-  if opt.policy == 'inv' or opt.policy == 'poly' then 
+  if opt.policy == 'inv' or opt.policy == 'poly' then
     if opt.power == math.huge then
       logmessage.display(2,'power parameter missing and is required to calculate learning rate when ' .. opt.policy .. ' learning rate policy is used')
       return
@@ -123,14 +123,14 @@ if opt.policy == 'fixed' or opt.policy == 'step' or opt.policy == 'exp' or opt.p
       logmessage.display(2,'step parameter missing and is required to calculate learning rate when ' .. opt.policy .. ' learning rate policy is used')
       return
     else
-          
+
       for i in string.gmatch(opt.stepvalues, '([^,]+)') do
         if tonumber(i) ~= nil then
           table.insert(stepvalues_list, tonumber(i))
         else
           logmessage.display(2,'invalid step parameter value : ' .. opt.stepvalues .. '. step parameter should contain only number. if there are more than one value, then the values should be delimited by comma. ex: "10" or "10,25,45,80"')
           return
-          
+
         end
       end
     end
@@ -138,7 +138,7 @@ if opt.policy == 'fixed' or opt.policy == 'step' or opt.policy == 'exp' or opt.p
 
 elseif opt.policy ~= 'torch_sgd' then
   logmessage.display(2,'invalid learning rate policy - '.. opt.policy .. '. Valid policies : fixed, step, exp, inv, multistep, poly, sigmoid and torch_sgd')
-  return 
+  return
 end
 
 if opt.useMeanPixel ~= 'yes' and opt.useMeanPixel ~= 'no' then
@@ -180,7 +180,7 @@ if ccn2 ~= nil then
   end
 end
 
--- load  
+-- load
 local data = require 'data'
 
 logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
@@ -242,6 +242,20 @@ if opt.retrain ~= '' then
    end
 end
 
+if opt.type == 'float' then
+    logmessage.display(0,'switching to floats')
+    torch.setdefaulttensortype('torch.FloatTensor')
+    model:float()
+    loss = loss:float()
+
+elseif opt.type =='cuda' then
+    require 'cunn'
+    logmessage.display(0,'switching to CUDA')
+    model:cuda()
+    loss = loss:cuda()
+    --torch.setdefaulttensortype('torch.CudaTensor')
+end
+
 local Weights,Gradients = model:getParameters()
 -- If weights option is set, preload weights from existing models appropriately
 if opt.weights ~= '' then
@@ -252,18 +266,6 @@ if opt.weights ~= '' then
        logmessage.display(2,'Weight file for pretrained model not found: ' .. opt.weights)
        return
    end
-end
-
-if opt.type == 'float' then
-    logmessage.display(0,'switching to floats')
-    torch.setdefaulttensortype('torch.FloatTensor')
-
-elseif opt.type =='cuda' then
-    require 'cunn'
-    logmessage.display(0,'switching to CUDA')
-    model:cuda()
-    loss = loss:cuda()
-    --torch.setdefaulttensortype('torch.CudaTensor')
 end
 
 -- create a directory, if not exists, to save all the snapshots
@@ -297,7 +299,7 @@ if opt.validation ~= '' then
   end
 end
 
--- validate "crop length" input parameter 
+-- validate "crop length" input parameter
 if opt.crop == 'yes' then
   if opt.croplen > train.ImageSizeY then
     logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image width ' .. train.ImageSizeY)
@@ -315,7 +317,7 @@ if ccn2 ~= nil then
     trainSize = trainSize - (trainSize % 32)
   end
   if opt.validation ~= '' and (valSize % 32) ~=0 then
-    logmessage.display(1,'when ccn2 is used, total images should be the exact multiple of 32. In validation db, as the total images are ' .. valSize .. ', skipped the last ' .. valSize % 32 .. ' images from validation db') 
+    logmessage.display(1,'when ccn2 is used, total images should be the exact multiple of 32. In validation db, as the total images are ' .. valSize .. ', skipped the last ' .. valSize % 32 .. ' images from validation db')
     valSize = valSize - (valSize % 32)
   end
 end
@@ -354,7 +356,7 @@ if opt.policy ~= 'torch_sgd' then
            step_values = stepvalues_list
     }
 
-else 
+else
     lrpolicy = LRPolicy{
            policy = opt.policy,
            baselr = opt.learningRate
@@ -426,7 +428,7 @@ if (math.ceil(trainSize/8)<5000) then
   logging_check = math.ceil(trainSize/8)
 else
   logging_check = 5000
-end  
+end
 logmessage.display(0,'During training. details will be logged after every ' .. logging_check .. ' images')
 
 
@@ -517,7 +519,7 @@ local function Validation()
       else
         inputs = torch.Tensor(opt.batchSize, val.ImageChannels, val.ImageSizeY, val.ImageSizeX)
       end
-      targets = torch.Tensor(opt.batchSize)      
+      targets = torch.Tensor(opt.batchSize)
     end
 
     for t = 1,valSize,opt.batchSize do
@@ -546,8 +548,9 @@ local function Validation()
       if opt.type =='cuda' then
           inputs=inputs:cuda()
           targets = targets:cuda()
-      else 
+      else
           inputs=inputs:float()
+          targets = targets:float()
       end
 
       local y = model:forward(inputs)
@@ -588,7 +591,7 @@ local function Train(epoch)
         inputs = torch.Tensor(opt.batchSize, train.ImageChannels, train.ImageSizeY, train.ImageSizeX)
       end
 
-      targets = torch.Tensor(opt.batchSize)      
+      targets = torch.Tensor(opt.batchSize)
     end
 
     for t = 1,trainSize,opt.batchSize do
@@ -613,10 +616,24 @@ local function Train(epoch)
           inputs,targets = train:nextBatch(math.min(trainSize-t+1,opt.batchSize))
       end
 
+--[=[
+      -- print some statistics, show input in iTorch
+
+      if t%1024==1  then
+          print(string.format("input mean=%f std=%f",inputs:mean(),inputs:std()))
+          for idx=1,opt.batchSize do
+                  print(classes[targets[idx]])
+          end
+          if itorch then
+              itorch.image(inputs)
+          end
+      end
+--]=]
+
       if opt.type =='cuda' then
           inputs = inputs:cuda()
           targets = targets:cuda()
-      else 
+      else
           inputs = inputs:float()
       end
 
@@ -701,6 +718,7 @@ while epoch<=opt.epoch do
     confusion:zero()
     Train(epoch)
     confusion:updateValids()
+    --print(confusion)
     ErrTrain = (1-confusion.totalValid)
     epoch = epoch+1
 end
@@ -725,7 +743,7 @@ if opt.epoch > last_snapshot_save_epoch then
 end
 
 train:close()
-if opt.validation ~= '' then  
+if opt.validation ~= '' then
   val:close()
 end
 
