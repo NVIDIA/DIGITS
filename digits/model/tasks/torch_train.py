@@ -34,15 +34,18 @@ class TorchTrainTask(TrainTask):
 
     TORCH_LOG = 'torch_output.log'
 
-    def __init__(self, shuffle, **kwargs):
+    def __init__(self, **kwargs):
         """
         Arguments:
         network -- a NetParameter defining the network
         """
         super(TorchTrainTask, self).__init__(**kwargs)
-        self.pickver_task_torch_train = PICKLE_VERSION
 
-        self.shuffle = shuffle
+        # save network description to file
+        with open(os.path.join(self.job_dir, utils.constants.TORCH_MODEL_FILE), "w") as outfile:
+            outfile.write(self.network)
+
+        self.pickver_task_torch_train = PICKLE_VERSION
 
         self.current_epoch = 0
 

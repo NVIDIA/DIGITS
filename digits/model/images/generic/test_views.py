@@ -146,7 +146,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
                 'model_name':                        'test_model',
                 'dataset':                           cls.dataset_id,
                 'method':                            'custom',
-                '%s_custom_network' % cls.FRAMEWORK: cls.network(),
+                'custom_network':                    cls.network(),
                 'batch_size':                        10,
                 'train_epochs':                      3,
                 'framework':                         cls.FRAMEWORK,
@@ -208,7 +208,7 @@ class BaseTestViews(BaseViewsTest):
 
     def test_visualize_network(self):
         rv = self.app.post('/models/visualize-network',
-                data = {'%s_custom_network' % self.FRAMEWORK: self.network()}
+                data = {'custom_network': self.network()}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')

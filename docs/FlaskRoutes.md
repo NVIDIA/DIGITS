@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Aug 21, 2015*
+*Generated Aug 25, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -288,7 +288,7 @@ Location: [`digits/model/views.py@56`](../digits/model/views.py#L56)
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@56`](../digits/model/images/classification/views.py#L56)
+Location: [`digits/model/images/classification/views.py@58`](../digits/model/images/classification/views.py#L58)
 
 ### `/models/images/classification/classify_many`
 
@@ -300,7 +300,7 @@ Location: [`digits/model/images/classification/views.py@56`](../digits/model/ima
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@360`](../digits/model/images/classification/views.py#L360)
+Location: [`digits/model/images/classification/views.py@362`](../digits/model/images/classification/views.py#L362)
 
 ### `/models/images/classification/classify_one`
 
@@ -312,7 +312,7 @@ Location: [`digits/model/images/classification/views.py@360`](../digits/model/im
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@291`](../digits/model/images/classification/views.py#L291)
+Location: [`digits/model/images/classification/views.py@293`](../digits/model/images/classification/views.py#L293)
 
 ### `/models/images/classification/large_graph`
 
@@ -320,7 +320,7 @@ Location: [`digits/model/images/classification/views.py@291`](../digits/model/im
 
 Methods: **GET**
 
-Location: [`digits/model/images/classification/views.py@280`](../digits/model/images/classification/views.py#L280)
+Location: [`digits/model/images/classification/views.py@282`](../digits/model/images/classification/views.py#L282)
 
 ### `/models/images/classification/new`
 
@@ -328,7 +328,7 @@ Location: [`digits/model/images/classification/views.py@280`](../digits/model/im
 
 Methods: **GET**
 
-Location: [`digits/model/images/classification/views.py@34`](../digits/model/images/classification/views.py#L34)
+Location: [`digits/model/images/classification/views.py@35`](../digits/model/images/classification/views.py#L35)
 
 ### `/models/images/classification/top_n`
 
@@ -336,7 +336,7 @@ Location: [`digits/model/images/classification/views.py@34`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@457`](../digits/model/images/classification/views.py#L457)
+Location: [`digits/model/images/classification/views.py@459`](../digits/model/images/classification/views.py#L459)
 
 ### `/models/images/generic`
 

@@ -25,6 +25,8 @@ from digits.utils.routing import request_wants_json
 import images.views
 import images as model_images
 
+from digits import frameworks
+
 NAMESPACE = '/models/'
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
@@ -63,23 +65,14 @@ def models_customize():
     if not network:
         raise werkzeug.exceptions.BadRequest('network not provided')
 
-    networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', framework)
+    fw = frameworks.get_framework_by_id(framework)
 
-    # Torch's GoogLeNet and AlexNet models are placed in sub folder
-    if framework == "torch" and (network == "alexnet" or network == "googlenet"):
-        networks_dir = os.path.join(networks_dir, 'ImageNet-Training')
+    # can we find it in standard networks?
+    network_desc = fw.get_standard_network_desc(network)
+    if network_desc:
+        return json.dumps({'network': network_desc})
 
-    for filename in os.listdir(networks_dir):
-        path = os.path.join(networks_dir, filename)
-        if os.path.isfile(path):
-            match = None
-            if framework == "caffe":
-                match = re.match(r'%s.prototxt' % network, filename)
-            elif framework == "torch":
-                match = re.match(r'%s.lua' % network, filename)
-            if match:
-                with open(path) as infile:
-                    return json.dumps({'network': infile.read()})
+    # not found in standard networks, looking for matching job
     job = scheduler.get_job(network)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
@@ -115,7 +108,7 @@ def models_visualize_network():
     Returns a visualization of the custom network as a string of PNG data
     """
     net = caffe_pb2.NetParameter()
-    text_format.Merge(flask.request.form['caffe_custom_network'], net)
+    text_format.Merge(flask.request.form['custom_network'], net)
     # Throws an error if name is None
     if not net.name:
         net.name = 'Network'

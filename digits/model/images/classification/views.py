@@ -8,12 +8,6 @@ import shutil
 import flask
 import werkzeug.exceptions
 import numpy as np
-from google.protobuf import text_format
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
 
 import digits
 from digits.config import config_value
@@ -21,7 +15,7 @@ from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
-from digits.model import tasks
+from digits import frameworks
 from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
@@ -46,6 +40,7 @@ def image_classification_model_new():
 
     return flask.render_template('models/images/classification/new.html',
             form = form,
+            frameworks = frameworks.get_frameworks(),
             previous_network_snapshots = prev_network_snapshots,
             previous_networks_fullinfo = get_previous_networks_fulldetails(),
             multi_gpu = config_value('caffe_root')['multi_gpu'],
@@ -90,39 +85,19 @@ def image_classification_model_create():
                 name        = form.model_name.data,
                 dataset_id  = datasetJob.id(),
                 )
+        # get handle to framework object
+        fw = frameworks.get_framework_by_id(form.framework.data)
 
-        network = caffe_pb2.NetParameter()
         pretrained_model = None
         if form.method.data == 'standard':
             found = False
-            networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', form.framework.data)
 
-            # Torch's GoogLeNet and AlexNet models are placed in sub folder
-            if form.framework.data == "torch" and (form.standard_networks.data == "alexnet" or form.standard_networks.data == "googlenet"):
-                networks_dir = os.path.join(networks_dir, 'ImageNet-Training')
+            # can we find it in standard networks?
+            network_desc = fw.get_standard_network_desc(form.standard_networks.data)
+            if network_desc:
+                found = True
+                network = fw.get_network_from_desc(network_desc)
 
-            for filename in os.listdir(networks_dir):
-                path = os.path.join(networks_dir, filename)
-                if os.path.isfile(path):
-                    match = None
-                    if form.framework.data == "caffe":
-                        match = re.match(r'%s.prototxt' % form.standard_networks.data, filename)
-                        if match:
-                            with open(path) as infile:
-                                text_format.Merge(infile.read(), network)
-                            found = True
-                            break
-
-                    elif form.framework.data == "torch":
-                        match = re.match(r'%s.lua' % form.standard_networks.data, filename)
-                        if match:
-                            # copying the standard networks content to job directory created
-                            with open(path) as infile:
-                                with open(os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE), "w") as outfile:
-                                    for line in infile:
-                                        outfile.write(line)
-                            found = True
-                            break
             if not found:
                 raise werkzeug.exceptions.BadRequest(
                         'Unknown standard model "%s"' % form.standard_networks.data)
@@ -132,15 +107,7 @@ def image_classification_model_create():
                 raise werkzeug.exceptions.BadRequest(
                         'Job not found: %s' % form.previous_networks.data)
 
-            if old_job.train_task().framework_name() == "caffe":
-                network.CopyFrom(old_job.train_task().network)
-                # Rename the final layer
-                # XXX making some assumptions about network architecture here
-                ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
-                if len(ip_layers) > 0:
-                    ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
-            elif old_job.train_task().framework_name() == "torch":
-                shutil.copy2(os.path.join(old_job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE))
+            network = fw.get_network_from_previous(old_job.train_task().network)
 
             for choice in form.previous_networks.choices:
                 if choice[0] == form.previous_networks.data:
@@ -161,12 +128,7 @@ def image_classification_model_create():
                     break
 
         elif form.method.data == 'custom':
-            if form.framework.data == "caffe":
-                text_format.Merge(form.caffe_custom_network.data, network)
-            elif form.framework.data == "torch":
-                model_file = open(os.path.join(job.dir(), utils.constants.TORCH_MODEL_FILE), "w")
-                model_file.write(form.torch_custom_network.data)
-                model_file.close()
+            network = fw.get_network_from_desc(form.custom_network.data)
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:
             raise werkzeug.exceptions.BadRequest(
@@ -213,10 +175,8 @@ def image_classification_model_create():
                 selected_gpus = [str(form.select_gpu.data)]
                 gpu_count = None
 
-        if form.framework.data == "caffe":
-
-            job.tasks.append(
-                tasks.CaffeTrainTask(
+        fw = frameworks.get_framework_by_id(form.framework.data)
+        job.tasks.append(fw.create_train_task(
                     job_dir         = job.dir(),
                     dataset         = datasetJob,
                     train_epochs    = form.train_epochs.data,
@@ -233,29 +193,6 @@ def image_classification_model_create():
                     network         = network,
                     random_seed     = form.random_seed.data,
                     solver_type     = form.solver_type.data,
-                    )
-                )
-
-        elif form.framework.data == "torch":
-
-            job.tasks.append(
-                tasks.TorchTrainTask(
-                    job_dir         = job.dir(),
-                    dataset         = datasetJob,
-                    train_epochs    = form.train_epochs.data,
-                    snapshot_interval   = form.snapshot_interval.data,
-                    learning_rate   = form.learning_rate.data,
-                    lr_policy       = policy,
-                    gpu_count       = gpu_count,
-                    selected_gpus   = selected_gpus,
-                    batch_size      = form.batch_size.data,
-                    val_interval    = form.val_interval.data,
-                    pretrained_model= pretrained_model,
-                    crop_size       = form.crop_size.data,
-                    use_mean        = form.use_mean.data,
-                    random_seed     = form.random_seed.data,
-                    solver_type     = form.solver_type.data,
-                    shuffle         = form.shuffle.data,
                     )
                 )
 

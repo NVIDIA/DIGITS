@@ -38,15 +38,13 @@ class CaffeTrainTask(TrainTask):
         #TODO
         pass
 
-    def __init__(self, network, **kwargs):
+    def __init__(self, **kwargs):
         """
         Arguments:
         network -- a caffe NetParameter defining the network
         """
         super(CaffeTrainTask, self).__init__(**kwargs)
         self.pickver_task_caffe_train = PICKLE_VERSION
-
-        self.network = network
 
         self.current_iteration = 0
 

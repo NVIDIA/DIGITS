@@ -1,6 +1,6 @@
 # REST API
 
-*Generated Aug 21, 2015*
+*Generated Aug 25, 2015*
 
 DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
 
@@ -94,7 +94,7 @@ Location: [`digits/model/views.py@32`](../digits/model/views.py#L32)
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@56`](../digits/model/images/classification/views.py#L56)
+Location: [`digits/model/images/classification/views.py@58`](../digits/model/images/classification/views.py#L58)
 
 ### `/models/images/classification/classify_many.json`
 
@@ -106,7 +106,7 @@ Location: [`digits/model/images/classification/views.py@56`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@360`](../digits/model/images/classification/views.py#L360)
+Location: [`digits/model/images/classification/views.py@362`](../digits/model/images/classification/views.py#L362)
 
 ### `/models/images/classification/classify_one.json`
 
@@ -118,7 +118,7 @@ Location: [`digits/model/images/classification/views.py@360`](../digits/model/im
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@291`](../digits/model/images/classification/views.py#L291)
+Location: [`digits/model/images/classification/views.py@293`](../digits/model/images/classification/views.py#L293)
 
 ### `/models/images/generic.json`
 

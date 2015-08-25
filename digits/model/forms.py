@@ -2,21 +2,16 @@
 
 import os
 
-from google.protobuf import text_format
 from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
 
 from digits.config import config_value
 from digits.device_query import get_device, get_nvml_info
 from digits import utils
 from digits.utils import sizeof_fmt
 from digits.utils.forms import validate_required_iff
+from digits import frameworks
 
 class ModelForm(Form):
 
@@ -31,11 +26,11 @@ class ModelForm(Form):
             raise validators.ValidationError("Selected job doesn't exist. Maybe it was deleted by another user.")
 
     def validate_NetParameter(form, field):
-        pb = caffe_pb2.NetParameter()
+        fw = frameworks.get_framework_by_id(form['framework'].data)
         try:
-            text_format.Merge(field.data, pb)
-        except text_format.ParseError as e:
-            raise validators.ValidationError('Not a valid NetParameter: %s' % e)
+            fw.validate_network(field.data)
+        except frameworks.exceptions.BadNetworkException as e:
+            raise validators.ValidationError('Bad network: %s' % e.message)
 
     ### Fields
 
@@ -174,11 +169,11 @@ class ModelForm(Form):
     framework = wtforms.HiddenField('framework',
             validators = [
                 validators.AnyOf(
-                    ['caffe', 'torch'],
+                    [fw.get_id() for fw in frameworks.get_frameworks()],
                     message='The framework you choose is not currently supported.'
                     )
                 ],
-            default = 'caffe'
+            default = frameworks.get_frameworks()[0].get_id()
             )
 
     # The options for this get set in the view (since they are dependent on the data type)
@@ -196,18 +191,11 @@ class ModelForm(Form):
                 ],
             )
 
-    # custom network validation is required for the caffe framework, because of limited protobuf support for torch framework.
-    caffe_custom_network = utils.forms.TextAreaField('Caffe Custom Network',
+    custom_network = utils.forms.TextAreaField('Custom Network',
             validators = [
-                validate_required_iff(method='custom', framework='caffe'),
+                validate_required_iff(method='custom'),
                 validate_NetParameter,
                 ],
-            )
-
-    torch_custom_network = utils.forms.TextAreaField('Torch Custom Network',
-            validators = [
-                validate_required_iff(method='custom',framework='torch'),
-                ]
             )
 
     custom_network_snapshot = utils.forms.TextField('Pretrained model',

@@ -118,7 +118,7 @@ def generic_image_model_create():
                     break
 
         elif form.method.data == 'custom':
-            text_format.Merge(form.caffe_custom_network.data, network)
+            text_format.Merge(form.custom_network.data, network)
             pretrained_model = form.custom_network_snapshot.data.strip()
         else:
             raise werkzeug.exceptions.BadRequest(

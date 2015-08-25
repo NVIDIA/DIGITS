@@ -316,14 +316,14 @@ function customizeNetwork(network, snapshot_list, framework) {
               )
         .done(function(data) {
                 data = $.parseJSON(data);
-                $('textarea[name="'+framework+"_custom_network"+'"]').val(data['network']);
+                $('textarea[name=custom_network]').val(data['network']);
                 if (data['snapshot'])
                     $('input[name=custom_network_snapshot]').val(data['snapshot']);
                 else
                     $('input[name=custom_network_snapshot]').val('');
                 })
         .fail(function(data) {
-                $('textarea[name="'+framework+"_custom_network"+'"]').val('');
+                $('textarea[name=custom_network]').val('');
                 $('input[name=custom_network_snapshot]').val('');
                 errorAlert(data);
                 });
@@ -333,7 +333,7 @@ function customizeNetwork(network, snapshot_list, framework) {
     if (!framework)
         var $tab = $('#stdnetRole'), $active = $tab.find('.active'), framework = $active.attr('id');
 
-    if ($('textarea[name="'+framework+"_custom_network"+'"]').val() != "") {
+    if ($('textarea[name=custom_network]').val() != "") {
         bootbox.confirm(
                 'This will overwrite data in the Custom Network tab. Continue?',
                 function(result) { if (result) fillCustomTab(network, snapshot_list, framework); }
@@ -342,6 +342,16 @@ function customizeNetwork(network, snapshot_list, framework) {
         fillCustomTab(network, snapshot_list, framework);
     }
 }
+
+var frameworks = {};
+{% for fw in frameworks %}
+framework = {
+    name : '{{ fw.get_name() }}',
+    can_shuffle : '{{ fw.can_shuffle_data() }}'=='True'
+    };
+frameworks['{{ fw.get_id() }}'] = framework;
+{% endfor %}
+
             </script>
 
             <ul class="nav nav-tabs" id="network-tabs">
@@ -353,16 +363,18 @@ function customizeNetwork(network, snapshot_list, framework) {
                 <div style="display:none;">{{form.framework(class='form-control')}}</div>
                 <div id="network-tab-standard" class="tab-pane active">
                     <ul class="nav nav-tabs" id="stdnetRole">
-                        <li id="caffe" class="active"><a href="#">Caffe</a></li>
-                        <li id="torch"><a href="#">Torch</a></li>
+                        {% for fw in frameworks %}
+                        <li id="{{ fw.get_id() }}"><a href="#">{{ fw.get_name() }}</a></li>
+                        {% endfor %}
                     </ul>
                     <script>
+                        $('#stdnetRole li').first().addClass("active");
                         $('#stdnetRole li').on('click', function(e) {
                              $(this).addClass('active');
                              $(this).siblings().removeClass('active');
                              $('#framework').val($(this).attr('id'));
                              $('#customFramework a[href="'+"#"+$(this).attr('id')+"_custom"+'"]').tab('show');
-                             if ($(this).attr('id') == "torch")
+                             if (frameworks[$(this).attr('id')].can_shuffle)
                                  $("#shuffle-data").show();
                              else
                                  $("#shuffle-data").hide();
@@ -489,7 +501,7 @@ function customizeNetwork(network, snapshot_list, framework) {
                         }
                         var framework_badge = $(this).parents('td').find(".badge").text();
                         $('#framework').val(framework_badge);  //sets the framework value based on the job selected in previous networks tab.
-                        if(framework_badge == "torch")
+                        if(frameworks[framework_badge].can_shuffle)
                             $("#shuffle-data").show();
                         else
                             $("#shuffle-data").hide();
@@ -513,14 +525,16 @@ function customizeNetwork(network, snapshot_list, framework) {
                 </script>
                 <div id="network-tab-custom" class="tab-pane">
                     <ul class="nav nav-tabs" id="customFramework">
-                        <li id="caffe" class="active"><a href="#caffe_custom" data-toggle="tab">Caffe</a></li>
-                        <li id="torch"><a href="#torch_custom" data-toggle="tab">Torch</a></li>
+                        {% for fw in frameworks %}
+                        <li id="{{ fw.get_id() }}"><a href="#{{ fw.get_id() }}_custom" data-toggle="tab">{{ fw.get_name() }}</a></li>
+                        {% endfor %}
                     </ul>
                     <br>
                     <script>
+                        $('#customFramework li').first().addClass("active");
                         $('#customFramework li').on('shown.bs.tab', function(e) {
                              $('#framework').val($(this).attr('id'));
-                             if ($(this).attr('id') == "torch")
+                             if (frameworks[$(this).attr('id')].can_shuffle)
                                  $("#shuffle-data").show();
                              else
                                  $("#shuffle-data").hide();
@@ -535,7 +549,7 @@ function visualizeNetwork() {
     $.ajax("{{url_for('models_visualize_network')}}",
         {
             type: "POST",
-            data: $('#'+framework+"_custom_network").serialize()
+            data: $('#custom_network').serialize()
             }
         )
     .done(function(data) {
@@ -551,24 +565,16 @@ function visualizeNetwork() {
 }
                     </script>
                        <div class="tab-content" id="custom_textareas">
-                            <div class="tab-pane" id="caffe_custom">
-                                <div class="form-group{{' has-error' if form.caffe_custom_network.errors}}">
-                                    {{form.caffe_custom_network.label}}
-                                    {{form.caffe_custom_network.explanation(file='/models/images/classification/custom_network_explanation.html')}}
+
+                                <div class="form-group{{' has-error' if form.custom_network.errors}}">
+                                    {{form.custom_network.label}}
+                                    {{form.custom_network.explanation(file='/models/images/classification/custom_network_explanation.html')}}
                                     <div class="pull-right">
                                         <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
                                     </div>
-                                    {{form.caffe_custom_network(class='form-control', rows=10)}}
+                                    {{form.custom_network(class='form-control', rows=10)}}
                                 </div>
-                            </div>
-                            <div class="tab-pane" id="torch_custom">
-                                <div class="form-group{{' has-error' if form.torch_custom_network.errors}}">
-                                    {{form.torch_custom_network.label}}
-                                    {{form.torch_custom_network(class='form-control', rows=10)}}
-                                </div>
-                            </div>
                         </div>
-
                         <script>$(this).addClass('active');
                             $('#custom_textareas div:first').addClass('tab-pane active') // Select first tab
                         </script>
@@ -583,15 +589,6 @@ function visualizeNetwork() {
             <script>
 function updateNetworkTab(method) {
     $('select[name=method]').val(method);
-    if (parts[parts.length-1] == "previous" || $('#framework').val() != "torch")
-    {
-        if(parts[parts.length-1] == "previous" && $("input:radio[name=previous_networks]").is(":checked") && $("input:radio[name=previous_networks]:checked").parents('td').find(".badge").text()=="torch")
-            $("#shuffle-data").show();
-        else
-            $("#shuffle-data").hide();
-    }
-    else
-        $("#shuffle-data").show();
 }
 $('#network-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         parts = e.target.href.split('-');
@@ -647,7 +644,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
 
 <script>
 if($("input:radio[name=previous_networks]").is(":checked")) {
-    if($prevtab_prev_clicked_tr.find(".badge").text()=="torch")
+    if (frameworks[$prevtab_prev_clicked_tr.find(".badge").text()].can_shuffle)
         $("#shuffle-data").show();
     else
         $("#shuffle-data").hide();

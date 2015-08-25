@@ -309,21 +309,21 @@ function customizeNetwork(network, snapshot_list) {
               )
         .done(function(data) {
                 data = $.parseJSON(data);
-                $('textarea[name=caffe_custom_network]').val(data['network']);
+                $('textarea[name=custom_network]').val(data['network']);
                 if (data['snapshot'])
                     $('input[name=custom_network_snapshot]').val(data['snapshot']);
                 else
                     $('input[name=custom_network_snapshot]').val('');
                 })
         .fail(function(data) {
-                $('textarea[name=caffe_custom_network]').val('');
+                $('textarea[name=custom_network]').val('');
                 $('input[name=custom_network_snapshot]').val('');
                 errorAlert(data);
                 });
         $('#network-tabs a:last').tab('show');
     }
 
-    if ($('textarea[name=caffe_custom_network]').val() != "") {
+    if ($('textarea[name=custom_network]').val() != "") {
         bootbox.confirm(
                 'This will overwrite data in the Custom Network tab. Continue?',
                 function(result) { if (result) fillCustomTab(network, snapshot_list); }
@@ -429,7 +429,7 @@ function visualizeNetwork() {
     $.ajax("{{url_for('models_visualize_network')}}",
         {
             type: "POST",
-            data: $("#caffe_custom_network").serialize()
+            data: $("#custom_network").serialize()
             }
         )
     .done(function(data) {
@@ -444,13 +444,13 @@ function visualizeNetwork() {
     return false;
 }
                     </script>
-                    <div class="form-group{{' has-error' if form.caffe_custom_network.errors}}">
-                        {{form.caffe_custom_network.label}}
-                        {{form.caffe_custom_network.explanation(file='/models/images/generic/custom_network_explanation.html')}}
+                    <div class="form-group{{' has-error' if form.custom_network.errors}}">
+                        {{form.custom_network.label}}
+                        {{form.custom_network.explanation(file='/models/images/generic/custom_network_explanation.html')}}
                         <div class="pull-right">
                             <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
                         </div>
-                        {{form.caffe_custom_network(class='form-control', rows=10)}}
+                        {{form.custom_network(class='form-control', rows=10)}}
                     </div>
                     <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
                         {{form.custom_network_snapshot.label}}
