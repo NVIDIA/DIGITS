@@ -166,6 +166,21 @@ def job_status(job_id):
         result['type'] = job.job_type()
     return json.dumps(result)
 
+@app.route('/job_management', methods=['GET'])
+@autodoc('util')
+def job_management():
+    """
+    Return the jobs management page
+
+    """
+
+    running_datasets    = get_job_list(dataset.DatasetJob, True)
+    running_models      = get_job_list(model.ModelJob, True)
+
+    return flask.render_template('job_management.html',
+                                 running_job = running_datasets + running_models,
+                             )
+
 @app.route('/datasets/<job_id>', methods=['DELETE'])
 @app.route('/models/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])

@@ -207,17 +207,7 @@ class TrainTask(Task):
 
         self.current_epoch = epoch
         self.progress = epoch/self.train_epochs
-
-        socketio.emit('task update',
-                {
-                    'task': self.html_id(),
-                    'update': 'progress',
-                    'percentage': int(round(100*self.progress)),
-                    'eta': utils.time_filters.print_time_diff(self.est_done()),
-                    },
-                namespace='/jobs',
-                room=self.job_id,
-                )
+        self.emit_progress_update()
 
     def save_train_output(self, *args):
         """
@@ -246,6 +236,20 @@ class TrainTask(Task):
                     namespace='/jobs',
                     room=self.job_id,
                     )
+
+            if data['columns']:
+                # isolate the Loss column data for the sparkline
+                graph_data = data['columns'][0][1:]
+                socketio.emit('task update',
+                              {
+                                  'task': self.html_id(),
+                                  'job_id': self.job_id,
+                                  'update': 'combined_graph',
+                                  'data': graph_data,
+                              },
+                              namespace='/jobs',
+                              room='job_management',
+                          )
 
         # lr graph data
         data = self.lr_graph_data()

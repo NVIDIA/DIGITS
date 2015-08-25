@@ -7,6 +7,7 @@ import mock
 from . import scheduler as _
 from config import config_value
 from job import Job
+from digits.utils import subclass, override
 
 class TestScheduler():
 
@@ -28,6 +29,13 @@ class TestScheduler():
         assert s.stop(), 'failed to stop'
 
 
+@subclass
+class JobForTesting(Job):
+    @override
+    def job_type(self):
+        return 'Job For Testing'
+
+
 class TestSchedulerFlow():
 
     @classmethod
@@ -40,7 +48,7 @@ class TestSchedulerFlow():
         assert cls.s.stop(), 'failed to stop'
 
     def test_add_remove_job(self):
-        job = Job('tmp')
+        job = JobForTesting('tmp')
         assert self.s.add_job(job), 'failed to add job'
         assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
         assert self.s.delete_job(job), 'failed to delete job'

@@ -8,6 +8,7 @@ import shutil
 
 import flask
 
+from digits import utils
 from digits.config import config_value
 from digits.utils import sizeof_fmt, filesystem as fs
 from status import Status, StatusCls
@@ -158,6 +159,7 @@ class Job(StatusCls):
                 'status': self.status.name,
                 'css': self.status.css,
                 'running': self.status.is_running(),
+                'job_id': self.id(),
                 }
         with app.app_context():
             message['html'] = flask.render_template('status_updates.html', updates=self.status_history)
@@ -166,6 +168,13 @@ class Job(StatusCls):
                 message,
                 namespace='/jobs',
                 room=self.id(),
+                )
+
+        # send message to job_management room as well
+        socketio.emit('job update',
+                message,
+                namespace='/jobs',
+                room='job_management',
                 )
 
     def abort(self):
@@ -202,3 +211,34 @@ class Job(StatusCls):
         size = fs.get_tree_size(self._dir)
         return sizeof_fmt(size)
 
+    def get_progress(self):
+        """
+        Return job progress computed from task progress
+        """
+        if len(self.tasks) == 0:
+            return 0.0
+
+        progress = 0.0
+
+        for task in self.tasks:
+            progress += task.progress
+
+        progress /= len(self.tasks)
+        return progress
+
+    def emit_progress_update(self):
+        """
+        Call socketio.emit for task job update, by considering task progress.
+        """
+        progress = self.get_progress()
+
+        from digits.webapp import socketio
+        socketio.emit('job update',
+                      {
+                          'job_id': self.id(),
+                          'update': 'progress',
+                          'percentage': int(round(100*progress)),
+                      },
+                      namespace='/jobs',
+                      room='job_management'
+                  )

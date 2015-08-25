@@ -4,12 +4,6 @@
 
 {% extends "layout.html" %}
 
-{% block head %}
-    {% with namespace = "/home" %}
-        {% include "socketio.html" %}
-    {% endwith %}
-{% endblock %}
-
 {% block content %}
 <script>
 function deleteJob(job_id) {
@@ -29,7 +23,7 @@ function deleteJob(job_id) {
 </script>
 <div class="page-header">
     {% if total_gpu_count %}
-    <div class="pull-right">
+    <div id="gpus-available" class="pull-right">
         {{remaining_gpu_count}}/{{total_gpu_count}}
         GPU{{'s' if total_gpu_count != 1 }} available
     </div>
@@ -38,6 +32,8 @@ function deleteJob(job_id) {
 </div>
 
 {{ print_flashes() }}
+
+{% include 'job_management.html' %}
 
 <div class="row">
     <div class="col-sm-6">
@@ -65,38 +61,14 @@ function deleteJob(job_id) {
 
 <h2>Datasets</h2>
 
-<h3>In progress</h3>
-<ul id="datasets-running" class="list-group">
-    {% for job in running_datasets %}
-    <li class="list-group-item">
-        <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
-        <h4 class="list-group-item-heading"><a href="{{ url_for('datasets_show', job_id=job.id()) }}">{{ job.name() }}</a> &nbsp; <span class="badge">{{job.train_db_task().backend}}</span></h4>
-        <p class="list-group-item-text">
-        <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
-        <small>({{job.status_history[0][1]|print_time_since}} ago)</small>
-        <br />
-        <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
-    </li>
-    {% else %}
-    <li class="list-group-item"><i>None</i></li>
-    {% endfor %}
-</ul>
-
-<h3>Completed</h3>
 <div class="tab-content">
     {% for batch in completed_datasets|batch(10) %}
     <div class="tab-pane{{' active' if loop.index==1}}" id="completed-datasets-page-{{loop.index}}">
-        <ul class="list-group">
+        <ul class="list-group" id="datasets">
             {% for job in batch %}
-            <li class="list-group-item">
-            <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
-                <h4 class="list-group-item-heading"><a href="{{ url_for('datasets_show', job_id=job.id()) }}">{{ job.name() }}</a> &nbsp; <span class="badge">{{job.train_db_task().backend}}</span></h4>
-                <p class="list-group-item-text">
-                <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
-                <br />
-                <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
-                <small>after {{(job.status_history[-1][1]-job.status_history[0][1])|print_time_diff}}</small>
-            </li>
+            {% set show_func = 'datasets_show' %}
+            {% set badge = job.train_db_task().backend %}
+            {% include 'job_item.html' %}
             {% else %}
             <li class="list-group-item"><i>None</i></li>
             {% endfor %}
@@ -146,38 +118,14 @@ function deleteJob(job_id) {
     </small>
 </h2>
 
-<h3>In progress</h3>
-<ul id="models-running" class="list-group">
-    {% for job in running_models %}
-    <li class="list-group-item">
-        <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
-        <h4 class="list-group-item-heading"><a href="{{ url_for('models_show', job_id=job.id()) }}">{{ job.name() }}</a> &nbsp; <span class="badge">{{job.train_task().get_framework_id()}}</span></h4>
-        <p class="list-group-item-text">
-        <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
-        <small>({{job.status_history[0][1]|print_time_since}} ago)</small>
-        <br />
-        <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
-    </li>
-    {% else %}
-    <li class="list-group-item"><i>None</i></li>
-    {% endfor %}
-</ul>
-
-<h3>Completed</h3>
 <div class="tab-content">
     {% for batch in completed_models|batch(10) %}
     <div class="tab-pane{{' active' if loop.index==1}}" id="completed-models-page-{{loop.index}}">
-    <ul class="list-group">
+    <ul class="list-group" id="models">
         {% for job in batch %}
-        <li id="job-{{job.id()}}" class="list-group-item">
-        <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
-            <h4 class="list-group-item-heading"><a href="{{ url_for('models_show', job_id=job.id()) }}">{{ job.name() }}</a> &nbsp; <span class="badge">{{job.train_task().get_framework_id()}}</span></h4>
-            <p class="list-group-item-text">
-            <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
-            <br />
-            <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
-            <small>after {{(job.status_history[-1][1]-job.status_history[0][1])|print_time_diff}}</small>
-        </li>
+        {% set show_func = 'models_show' %}
+        {% set badge = job.train_task().get_framework_id() %}
+        {% include 'job_item.html' %}
         {% else %}
         <li class="list-group-item"><i>None</i></li>
         {% endfor %}

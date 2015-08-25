@@ -4,6 +4,9 @@
 *.pyc
 *.swp
 
+# Ignore emacs backup files
+*~
+
 # Ignore these files
 .coverage
 

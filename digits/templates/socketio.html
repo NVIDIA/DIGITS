@@ -13,7 +13,7 @@ $(window).bind("beforeunload", function() {
 
 {% if room -%}
     socket.on('connect', function () {
-            socket.emit('join', {'room': '{{job.id()}}'});
+            socket.emit('join', {'room': '{{room}}'});
         });
 {% endif -%}
 
