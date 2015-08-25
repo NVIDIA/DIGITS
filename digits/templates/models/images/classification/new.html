@@ -78,6 +78,13 @@ $("#dataset").change(function() {
                 <h4>Solver Options</h4>
 
                 <!-- Length -->
+                <div class="form-group{{' has-error' if form.shuffle.errors}}" id="shuffle-data" style="display:none;">
+                    <label for={{form.shuffle.name}}>
+                        {{form.shuffle}}
+                        {{form.shuffle.label.text}}
+                    </label>
+                    {{ form.shuffle.tooltip }}
+                </div>
 
                 <div class="form-group{{' has-error' if form.train_epochs.errors}}">
                     {{form.train_epochs.label}}

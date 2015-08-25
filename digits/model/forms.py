@@ -281,6 +281,7 @@ class ModelForm(Form):
             )
 
     shuffle = utils.forms.BooleanField('Shuffle Train Data',
-                        default = True
+                                       default = True,
+                                       tooltip = 'For every epoch, shuffle the data before training.'
             )
 
