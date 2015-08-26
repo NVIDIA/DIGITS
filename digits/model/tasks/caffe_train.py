@@ -1380,3 +1380,6 @@ class CaffeTrainTask(TrainTask):
         self._transformer = t
         return self._transformer
 
+    def get_model_file(self):
+        return self.deploy_file
+

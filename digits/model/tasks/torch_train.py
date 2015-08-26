@@ -904,3 +904,6 @@ class TorchTrainTask(TrainTask):
         """
         return False
 
+    def get_model_file(self):
+        return self.model_file
+

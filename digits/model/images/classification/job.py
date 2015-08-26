@@ -38,21 +38,9 @@ class ImageClassificationModelJob(ImageModelJob):
         if not snapshot_filename:
             raise ValueError('Invalid epoch')
 
-        if task.framework_name() == 'caffe':
-            return [
-                (self.path(task.deploy_file),
-                    os.path.basename(task.deploy_file)),
-                (task.dataset.path(task.dataset.labels_file),
-                    os.path.basename(task.dataset.labels_file)),
-                (task.dataset.path(task.dataset.train_db_task().mean_file),
-                    os.path.basename(task.dataset.train_db_task().mean_file)),
-                (snapshot_filename,
-                    os.path.basename(snapshot_filename)),
-                ]
-        elif task.framework_name() == 'torch':
-            return [
-                (self.path(task.model_file),
-                    os.path.basename(task.model_file)),
+        return [
+                (self.path(task.get_model_file()),
+                    os.path.basename(task.get_model_file())),
                 (task.dataset.path(task.dataset.labels_file),
                     os.path.basename(task.dataset.labels_file)),
                 (task.dataset.path(task.dataset.train_db_task().mean_file),
