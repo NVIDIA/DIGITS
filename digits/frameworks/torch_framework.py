@@ -64,6 +64,10 @@ class TorchFramework(Framework):
         # return the same string
         return previous_network
 
+    # return visualization of network
+    def get_network_visualization(self, desc):
+        raise NotImplementedError
+
 
 
 

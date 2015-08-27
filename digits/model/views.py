@@ -10,13 +10,7 @@ import zipfile
 
 import flask
 import werkzeug.exceptions
-from google.protobuf import text_format
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
-import caffe.draw
+
 
 import digits
 from digits import utils
@@ -87,19 +81,10 @@ def models_customize():
     except:
         pass
 
-    if framework == "caffe":
-        return json.dumps({
-            'network': text_format.MessageToString(job.train_task().network),
+    return json.dumps({
+            'network': job.train_task().get_network_desc(),
             'snapshot': snapshot
             })
-    elif framework == "torch":
-        with open (os.path.join(job.train_task().job_dir,utils.constants.TORCH_MODEL_FILE), "r") as infile:
-            return json.dumps({
-                'network':infile.read(),
-                'snapshot': snapshot
-                })
-    else:
-        raise werkzeug.Exceptions.BadRequest('unknown framework')
 
 @app.route(NAMESPACE + 'visualize-network', methods=['POST'])
 @autodoc('models')
@@ -107,12 +92,15 @@ def models_visualize_network():
     """
     Returns a visualization of the custom network as a string of PNG data
     """
-    net = caffe_pb2.NetParameter()
-    text_format.Merge(flask.request.form['custom_network'], net)
-    # Throws an error if name is None
-    if not net.name:
-        net.name = 'Network'
-    return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
+    print flask.request.args
+    framework = flask.request.args.get('framework')
+    if not framework:
+        raise werkzeug.exceptions.BadRequest('framework not provided')
+
+    fw = frameworks.get_framework_by_id(framework)
+    ret = fw.get_network_visualization(flask.request.form['custom_network'])
+
+    return ret
 
 @app.route(NAMESPACE + 'visualize-lr', methods=['POST'])
 @autodoc('models')

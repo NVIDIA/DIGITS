@@ -923,6 +923,14 @@ class TorchTrainTask(TrainTask):
         """
         return False
 
+    # return path to model file
     def get_model_file(self):
         return self.model_file
+
+    # return text description of network
+    def get_network_desc(self):
+        with open (os.path.join(self.job_dir,utils.constants.TORCH_MODEL_FILE), "r") as infile:
+            desc = infile.read()
+        return desc
+
 

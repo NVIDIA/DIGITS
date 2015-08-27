@@ -546,7 +546,7 @@ frameworks['{{ fw.get_id() }}'] = framework;
 
 function visualizeNetwork() {
     framework = $('#framework').val();
-    $.ajax("{{url_for('models_visualize_network')}}",
+    $.ajax("{{url_for('models_visualize_network')}}?framework="+framework,
         {
             type: "POST",
             data: $('#custom_network').serialize()

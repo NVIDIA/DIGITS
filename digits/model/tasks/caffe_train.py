@@ -1380,6 +1380,10 @@ class CaffeTrainTask(TrainTask):
         self._transformer = t
         return self._transformer
 
+    # return path to model file
     def get_model_file(self):
         return self.deploy_file
 
+    # return text description of model
+    def get_network_desc(self):
+        return text_format.MessageToString(self.network)

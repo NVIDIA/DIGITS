@@ -15,6 +15,7 @@ try:
 except ImportError:
     # See issue #32
     from caffe.proto import caffe_pb2
+import caffe.draw
 
 @subclass
 class CaffeFramework(Framework):
@@ -79,3 +80,13 @@ class CaffeFramework(Framework):
         if len(ip_layers) > 0:
             ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
         return network
+
+    # return visualization of network
+    def get_network_visualization(self, desc):
+        net = caffe_pb2.NetParameter()
+        text_format.Merge(desc, net)
+        # Throws an error if name is None
+        if not net.name:
+            net.name = 'Network'
+        return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
+
