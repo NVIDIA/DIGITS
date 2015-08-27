@@ -1,6 +1,6 @@
 # REST API
 
-*Generated Aug 26, 2015*
+*Generated Aug 27, 2015*
 
 DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
 
@@ -82,7 +82,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/model/views.py@34`](../digits/model/views.py#L34)
+Location: [`digits/model/views.py@28`](../digits/model/views.py#L28)
 
 ### `/models/images/classification.json`
 
@@ -106,7 +106,7 @@ Location: [`digits/model/images/classification/views.py@51`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@297`](../digits/model/images/classification/views.py#L297)
+Location: [`digits/model/images/classification/views.py@292`](../digits/model/images/classification/views.py#L292)
 
 ### `/models/images/classification/classify_one.json`
 

@@ -8,6 +8,7 @@ import math
 import subprocess
 import sys
 import operator
+import shutil
 
 import numpy as np
 
@@ -897,7 +898,7 @@ class TorchTrainTask(TrainTask):
             else:
                 self.logger.info('%s classify many task completed.' % self.framework_name())
         finally:
-            os.removedirs(temp_dir_path)
+            shutil.rmtree(temp_dir_path)
 
         return (labels,np.array(predictions))
 

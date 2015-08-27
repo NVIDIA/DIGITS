@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Aug 26, 2015*
+*Generated Aug 27, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -248,7 +248,7 @@ Methods: **GET**
 
 Arguments: `job_id`
 
-Location: [`digits/model/views.py@34`](../digits/model/views.py#L34)
+Location: [`digits/model/views.py@28`](../digits/model/views.py#L28)
 
 ### `/models/<job_id>/download`
 
@@ -258,7 +258,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension` (`tar.gz`)
 
-Location: [`digits/model/views.py@173`](../digits/model/views.py#L173)
+Location: [`digits/model/views.py@161`](../digits/model/views.py#L161)
 
 ### `/models/<job_id>/download.<extension>`
 
@@ -268,7 +268,7 @@ Methods: **GET**, **POST**
 
 Arguments: `job_id`, `extension`
 
-Location: [`digits/model/views.py@173`](../digits/model/views.py#L173)
+Location: [`digits/model/views.py@161`](../digits/model/views.py#L161)
 
 ### `/models/customize`
 
@@ -276,7 +276,7 @@ Location: [`digits/model/views.py@173`](../digits/model/views.py#L173)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@58`](../digits/model/views.py#L58)
+Location: [`digits/model/views.py@52`](../digits/model/views.py#L52)
 
 ### `/models/images/classification`
 
@@ -300,7 +300,7 @@ Location: [`digits/model/images/classification/views.py@51`](../digits/model/ima
 
 Methods: **GET**, **POST**
 
-Location: [`digits/model/images/classification/views.py@297`](../digits/model/images/classification/views.py#L297)
+Location: [`digits/model/images/classification/views.py@292`](../digits/model/images/classification/views.py#L292)
 
 ### `/models/images/classification/classify_one`
 
@@ -336,7 +336,7 @@ Location: [`digits/model/images/classification/views.py@28`](../digits/model/ima
 
 Methods: **POST**
 
-Location: [`digits/model/images/classification/views.py@394`](../digits/model/images/classification/views.py#L394)
+Location: [`digits/model/images/classification/views.py@375`](../digits/model/images/classification/views.py#L375)
 
 ### `/models/images/generic`
 
@@ -388,7 +388,7 @@ Location: [`digits/model/images/generic/views.py@30`](../digits/model/images/gen
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@118`](../digits/model/views.py#L118)
+Location: [`digits/model/views.py@106`](../digits/model/views.py#L106)
 
 ### `/models/visualize-network`
 
@@ -396,7 +396,7 @@ Location: [`digits/model/views.py@118`](../digits/model/views.py#L118)
 
 Methods: **POST**
 
-Location: [`digits/model/views.py@105`](../digits/model/views.py#L105)
+Location: [`digits/model/views.py@90`](../digits/model/views.py#L90)
 
 ## Util
 

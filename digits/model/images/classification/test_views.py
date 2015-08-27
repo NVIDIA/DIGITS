@@ -212,7 +212,7 @@ class BaseTestViews(BaseViewsTest):
     def test_visualize_network(self):
         if self.FRAMEWORK=='torch':
             raise unittest.SkipTest('Torch visualization not supported')
-        rv = self.app.post('/models/visualize-network',
+        rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
                 data = {'custom_network': self.network()}
                 )
         s = BeautifulSoup(rv.data)

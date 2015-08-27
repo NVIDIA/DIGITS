@@ -207,7 +207,7 @@ class BaseTestViews(BaseViewsTest):
         assert not self.model_exists('foo'), "model shouldn't exist"
 
     def test_visualize_network(self):
-        rv = self.app.post('/models/visualize-network',
+        rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
                 data = {'custom_network': self.network()}
                 )
         s = BeautifulSoup(rv.data)
