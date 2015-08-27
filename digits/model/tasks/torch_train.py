@@ -462,9 +462,8 @@ class TorchTrainTask(TrainTask):
         if constants.TORCH_USE_MEAN_PIXEL:
             args.append('--useMeanPixel=yes')
 
-        if self.crop_size:
-            args.append('--crop=yes')
-            args.append('--croplen=%d' % self.crop_size)
+        # input image has been resized to network input dimensions by caller
+        args.append('--crop=no')
 
         if self.use_mean:
             args.append('--subtractMean=yes')
@@ -770,7 +769,7 @@ class TorchTrainTask(TrainTask):
             return self.classify_many(data, snapshot_epoch=snapshot_epoch)
         raise NotImplementedError()
 
-    def classify_many(self, image_file, snapshot_epoch=None):
+    def classify_many(self, images, snapshot_epoch=None):
         """
         Returns (labels, results):
         labels -- an array of strings
@@ -787,100 +786,120 @@ class TorchTrainTask(TrainTask):
         Keyword arguments:
         snapshot_epoch -- which snapshot to use
         """
-	labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
 
-        if config_value('torch_root') == '<PATHS>':
-            torch_bin = 'th'
-        else:
-            torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
+        # create a temporary folder to store images and a temporary file
+        # to store a list of paths to the images
+        temp_dir_path = tempfile.mkdtemp()
+        try: # this try...finally clause is used to clean up the temp directory in any case
+            _, temp_imgfile_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
+            temp_imgfile = open(temp_imgfile_path, "w")
+            for image in images:
+                _, temp_image_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.jpeg')
+                image = PIL.Image.fromarray(image)
+                try:
+                    image.save(temp_image_path, format='jpeg')
+                except KeyError:
+                    error_message = 'Unable to save file to "%s"' % temp_image_path
+                    self.logger.error(error_message)
+                    raise errors.TestError(error_message)
+                temp_imgfile.write("%s\n" % temp_image_path)
+            temp_imgfile.close()
 
-        args = [torch_bin,
-                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
-		'--testMany=yes',
-		'--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
-		'--image=%s' % str(image_file),
-                '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
-                '--network=%s' % self.model_file.split(".")[0],
-                '--networkDirectory=%s' % self.job_dir,
-                '--load=%s' % self.job_dir,
-                '--snapshotPrefix=%s' % self.snapshot_prefix,
-                '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
-		'--pythonPrefix=%s' % sys.executable,
-                '--labels=%s' % self.dataset.path(self.dataset.labels_file)
-                ]
-        if snapshot_epoch:
-            args.append('--epoch=%d' % int(snapshot_epoch))
-        if constants.TORCH_USE_MEAN_PIXEL:
-            args.append('--useMeanPixel=yes')
+            labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
 
-        if self.crop_size:
-            args.append('--crop=yes')
-            args.append('--croplen=%d' % self.crop_size)
-
-        if self.use_mean:
-            args.append('--subtractMean=yes')
-        else:
-            args.append('--subtractMean=no')
-
-        #print args
-
-        # Convert them all to strings
-        args = [str(x) for x in args]
-
-        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
-        self.logger.info('%s classify many task started.' % self.name())
-
-        unrecognized_output = []
-	predictions = []
-        p = subprocess.Popen(args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.job_dir,
-                close_fds=True,
-                )
-
-        try:
-            while p.poll() is None:
-                for line in utils.nonblocking_readlines(p.stdout):
-                    if self.aborted.is_set():
-                        p.terminate()
-                        raise errors.TestError('%s classify many task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
-
-                    if line is not None:
-                        # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
-                        # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
-                        line=regex.sub('', line).strip()
-                    if line:
-                        if not self.process_test_output(line, predictions, 'many'):
-                            self.logger.warning('%s classify many task unrecognized input: %s' % (self.framework_name(), line.strip()))
-                            unrecognized_output.append(line)
-                    else:
-                        time.sleep(0.05)
-        except Exception as e:
-            if p.poll() is None:
-                p.terminate()
-            error_message = ''
-            if type(e) == errors.TestError:
-                error_message = e.__str__()
+            if config_value('torch_root') == '<PATHS>':
+                torch_bin = 'th'
             else:
-                error_message = '%s classify many task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
-            self.logger.error(error_message)
-            if unrecognized_output:
-                unrecognized_output = '\n'.join(unrecognized_output)
-                error_message = error_message + unrecognized_output
-            raise errors.TestError(error_message)
+                torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
-        if p.returncode != 0:
-            error_message = '%s classify many task failed with error code %d' % (self.framework_name(), p.returncode)
-            self.logger.error(error_message)
-            if unrecognized_output:
-                unrecognized_output = '\n'.join(unrecognized_output)
-                error_message = error_message + unrecognized_output
-            raise errors.TestError(error_message)
-        else:
-            self.logger.info('%s classify many task completed.' % self.framework_name())
+            args = [torch_bin,
+                    os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
+                    '--testMany=yes',
+                    '--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
+                    '--image=%s' % str(temp_imgfile_path),
+                    '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
+                    '--network=%s' % self.model_file.split(".")[0],
+                    '--networkDirectory=%s' % self.job_dir,
+                    '--load=%s' % self.job_dir,
+                    '--snapshotPrefix=%s' % self.snapshot_prefix,
+                    '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
+                    '--pythonPrefix=%s' % sys.executable,
+                    '--labels=%s' % self.dataset.path(self.dataset.labels_file)
+                    ]
+            if snapshot_epoch:
+                args.append('--epoch=%d' % int(snapshot_epoch))
+            if constants.TORCH_USE_MEAN_PIXEL:
+                args.append('--useMeanPixel=yes')
 
-	return (labels,np.array(predictions))
+            # input images have been resized to network input dimensions by caller
+            args.append('--crop=no')
+
+            if self.use_mean:
+                args.append('--subtractMean=yes')
+            else:
+                args.append('--subtractMean=no')
+
+            #print args
+
+            # Convert them all to strings
+            args = [str(x) for x in args]
+
+            regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+            self.logger.info('%s classify many task started.' % self.name())
+
+            unrecognized_output = []
+            predictions = []
+            p = subprocess.Popen(args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=self.job_dir,
+                    close_fds=True,
+                    )
+
+            try:
+                while p.poll() is None:
+                    for line in utils.nonblocking_readlines(p.stdout):
+                        if self.aborted.is_set():
+                            p.terminate()
+                            raise errors.TestError('%s classify many task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
+
+                        if line is not None:
+                            # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
+                            # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
+                            line=regex.sub('', line).strip()
+                        if line:
+                            if not self.process_test_output(line, predictions, 'many'):
+                                self.logger.warning('%s classify many task unrecognized input: %s' % (self.framework_name(), line.strip()))
+                                unrecognized_output.append(line)
+                        else:
+                            time.sleep(0.05)
+            except Exception as e:
+                if p.poll() is None:
+                    p.terminate()
+                error_message = ''
+                if type(e) == errors.TestError:
+                    error_message = e.__str__()
+                else:
+                    error_message = '%s classify many task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
+                self.logger.error(error_message)
+                if unrecognized_output:
+                    unrecognized_output = '\n'.join(unrecognized_output)
+                    error_message = error_message + unrecognized_output
+                raise errors.TestError(error_message)
+
+            if p.returncode != 0:
+                error_message = '%s classify many task failed with error code %d' % (self.framework_name(), p.returncode)
+                self.logger.error(error_message)
+                if unrecognized_output:
+                    unrecognized_output = '\n'.join(unrecognized_output)
+                    error_message = error_message + unrecognized_output
+                raise errors.TestError(error_message)
+            else:
+                self.logger.info('%s classify many task completed.' % self.framework_name())
+        finally:
+            os.removedirs(temp_dir_path)
+
+        return (labels,np.array(predictions))
 
     def has_model(self):
         """

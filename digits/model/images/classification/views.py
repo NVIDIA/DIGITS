@@ -253,13 +253,8 @@ def image_classification_model_classify_one():
     if job.train_task().crop_size:
         height = job.train_task().crop_size
         width = job.train_task().crop_size
-    if job.train_task().framework_name() == 'torch' and (not utils.constants.TORCH_USE_MEAN_PIXEL) and job.train_task().use_mean:  # for torch, resizing the test image to match with db image sizes instead of matching with cropped images used to train the model. Further cropping will be take care in torch lua script after preprocessing the image.
-        image = utils.image.resize_image(image, job.dataset.image_dims[0], job.dataset.image_dims[1],
-                channels = db_task.image_dims[2],
-                resize_mode = db_task.resize_mode,
-                )
-    else:                                                       # if job.train_task().framework_name() == 'caffe' or utils.constants.TRAIN_DB or (not job.train_task().use_mean)
-        image = utils.image.resize_image(image, height, width,
+
+    image = utils.image.resize_image(image, height, width,
                 channels = db_task.image_dims[2],
                 resize_mode = db_task.resize_mode,
                 )
@@ -346,21 +341,7 @@ def image_classification_model_classify_many():
         raise werkzeug.exceptions.BadRequest(
                 'Unable to load any images from the file')
 
-    labels, scores = None, None
-
-    if job.train_task().framework_name() == 'torch':
-        _, temp_imgfile_path = tempfile.mkstemp(suffix='.txt')
-        temp_imgfile = open(temp_imgfile_path, "w")
-        for eachurl in paths:
-            temp_imgfile.write("%s\n" % eachurl)
-        temp_imgfile.close()
-        labels, scores = job.train_task().infer_many(temp_imgfile_path, snapshot_epoch=epoch)
-        try:
-            os.remove(temp_imgfile_path)
-        except OSError:
-            pass
-    elif job.train_task().framework_name() == 'caffe':
-        labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
+    labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
 
     if scores is None:
         raise RuntimeError('An error occured while processing the images')
