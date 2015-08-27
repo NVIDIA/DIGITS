@@ -276,14 +276,15 @@ class CaffeTrainTask(TrainTask):
 
         # input
         deploy_network.input.append('data')
-        deploy_network.input_dim.append(1)
-        deploy_network.input_dim.append(self.dataset.image_dims[2])
+        shape = deploy_network.input_shape.add()
+        shape.dim.append(1)
+        shape.dim.append(self.dataset.image_dims[2])
         if self.crop_size:
-            deploy_network.input_dim.append(self.crop_size)
-            deploy_network.input_dim.append(self.crop_size)
+            shape.dim.append(self.crop_size)
+            shape.dim.append(self.crop_size)
         else:
-            deploy_network.input_dim.append(self.dataset.image_dims[0])
-            deploy_network.input_dim.append(self.dataset.image_dims[1])
+            shape.dim.append(self.dataset.image_dims[0])
+            shape.dim.append(self.dataset.image_dims[1])
 
         # hidden layers
         deploy_network.MergeFrom(hidden_layers)
@@ -484,16 +485,17 @@ class CaffeTrainTask(TrainTask):
 
         # input
         deploy_network.input.append('data')
-        deploy_network.input_dim.append(1)
-        deploy_network.input_dim.append(train_image_db.image_channels)
+        shape = deploy_network.input_shape.add()
+        shape.dim.append(1)
+        shape.dim.append(train_image_db.image_channels)
         if train_image_data_layer.transform_param.HasField('crop_size'):
-            deploy_network.input_dim.append(
+            shape.dim.append(
                     train_image_data_layer.transform_param.crop_size)
-            deploy_network.input_dim.append(
+            shape.dim.append(
                     train_image_data_layer.transform_param.crop_size)
         else:
-            deploy_network.input_dim.append(train_image_db.image_height)
-            deploy_network.input_dim.append(train_image_db.image_width)
+            shape.dim.append(train_image_db.image_height)
+            shape.dim.append(train_image_db.image_width)
 
         # hidden layers
         deploy_network.MergeFrom(deploy_layers)
@@ -1316,7 +1318,10 @@ class CaffeTrainTask(TrainTask):
         network = caffe_pb2.NetParameter()
         with open(self.path(self.deploy_file)) as infile:
             text_format.Merge(infile.read(), network)
-        data_shape = network.input_dim
+        if network.input_shape:
+            data_shape = network.input_shape[0].dim
+        else:
+            data_shape = network.input_dim[:4]
 
         if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             if self.dataset.image_dims[2] == 3 and \
