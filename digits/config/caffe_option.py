@@ -7,6 +7,9 @@ import imp
 import platform
 import subprocess
 
+import matplotlib
+matplotlib.use('Agg')
+
 from digits import device_query
 import config_option
 import prompt
