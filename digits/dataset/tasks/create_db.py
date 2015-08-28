@@ -49,6 +49,12 @@ class CreateDbTask(Task):
         self.input_file = input_file
         self.db_name = db_name
         self.backend = backend
+        if backend == 'hdf5':
+            # store a textfile that contains a path to the hdf5 file
+            self.textfile = '%s.txt' % self.db_name
+            with open(self.path(self.textfile), 'w') as outfile:
+                # XXX - this works because the model job will be in an adjacent folder
+                outfile.write('../%s/%s' % (self.job_id, self.db_name))
         self.image_dims = image_dims
         if image_dims[2] == 3:
             self.image_channel_order = 'BGR'
