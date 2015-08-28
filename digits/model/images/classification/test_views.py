@@ -69,6 +69,24 @@ layer {
 }
 """
 
+    TORCH_NETWORK = \
+"""
+require 'nn'
+require 'cunn'
+local model = nn.Sequential()
+model:add(nn.View(-1):setNumInputDims(3)) -- 10*10*3 -> 300
+model:add(nn.Linear(300, 3))
+model:add(nn.LogSoftMax())
+model:cuda()
+return model
+"""
+
+    @classmethod
+    def setUpClass(cls):
+        super(BaseViewsTest, cls).setUpClass()
+        if cls.FRAMEWORK=='torch' and not config_value('torch_root'):
+            raise unittest.SkipTest('Torch not found')
+
     @classmethod
     def model_exists(cls, job_id):
         return cls.job_exists(job_id, 'models')
@@ -92,6 +110,9 @@ layer {
     def delete_model(cls, job_id):
         return cls.delete_job(job_id, job_type='models')
 
+    @classmethod
+    def network(cls):
+        return cls.TORCH_NETWORK if cls.FRAMEWORK=='torch' else cls.CAFFE_NETWORK
 
 class BaseViewsTestWithDataset(BaseViewsTest,
         digits.dataset.images.classification.test_views.BaseViewsTestWithDataset):
@@ -125,12 +146,13 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         **kwargs -- data to be sent with POST request
         """
         data = {
-                'model_name':       'test_model',
-                'dataset':          cls.dataset_id,
-                'method':           'custom',
-                'custom_network':   cls.CAFFE_NETWORK,
-                'batch_size':       10,
-                'train_epochs':     1,
+                'model_name':                        'test_model',
+                'dataset':                           cls.dataset_id,
+                'method':                            'custom',
+                'custom_network':                    cls.network(),
+                'batch_size':                        10,
+                'train_epochs':                      1,
+                'framework' :                        cls.FRAMEWORK
                 }
         if cls.CROP_SIZE is not None:
             data['crop_size'] = cls.CROP_SIZE
@@ -175,12 +197,7 @@ class BaseViewsTestWithModel(BaseViewsTestWithDataset):
         cls.model_id = cls.create_model(json=True)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
-
-################################################################################
-# Test classes
-################################################################################
-
-class TestViews(BaseViewsTest):
+class BaseTestViews(BaseViewsTest):
     """
     Tests which don't require a dataset or a model
     """
@@ -193,8 +210,10 @@ class TestViews(BaseViewsTest):
         assert not self.model_exists('foo'), "model shouldn't exist"
 
     def test_visualize_network(self):
-        rv = self.app.post('/models/visualize-network',
-                data = {'custom_network': self.CAFFE_NETWORK}
+        if self.FRAMEWORK=='torch':
+            raise unittest.SkipTest('Torch visualization not supported')
+        rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
+                data = {'custom_network': self.network()}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
@@ -203,7 +222,7 @@ class TestViews(BaseViewsTest):
         assert image is not None, "didn't return an image"
 
 
-class TestCreation(BaseViewsTestWithDataset):
+class BaseTestCreation(BaseViewsTestWithDataset):
     """
     Model creation tests
     """
@@ -299,7 +318,7 @@ class TestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job1_id) == 'Done', 'second job failed'
 
 
-class TestCreated(BaseViewsTestWithModel):
+class BaseTestCreated(BaseViewsTestWithModel):
     """
     Tests on a model that has already been created
     """
@@ -419,6 +438,8 @@ class TestCreated(BaseViewsTestWithModel):
         assert 'classifications' in data, 'invalid response'
 
     def test_top_n(self):
+        if self.FRAMEWORK=='torch':
+            raise unittest.SkipTest('Torch top_n not supported')
         textfile_images = ''
         label_id = 0
         for label, images in self.imageset_paths.iteritems():
@@ -442,7 +463,7 @@ class TestCreated(BaseViewsTestWithModel):
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'
 
-class TestDatasetModelInteractions(BaseViewsTestWithDataset):
+class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
     """
     Test the interactions between datasets and models
     """
@@ -507,16 +528,16 @@ class TestDatasetModelInteractions(BaseViewsTestWithDataset):
         self.abort_model(model_id)
 
 
-class TestCreatedWide(TestCreated):
+class BaseTestCreatedWide(BaseTestCreated):
     IMAGE_WIDTH = 20
 
-class TestCreatedTall(TestCreated):
+class BaseTestCreatedTall(BaseTestCreated):
     IMAGE_HEIGHT = 20
 
-class TestCreatedCropInForm(TestCreated):
+class BaseTestCreatedCropInForm(BaseTestCreated):
     CROP_SIZE = 8
 
-class TestCreatedCropInNetwork(TestCreated):
+class BaseTestCreatedCropInNetwork(BaseTestCreated):
     CAFFE_NETWORK = \
 """
 layer {
@@ -568,13 +589,57 @@ layer {
 }
 """
 
-class TestLeNet(TestCreated):
+################################################################################
+# Test classes
+################################################################################
+
+class TestCaffeViews(BaseTestViews):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreation(BaseTestCreation):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreated(BaseTestCreated):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedWide(BaseTestCreatedWide):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedTall(BaseTestCreatedTall):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
+    FRAMEWORK = 'caffe'
+
+class TestTorchViews(BaseTestViews):
+    FRAMEWORK = 'torch'
+
+class TestTorchCreation(BaseTestCreation):
+    FRAMEWORK = 'torch'
+
+class TestTorchCreated(BaseTestCreated):
+    FRAMEWORK = 'torch'
+
+class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
+    FRAMEWORK = 'torch'
+
+class TestCaffeLeNet(TestCaffeCreated):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
 
     CAFFE_NETWORK=open(
             os.path.join(
                 os.path.dirname(digits.__file__),
-                'standard-networks', 'lenet.prototxt')
+                'standard-networks', 'caffe', 'lenet.prototxt')
             ).read()
+
+
+
+
 

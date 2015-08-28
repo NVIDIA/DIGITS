@@ -39,8 +39,8 @@ class ImageClassificationModelJob(ImageModelJob):
             raise ValueError('Invalid epoch')
 
         return [
-                (self.path(task.deploy_file),
-                    os.path.basename(task.deploy_file)),
+                (self.path(task.get_model_file()),
+                    os.path.basename(task.get_model_file())),
                 (task.dataset.path(task.dataset.labels_file),
                     os.path.basename(task.dataset.labels_file)),
                 (task.dataset.path(task.dataset.train_db_task().mean_file),

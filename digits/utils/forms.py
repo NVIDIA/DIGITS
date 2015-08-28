@@ -191,3 +191,10 @@ class TextAreaField(wtforms.TextAreaField):
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
+
+class BooleanField(wtforms.BooleanField):
+    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+        super(BooleanField, self).__init__(label, validators, **kwargs)
+
+        self.tooltip = Tooltip(self.id, self.short_name, tooltip)
+        self.explanation = Explanation(self.id, self.short_name, explanation_file)

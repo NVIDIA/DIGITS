@@ -77,6 +77,12 @@ class Task(StatusCls):
         """
         raise NotImplementedError
 
+    def get_framework_id(self):
+        """
+        Returns a string
+        """
+        raise NotImplementedError('Please implement me')
+
     def html_id(self):
         """
         Returns a string
@@ -214,7 +220,6 @@ class Task(StatusCls):
                     if line is not None:
                         # Remove whitespace
                         line = line.strip()
-
                     if line:
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
@@ -239,8 +244,11 @@ class Task(StatusCls):
             if self.exception is None:
                 self.exception = 'error code %d' % p.returncode
                 if unrecognized_output:
-                    self.traceback = '\n'.join(unrecognized_output)
-            self.after_runtime_error()
+                    if self.traceback is None:
+                        self.traceback = '\n'.join(unrecognized_output)
+                    else:
+                        self.traceback = self.traceback + ('\n'.join(unrecognized_output))
+            #self.after_runtime_error()
             self.status = Status.ERROR
             return False
         else:

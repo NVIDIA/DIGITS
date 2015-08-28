@@ -17,3 +17,9 @@ class LoadImageError(DigitsError):
     Errors that occur while loading an image
     """
     pass
+
+class TestError(DigitsError):
+    """
+    Errors that occur while loading an image
+    """
+    pass

@@ -23,7 +23,7 @@ from digits import utils, dataset
 from digits.utils import subclass, override, constants
 
 # NOTE: Increment this everytime the pickled object changes
-PICKLE_VERSION = 2
+PICKLE_VERSION = 3
 
 @subclass
 class CaffeTrainTask(TrainTask):
@@ -38,15 +38,13 @@ class CaffeTrainTask(TrainTask):
         #TODO
         pass
 
-    def __init__(self, network, **kwargs):
+    def __init__(self, **kwargs):
         """
         Arguments:
         network -- a caffe NetParameter defining the network
         """
         super(CaffeTrainTask, self).__init__(**kwargs)
         self.pickver_task_caffe_train = PICKLE_VERSION
-
-        self.network = network
 
         self.current_iteration = 0
 
@@ -59,7 +57,7 @@ class CaffeTrainTask(TrainTask):
         self.train_val_file = constants.CAFFE_TRAIN_VAL_FILE
         self.snapshot_prefix = constants.CAFFE_SNAPSHOT_PREFIX
         self.deploy_file = constants.CAFFE_DEPLOY_FILE
-        self.caffe_log_file = self.CAFFE_LOG
+        self.log_file = self.CAFFE_LOG
 
     def __getstate__(self):
         state = super(CaffeTrainTask, self).__getstate__()
@@ -78,9 +76,13 @@ class CaffeTrainTask(TrainTask):
         super(CaffeTrainTask, self).__setstate__(state)
 
         # Upgrade pickle file
-        if state['pickver_task_caffe_train'] == 1:
-            print 'upgrading %s' % self.job_id
+        if state['pickver_task_caffe_train'] <= 1:
+            print 'Upgrading CaffeTrainTask to version 2 ...'
             self.caffe_log_file = self.CAFFE_LOG
+        if state['pickver_task_caffe_train'] <= 2:
+            print 'Upgrading CaffeTrainTask to version 3 ...'
+            self.log_file = self.caffe_log_file
+            self.framework_id = 'caffe'
         self.pickver_task_caffe_train = PICKLE_VERSION
 
         # Make changes to self
@@ -1380,3 +1382,10 @@ class CaffeTrainTask(TrainTask):
         self._transformer = t
         return self._transformer
 
+    # return path to model file
+    def get_model_file(self):
+        return self.deploy_file
+
+    # return text description of model
+    def get_network_desc(self):
+        return text_format.MessageToString(self.network)
