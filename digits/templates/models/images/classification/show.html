@@ -76,6 +76,7 @@
 
             {% set task = job.train_task() %}
             <hr>
+            <h2>Trained Models</h2>
             <form id="test-model-form"
                 enctype="multipart/form-data"
                 method="post"
@@ -86,8 +87,12 @@
                 >
                 <div class="row">
                     <div class="col-sm-12">
+                        <label for="snapshot_epoch">Select Model</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-8">
                         <div class="form-group">
-                            <label for="snapshot_epoch">Select Model</label>
                             <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
                             </select>
                             <script>
@@ -117,18 +122,21 @@ function updateSnapshotList(data) {
 updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescape %});
                             </script>
                         </div>
+                    </div>
+                    <div class="col-sm-4">
                         <button
                             formaction="{{url_for('models_download', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             class="btn btn-info">
-                            Download
+                            Download Model
                         </button>
                     </div>
                 </div>
                 {% if task.get_framework_id() in framework_ids %}
                 <div class="row">
                     <div class="col-sm-6">
+                        <h3>Test a single image</h3>
                         <div class="form-group">
                             <label for="image_url" class="control-label">Image URL</label>
                             <input type="text" id="image_url" name="image_url" class="form-control">
@@ -153,20 +161,30 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 title="For each layer in the network, show statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
                                 ></span>
                         </div>
-                        <button name="classify-one-btn" onClick="return classifyOne();" class="btn btn-primary">Classify One Image</button>
-                        <span name="classify-one-explanation"
-                            class="explanation-tooltip glyphicon glyphicon-question-sign"
-                            data-container="body"
-                            title="Classify one image and show the top 5 category predictions. Also displays weights and activations for the network."
-                            ></span>
+                        <button name="classify-one-btn"
+                            formaction="{{url_for('image_classification_model_classify_one', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            formtarget="_blank"
+                            class="btn btn-primary">
+                            Classify One
+                        </button>
                     </div>
                     <div class="col-sm-6">
+                        <h3>Test a list of images</h3>
                         <div class="form-group">
                             <label for="image_list" class="control-label">Upload Image List</label>
                             <input type="file" id="image_list" name="image_list" class="form-control">
                             <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
                         </div>
-                        <button name="classify-many-btn" onClick="return classifyMany();" class="btn btn-primary">Classify Many Images</button>
+                        <button name="classify-many-btn"
+                            formaction="{{url_for('image_classification_model_classify_many', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            formtarget="_blank"
+                            class="btn btn-primary">
+                            Classify Many
+                        </button>
                         <span name="classify-many-explanation"
                             class="explanation-tooltip glyphicon glyphicon-question-sign"
                             data-container="body"
@@ -198,59 +216,6 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                 </div>
                 {% endif %}
             </form>
-
-            <script>
-function classifyOne() {
-    // grab all form data
-    var formData = new FormData($("#test-model-form")[0]);
-
-    $.ajax("{{url_for('image_classification_model_classify_one', job_id=job.id())}}",
-    {
-        type: "POST",
-        data: formData,
-        // options to tell jQuery not to process data or worry about content-type
-        cache: false,
-        contentType: false,
-        processData: false,
-    })
-    .done(function(data) {
-        bootbox.alert({
-            message: 'Loading...',
-            animate: false,
-            className: "wide-bootbox"
-        });
-        // Do this after the page loads so javascript works
-        $('div.bootbox-body').html(data);
-        $(".wide-bootbox").animate({scrollTop: 0}, "");
-    })
-    .fail(function(data) { errorAlert(data); });
-    return false;
-}
-function classifyMany() {
-    // grab all form data
-    var formData = new FormData($("#test-model-form")[0]);
-
-    $.ajax("{{url_for('image_classification_model_classify_many', job_id=job.id())}}",
-            {
-                type: "POST",
-                data: formData,
-                // options to tell jQuery not to process data or worry about content-type
-                cache: false,
-                contentType: false,
-                processData: false,
-            })
-    .done(function(data) {
-            bootbox.alert({
-                message: data,
-                animate: false,
-                className: "wide-bootbox"
-                });
-            $(".wide-bootbox").animate({scrollTop: 0}, "");
-            })
-    .fail(function(data) { errorAlert(data); });
-    return false;
-}
-            </script>
         </div>
     </div>
 </div>

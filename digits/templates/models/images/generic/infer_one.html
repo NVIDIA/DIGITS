@@ -1,4 +1,22 @@
 {# Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved. #}
+{% extends "layout.html" %}
+
+{% block nav %}
+<li><a href="{{url_for('models_show', job_id=job.id())}}">{{job.name()}}</a></li>
+<li class="active"><a>Test One</a></li>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>
+        {{job.name()}}
+        <small>
+            {{job.job_type()}}
+        </small>
+    </h1>
+</div>
+
 
 <div class="row">
     <div class="col-sm-6">
@@ -105,4 +123,6 @@
     </tr>
 </table>
 {% endif %}
+
+{% endblock %}
 

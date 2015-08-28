@@ -281,6 +281,7 @@ def image_classification_model_classify_one():
         return flask.jsonify({'predictions': predictions})
     else:
         return flask.render_template('models/images/classification/classify_one.html',
+                job             = job,
                 image_src       = utils.image.embed_image_html(image),
                 predictions     = predictions,
                 visualizations  = visualizations,
@@ -366,10 +367,11 @@ def image_classification_model_classify_many():
         return flask.jsonify({'classifications': joined})
     else:
         return flask.render_template('models/images/classification/classify_many.html',
-                paths=paths,
-                classifications=classifications,
-                show_ground_truth=not(ground_truths == [None]*len(ground_truths)),
-                ground_truths=ground_truths
+                job             = job,
+                paths           = paths,
+                classifications = classifications,
+                show_ground_truth= not(ground_truths == [None]*len(ground_truths)),
+                ground_truths   = ground_truths
                 )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
