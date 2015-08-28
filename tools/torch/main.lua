@@ -649,9 +649,9 @@ local function Train(epoch)
 
       local current_epoch = (epoch-1)+utils.round((math.min(t+opt.batchSize-1,trainSize))/trainSize, epoch_round)
 
-      -- log details when required number of images are processed
+      -- log details on first iteration, or when required number of images are processed
       curr_images_cnt = curr_images_cnt + opt.batchSize
-      if curr_images_cnt >= logging_check then
+      if t==1 or curr_images_cnt >= logging_check then
         logmessage.display(0, 'Training (epoch ' .. current_epoch .. '): loss = ' .. (loss_sum/loss_batches_cnt) .. ', lr = ' .. learningrate)
         curr_images_cnt = 0             -- For accurate values we may assign curr_images_cnt % logging_check to curr_images_cnt, instead of 0
         loss_sum = 0
