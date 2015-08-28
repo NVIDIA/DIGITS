@@ -85,6 +85,7 @@ class StatusCls(object):
     """
 
     def __init__(self):
+        self.progress = 0
         self.status_history = []
         self.status = Status.INIT
 
@@ -112,6 +113,10 @@ class StatusCls(object):
             prev = self.status_history[-2]
             if prev[0] == Status.WAIT and (curr[1] - prev[1]) < 1:
                 self.status_history.pop(-2)
+
+        # If the status is Done, then force the progress to 100%
+        if value == Status.DONE:
+            self.progress = 1.0
 
         # Don't invoke callback for INIT
         if value != Status.INIT:
