@@ -9,16 +9,49 @@ from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
-from . import dataset, model
+from . import dataset, model, forms
 from config import config_value
 from webapp import app, socketio, scheduler, autodoc
 import dataset.views
 import model.views
+from digits import utils
 from digits.utils import errors
+from digits.utils.session import session_required
 from digits.utils.routing import request_wants_json
+
+@app.route('/login', methods=['GET', 'POST'])
+@autodoc('login')
+def login():
+    """
+    DIGITS login page
+    Has users set a username in a cookie for tagging jobs
+    """
+    if 'username' in flask.session:
+        return flask.redirect(flask.url_for('home'))
+
+    form = forms.LoginForm()
+
+    if flask.request.method == 'GET' or not form.validate_on_submit():
+        return flask.render_template('login.html', form=form)
+
+    flask.session['username'] = form.username.data
+
+    return flask.redirect(flask.url_for('home'))
+
+@app.route('/logout', methods=['GET'])
+@session_required
+@autodoc('logout')
+def logout():
+    """
+    Logout from DIGITS
+    """
+    flask.session.pop('username')
+
+    return flask.redirect(flask.url_for('login'))
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
+@session_required
 @autodoc(['home', 'api'])
 def home():
     """
@@ -95,6 +128,7 @@ def get_job_list(cls, running):
 ### Jobs routes
 
 @app.route('/jobs/<job_id>', methods=['GET'])
+@session_required
 @autodoc('jobs')
 def show_job(job_id):
     """
@@ -112,6 +146,7 @@ def show_job(job_id):
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
 @app.route('/jobs/<job_id>', methods=['PUT'])
+@session_required
 @autodoc('jobs')
 def edit_job(job_id):
     """
@@ -128,6 +163,7 @@ def edit_job(job_id):
 @app.route('/datasets/<job_id>/status', methods=['GET'])
 @app.route('/models/<job_id>/status', methods=['GET'])
 @app.route('/jobs/<job_id>/status', methods=['GET'])
+@session_required
 @autodoc('jobs')
 def job_status(job_id):
     """
@@ -147,6 +183,7 @@ def job_status(job_id):
 @app.route('/datasets/<job_id>', methods=['DELETE'])
 @app.route('/models/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])
+@session_required
 @autodoc('jobs')
 def delete_job(job_id):
     """
@@ -167,6 +204,7 @@ def delete_job(job_id):
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
 @app.route('/jobs/<job_id>/abort', methods=['POST'])
+@session_required
 @autodoc('jobs')
 def abort_job(job_id):
     """
@@ -225,6 +263,7 @@ for code in HTTP_STATUS_CODES:
 ### File serving
 
 @app.route('/files/<path:path>', methods=['GET'])
+@session_required
 @autodoc('util')
 def serve_file(path):
     """
@@ -239,6 +278,7 @@ def serve_file(path):
 ### Path Completion
 
 @app.route('/autocomplete/path', methods=['GET'])
+@session_required
 @autodoc('util')
 def path_autocomplete():
     """

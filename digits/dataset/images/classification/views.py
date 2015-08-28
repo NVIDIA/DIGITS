@@ -4,7 +4,7 @@ import os
 
 import flask
 
-from digits import utils
+from digits.utils.session import session_required
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
@@ -232,6 +232,7 @@ def from_files(job, form):
 
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@session_required
 @autodoc('datasets')
 def image_classification_dataset_new():
     """
@@ -242,6 +243,7 @@ def image_classification_dataset_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
+@session_required
 @autodoc(['datasets', 'api'])
 def image_classification_dataset_create():
     """
@@ -295,6 +297,7 @@ def show(job):
     return flask.render_template('datasets/images/classification/show.html', job=job)
 
 @app.route(NAMESPACE + '/summary', methods=['GET'])
+@session_required
 @autodoc('datasets')
 def image_classification_dataset_summary():
     """

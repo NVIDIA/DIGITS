@@ -2,6 +2,7 @@
 
 import flask
 
+from digits.utils.session import session_required
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
@@ -11,6 +12,7 @@ from job import GenericImageDatasetJob
 NAMESPACE = '/datasets/images/generic'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@session_required
 @autodoc('datasets')
 def generic_image_dataset_new():
     """
@@ -21,6 +23,7 @@ def generic_image_dataset_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
+@session_required
 @autodoc(['datasets', 'api'])
 def generic_image_dataset_create():
     """
@@ -100,6 +103,7 @@ def show(job):
     return flask.render_template('datasets/images/generic/show.html', job=job)
 
 @app.route(NAMESPACE + '/summary', methods=['GET'])
+@session_required
 @autodoc('datasets')
 def generic_image_dataset_summary():
     """
