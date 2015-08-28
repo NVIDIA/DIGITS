@@ -199,7 +199,7 @@ class CreateDbTask(Task):
             return True
 
         # result
-        match = re.match(r'Total images added: (\d+)', message)
+        match = re.match(r'(\d+) images written to database', message)
         if match:
             self.entries_count = int(match.group(1))
             self.logger.debug(message)

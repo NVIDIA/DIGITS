@@ -6,165 +6,226 @@ import shutil
 from cStringIO import StringIO
 import unittest
 import platform
+import Queue
+from collections import Counter
+import shutil
 
-from nose.tools import raises, assert_raises
+import nose.tools
 import mock
 import PIL.Image
 import numpy as np
 
 from . import create_db as _
 
-class TestInit(object):
+class BaseTest():
+    """
+    Provides some helpful files and utilities
+    """
     @classmethod
     def setUpClass(cls):
-        cls.db_name = tempfile.mkdtemp()
+        cls.empty_file = tempfile.mkstemp()
+        cls.empty_dir = tempfile.mkdtemp()
+
+        # Create one good textfile
+        cls.good_file = tempfile.mkstemp()
+
+        # Create a color image
+        cls.color_image_file = tempfile.mkstemp(suffix='.png')
+        cls.numpy_image_color = np.ones((8,10,3), dtype='uint8')
+        cls.pil_image_color = PIL.Image.fromarray(cls.numpy_image_color)
+        cls.pil_image_color.save(cls.color_image_file[1])
+
+        # Create a grayscale image
+        cls.gray_image_file = tempfile.mkstemp(suffix='.png')
+        cls.numpy_image_gray = np.ones((8,10), dtype='uint8')
+        cls.pil_image_gray = PIL.Image.fromarray(cls.numpy_image_gray)
+        cls.pil_image_gray.save(cls.gray_image_file[1])
+
+        cls.image_count = 0
+        for i in xrange(3):
+            for j in xrange(3):
+                os.write(cls.good_file[0], '%s %s\n' % (cls.color_image_file[1], i))
+                os.write(cls.good_file[0], '%s %s\n' % (cls.gray_image_file[1], i))
+                cls.image_count += 2
 
     @classmethod
     def tearDownClass(cls):
+        for f in cls.empty_file, cls.good_file, cls.color_image_file, cls.gray_image_file:
+            try:
+                os.close(f[0])
+                os.remove(f[1])
+            except OSError:
+                pass
         try:
-            shutil.rmtree(cls.db_name)
+            shutil.rmtree(cls.empty_dir)
         except OSError:
-            pass
-
-class TestCreate(object):
-    @classmethod
-    def setUpClass(cls):
-        cls.db_name = tempfile.mkdtemp()
-        cls.db = _.DbCreator(cls.db_name)
-
-        fd, cls.input_file = tempfile.mkstemp()
-        os.close(fd)
-
-        # Use the example picture to construct a test input file
-        with open(cls.input_file, 'wb') as f:
-            f.write('digits/static/images/mona_lisa.jpg 0')
-
-    @classmethod
-    def tearDownClass(cls):
-        os.remove(cls.input_file)
-
-        try:
-            shutil.rmtree(cls.db_name)
-        except OSError:
-            pass
-
-    def test_create_no_input_file(self):
-        assert not self.db.create('', width=0, height=0), 'database should not allow empty input file'
-
-    def test_create_bad_height_width(self):
-        assert not self.db.create(
-            self.input_file,
-            width=-1,
-            height=-1,
-            resize_mode='crop'), 'database should not allow height == width == -1'
-
-    def test_create_bad_channel_count(self):
-        assert not self.db.create(
-            self.input_file,
-            width=200,
-            height=200,
-            channels=0,
-            resize_mode='crop'), 'database should not allow channels == 0'
-
-    def test_create_bad_resize_mode(self):
-        assert not self.db.create(
-            self.input_file,
-            width=200,
-            height=200,
-            resize_mode='slurp'), 'database should not allow bad resize mode slurp'
-
-    def test_create_bad_image_folder(self):
-        assert not self.db.create(
-            self.input_file,
-            width=200,
-            height=200,
-            resize_mode='crop',
-            image_folder='/clearly/a/wrong/folder'), 'database should not allow bad image folder'
-
-    def test_create_normal(self):
-        assert self.db.create(
-            self.input_file,
-            width=200,
-            height=200,
-            resize_mode='crop'), 'database should complete building normally'
+            raise
 
 
-class TestPathToDatum(object):
-    @classmethod
-    def setUpClass(cls):
-        cls.tmpdir = tempfile.mkdtemp()
-        cls.db_name = tempfile.mkdtemp(dir=cls.tmpdir)
-        cls.db = _.DbCreator(cls.db_name)
-        _handle, cls.image_path = tempfile.mkstemp(dir=cls.tmpdir, suffix='.jpg')
-        with open(cls.image_path, 'wb') as outfile:
-            PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8)).save(outfile, format='JPEG', quality=100)
+class TestFillLoadQueue(BaseTest):
 
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            shutil.rmtree(cls.tmpdir)
-        except OSError:
-            pass
+    def test_valid_file(self):
+        for shuffle in True, False:
+            yield self.check_valid_file, shuffle
 
-    def test_configs(self):
-        self.db.height = 10
-        self.db.width = 10
-        self.db.resize_mode = 'squash'
-        self.db.image_folder = None
-        for e in ['none', 'png', 'jpg']:
-            for c in [1, 3]:
-                for m in [True, False]:
-                    yield self.check_configs, (e, c, m)
+    def check_valid_file(self, shuffle):
+        queue = Queue.Queue()
+        result = _._fill_load_queue(self.good_file[1], queue, shuffle)
+        assert result == self.image_count, 'lines not added'
+        assert queue.qsize() == self.image_count, 'queue not full'
 
-    def check_configs(self, args):
-        e, c, m = args
-        self.db.encoding = e
-        self.db.channels = c
-        self.db.compute_mean = m
-        image_sum = self.db.initial_image_sum()
-        d = self.db.path_to_datum(self.image_path, 0, image_sum)
-        assert (d.channels, d.height, d.width) == (self.db.channels, self.db.height, self.db.width), 'wrong datum shape'
-        if e == 'none':
-            assert not d.encoded, 'datum should not be encoded when encoding="%s"' % e
+    def test_empty_file(self):
+        for shuffle in True, False:
+            yield self.check_empty_file, shuffle
+
+    def check_empty_file(self, shuffle):
+        queue = Queue.Queue()
+        nose.tools.assert_raises(
+                _.BadInputFileError,
+                _._fill_load_queue,
+                self.empty_file[1], queue, shuffle)
+
+class TestParseLine():
+
+    def test_good_lines(self):
+        for label, line in [
+                (0, '/path/image.jpg 0'),
+                (1, 'image.jpg 1'),
+                (2, 'image.jpg 2\n'),
+                (3, 'image.jpg           3'),
+                (4, 'spaces in filename.jpg 4'),
+                ]:
+            yield self.check_good_line, line, label
+
+    def check_good_line(self, line, label):
+        c = Counter()
+        p, l = _._parse_line(line, c)
+        assert l == label, 'parsed label wrong'
+        assert c[l] == 1, 'distribution is wrong'
+
+    def test_bad_lines(self):
+        for line in [
+                'nolabel.jpg',
+                'non-number.jpg five',
+                'negative.jpg -1',
+                ]:
+            yield self.check_bad_line, line
+
+    def check_bad_line(self, line):
+        nose.tools.assert_raises(
+                _.ParseLineError,
+                _._parse_line,
+                line, Counter()
+                )
+
+
+class TestCalculateBatchSize():
+    def test(self):
+        for count, batch_size in [
+                (1, 1),
+                (50, 50),
+                (100, 100),
+                (200, 100),
+                ]:
+            yield self.check, count, batch_size
+
+    def check(self, count, batch_size):
+        assert _._calculate_batch_size(count) == batch_size
+
+
+class TestCalculateNumThreads():
+    def test(self):
+        for batch_size, shuffle, num in [
+                (1000, True, 10),
+                (1000, False, 1),
+                (100, True, 10),
+                (100, False, 1),
+                (50, True, 7),
+                (4, True, 2),
+                (1, True, 1),
+                ]:
+            yield self.check, batch_size, shuffle, num
+
+    def check(self, batch_size, shuffle, num):
+        assert _._calculate_num_threads(
+                batch_size, shuffle) == num
+
+
+class TestInitialImageSum():
+    def test_color(self):
+        s = _._initial_image_sum(10, 10, 3)
+        assert s.shape == (10, 10, 3)
+        assert s.dtype == 'float64'
+
+    def test_grayscale(self):
+        s = _._initial_image_sum(10, 10, 1)
+        assert s.shape == (10, 10)
+        assert s.dtype == 'float64'
+
+
+class TestImageToDatum(BaseTest):
+    def test(self):
+        for compression in None, 'png', 'jpg':
+            yield self.check_color, compression
+            yield self.check_grayscale, compression
+
+    def check_color(self, compression):
+        d = _._array_to_datum(self.numpy_image_color, 1, compression)
+        assert d.height == self.numpy_image_color.shape[0]
+        assert d.width == self.numpy_image_color.shape[1]
+        assert d.channels == 3
+        assert d.encoded == bool(compression)
+
+    def check_grayscale(self, compression):
+        d = _._array_to_datum(self.numpy_image_gray, 1, compression)
+        assert d.height == self.numpy_image_gray.shape[0]
+        assert d.width == self.numpy_image_gray.shape[1]
+        assert d.channels == 1
+        assert d.encoded == bool(compression)
+
+class TestSaveMeans():
+    def test(self):
+        for color in True, False:
+            d = tempfile.mkdtemp()
+            for filename in 'mean.jpg', 'mean.png', 'mean.npy', 'mean.binaryproto':
+                yield self.check, d, filename, color
+            shutil.rmtree(d)
+
+    def check(self, directory, filename, color):
+        filename = os.path.join(directory, filename)
+        if color:
+            s = np.ones((8,10,3),dtype='float64')
         else:
-            assert d.encoded, 'datum should be encoded when encoding="%s"' % e
+            s = np.ones((8,10),dtype='float64')
 
+        _._save_means(s, 2, [filename])
+        assert os.path.exists(filename)
 
-class TestMapSize(object):
-    """
-    Tests regarding the LMDB map_size argument
-    """
+class BaseCreationTest(BaseTest):
 
-    def test_default_mapsize(self):
-        db_name = tempfile.mkdtemp()
-        db = _.DbCreator(db_name)
-        assert db.db.info()['map_size'] == (10<<20), 'Default map_size %s != 10MB' % db.db.info()['map_size']
+    def test_image_sizes(self):
+        for width in 8, 12:
+            for channels in 1, 3:
+                yield self.check_image_sizes, width, channels, False
 
-    @unittest.skipIf(platform.system() != 'Linux',
-            'This test fails on non-Linux systems')
-    def test_huge_mapsize(self):
-        db_name = tempfile.mkdtemp()
-        mapsize_mb = 1024**2 # 1TB should be no problem
-        db = _.DbCreator(db_name, lmdb_map_size=mapsize_mb)
+    def check_image_sizes(self, width, channels, shuffle):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                width, 10, channels, self.BACKEND)
 
-    def test_set_mapsize(self):
-        # create textfile
-        fd, input_file = tempfile.mkstemp()
-        os.close(fd)
-        with open(input_file, 'wb') as f:
-            f.write('digits/static/images/mona_lisa.jpg 0')
+    def test_no_shuffle(self):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 1, self.BACKEND, shuffle=False)
 
-        # create DbCreator object
-        db_name = tempfile.mkdtemp()
-        mapsize_mb = 1
-        db = _.DbCreator(db_name, lmdb_map_size=mapsize_mb)
+    def test_means(self):
+        mean_files = []
+        for suffix in 'jpg','npy','png','binaryproto':
+            mean_files.append(os.path.join(self.empty_dir, 'mean.%s' % suffix))
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 1, self.BACKEND, mean_files=mean_files)
 
-        # create db
-        image_size = 1000 # big enough to trigger a MapFullError
-        assert db.create(
-            input_file,
-            width=image_size,
-            height=image_size,
-            ), 'create failed'
+class TestLmdbCreation(BaseCreationTest):
+    BACKEND = 'lmdb'
 
+class TestHdf5Creation(BaseCreationTest):
+    BACKEND = 'hdf5'
 
