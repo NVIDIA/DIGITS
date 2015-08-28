@@ -609,7 +609,7 @@ if __name__ == '__main__':
             help = 'Image encoding format (jpg/png)'
             )
     parser.add_argument('-C', '--compression',
-            help = 'Database compression format (gzip/lzf)'
+            help = 'Database compression format (gzip)'
             )
     parser.add_argument('-b', '--backend',
             default='lmdb',
