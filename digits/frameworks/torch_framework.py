@@ -30,12 +30,18 @@ class TorchFramework(Framework):
         # id must be unique
         self.id = self.CLASS
 
-    # create train task
+    @override
     def create_train_task(self, **kwargs):
-        return TorchTrainTask(**kwargs)
+        """
+        create train task
+        """
+        return TorchTrainTask(framework_id = self.id, **kwargs)
 
-    # return description of standard network
+    @override
     def get_standard_network_desc(self, network):
+        """
+        return description of standard network
+        """
         networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', self.CLASS)
 
         # Torch's GoogLeNet and AlexNet models are placed in sub folder
@@ -48,25 +54,33 @@ class TorchFramework(Framework):
                 match = None
                 match = re.match(r'%s.lua' % network, filename)
                 if match:
-                    print "match!"
                     with open(path) as infile:
                         return infile.read()
         # return None if not found
         return None
 
-    # return network object from a string representation
+    @override
     def get_network_from_desc(self, network_desc):
+        """
+        return network object from a string representation
+        """
         # return the same string
         return network_desc
 
-    # return new instance of network from previous network
+    @override
     def get_network_from_previous(self, previous_network):
+        """
+        return new instance of network from previous network
+        """
         # return the same string
         return previous_network
 
-    # return visualization of network
-    def get_network_visualization(self, desc):
-        raise NotImplementedError
+    @override
+    def validate_network(self, data):
+        """
+        validate a network
+        """
+        return True
 
 
 

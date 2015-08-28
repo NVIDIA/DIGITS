@@ -12,21 +12,21 @@
     <div class="col-sm-6">
         <div class="well">
             <dl>
-                {% if task.framework_name() == 'caffe' %}
+                {% if task.get_framework_id() == 'caffe' %}
                 <dt>Solver</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{{task.solver_file}}</a></dd>
                 <dt>Network (train/val)</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{{task.train_val_file}}</a></dd>
                 <dt>Network (deploy)</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
-                {% elif task.framework_name() == 'torch' %}
+                {% elif task.get_framework_id() == 'torch' %}
                 <dt>Network</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.model_file, relative=True))}}">{{task.model_file}}</a></dd>
                 <dt>Shuffle</dt>
                 <dd>{{task.shuffle}}</dd>
                 {% endif %}
 
-                <dt>Raw {{task.framework_name()}} output</dt>
+                <dt>Raw {{task.get_framework_id()}} output</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.log_file, relative=True))}}">{{task.log_file}}</a></dd>
 
                 {% if task.pretrained_model %}

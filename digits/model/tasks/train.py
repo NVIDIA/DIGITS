@@ -52,6 +52,7 @@ class TrainTask(Task):
         self.solver_type = kwargs.pop('solver_type', None)
         self.shuffle = kwargs.pop('shuffle', None)
         self.network = kwargs.pop('network', None)
+        self.framework_id = kwargs.pop('framework_id', None)
 
         super(TrainTask, self).__init__(**kwargs)
         self.pickver_task_train = PICKLE_VERSION
@@ -511,4 +512,9 @@ class TrainTask(Task):
             # return None if only validation data exists
             # helps with ordering of columns in graph
             return None
+
+    # return id of framework used for training
+    @override
+    def get_framework_id(self):
+        return self.framework_id
 

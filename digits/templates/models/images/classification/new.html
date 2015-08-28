@@ -442,7 +442,7 @@ frameworks['{{ fw.get_id() }}'] = framework;
                                         {{network}}
                                         {{network.label}}
                                         <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
-                                        <span class="badge">{{each_previous_network.train_task().framework_name()}}</span>
+                                        <span class="badge">{{each_previous_network.train_task().get_framework_id()}}</span>
                                     </td>
                                     <td>
                                         {% set snapshot_list = previous_network_snapshots[loop.index0] %}
@@ -454,7 +454,7 @@ frameworks['{{ fw.get_id() }}'] = framework;
                                         </select>
                                         {% endif %}
                                     </td>
-                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{each_previous_network.train_task().framework_name()}}' );">Customize</a></td>
+                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{each_previous_network.train_task().get_framework_id()}}' );">Customize</a></td>
                                 </tr>
                                 {% else %}
                                 <tr>

@@ -82,6 +82,7 @@ class CaffeTrainTask(TrainTask):
         if state['pickver_task_caffe_train'] <= 2:
             print 'Upgrading CaffeTrainTask to version 3 ...'
             self.log_file = self.caffe_log_file
+            self.framework_id = 'caffe'
         self.pickver_task_caffe_train = PICKLE_VERSION
 
         # Make changes to self
@@ -96,10 +97,6 @@ class CaffeTrainTask(TrainTask):
     @override
     def name(self):
         return 'Train Caffe Model'
-
-    @override
-    def framework_name(self):
-        return 'caffe'
 
     @override
     def before_run(self):

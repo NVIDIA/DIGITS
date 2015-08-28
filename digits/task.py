@@ -77,7 +77,7 @@ class Task(StatusCls):
         """
         raise NotImplementedError
 
-    def framework_name(self):
+    def get_framework_id(self):
         """
         Returns a string
         """

@@ -33,24 +33,34 @@ class CaffeFramework(Framework):
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = False
 
+    @override
     def __init__(self):
         super(CaffeFramework, self).__init__()
         self.id = self.CLASS
 
-    # create train task
+    @override
     def create_train_task(self, **kwargs):
-        return CaffeTrainTask(**kwargs)
+        """
+        create train task
+        """
+        return CaffeTrainTask(framework_id=self.id, **kwargs)
 
     @override
     def validate_network(self, data):
+        """
+        validate a network
+        """
         pb = caffe_pb2.NetParameter()
         try:
             text_format.Merge(data, pb)
         except text_format.ParseError as e:
             raise BadNetworkException('Not a valid NetParameter: %s' % e)
 
-    # return description of standard network
+    @override
     def get_standard_network_desc(self, network):
+        """
+        return description of standard network
+        """
         networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', self.CLASS)
 
         for filename in os.listdir(networks_dir):
@@ -64,14 +74,20 @@ class CaffeFramework(Framework):
         # return None if not found
         return None
 
-    # return network object from a string representation
+    @override
     def get_network_from_desc(self, network_desc):
+        """
+        return network object from a string representation
+        """
         network = caffe_pb2.NetParameter()
         text_format.Merge(network_desc, network)
         return network
 
-    # return new instance of network from previous network
+    @override
     def get_network_from_previous(self, previous_network):
+        """
+        return new instance of network from previous network
+        """
         network = caffe_pb2.NetParameter()
         network.CopyFrom(previous_network)
         # Rename the final layer
@@ -81,8 +97,10 @@ class CaffeFramework(Framework):
             ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
         return network
 
-    # return visualization of network
     def get_network_visualization(self, desc):
+        """
+        return visualization of network
+        """
         net = caffe_pb2.NetParameter()
         text_format.Merge(desc, net)
         # Throws an error if name is None

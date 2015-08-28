@@ -95,10 +95,6 @@ class TorchTrainTask(TrainTask):
         return 'Train Torch Model'
 
     @override
-    def framework_name(self):
-        return 'torch'
-
-    @override
     def before_run(self):
         if not isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             raise NotImplementedError()
@@ -479,7 +475,7 @@ class TorchTrainTask(TrainTask):
         args = [str(x) for x in args]
 
         regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
-        self.logger.info('%s classify one task started.' % self.framework_name())
+        self.logger.info('%s classify one task started.' % self.get_framework_id())
 
         unrecognized_output = []
         predictions = []
@@ -497,14 +493,14 @@ class TorchTrainTask(TrainTask):
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        raise errors.TestError('%s classify one task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
+                        raise errors.TestError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode()))
 
                     if line is not None:
                         # Remove color codes and whitespace
                         line=regex.sub('', line).strip()
                     if line:
                         if not self.process_test_output(line, predictions, 'one'):
-                            self.logger.warning('%s classify one task unrecognized input: %s' % (self.framework_name(), line.strip()))
+                            self.logger.warning('%s classify one task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
@@ -516,7 +512,7 @@ class TorchTrainTask(TrainTask):
             if type(e) == errors.TestError:
                 error_message = e.__str__()
             else:
-                error_message = '%s classify one task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
+                error_message = '%s classify one task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode(), str(e))
             self.logger.error(error_message)
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
@@ -527,14 +523,14 @@ class TorchTrainTask(TrainTask):
             self.after_test_run(temp_image_path)
 
         if p.returncode != 0:
-            error_message = '%s classify one task failed with error code %d' % (self.framework_name(), p.returncode)
+            error_message = '%s classify one task failed with error code %d' % (self.get_framework_id(), p.returncode)
             self.logger.error(error_message)
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
                 error_message = error_message + unrecognized_output
             raise errors.TestError(error_message)
         else:
-            self.logger.info('%s classify one task completed.' % self.framework_name())
+            self.logger.info('%s classify one task completed.' % self.get_framework_id())
 
 
         visualizations = []
@@ -747,14 +743,14 @@ class TorchTrainTask(TrainTask):
 
         # displaying info and warn messages as we aren't maintaining seperate log file for model testing
         if level == 'info':
-            self.logger.debug('%s classify %s task : %s' % (self.framework_name(), test_category, message))
+            self.logger.debug('%s classify %s task : %s' % (self.get_framework_id(), test_category, message))
             return True
         if level == 'warning':
-            self.logger.warning('%s classify %s task : %s' % (self.framework_name(), test_category, message))
+            self.logger.warning('%s classify %s task : %s' % (self.get_framework_id(), test_category, message))
             return True
 
         if level in ['error', 'critical']:
-            raise errors.TestError('%s classify %s task failed with error message - %s' % (self.framework_name(), test_category, message))
+            raise errors.TestError('%s classify %s task failed with error message - %s' % (self.get_framework_id(), test_category, message))
 
         return True           # control never reach this line. It can be removed.
 
@@ -862,7 +858,7 @@ class TorchTrainTask(TrainTask):
                     for line in utils.nonblocking_readlines(p.stdout):
                         if self.aborted.is_set():
                             p.terminate()
-                            raise errors.TestError('%s classify many task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
+                            raise errors.TestError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode()))
 
                         if line is not None:
                             # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
@@ -870,7 +866,7 @@ class TorchTrainTask(TrainTask):
                             line=regex.sub('', line).strip()
                         if line:
                             if not self.process_test_output(line, predictions, 'many'):
-                                self.logger.warning('%s classify many task unrecognized input: %s' % (self.framework_name(), line.strip()))
+                                self.logger.warning('%s classify many task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
                                 unrecognized_output.append(line)
                         else:
                             time.sleep(0.05)
@@ -881,7 +877,7 @@ class TorchTrainTask(TrainTask):
                 if type(e) == errors.TestError:
                     error_message = e.__str__()
                 else:
-                    error_message = '%s classify many task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
+                    error_message = '%s classify many task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode(), str(e))
                 self.logger.error(error_message)
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
@@ -889,14 +885,14 @@ class TorchTrainTask(TrainTask):
                 raise errors.TestError(error_message)
 
             if p.returncode != 0:
-                error_message = '%s classify many task failed with error code %d' % (self.framework_name(), p.returncode)
+                error_message = '%s classify many task failed with error code %d' % (self.get_framework_id(), p.returncode)
                 self.logger.error(error_message)
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
                     error_message = error_message + unrecognized_output
                 raise errors.TestError(error_message)
             else:
-                self.logger.info('%s classify many task completed.' % self.framework_name())
+                self.logger.info('%s classify many task completed.' % self.get_framework_id())
         finally:
             shutil.rmtree(temp_dir_path)
 
