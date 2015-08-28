@@ -496,7 +496,14 @@ def _write_batch_lmdb(db, batch, image_count):
         curr_limit = db.info()['map_size']
         new_limit = curr_limit*2
         logger.debug('Doubling LMDB map size to %sMB ...' % (new_limit>>20,))
-        db.set_mapsize(new_limit) # double it
+        try:
+            db.set_mapsize(new_limit) # double it
+        except AttributeError as e:
+            version = tuple(int(x) for x in lmdb.__version__.split('.'))
+            if version < (0,87):
+                raise Error('py-lmdb is out of date (%s vs 0.87)' % lmdb.__version__)
+            else:
+                raise e
         # try again
         _write_batch_lmdb(db, batch, image_count)
 
