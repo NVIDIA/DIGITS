@@ -211,7 +211,7 @@ def show(job):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job)
+    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()])
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
 @autodoc('models')

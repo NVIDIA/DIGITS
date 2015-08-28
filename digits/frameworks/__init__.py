@@ -3,17 +3,24 @@
 from framework import Framework
 from caffe_framework import CaffeFramework
 from torch_framework import TorchFramework
+from digits.config import config_value
 
 #
-#  create instances
-#  TODO: do this dynamically depending on framework availability
+#  create framework instances
 #
-torch = TorchFramework()
+
+# torch is optional
+torch = TorchFramework() if config_value('torch_root') else None
+
+# caffe is mandatory
 caffe = CaffeFramework()
 
 # return list of all available framework instances
 def get_frameworks():
-    return [caffe, torch]
+    frameworks = [caffe]
+    if torch:
+        frameworks.append(torch)
+    return frameworks
 
 # return framework associated with given id
 def get_framework_by_id(id):

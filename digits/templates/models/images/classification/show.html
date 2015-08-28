@@ -135,6 +135,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                         </button>
                     </div>
                 </div>
+                {% if task.get_framework_id() in framework_ids %}
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="form-group">
@@ -204,6 +205,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             ></span>
                     </div>
                 </div>
+                {% endif %}
             </form>
 
             <script>
