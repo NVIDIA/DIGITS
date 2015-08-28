@@ -10,7 +10,7 @@ import digits.scheduler
 ### Create Flask, Scheduler and SocketIO objects
 
 app = flask.Flask(__name__)
-app.config['DEBUG'] = False
+app.config['DEBUG'] = True
 # Disable CSRF checking in WTForms
 app.config['WTF_CSRF_ENABLED'] = False
 # This is still necessary for SocketIO
