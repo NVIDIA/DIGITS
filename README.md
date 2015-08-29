@@ -92,6 +92,8 @@ You can run DIGITS in two ways:
 
 Starts a development server that listens on port 5000 (but you can change the port if you like - try running it with the --help flag).
 
+If you run into errors starting "Did you forget to "make pycaffe"? ... ImportError: libcudart.so.7.0: cannot open shared object file: No such file or directory " Then try executing following command `sudo ldconfig /usr/local/cuda/lib64`
+
 Then, you can view your server at `http://localhost:5000/`.
 
 ### Production mode
