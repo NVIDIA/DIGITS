@@ -155,7 +155,7 @@ function deleteJob(job_id) {
     {% for job in running_models %}
     <li class="list-group-item">
         <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
-        <h4 class="list-group-item-heading"><a href="{{ url_for('models_show', job_id=job.id()) }}">{{ job.name() }}</a></h4>
+        <h4 class="list-group-item-heading"><a href="{{ url_for('models_show', job_id=job.id()) }}">{{ job.name() }}</a> &nbsp; <span class="badge">{{job.train_task().get_framework_id()}}</span></h4>
         <p class="list-group-item-text">
         <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
         <small>({{job.status_history[0][1]|print_time_since}} ago)</small>
@@ -175,7 +175,7 @@ function deleteJob(job_id) {
         {% for job in batch %}
         <li id="job-{{job.id()}}" class="list-group-item">
         <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
-            <h4 class="list-group-item-heading"><a href="{{ url_for('models_show', job_id=job.id()) }}">{{ job.name() }}</a></h4>
+            <h4 class="list-group-item-heading"><a href="{{ url_for('models_show', job_id=job.id()) }}">{{ job.name() }}</a> &nbsp; <span class="badge">{{job.train_task().get_framework_id()}}</span></h4>
             <p class="list-group-item-text">
             <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
             <br />

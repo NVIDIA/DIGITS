@@ -301,7 +301,7 @@ function customizeNetwork(network, snapshot_list) {
         data = null;
         if (snapshot_list)
             data = {'snapshot_epoch': $('#'+snapshot_list).val()};
-        $.ajax("{{url_for('models_customize')}}?network=" + network,
+        $.ajax("{{url_for('models_customize')}}?network=" + network + "&framework=caffe",
                 {
                     type: "POST",
                     data: data
@@ -359,11 +359,13 @@ function customizeNetwork(network, snapshot_list) {
                             <th></th>
                         </tr>
                         {% for network in form.previous_networks %}
+                        {% set each_previous_network = previous_networks_fullinfo[loop.index0] %}
                         <tr>
                             <td>
                                 {{network}}
                                 {{network.label}}
                                 <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
+                                <span class="badge">{{each_previous_network.train_task().get_framework_id()}}</span>
                             </td>
                             <td>
                                 {% set snapshot_list = previous_network_snapshots[loop.index0] %}
@@ -426,7 +428,7 @@ function customizeNetwork(network, snapshot_list) {
                 <div id="network-tab-custom" class="tab-pane">
                     <script>
 function visualizeNetwork() {
-    $.ajax("{{url_for('models_visualize_network')}}",
+    $.ajax("{{url_for('models_visualize_network')}}?framework=caffe",
         {
             type: "POST",
             data: $("#custom_network").serialize()

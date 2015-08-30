@@ -13,10 +13,7 @@ MEAN_FILE_IMAGE = 'mean.jpg'
 LABELS_FILE = 'labels.txt'
 DEFAULT_BATCH_SIZE = 16
 
-# Caffe
+# Caffe Protocol Buffers
 MEAN_FILE_CAFFE = 'mean.binaryproto'
-CAFFE_SOLVER_FILE = 'solver.prototxt'
-CAFFE_TRAIN_VAL_FILE = 'train_val.prototxt'
-CAFFE_SNAPSHOT_PREFIX = 'snapshot'
-CAFFE_DEPLOY_FILE = 'deploy.prototxt'
+
 
