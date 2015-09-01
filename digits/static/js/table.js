@@ -1,7 +1,7 @@
 // Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 (function($, window, document, undefined) {
-    var nonNumeric = ['Name', 'ID', 'Status', 'Runtime'];
+    var nonNumeric = ['Name', 'ID', 'Status', 'Runtime', 'Framework'];
     var defaultVisible = ['Name', 'Status', 'Runtime', 'Loss', 'Accuracy'];
 
     function getText(node) {

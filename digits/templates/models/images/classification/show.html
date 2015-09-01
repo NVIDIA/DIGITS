@@ -12,14 +12,14 @@
     <div class="col-sm-6">
         <div class="well">
             <dl>
-                <dt>Solver</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{{task.solver_file}}</a></dd>
-                <dt>Network (train/val)</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.train_val_file, relative=True))}}">{{task.train_val_file}}</a></dd>
-                <dt>Network (deploy)</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.deploy_file, relative=True))}}">{{task.deploy_file}}</a></dd>
-                <dt>Raw caffe output</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.caffe_log_file, relative=True))}}">{{task.caffe_log_file}}</a></dd>
+                {% for key,value in task.get_model_files().items() %}
+                <dt>{{key}}</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(value, relative=True))}}">{{value}}</a></dd>
+                {% endfor %}
+
+                <dt>Raw {{task.get_framework_id()}} output</dt>
+                <dd><a href="{{url_for('serve_file', path=task.path(task.log_file, relative=True))}}">{{task.log_file}}</a></dd>
+
                 {% if task.pretrained_model %}
                 <dt>Pretrained Model</dt>
                 <dd>{{task.pretrained_model}}</dd>
@@ -126,6 +126,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                         </button>
                     </div>
                 </div>
+                {% if task.get_framework_id() in framework_ids %}
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="form-group">
@@ -195,6 +196,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             ></span>
                     </div>
                 </div>
+                {% endif %}
             </form>
 
             <script>

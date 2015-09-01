@@ -12,15 +12,10 @@ from datetime import timedelta
 
 import flask
 import werkzeug.exceptions
-from google.protobuf import text_format
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
-import caffe.draw
+
 
 import digits
+from digits import utils
 from digits.webapp import app, scheduler, autodoc
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
@@ -28,6 +23,8 @@ from . import ModelJob
 import forms
 import images.views
 import images as model_images
+
+from digits import frameworks
 
 NAMESPACE = '/models/'
 
@@ -57,7 +54,8 @@ def models_all():
             rjob.name(),
             rjob.id(),
             rjob.status,
-            time_filters.print_time_diff_nosuffixes(history[-1][1] - history[0][1])
+            time_filters.print_time_diff_nosuffixes(history[-1][1] - history[0][1]),
+            rjob.train_task().framework_id
         )
 
         # build a dictionary of each attribute of a job. If an attribute is
@@ -118,17 +116,18 @@ def models_customize():
     Returns a customized file for the ModelJob based on completed form fields
     """
     network = flask.request.args['network']
+    framework = flask.request.args.get('framework')
     if not network:
         raise werkzeug.exceptions.BadRequest('network not provided')
 
-    networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks')
-    for filename in os.listdir(networks_dir):
-        path = os.path.join(networks_dir, filename)
-        if os.path.isfile(path):
-            match = re.match(r'%s.prototxt' % network, filename)
-            if match:
-                with open(path) as infile:
-                    return json.dumps({'network': infile.read()})
+    fw = frameworks.get_framework_by_id(framework)
+
+    # can we find it in standard networks?
+    network_desc = fw.get_standard_network_desc(network)
+    if network_desc:
+        return json.dumps({'network': network_desc})
+
+    # not found in standard networks, looking for matching job
     job = scheduler.get_job(network)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
@@ -144,9 +143,9 @@ def models_customize():
         pass
 
     return json.dumps({
-        'network': text_format.MessageToString(job.train_task().network),
-        'snapshot': snapshot
-        })
+            'network': job.train_task().get_network_desc(),
+            'snapshot': snapshot
+            })
 
 @app.route(NAMESPACE + 'visualize-network', methods=['POST'])
 @autodoc('models')
@@ -154,12 +153,14 @@ def models_visualize_network():
     """
     Returns a visualization of the custom network as a string of PNG data
     """
-    net = caffe_pb2.NetParameter()
-    text_format.Merge(flask.request.form['custom_network'], net)
-    # Throws an error if name is None
-    if not net.name:
-        net.name = 'Network'
-    return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
+    framework = flask.request.args.get('framework')
+    if not framework:
+        raise werkzeug.exceptions.BadRequest('framework not provided')
+
+    fw = frameworks.get_framework_by_id(framework)
+    ret = fw.get_network_visualization(flask.request.form['custom_network'])
+
+    return ret
 
 @app.route(NAMESPACE + 'visualize-lr', methods=['POST'])
 @autodoc('models')
@@ -272,11 +273,12 @@ def models_download(job_id, extension):
     return response
 
 class JobBasicInfo(object):
-    def __init__(self, name, ID, status, time):
+    def __init__(self, name, ID, status, time, framework_id):
         self.name = name
         self.id = ID
         self.status = status
         self.time = time
+        self.framework_id = framework_id
 
 class ColumnType(object):
     def __init__(self, name, has_suffix, find_fn):

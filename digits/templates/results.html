@@ -28,6 +28,7 @@
             <tr>
                 <th>Name</th>
                 <th>ID</th>
+                <th>Framework</th>
                 <th>Status</th>
                 <th>Runtime</th>
                 {% for attrib in attrs_and_labels %}
@@ -39,6 +40,7 @@
             <tr>
                 <th>Name</th>
                 <th>ID</th>
+                <th>Framework</th>
                 <th>Status</th>
                 <th>Runtime</th>
                 {% for attrib in attrs_and_labels %}
@@ -55,6 +57,7 @@
             <tr class="{{ job_info.status.css }}">
                 <td><a href="{{ job_info.id }}">{{ job_info.name|e }}</a></td>
                 <td>{{ job_info.id }}</td>
+                <td>{{ job_info.framework_id }}</td>
                 <td>{{ job_info.status.name }}</td>
                 <td>{{ job_info.time }}</td>
                 {% for attrib in attrs_and_labels %}

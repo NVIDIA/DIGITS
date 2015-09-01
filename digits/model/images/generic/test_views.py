@@ -94,6 +94,10 @@ layer {
     def delete_model(cls, job_id):
         return cls.delete_job(job_id, job_type='models')
 
+    @classmethod
+    def network(cls):
+        return cls.CAFFE_NETWORK
+
 
 class BaseViewsTestWithDataset(BaseViewsTest,
         digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
@@ -130,9 +134,10 @@ class BaseViewsTestWithDataset(BaseViewsTest,
                 'model_name':       'test_model',
                 'dataset':          cls.dataset_id,
                 'method':           'custom',
-                'custom_network':   cls.CAFFE_NETWORK,
+                'custom_network':   cls.network(),
                 'batch_size':       10,
                 'train_epochs':     3,
+                'framework':        cls.FRAMEWORK,
                 }
         if cls.CROP_SIZE is not None:
             data['crop_size'] = cls.CROP_SIZE
@@ -177,12 +182,7 @@ class BaseViewsTestWithModel(BaseViewsTestWithDataset):
         cls.model_id = cls.create_model(json=True)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
-
-################################################################################
-# Test classes
-################################################################################
-
-class TestViews(BaseViewsTest):
+class BaseTestViews(BaseViewsTest):
     """
     Tests which don't require a dataset or a model
     """
@@ -195,8 +195,8 @@ class TestViews(BaseViewsTest):
         assert not self.model_exists('foo'), "model shouldn't exist"
 
     def test_visualize_network(self):
-        rv = self.app.post('/models/visualize-network',
-                data = {'custom_network': self.CAFFE_NETWORK}
+        rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
+                data = {'custom_network': self.network()}
                 )
         s = BeautifulSoup(rv.data)
         body = s.select('body')
@@ -205,7 +205,7 @@ class TestViews(BaseViewsTest):
         assert image is not None, "didn't return an image"
 
 
-class TestCreation(BaseViewsTestWithDataset):
+class BaseTestCreation(BaseViewsTestWithDataset):
     """
     Model creation tests
     """
@@ -301,7 +301,7 @@ class TestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job1_id) == 'Done', 'second job failed'
 
 
-class TestCreated(BaseViewsTestWithModel):
+class BaseTestCreated(BaseViewsTestWithModel):
     """
     Tests on a model that has already been created
     """
@@ -402,7 +402,7 @@ class TestCreated(BaseViewsTestWithModel):
         assert 'outputs' in data, 'invalid response'
 
 
-class TestDatasetModelInteractions(BaseViewsTestWithDataset):
+class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
     """
     Test the interactions between datasets and models
     """
@@ -467,7 +467,7 @@ class TestDatasetModelInteractions(BaseViewsTestWithDataset):
         self.abort_model(model_id)
 
 
-class TestCreatedCropInNetwork(TestCreated):
+class BaseTestCreatedCropInNetwork(BaseTestCreated):
     CAFFE_NETWORK = \
 """
 layer {
@@ -519,6 +519,29 @@ layer {
 }
 """
 
-class TestCreatedCropInForm(TestCreated):
+class BaseTestCreatedCropInForm(BaseTestCreated):
     CROP_SIZE = 8
+
+################################################################################
+# Test classes
+################################################################################
+
+class TestCaffeViews(BaseTestViews):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreation(BaseTestCreation):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreated(BaseTestCreated):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
+    FRAMEWORK = 'caffe'
+
 
