@@ -2,7 +2,7 @@
 
 import time
 
-class Status:
+class Status():
     """
     A little class to store the state of Jobs and Tasks
     It's pickle-able!
