@@ -43,7 +43,6 @@ class Task(StatusCls):
         else:
             raise TypeError('parents is %s' % type(parents))
 
-        self.progress = 0
         self.exception = None
         self.traceback = None
         self.aborted = gevent.event.Event()
