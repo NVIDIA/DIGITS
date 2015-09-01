@@ -30,7 +30,7 @@ NAMESPACE = '/models/'
 
 @app.route(NAMESPACE, methods=['GET'])
 @autodoc(['models'])
-def models_all():
+def models_index():
     column_attrs = list(get_column_attrs())
     raw_jobs = [j for j in scheduler.jobs if isinstance(j, ModelJob)]
 
@@ -80,7 +80,7 @@ def models_all():
         for ctype in column_types:
             attrs_and_labels.append((cattr, ctype, ctype.label(cattr)))
 
-    return flask.render_template('results.html',
+    return flask.render_template('models/index.html',
         jobs=jobs,
         attrs_and_labels=attrs_and_labels)
 
