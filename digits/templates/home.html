@@ -64,8 +64,6 @@ function deleteJob(job_id) {
 </div>
 
 <h2>Datasets</h2>
-<br>
-
 
 <h3>In progress</h3>
 <ul id="datasets-running" class="list-group">
@@ -123,32 +121,30 @@ function deleteJob(job_id) {
 
 <!-- Models -->
 
-<ul class="list-inline">
-    <li><h2>Models</h2></li>
+<div class="pull-right">
+    New Model
+    <ul class="nav nav-pills">
+        {% for category in new_model_options %}
+        <li class="dropdown active">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                {{category[0]}} <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                {% for option in category[1] %}
+                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
 
-    <li class="pull-right">
-        New Model
-        <ul class="nav nav-pills">
-            {% for category in new_model_options %}
-            <li class="dropdown active">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    {{category[0]}} <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                    {% for option in category[1] %}
-                    <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
-                    {% endfor %}
-                </ul>
-            </li>
-            {% endfor %}
-        </ul>
-    </li>
-
-    <li class="pull-right">
-        Results Browser
-        <a class="btn btn-success center-block" href="{{ url_for('models_all') }}">View Results</a>
-    </li>
-</ul>
+<h2>
+    Models
+    <small>
+        <a href="{{ url_for('models_index') }}">View details</a>
+    </small>
+</h2>
 
 <h3>In progress</h3>
 <ul id="models-running" class="list-group">
