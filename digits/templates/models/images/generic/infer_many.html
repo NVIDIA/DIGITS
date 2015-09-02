@@ -28,8 +28,9 @@
     {% for path in paths %}
     <tr>
         <td>{{path}}</td>
+        {% set index=loop.index0 %}
         {% for key, val in network_outputs.iteritems() %}
-        <td>{{network_outputs[key][loop.index0]}}</td>
+        <td>{{network_outputs[key][index]}}</td>
         {% endfor %}
     </tr>
     {% endfor %}
