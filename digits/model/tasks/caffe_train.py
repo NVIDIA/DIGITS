@@ -6,6 +6,7 @@ import time
 import math
 import subprocess
 import operator
+import copy
 
 import numpy as np
 from google.protobuf import text_format
@@ -1208,7 +1209,7 @@ class CaffeTrainTask(TrainTask):
                         'data', image)
             output = net.forward()[net.outputs[-1]]
             if scores is None:
-                scores = output
+                scores = copy.deepcopy(output)
             else:
                 scores = np.vstack((scores, output))
             print 'Processed %s/%s images' % (len(scores), len(caffe_images))
