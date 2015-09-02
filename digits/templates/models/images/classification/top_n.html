@@ -4,13 +4,13 @@
 
 {% block nav %}
 <li><a href="{{url_for('models_show', job_id=job.id())}}">{{job.job_type()}}</a></li>
-<li class="active"><a>Test Many</a></li>
+<li class="active"><a>Top N</a></li>
 {% endblock %}
 
 {% block content %}
 
 <div class="page-header">
-    <h1>Test multiple images</h1>
+    <h1>Top N Predictions per Category</h1>
 </div>
 
 <table class="table">

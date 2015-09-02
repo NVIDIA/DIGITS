@@ -250,6 +250,7 @@ def generic_image_model_infer_one():
         return flask.jsonify({'outputs': dict((name, blob.tolist()) for name,blob in outputs.iteritems())})
     else:
         return flask.render_template('models/images/generic/infer_one.html',
+                job             = job,
                 image_src       = utils.image.embed_image_html(image),
                 network_outputs = outputs,
                 visualizations  = visualizations,
@@ -323,6 +324,7 @@ def generic_image_model_infer_many():
         return flask.jsonify({'outputs': result})
     else:
         return flask.render_template('models/images/generic/infer_many.html',
+                job             = job,
                 paths           = paths,
                 network_outputs = outputs,
                 )
