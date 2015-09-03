@@ -50,8 +50,18 @@ $(".explanation-tooltip").tooltip();
 
 window.onload = function () {
     $('.autocomplete_path').autocomplete({
-    serviceUrl: '/autocomplete/path'
-}); };
+       serviceUrl: '/autocomplete/path',
+       formatResult: function (suggestion, currentValue)
+       {
+            function baseName(str)
+            {
+               var base = new String(str).substring(str.lastIndexOf('/') + 1);
+               return base;
+            }
+            return baseName(suggestion.value);
+        }
+    });
+};
 
 </script>
 
