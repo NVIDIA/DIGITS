@@ -40,8 +40,7 @@ class DbReader(object):
         """
         self._db = lmdb.open(location,
                 map_size=1024**3, # 1MB
-                max_dbs=0,
-                readonly=True)
+                readonly=True, lock=False)
 
         with self._db.begin() as txn:
             self.total_entries = txn.stat()['entries']
