@@ -23,7 +23,12 @@ class AnalyzeDbTask(Task):
         Arguments:
         database -- path to the database to analyze
         purpose -- what is this database going to be used for
+
+        Keyword arguments:
+        force_same_shape -- if True, enforce that every entry in the database has the same shape
         """
+        self.force_same_shape = kwargs.pop('force_same_shape', False)
+
         super(AnalyzeDbTask, self).__init__(**kwargs)
         self.pickver_task_analyzedb = PICKLE_VERSION
 
@@ -67,8 +72,13 @@ class AnalyzeDbTask(Task):
             os.path.dirname(os.path.dirname(os.path.abspath(digits.__file__))),
             'tools', 'analyze_db.py'),
                 self.database,
-                '--force-dimensions'
                 ]
+        if self.force_same_shape:
+            args.append('--force-same-shape')
+        else:
+            args.append('--only-count')
+
+        print args
 
         return args
 
@@ -103,7 +113,7 @@ class AnalyzeDbTask(Task):
             return True
 
         # image dimensions
-        match = re.match(r'(\d+) entries found with dims ((\d+)x(\d+)x(\d+))', message)
+        match = re.match(r'(\d+) entries found with shape ((\d+)x(\d+)x(\d+))', message)
         if match:
             count = int(match.group(1))
             dims = match.group(2)

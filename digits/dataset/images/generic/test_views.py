@@ -187,6 +187,10 @@ class TestCreation(BaseViewsTestWithImageset):
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
+    def test_no_force_same_shape(self):
+        job_id = self.create_dataset(force_same_shape=0)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+
 class TestCreated(BaseViewsTestWithDataset):
     """
     Tests on a dataset that has already been created
