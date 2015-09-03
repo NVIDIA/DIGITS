@@ -28,6 +28,10 @@
         <i>?</i>
         {% endif %}
         </dd>
+        {% if task.analyze_db_log_file %}
+        <dt>DB analysis log file</dt>
+        <dd><a href="{{url_for('serve_file', path=task.path(task.analyze_db_log_file, relative=True))}}">{{task.analyze_db_log_file}}</a></dd>
+        {% endif %}
     </dl>
 </div>
 {% endmacro %}

@@ -41,8 +41,12 @@ class AnalyzeDbTask(Task):
         self.image_height = None
         self.image_channels = None
 
+        self.analyze_db_log_file = 'analyze_db_%s.log' % '-'.join(p.lower() for p in self.purpose.split())
+
     def __getstate__(self):
         state = super(AnalyzeDbTask, self).__getstate__()
+        if 'analyze_db_log' in state:
+            del state['analyze_db_log']
         return state
 
     def __setstate__(self, state):
@@ -83,8 +87,16 @@ class AnalyzeDbTask(Task):
         return args
 
     @override
+    def before_run(self):
+        super(AnalyzeDbTask, self).before_run()
+        self.analyze_db_log = open(self.path(self.analyze_db_log_file), 'a')
+
+    @override
     def process_output(self, line):
         from digits.webapp import socketio
+
+        self.analyze_db_log.write('%s\n' % line)
+        self.analyze_db_log.flush()
 
         timestamp, level, message = self.preprocess_output_digits(line)
         if not message:
@@ -132,6 +144,11 @@ class AnalyzeDbTask(Task):
             return True
 
         return True
+
+    @override
+    def after_run(self):
+        super(AnalyzeDbTask, self).after_run()
+        self.analyze_db_log.close()
 
     def image_type(self):
         """
