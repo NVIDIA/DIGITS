@@ -1057,6 +1057,7 @@ class CaffeTrainTask(TrainTask):
     def get_layer_vis_square(self, data,
             allow_heatmap = True,
             normalize = True,
+            min_img_dim = 100,
             max_width = 1200,
             ):
         """
@@ -1123,10 +1124,18 @@ class CaffeTrainTask(TrainTask):
         if not allow_heatmap and data.ndim == 3:
             data = data[...,np.newaxis]
 
-        return utils.image.vis_square(data,
+        vis = utils.image.vis_square(data,
                 padsize     = padsize,
                 normalize   = normalize,
                 )
+
+        # find minimum dimension and upscale if necessary
+        _min = sorted(vis.shape[:2])[0]
+        if _min < min_img_dim:
+            # upscale image
+            ratio = min_img_dim/float(_min)
+            vis = utils.image.upscale(vis, ratio)
+        return vis
 
     def get_layer_statistics(self, data):
         """

@@ -8,6 +8,8 @@
 
 {% block content %}
 
+<script src="{{ url_for('static', filename='js/jquery.elevateZoom.min.js') }}"></script>
+
 <div class="page-header">
     <h1>
         {{job.name()}}
@@ -111,7 +113,12 @@
         </td>
         <td>
             {% if vis['image_html'] %}
-            <img style="max-width:100%" src="{{vis['image_html']}}" />
+            <img style="max-width:100%" src="{{vis['image_html']}}" id="vis_{{ loop.index }}" />
+             <script>
+                $('#vis_{{ loop.index }}').elevateZoom({zoomType: "inner", cursor: "crosshair",
+                        zoomWindowFadeIn: 500, zoomWindowFadeOut: 750,
+                        scrollZoom: true, scrollZoomIncrement: 0.025});
+            </script>
             {% else %}
             <i>Not shown</i>
             {% endif %}
