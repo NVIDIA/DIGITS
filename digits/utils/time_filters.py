@@ -2,9 +2,14 @@
 
 import time
 
-def print_time(t):
+def print_time(t, ref_time = None):
     lt = time.localtime(t)
-    now = time.localtime()
+
+    # ref_time is for testing
+    if ref_time is None:
+        now = time.localtime()
+    else:
+        now = time.localtime(ref_time)
 
     if lt.tm_year != now.tm_year:
         return time.strftime('%b %d %Y, %I:%M:%S %p', lt)
@@ -19,26 +24,31 @@ def print_time_diff(diff):
     if diff is None:
         return '?'
 
+    if diff < 0:
+        return 'Negative Time'
+
     total_seconds = int(diff)
     days = total_seconds//(24*3600)
     hours = (total_seconds % (24*3600))//3600
     minutes = (total_seconds % 3600)//60
     seconds = total_seconds % 60
-    if days > 1:
-        return '%d days, %d hours' % (days, hours)
-    elif days == 1:
-        return '1 day, %d hours' % hours
-    elif hours > 1:
-        return '%d hours, %d minutes' % (hours, minutes)
-    elif hours == 1:
-        return '1 hour, %d minutes' % minutes
-    elif minutes > 1:
-        return '%d minutes, %d seconds' % (minutes, seconds)
-    elif minutes == 1:
-        return '1 minute, %d seconds' % seconds
-    elif seconds == 1:
-        return '1 second'
-    return '%s seconds' % seconds
+
+    def plural(number, name):
+        return '%d %s%s' % (number, name, '' if number == 1 else 's')
+
+    def pair(number1, name1, number2, name2):
+        if number2 > 0:
+            return '%s, %s' % (plural(number1, name1), plural(number2, name2))
+        else:
+            return '%s' % plural(number1, name1)
+
+    if days >= 1:
+        return pair(days, 'day', hours, 'hour')
+    elif hours >= 1:
+        return pair(hours, 'hour', minutes, 'minute')
+    elif minutes >= 1:
+        return pair(minutes, 'minute', seconds, 'second')
+    return plural(seconds, 'second')
 
 def print_time_diff_nosuffixes(diff):
     if diff is None:
