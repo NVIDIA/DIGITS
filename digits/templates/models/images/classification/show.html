@@ -76,7 +76,6 @@
 
             {% set task = job.train_task() %}
             <hr>
-            <h2>Trained Models</h2>
             <form id="test-model-form"
                 enctype="multipart/form-data"
                 method="post"
@@ -85,6 +84,7 @@
                 style="display:none;"
                 {% endif %}
                 >
+                <h2>Trained Models</h2>
                 <div class="row">
                     <div class="col-sm-12">
                         <label for="snapshot_epoch">Select Model</label>
