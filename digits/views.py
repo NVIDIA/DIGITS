@@ -3,6 +3,7 @@
 import json
 import traceback
 import glob
+import platform
 
 import flask
 from werkzeug import HTTP_STATUS_CODES
@@ -247,9 +248,13 @@ def path_autocomplete():
 
     """
     path = flask.request.args.get('query','')
+    suggestions = glob.glob(path+"*")
+    if platform.system() == 'Windows':
+        # on windows, convert backslashes with forward slashes
+        suggestions = [p.replace('\\', '/') for p in suggestions]
 
     result = {
-        "suggestions": glob.glob(path+"*")
+        "suggestions": suggestions
     }
 
     return json.dumps(result)
