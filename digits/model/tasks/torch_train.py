@@ -7,8 +7,12 @@ import time
 import math
 import subprocess
 import sys
+import operator
+import shutil
 
 import numpy as np
+
+import h5py
 
 import tempfile
 import PIL.Image
@@ -19,9 +23,15 @@ from digits.status import Status
 from digits import utils, dataset
 from digits.utils import subclass, override, constants, errors
 from digits.dataset import ImageClassificationDatasetJob
+#from digits.frameworks.errors import InferenceError
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
+
+# Constants
+TORCH_MODEL_FILE = 'model.lua'
+TORCH_SNAPSHOT_PREFIX = 'snapshot'
+TORCH_USE_MEAN_PIXEL = True
 
 @subclass
 class TorchTrainTask(TrainTask):
@@ -31,15 +41,18 @@ class TorchTrainTask(TrainTask):
 
     TORCH_LOG = 'torch_output.log'
 
-    def __init__(self, shuffle, **kwargs):
+    def __init__(self, **kwargs):
         """
         Arguments:
         network -- a NetParameter defining the network
         """
         super(TorchTrainTask, self).__init__(**kwargs)
-        self.pickver_task_torch_train = PICKLE_VERSION
 
-        self.shuffle = shuffle
+        # save network description to file
+        with open(os.path.join(self.job_dir, TORCH_MODEL_FILE), "w") as outfile:
+            outfile.write(self.network)
+
+        self.pickver_task_torch_train = PICKLE_VERSION
 
         self.current_epoch = 0
 
@@ -49,11 +62,12 @@ class TorchTrainTask(TrainTask):
         self.classifier = None
         self.solver = None
 
-        self.model_file = constants.TORCH_MODEL_FILE
+        self.model_file = TORCH_MODEL_FILE
         self.train_file = constants.TRAIN_DB
         self.val_file = constants.VAL_DB
-        self.snapshot_prefix = constants.TORCH_SNAPSHOT_PREFIX
+        self.snapshot_prefix = TORCH_SNAPSHOT_PREFIX
         self.log_file = self.TORCH_LOG
+        self.trained_on_cpu = None
 
     def __getstate__(self):
         state = super(TorchTrainTask, self).__getstate__()
@@ -88,11 +102,9 @@ class TorchTrainTask(TrainTask):
         return 'Train Torch Model'
 
     @override
-    def framework_name(self):
-        return 'torch'
-
-    @override
     def before_run(self):
+        super(TorchTrainTask, self).before_run()
+
         if not isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
             raise NotImplementedError()
 
@@ -113,7 +125,10 @@ class TorchTrainTask(TrainTask):
             torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
         if self.batch_size is None:
-            self.batch_size = constants.DEFAULT_TORCH_BATCH_SIZE
+            self.batch_size = constants.DEFAULT_BATCH_SIZE
+
+        dataset_backend = self.dataset.train_db_task().backend
+        assert dataset_backend=='lmdb' or dataset_backend=='hdf5'
 
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','main.lua'),
@@ -129,7 +144,8 @@ class TorchTrainTask(TrainTask):
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file),
                 '--batchSize=%d' % self.batch_size,
                 '--learningRate=%s' % self.learning_rate,
-                '--policy=%s' % str(self.lr_policy['policy'])
+                '--policy=%s' % str(self.lr_policy['policy']),
+                '--dbbackend=%s' % dataset_backend
                 ]
 
         #learning rate policy input parameters
@@ -187,7 +203,11 @@ class TorchTrainTask(TrainTask):
             if len(identifiers) == 1:
                 args.append('--devid=%s' % (identifiers[0]+1,))
             elif len(identifiers) > 1:
-                raise NotImplementedError("haven't tested torch with multiple GPUs yet")
+                raise NotImplementedError("Multi-GPU with Torch not supported yet")
+        else:
+            # switch to CPU mode
+            args.append('--type=float')
+            self.trained_on_cpu = True
 
         if self.pretrained_model:
             args.append('--weights=%s' % self.path(self.pretrained_model))
@@ -294,7 +314,8 @@ class TorchTrainTask(TrainTask):
         # skip remaining info and warn messages
         return True
 
-    def preprocess_output_torch(self, line):
+    @staticmethod
+    def preprocess_output_torch(line):
         """
         Takes line of output and parses it according to caffe's output format
         Returns (timestamp, level, message) or (None, None, None)
@@ -359,7 +380,11 @@ class TorchTrainTask(TrainTask):
                 if message:
                     lines.append(message)
             # return the last 20 lines
-            self.traceback = '\n'.join(lines[len(lines)-20:])
+            traceback = '\n\nLast output:\n' + '\n'.join(lines[len(lines)-20:]) if len(lines)>0 else ''
+            if self.traceback:
+                self.traceback = self.traceback + traceback
+            else:
+                self.traceback = traceback
 
     @override
     def detect_snapshots(self):
@@ -434,7 +459,7 @@ class TorchTrainTask(TrainTask):
         except KeyError:
             error_message = 'Unable to save file to "%s"' % temp_image_path
             self.logger.error(error_message)
-            raise errors.TestError(error_message)
+            raise digits.frameworks.errors.InferenceError(error_message)
 
         if config_value('torch_root') == '<PATHS>':
             torch_bin = 'th'
@@ -445,36 +470,41 @@ class TorchTrainTask(TrainTask):
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
 		'--image=%s' % temp_image_path,
                 '--network=%s' % self.model_file.split(".")[0],
-                '--epoch=%d' % int(snapshot_epoch),
                 '--networkDirectory=%s' % self.job_dir,
                 '--load=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
                 '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
                 '--labels=%s' % self.dataset.path(self.dataset.labels_file)
                 ]
-
-        if constants.TORCH_USE_MEAN_PIXEL:
+        if snapshot_epoch:
+            args.append('--epoch=%d' % int(snapshot_epoch))
+        if TORCH_USE_MEAN_PIXEL:
             args.append('--useMeanPixel=yes')
+        if self.trained_on_cpu:
+            args.append('--type=float')
 
-        if self.crop_size:
-            args.append('--crop=yes')
-            args.append('--croplen=%d' % self.crop_size)
+        # input image has been resized to network input dimensions by caller
+        args.append('--crop=no')
 
         if self.use_mean:
             args.append('--subtractMean=yes')
         else:
             args.append('--subtractMean=no')
 
+        if layers=='all':
+            args.append('--visualization=yes')
+            args.append('--save=%s' % self.job_dir)
+
         # Convert them all to strings
         args = [str(x) for x in args]
 
-        #print args
-
         regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
-        self.logger.info('%s classify one task started.' % self.framework_name())
+        self.logger.info('%s classify one task started.' % self.get_framework_id())
 
         unrecognized_output = []
-	predictions = []
+        predictions = []
+        self.visualization_file = None
+
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -487,14 +517,14 @@ class TorchTrainTask(TrainTask):
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        raise errors.TestError('%s classify one task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
+                        raise digits.frameworks.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode()))
 
                     if line is not None:
                         # Remove color codes and whitespace
                         line=regex.sub('', line).strip()
                     if line:
                         if not self.process_test_output(line, predictions, 'one'):
-                            self.logger.warning('%s classify one task unrecognized input: %s' % (self.framework_name(), line.strip()))
+                            self.logger.warning('%s classify one task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
@@ -503,31 +533,121 @@ class TorchTrainTask(TrainTask):
             if p.poll() is None:
                 p.terminate()
             error_message = ''
-            if type(e) == errors.TestError:
+            if type(e) == digits.frameworks.errors.InferenceError:
                 error_message = e.__str__()
             else:
-                error_message = '%s classify one task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
+                error_message = '%s classify one task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode(), str(e))
             self.logger.error(error_message)
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
                 error_message = error_message + unrecognized_output
-            raise errors.TestError(error_message)
+            raise digits.frameworks.errors.InferenceError(error_message)
 
         finally:
             self.after_test_run(temp_image_path)
 
         if p.returncode != 0:
-            error_message = '%s classify one task failed with error code %d' % (self.framework_name(), p.returncode)
+            error_message = '%s classify one task failed with error code %d' % (self.get_framework_id(), p.returncode)
             self.logger.error(error_message)
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
                 error_message = error_message + unrecognized_output
-            raise errors.TestError(error_message)
+            raise digits.frameworks.errors.InferenceError(error_message)
         else:
-            self.logger.info('%s classify one task completed.' % self.framework_name())
+            self.logger.info('%s classify one task completed.' % self.get_framework_id())
 
-        #TODO: implement visualization
-	return (predictions,None)
+
+        visualizations = []
+
+        if layers=='all' and self.visualization_file:
+            vis_db = h5py.File(self.visualization_file, 'r')
+            # the HDF5 database is organized as follows:
+            # <root>
+            # |- layers
+            #    |- 1
+            #    |  |- name
+            #    |  |- activations
+            #    |  |- weights
+            #    |- 2
+            for layer_id,layer in vis_db['layers'].items():
+                layer_desc = layer['name'][...].tostring()
+                if 'Sequential' in layer_desc or 'Parallel' in layer_desc:
+                    # ignore containers
+                    continue
+                idx = int(layer_id)
+                # activations
+                data = np.array(layer['activations'][...])
+                # skip batch dimension
+                if len(data.shape)>1 and data.shape[0]==1:
+                    data = data[0]
+                vis = utils.image.get_layer_vis_square(data)
+                mean, std, hist = self.get_layer_statistics(data)
+                visualizations.append(
+                                         {
+                                             'id':         idx,
+                                             'name':       layer_desc,
+                                             'vis_type':   'Activations',
+                                             'image_html': utils.image.embed_image_html(vis),
+                                             'data_stats': {
+                                                              'shape':      data.shape,
+                                                              'mean':       mean,
+                                                              'stddev':     std,
+                                                              'histogram':  hist,
+                                             }
+                                         }
+                                     )
+                # weights
+                if 'weights' in layer:
+                    data = np.array(layer['weights'][...])
+                    if 'Linear' not in layer_desc:
+                        vis = utils.image.get_layer_vis_square(data)
+                    else:
+                        # Linear (inner product) layers have too many weights
+                        # to display
+                        vis = None
+                    mean, std, hist = self.get_layer_statistics(data)
+                    parameter_count = reduce(operator.mul, data.shape, 1)
+                    if 'bias' in layer:
+                        bias = np.array(layer['bias'][...])
+                        parameter_count += reduce(operator.mul, bias.shape, 1)
+                    visualizations.append(
+                                           {
+                                               'id':          idx,
+                                               'name':        layer_desc,
+                                               'vis_type':    'Weights',
+                                               'image_html':  utils.image.embed_image_html(vis),
+                                               'param_count': parameter_count,
+                                               'data_stats': {
+                                                                 'shape':      data.shape,
+                                                                 'mean':       mean,
+                                                                 'stddev':     std,
+                                                                 'histogram':  hist,
+                                               }
+                                           }
+                                         )
+            # sort by layer ID
+            visualizations = sorted(visualizations,key=lambda x:x['id'])
+        return (predictions,visualizations)
+
+    def get_layer_statistics(self, data):
+        """
+        Returns statistics for the given layer data:
+            (mean, standard deviation, histogram)
+                histogram -- [y, x, ticks]
+
+        Arguments:
+        data -- a np.ndarray
+        """
+        # XXX These calculations can be super slow
+        mean = np.mean(data)
+        std = np.std(data)
+        y, x = np.histogram(data, bins=20)
+        y = list(y)
+        ticks = x[[0,len(x)/2,-1]]
+        x = [(x[i]+x[i+1])/2.0 for i in xrange(len(x)-1)]
+        ticks = list(ticks)
+        return (mean, std, [y, x, ticks])
+
 
     def after_test_run(self, temp_image_path):
         try:
@@ -567,16 +687,22 @@ class TorchTrainTask(TrainTask):
 	    predictions.append(map(float, values))
             return True
 
+        # path to visualization file
+        match = re.match(r'Saving visualization to (.*)', message)
+        if match:
+            self.visualization_file = match.group(1).strip()
+            return True
+
         # displaying info and warn messages as we aren't maintaining seperate log file for model testing
         if level == 'info':
-            self.logger.debug('%s classify %s task : %s' % (self.framework_name(), test_category, message))
+            self.logger.debug('%s classify %s task : %s' % (self.get_framework_id(), test_category, message))
             return True
         if level == 'warning':
-            self.logger.warning('%s classify %s task : %s' % (self.framework_name(), test_category, message))
+            self.logger.warning('%s classify %s task : %s' % (self.get_framework_id(), test_category, message))
             return True
 
         if level in ['error', 'critical']:
-            raise errors.TestError('%s classify %s task failed with error message - %s' % (self.framework_name(), test_category, message))
+            raise digits.frameworks.errors.InferenceError('%s classify %s task failed with error message - %s' % (self.get_framework_id(), test_category, message))
 
         return True           # control never reach this line. It can be removed.
 
@@ -592,7 +718,7 @@ class TorchTrainTask(TrainTask):
             return self.classify_many(data, snapshot_epoch=snapshot_epoch)
         raise NotImplementedError()
 
-    def classify_many(self, image_file, snapshot_epoch=None):
+    def classify_many(self, images, snapshot_epoch=None):
         """
         Returns (labels, results):
         labels -- an array of strings
@@ -609,99 +735,122 @@ class TorchTrainTask(TrainTask):
         Keyword arguments:
         snapshot_epoch -- which snapshot to use
         """
-	labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
 
-        if config_value('torch_root') == '<PATHS>':
-            torch_bin = 'th'
-        else:
-            torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
+        # create a temporary folder to store images and a temporary file
+        # to store a list of paths to the images
+        temp_dir_path = tempfile.mkdtemp()
+        try: # this try...finally clause is used to clean up the temp directory in any case
+            _, temp_imgfile_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
+            temp_imgfile = open(temp_imgfile_path, "w")
+            for image in images:
+                _, temp_image_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.jpeg')
+                image = PIL.Image.fromarray(image)
+                try:
+                    image.save(temp_image_path, format='jpeg')
+                except KeyError:
+                    error_message = 'Unable to save file to "%s"' % temp_image_path
+                    self.logger.error(error_message)
+                    raise digits.frameworks.errors.InferenceError(error_message)
+                temp_imgfile.write("%s\n" % temp_image_path)
+            temp_imgfile.close()
 
-        args = [torch_bin,
-                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
-		'--testMany=yes',
-		'--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
-		'--image=%s' % str(image_file),
-                '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
-                '--network=%s' % self.model_file.split(".")[0],
-                '--epoch=%d' % int(snapshot_epoch),
-                '--networkDirectory=%s' % self.job_dir,
-                '--load=%s' % self.job_dir,
-                '--snapshotPrefix=%s' % self.snapshot_prefix,
-                '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
-		'--pythonPrefix=%s' % sys.executable,
-                '--labels=%s' % self.dataset.path(self.dataset.labels_file)
-                ]
-        if constants.TORCH_USE_MEAN_PIXEL:
-            args.append('--useMeanPixel=yes')
+            labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
 
-        if self.crop_size:
-            args.append('--crop=yes')
-            args.append('--croplen=%d' % self.crop_size)
-
-        if self.use_mean:
-            args.append('--subtractMean=yes')
-        else:
-            args.append('--subtractMean=no')
-
-        #print args
-
-        # Convert them all to strings
-        args = [str(x) for x in args]
-
-        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
-        self.logger.info('%s classify many task started.' % self.name())
-
-        unrecognized_output = []
-	predictions = []
-        p = subprocess.Popen(args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.job_dir,
-                close_fds=True,
-                )
-
-        try:
-            while p.poll() is None:
-                for line in utils.nonblocking_readlines(p.stdout):
-                    if self.aborted.is_set():
-                        p.terminate()
-                        raise errors.TestError('%s classify many task got aborted. error code - %d' % (self.framework_name(), p.returncode()))
-
-                    if line is not None:
-                        # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
-                        # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
-                        line=regex.sub('', line).strip()
-                    if line:
-                        if not self.process_test_output(line, predictions, 'many'):
-                            self.logger.warning('%s classify many task unrecognized input: %s' % (self.framework_name(), line.strip()))
-                            unrecognized_output.append(line)
-                    else:
-                        time.sleep(0.05)
-        except Exception as e:
-            if p.poll() is None:
-                p.terminate()
-            error_message = ''
-            if type(e) == errors.TestError:
-                error_message = e.__str__()
+            if config_value('torch_root') == '<PATHS>':
+                torch_bin = 'th'
             else:
-                error_message = '%s classify many task failed with error code %d \n %s' % (self.framework_name(), p.returncode(), str(e))
-            self.logger.error(error_message)
-            if unrecognized_output:
-                unrecognized_output = '\n'.join(unrecognized_output)
-                error_message = error_message + unrecognized_output
-            raise errors.TestError(error_message)
+                torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
-        if p.returncode != 0:
-            error_message = '%s classify many task failed with error code %d' % (self.framework_name(), p.returncode)
-            self.logger.error(error_message)
-            if unrecognized_output:
-                unrecognized_output = '\n'.join(unrecognized_output)
-                error_message = error_message + unrecognized_output
-            raise errors.TestError(error_message)
-        else:
-            self.logger.info('%s classify many task completed.' % self.framework_name())
+            args = [torch_bin,
+                    os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
+                    '--testMany=yes',
+                    '--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
+                    '--image=%s' % str(temp_imgfile_path),
+                    '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
+                    '--network=%s' % self.model_file.split(".")[0],
+                    '--networkDirectory=%s' % self.job_dir,
+                    '--load=%s' % self.job_dir,
+                    '--snapshotPrefix=%s' % self.snapshot_prefix,
+                    '--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE),
+                    '--pythonPrefix=%s' % sys.executable,
+                    '--labels=%s' % self.dataset.path(self.dataset.labels_file)
+                    ]
+            if snapshot_epoch:
+                args.append('--epoch=%d' % int(snapshot_epoch))
+            if TORCH_USE_MEAN_PIXEL:
+                args.append('--useMeanPixel=yes')
+            if self.trained_on_cpu:
+                args.append('--type=float')
 
-	return (labels,np.array(predictions))
+            # input images have been resized to network input dimensions by caller
+            args.append('--crop=no')
+
+            if self.use_mean:
+                args.append('--subtractMean=yes')
+            else:
+                args.append('--subtractMean=no')
+
+            #print args
+
+            # Convert them all to strings
+            args = [str(x) for x in args]
+
+            regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+            self.logger.info('%s classify many task started.' % self.name())
+
+            unrecognized_output = []
+            predictions = []
+            p = subprocess.Popen(args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=self.job_dir,
+                    close_fds=True,
+                    )
+
+            try:
+                while p.poll() is None:
+                    for line in utils.nonblocking_readlines(p.stdout):
+                        if self.aborted.is_set():
+                            p.terminate()
+                            raise digits.frameworks.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode()))
+
+                        if line is not None:
+                            # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
+                            # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
+                            line=regex.sub('', line).strip()
+                        if line:
+                            if not self.process_test_output(line, predictions, 'many'):
+                                self.logger.warning('%s classify many task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
+                                unrecognized_output.append(line)
+                        else:
+                            time.sleep(0.05)
+            except Exception as e:
+                if p.poll() is None:
+                    p.terminate()
+                error_message = ''
+                if type(e) == digits.frameworks.errors.InferenceError:
+                    error_message = e.__str__()
+                else:
+                    error_message = '%s classify many task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode(), str(e))
+                self.logger.error(error_message)
+                if unrecognized_output:
+                    unrecognized_output = '\n'.join(unrecognized_output)
+                    error_message = error_message + unrecognized_output
+                raise digits.frameworks.errors.InferenceError(error_message)
+
+            if p.returncode != 0:
+                error_message = '%s classify many task failed with error code %d' % (self.get_framework_id(), p.returncode)
+                self.logger.error(error_message)
+                if unrecognized_output:
+                    unrecognized_output = '\n'.join(unrecognized_output)
+                    error_message = error_message + unrecognized_output
+                raise digits.frameworks.errors.InferenceError(error_message)
+            else:
+                self.logger.info('%s classify many task completed.' % self.get_framework_id())
+        finally:
+            shutil.rmtree(temp_dir_path)
+
+        return (labels,np.array(predictions))
 
     def has_model(self):
         """
@@ -709,19 +858,22 @@ class TorchTrainTask(TrainTask):
         """
         return len(self.snapshots) != 0
 
-    def loaded_model(self):
+    @override
+    def get_model_files(self):
         """
-        Returns True if a model has been loaded
+        return paths to model files
         """
-        return None
+        return {
+                "Network": self.model_file
+                }
 
-    def load_model(self, epoch=None):
+    @override
+    def get_network_desc(self):
         """
-        Loads a .caffemodel
-        Returns True if the model is loaded (or if it was already loaded)
+        return text description of network
+        """
+        with open (os.path.join(self.job_dir,TORCH_MODEL_FILE), "r") as infile:
+            desc = infile.read()
+        return desc
 
-        Keyword Arguments:
-        epoch -- which snapshot to load (default is -1 to load the most recently generated snapshot)
-        """
-        return False
 

@@ -112,7 +112,7 @@ function utilsClass.resizeImage(img, height, width, channels,resize_mode)
     width_ratio = img:size(3) / width
     height_ratio = img:size(2) / height
     if resize_mode == 'squash' or width_ratio == height_ratio then
-        return image.scale(img,width,height)    
+        return image.scale(img,width,height)
     elseif resize_mode == 'crop' then
         -- resize to smallest of ratios (relatively larger image), keeping aspect ratio
         if width_ratio > height_ratio then
@@ -126,13 +126,13 @@ function utilsClass.resizeImage(img, height, width, channels,resize_mode)
 
 	-- chop off ends of dimension that is still too long
 	if width_ratio > height_ratio then
-	    start = round((resize_width-width)/2.0)  
+	    start = round((resize_width-width)/2.0)
 	    return image.crop(img, start, 0, start+width, img:size(2))
         else
 	    start = round((resize_height-height)/2.0)
 	    return image.crop(img, 0, start, img:size(3), start+height)
         end
-    else 
+    else
 	if resize_mode == 'fill' then
             -- resize to biggest of ratios (relatively smaller image), keeping aspect ratio
             if width_ratio > height_ratio then
@@ -161,7 +161,7 @@ function utilsClass.resizeImage(img, height, width, channels,resize_mode)
                 resize_width = resize_width + 1
             end
 
-            img = image.scale(img,resize_width,resize_height) 
+            img = image.scale(img,resize_width,resize_height)
             -- chop off ends of dimension that is still too long
             if width_ratio > height_ratio then
                 start = round((resize_width-width)/2.0)
@@ -180,7 +180,7 @@ function utilsClass.resizeImage(img, height, width, channels,resize_mode)
         -- fill ends of dimension that is too short with random noise
         if width_ratio > height_ratio then
             padding = (height - resize_height)/2
-            padding_tensor = torch.rand(img:size(1),padding,img:size(3))            
+            padding_tensor = torch.rand(img:size(1),padding,img:size(3))
 	    img = torch.cat(padding_tensor,img,2)
 	    img = torch.cat(img,padding_tensor,2)
         else
@@ -221,6 +221,31 @@ function correctFinalOutputDim(node, outputSize)
         return true
     end
     return false
+end
+
+-- return whether a Luarocks module is available
+function isModuleAvailable(name)
+  if package.loaded[name] then
+    return true
+  else
+    for _, searcher in ipairs(package.searchers or package.loaders) do
+      local loader = searcher(name)
+      if type(loader) == 'function' then
+        package.preload[name] = loader
+        return true
+      end
+    end
+    return false
+  end
+end
+
+-- attempt to require a module and drop error if not available
+function check_require(name)
+    if isModuleAvailable(name) then
+        return require(name)
+    else
+        assert(false,"Did you forget to install " .. name .. " module? c.f. install instructions")
+    end
 end
 
 utilsClass.correctFinalOutputDim = correctFinalOutputDim

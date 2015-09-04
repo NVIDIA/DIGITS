@@ -5,10 +5,16 @@ require 'xlua'
 require 'optim'
 require 'pl'
 require 'trepl'
-require 'cutorch'
 require 'image'
-require 'cudnn'
 require 'lfs'
+
+local dir_path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]]
+if dir_path ~= nil then
+    package.path = dir_path .."?.lua;".. package.path
+end
+
+require 'utils'
+check_require 'hdf5'
 
 package.path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
 
@@ -29,8 +35,9 @@ opt = lapp[[
 -i,--image              (string)                 the value to this parameter depends on "testMany" parameter. If testMany is 'no' then this parameter specifies single image that needs to be classified or else this parameter specifies the location of file which contains paths of multiple images that needs to be classified. Provide full path, if the image (or) images file is in different directory.
 -s,--mean               (string)                 train images mean (saved as .jpg file)
 -y,--ccn2               (default no)             should be 'yes' if ccn2 is used in network. Default : false
+-s,--save               (default .)              save directory
 
---testMany		(default no)             If this option is 'yes', then "image" input parameter should specify the file with all the images to be tested
+--testMany              (default no)             If this option is 'yes', then "image" input parameter should specify the file with all the images to be tested
 --testUntil             (default -1)             specifies how many images in the "image" file to be tested. This parameter is only valid when testMany is set to "yes"
 --crop                  (default no)             If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter
 --croplen               (default 0)              crop length. This is required parameter when crop option is provided
@@ -40,13 +47,23 @@ opt = lapp[[
 --snapshotPrefix        (default '')             prefix of the weights/snapshots
 --networkDirectory      (default '')             directory in which network exists
 --pythonPrefix        	(default 'python')       python version
---allPredictions        (default no)       	 If 'yes', displays all the predictions of an image instead of formatted topN results
+--allPredictions        (default no)       	     If 'yes', displays all the predictions of an image instead of formatted topN results
+--visualization         (default no)             Create HDF5 database with layers weights and activations. Depends on --testMany~=yes
 ]]
 
 
 torch.setnumthreads(opt.threads)
-cutorch.setDevice(opt.devid)
 
+if opt.type =='cuda' then
+  require 'cutorch'
+  require 'cunn'
+  cutorch.setDevice(opt.devid)
+end
+
+if opt.testMany=='yes' and opt.visualization=='yes' then
+    logmessage.display(1,'testMany==yes => disabling visualizations')
+    opt.visualization = 'no'
+end
 
 local snapshot_prefix = ''
 
@@ -107,14 +124,22 @@ end
 
 if opt.epoch == -1 then
     logmessage.display(2,'There are no pretrained model weights to test in this directory - ' .. paths.concat(opt.networkDirectory))
-    return
+    os.exit(-1)
 end
 
 package.path = paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
 
 logmessage.display(0,'Loading network definition from ' .. paths.concat(opt.networkDirectory, opt.network))
-local model = require (opt.network)
+local parameters = {
+        ngpus = (opt.type =='cuda') and 1 or 0
+    }
+local network = require (opt.network)(parameters)
+local model = network.model
+
 local using_ccn2 = opt.ccn2
+
+-- fix final output dimension of network
+utils.correctFinalOutputDim(model, #class_labels)
 
 -- if ccn2 is used in network, then set using_ccn2 value as 'yes'
 if ccn2 ~= nil then
@@ -130,6 +155,8 @@ weights:copy(torch.load(weights_filename))
 
 if opt.type =='cuda' then
   model:cuda()
+else
+  model:float()
 end
 
 -- as we want to classify, let's disable dropouts by enabling evaluation mode
@@ -159,6 +186,14 @@ local function preprocess(img_path)
 
     -- Depending on the function arguments, image preprocess may include conversion from RGB to BGR and mean subtraction, image resize after mean subtraction
     local image_preprocessed = data.PreProcess(im, img_mean["mean"], opt.subtractMean, img_mean["channels"], 'no', crop, false, cropX, cropY, opt.croplen)
+
+    -- crop to match network expected input dimensions
+    if network.croplen then
+        image_size = image_preprocessed:size()
+        assert(image_size[2] == image_size[3], "Expected square image")
+        c = (image_size[2]-network.croplen)/2 + 1
+        image_preprocessed = data.PreProcess(image_preprocessed, nil, 'no', nil, 'no', 'yes',  false, c, c, network.croplen)
+    end
     return image_preprocessed
 end
 
@@ -182,7 +217,9 @@ else
   batch_size = 1
 end
 
-if opt.crop == 'yes' then   -- notice that here "opt.crop" is used, instead of "crop", as there are a chances that "crop" variable is getting overriden in the above instructions
+if network.croplen then
+  inputs = torch.Tensor(batch_size, img_mean["channels"], network.croplen, network.croplen)
+elseif opt.crop == 'yes' then   -- notice that here "opt.crop" is used, instead of "crop", as there are a chances that "crop" variable is getting overriden in the above instructions
   inputs = torch.Tensor(batch_size, img_mean["channels"], opt.croplen, opt.croplen)
 else
   inputs = torch.Tensor(batch_size, img_mean["channels"], img_mean["height"], img_mean["width"])
@@ -198,15 +235,22 @@ local function predictBatch(inputs)
   -- sort the outputs of SoftMax layer in decreasing order
   for i=1,counter do
     index = index + 1
+    if predictions:nDimension() == 2 then
+      val = predictions[{i,{}}]
+    else
+      -- some networks drop the batch dimension when fed with only one training example
+      assert(predictions:nDimension() == 1, "Expect exactly one dimension - dim=" .. predictions:nDimension())
+      assert(counter == 1, "Expect only one sample when prediction has dimensionality of 1 - counter=" .. counter)
+      val = predictions[{{}}]
+    end
     if opt.allPredictions == 'no' then
       --display topN predictions of each image
-      val,classes = predictions[{i,{}}]:float():sort(true)
+      val,classes = val:float():sort(true)
       for j=1,topN do
         -- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
         logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. math.exp(val[j]))
       end
     else
-      val = predictions[{i,{}}]:float()
       allPredictions = ''
       for j=1,val:size(1) do
         allPredictions = allPredictions .. ' ' .. math.exp(val[j])
@@ -261,5 +305,31 @@ else
   end
   counter = 1      -- here counter is set, so that predictBatch() method displays only the predictions of first image
   predictBatch(inputs)
+  if opt.visualization=='yes' then
+    local filename = paths.concat(opt.save, 'vis.h5')
+    logmessage.display(0,'Saving visualization to ' .. filename)
+    local vis_db = hdf5.open(filename, 'w')
+    for i,layer in ipairs(model:listModules()) do
+      local activations = layer.output
+      local weights = layer.weight
+      local bias = layer.bias
+      name = tostring(layer)
+      -- convert 'name' string to Tensor as torch.hdf5 only
+      -- accepts Tensor objects
+      tname = torch.CharTensor(string.len(name))
+      for j=1,string.len(name) do
+        tname[j] = string.byte(name,j)
+      end
+      vis_db:write('/layers/'..i..'/name', tname )
+      vis_db:write('/layers/'..i..'/activations', activations:float())
+      if weights ~= nil then
+        vis_db:write('/layers/'..i..'/weights', weights:float())
+      end
+      if bias ~= nil then
+        vis_db:write('/layers/'..i..'/bias', bias:float())
+      end
+    end
+    vis_db:close()
+  end
 end
 

@@ -1020,7 +1020,7 @@ class CaffeTrainTask(TrainTask):
                     for bottom in layer.bottom:
                         if bottom in net.blobs and bottom not in added_activations:
                             data = net.blobs[bottom].data[0]
-                            vis = self.get_layer_vis_square(data,
+                            vis = utils.image.get_layer_vis_square(data,
                                     allow_heatmap=bool(bottom != 'data'))
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
@@ -1040,7 +1040,7 @@ class CaffeTrainTask(TrainTask):
                     if layer.name in net.params:
                         data = net.params[layer.name][0].data
                         if layer.type not in ['InnerProduct']:
-                            vis = self.get_layer_vis_square(data)
+                            vis = utils.image.get_layer_vis_square(data)
                         else:
                             vis = None
                         mean, std, hist = self.get_layer_statistics(data)
@@ -1073,7 +1073,7 @@ class CaffeTrainTask(TrainTask):
                             # don't normalize softmax layers
                             if layer.type == 'Softmax':
                                 normalize = False
-                            vis = self.get_layer_vis_square(data,
+                            vis = utils.image.get_layer_vis_square(data,
                                     normalize = normalize,
                                     allow_heatmap = bool(top != 'data'))
                             mean, std, hist = self.get_layer_statistics(data)
@@ -1095,89 +1095,6 @@ class CaffeTrainTask(TrainTask):
                 raise NotImplementedError
 
         return visualizations
-
-    def get_layer_vis_square(self, data,
-            allow_heatmap = True,
-            normalize = True,
-            min_img_dim = 100,
-            max_width = 1200,
-            ):
-        """
-        Returns a vis_square for the given layer data
-
-        Arguments:
-        data -- a np.ndarray
-
-        Keyword arguments:
-        allow_heatmap -- if True, convert single channel images to heatmaps
-        normalize -- whether to normalize the data when visualizing
-        max_width -- maximum width for the vis_square
-        """
-        if data.ndim == 1:
-            # interpret as 1x1 grayscale images
-            # (N, 1, 1)
-            data = data[:, np.newaxis, np.newaxis]
-        elif data.ndim == 2:
-            # interpret as 1x1 grayscale images
-            # (N, 1, 1)
-            data = data.reshape((data.shape[0]*data.shape[1], 1, 1))
-        elif data.ndim == 3:
-            if data.shape[0] == 3:
-                # interpret as a color image
-                # (1, H, W,3)
-                data = data[[2,1,0],...] # BGR to RGB (see issue #59)
-                data = data.transpose(1,2,0)
-                data = data[np.newaxis,...]
-            else:
-                # interpret as grayscale images
-                # (N, H, W)
-                pass
-        elif data.ndim == 4:
-            if data.shape[0] == 3:
-                # interpret as HxW color images
-                # (N, H, W, 3)
-                data = data.transpose(1,2,3,0)
-                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
-            elif data.shape[1] == 3:
-                # interpret as HxW color images
-                # (N, H, W, 3)
-                data = data.transpose(0,2,3,1)
-                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
-            else:
-                # interpret as HxW grayscale images
-                # (N, H, W)
-                data = data.reshape((data.shape[0]*data.shape[1], data.shape[2], data.shape[3]))
-        else:
-            raise RuntimeError('unrecognized data shape: %s' % (data.shape,))
-
-        # chop off data so that it will fit within max_width
-        padsize = 0
-        width = data.shape[2]
-        if width > max_width:
-            data = data[:1,:max_width,:max_width]
-        else:
-            if width > 1:
-                padsize = 1
-                width += 1
-            n = max(max_width/width,1)
-            n *= n
-            data = data[:n]
-
-        if not allow_heatmap and data.ndim == 3:
-            data = data[...,np.newaxis]
-
-        vis = utils.image.vis_square(data,
-                padsize     = padsize,
-                normalize   = normalize,
-                )
-
-        # find minimum dimension and upscale if necessary
-        _min = sorted(vis.shape[:2])[0]
-        if _min < min_img_dim:
-            # upscale image
-            ratio = min_img_dim/float(_min)
-            vis = utils.image.upscale(vis, ratio)
-        return vis
 
     def get_layer_statistics(self, data):
         """
