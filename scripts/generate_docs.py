@@ -148,7 +148,7 @@ class DocGenerator(object):
                     args[-1] = '%s (`%s`)' % (args[-1], route['defaults'][arg])
             self.w('Arguments: ' + ', '.join(args))
             self.w()
-        if 'location' in route:
+        if 'location' in route and route['location']:
             # get location relative to digits root
             digits_root = os.path.dirname(
                     os.path.dirname(
