@@ -63,6 +63,15 @@ New Image Dataset
                     </div>
                     <div class="row">
                         <div class="col-sm-6 col-sm-offset-3">
+                            <div class="form-group{{ ' has-error' if form.force_same_shape.errors else '' }}">
+                                {{ form.force_same_shape.label }}
+                                {{ form.force_same_shape.tooltip }}
+                                {{ form.force_same_shape(class='form-control') }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 col-sm-offset-3">
                             <div class="form-group{{ ' has-error' if form.prebuilt_mean_file.errors else '' }}">
                                 {{ form.prebuilt_mean_file.label }}
                                 {{ form.prebuilt_mean_file.tooltip }}

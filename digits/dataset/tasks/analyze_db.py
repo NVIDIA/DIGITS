@@ -23,7 +23,12 @@ class AnalyzeDbTask(Task):
         Arguments:
         database -- path to the database to analyze
         purpose -- what is this database going to be used for
+
+        Keyword arguments:
+        force_same_shape -- if True, enforce that every entry in the database has the same shape
         """
+        self.force_same_shape = kwargs.pop('force_same_shape', False)
+
         super(AnalyzeDbTask, self).__init__(**kwargs)
         self.pickver_task_analyzedb = PICKLE_VERSION
 
@@ -36,8 +41,12 @@ class AnalyzeDbTask(Task):
         self.image_height = None
         self.image_channels = None
 
+        self.analyze_db_log_file = 'analyze_db_%s.log' % '-'.join(p.lower() for p in self.purpose.split())
+
     def __getstate__(self):
         state = super(AnalyzeDbTask, self).__getstate__()
+        if 'analyze_db_log' in state:
+            del state['analyze_db_log']
         return state
 
     def __setstate__(self, state):
@@ -67,14 +76,27 @@ class AnalyzeDbTask(Task):
             os.path.dirname(os.path.dirname(os.path.abspath(digits.__file__))),
             'tools', 'analyze_db.py'),
                 self.database,
-                '--force-dimensions'
                 ]
+        if self.force_same_shape:
+            args.append('--force-same-shape')
+        else:
+            args.append('--only-count')
+
+        print args
 
         return args
 
     @override
+    def before_run(self):
+        super(AnalyzeDbTask, self).before_run()
+        self.analyze_db_log = open(self.path(self.analyze_db_log_file), 'a')
+
+    @override
     def process_output(self, line):
         from digits.webapp import socketio
+
+        self.analyze_db_log.write('%s\n' % line)
+        self.analyze_db_log.flush()
 
         timestamp, level, message = self.preprocess_output_digits(line)
         if not message:
@@ -103,7 +125,7 @@ class AnalyzeDbTask(Task):
             return True
 
         # image dimensions
-        match = re.match(r'(\d+) entries found with dims ((\d+)x(\d+)x(\d+))', message)
+        match = re.match(r'(\d+) entries found with shape ((\d+)x(\d+)x(\d+))', message)
         if match:
             count = int(match.group(1))
             dims = match.group(2)
@@ -122,6 +144,11 @@ class AnalyzeDbTask(Task):
             return True
 
         return True
+
+    @override
+    def after_run(self):
+        super(AnalyzeDbTask, self).after_run()
+        self.analyze_db_log.close()
 
     def image_type(self):
         """

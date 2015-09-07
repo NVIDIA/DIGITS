@@ -40,8 +40,7 @@ class DbReader(object):
         """
         self._db = lmdb.open(location,
                 map_size=1024**3, # 1MB
-                max_dbs=0,
-                readonly=True)
+                readonly=True, lock=False)
 
         with self._db.begin() as txn:
             self.total_entries = txn.stat()['entries']
@@ -81,7 +80,7 @@ def print_datum(datum):
 
 def analyze_db(database,
         only_count=False,
-        force_dimensions=False,
+        force_same_shape=False,
         ):
     """
     Looks at the data in a prebuilt database and verifies it
@@ -93,7 +92,7 @@ def analyze_db(database,
 
     Keyword arguments:
     only_count -- only count the entries, don't inspect them
-    force_dimensions -- throw an error if not all images have the same dimensions
+    force_same_shape -- throw an error if not all images have the same shape
     """
     start_time = time.time()
 
@@ -107,10 +106,7 @@ def analyze_db(database,
     reader = DbReader(database)
     logger.info('Total entries: %s' % reader.total_entries)
 
-    if only_count:
-        return True
-
-    unique_dims = Counter()
+    unique_shapes = Counter()
 
     count = 0
     update_time = None
@@ -118,11 +114,11 @@ def analyze_db(database,
         datum = caffe_pb2.Datum()
         datum.ParseFromString(value)
 
-        d = '%sx%sx%s' % (datum.width, datum.height, datum.channels)
-        unique_dims[d] += 1
+        shape = '%sx%sx%s' % (datum.width, datum.height, datum.channels)
+        unique_shapes[shape] += 1
 
-        if force_dimensions and len(unique_dims.keys()) > 1:
-            logger.error("Images with different sizes found: %s and %s" % tuple(unique_dims.keys()))
+        if force_same_shape and len(unique_shapes.keys()) > 1:
+            logger.error("Images with different shapes found: %s and %s" % tuple(unique_shapes.keys()))
             return False
 
         count += 1
@@ -133,11 +129,18 @@ def analyze_db(database,
             logger.debug('Progress: %s/%s' % (count, reader.total_entries))
             update_time = time.time()
 
+        if only_count:
+            # quit after reading one
+            count = reader.total_entries
+            logger.info('Assuming all entries have same shape ...')
+            unique_shapes[unique_shapes.keys()[0]] = count
+            break
+
     if count != reader.total_entries:
         logger.warning('LMDB reported %s total entries, but only read %s' % (reader.total_entries, count))
 
-    for key, val in sorted(unique_dims.items(), key=operator.itemgetter(1), reverse=True):
-        logger.info('%s entries found with dims %s (WxHxC)' % (val, key))
+    for key, val in sorted(unique_shapes.items(), key=operator.itemgetter(1), reverse=True):
+        logger.info('%s entries found with shape %s (WxHxC)' % (val, key))
 
     logger.info('Completed in %s seconds.' % (time.time() - start_time,))
     return True
@@ -157,15 +160,15 @@ if __name__ == '__main__':
             action="store_true",
             help="Only print the number of entries, don't analyze the data")
 
-    parser.add_argument('--force-dimensions',
+    parser.add_argument('--force-same-shape',
             action="store_true",
-            help="Throw an error if not all images have the same dimensions")
+            help='Throw an error if not all entries have the same shape')
 
     args = vars(parser.parse_args())
 
     if analyze_db(args['database'],
             only_count = args['only_count'],
-            force_dimensions = args['force_dimensions'],
+            force_same_shape = args['force_same_shape'],
             ):
         sys.exit(0)
     else:

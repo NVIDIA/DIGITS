@@ -47,11 +47,14 @@ def generic_image_dataset_create():
         else:
             raise ValueError('method not supported')
 
+        force_same_shape = form.force_same_shape.data
+
         job.tasks.append(
                 tasks.AnalyzeDbTask(
                     job_dir     = job.dir(),
                     database    = form.prebuilt_train_images.data,
                     purpose     = form.prebuilt_train_images.label.text,
+                    force_same_shape = force_same_shape,
                     )
                 )
 
@@ -61,6 +64,7 @@ def generic_image_dataset_create():
                         job_dir     = job.dir(),
                         database    = form.prebuilt_train_labels.data,
                         purpose     = form.prebuilt_train_labels.label.text,
+                        force_same_shape = force_same_shape,
                         )
                     )
 
@@ -70,6 +74,7 @@ def generic_image_dataset_create():
                         job_dir     = job.dir(),
                         database    = form.prebuilt_val_images.data,
                         purpose     = form.prebuilt_val_images.label.text,
+                        force_same_shape = force_same_shape,
                         )
                     )
             if form.prebuilt_val_labels.data:
@@ -78,6 +83,7 @@ def generic_image_dataset_create():
                             job_dir     = job.dir(),
                             database    = form.prebuilt_val_labels.data,
                             purpose     = form.prebuilt_val_labels.label.text,
+                            force_same_shape = force_same_shape,
                             )
                         )
 
