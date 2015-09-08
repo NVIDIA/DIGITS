@@ -1,7 +1,7 @@
 nose>=1.3.1
 mock>=1.0.1
 beautifulsoup4>=4.2.1
--e git://github.com/lukeyeager/flask-autodoc.git#egg=Flask_Autodoc-master
+Flask-Autodoc>=0.1.2
 selenium>=2.25.0
 coverage>=3.7.1
 coveralls>=0.5
