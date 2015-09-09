@@ -12,11 +12,11 @@ fi
 INSTALL_DIR=$1
 mkdir -p $INSTALL_DIR
 
-CAFFE_TAG="caffe-0.11"
+CAFFE_BRANCH="caffe-0.13"
 CAFFE_URL="https://github.com/NVIDIA/caffe.git"
 
 # Get source
-git clone --depth 1 --branch $CAFFE_TAG $CAFFE_URL $INSTALL_DIR
+git clone --depth 1 --branch $CAFFE_BRANCH $CAFFE_URL $INSTALL_DIR
 cd $INSTALL_DIR
 
 # Install dependencies
