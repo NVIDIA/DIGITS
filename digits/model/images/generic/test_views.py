@@ -158,6 +158,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
+            print 'Status code:', rv.status_code
             s = BeautifulSoup(rv.data)
             div = s.select('div.alert-danger')
             if div:
@@ -297,8 +298,31 @@ class BaseTestCreation(BaseViewsTestWithDataset):
                 }
         options['%s-snapshot' % job1_id] = content['snapshots'][-1]
 
-        job_id = self.create_model(**options)
-        assert self.model_wait_completion(job1_id) == 'Done', 'second job failed'
+        job2_id = self.create_model(**options)
+        assert self.model_wait_completion(job2_id) == 'Done', 'second job failed'
+
+    def test_retrain_twice(self):
+        # retrain from a job which already had a pretrained model
+        job1_id = self.create_model()
+        assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
+        rv = self.app.get('/models/%s.json' % job1_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']), 'should have at least snapshot'
+        options_2 = {
+                'method': 'previous',
+                'previous_networks': job1_id,
+                }
+        options_2['%s-snapshot' % job1_id] = content['snapshots'][-1]
+        job2_id = self.create_model(**options_2)
+        assert self.model_wait_completion(job2_id) == 'Done', 'second job failed'
+        options_3 = {
+                'method': 'previous',
+                'previous_networks': job2_id,
+                }
+        options_3['%s-snapshot' % job2_id] = -1
+        job3_id = self.create_model(**options_3)
+        assert self.model_wait_completion(job3_id) == 'Done', 'third job failed'
 
 
 class BaseTestCreated(BaseViewsTestWithModel):

@@ -96,7 +96,11 @@ def generic_image_model_create():
             for choice in form.previous_networks.choices:
                 if choice[0] == form.previous_networks.data:
                     epoch = float(flask.request.form['%s-snapshot' % form.previous_networks.data])
-                    if epoch != 0:
+                    if epoch == 0:
+                        pass
+                    elif epoch == -1:
+                        pretrained_model = old_job.train_task().pretrained_model
+                    else:
                         for filename, e in old_job.train_task().snapshots:
                             if e == epoch:
                                 pretrained_model = filename
@@ -356,6 +360,8 @@ def get_previous_network_snapshots():
         job = scheduler.get_job(job_id)
         e = [(0, 'None')] + [(epoch, 'Epoch #%s' % epoch)
                 for _, epoch in reversed(job.train_task().snapshots)]
+        if job.train_task().pretrained_model:
+            e.insert(0, (-1, 'Previous pretrained model'))
         prev_network_snapshots.append(e)
     return prev_network_snapshots
 
