@@ -133,14 +133,17 @@ def models_customize():
         raise werkzeug.exceptions.NotFound('Job not found')
 
     snapshot = None
-    try:
-        epoch = int(flask.request.form['snapshot_epoch'])
+    epoch = int(flask.request.form.get('snapshot_epoch', 0))
+    print 'epoch:',epoch
+    if epoch == 0:
+        pass
+    elif epoch == -1:
+        snapshot = job.train_task().pretrained_model
+    else:
         for filename, e in job.train_task().snapshots:
             if e == epoch:
                 snapshot = job.path(filename)
                 break
-    except:
-        pass
 
     return json.dumps({
             'network': job.train_task().get_network_desc(),
