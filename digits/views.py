@@ -126,6 +126,20 @@ def edit_job(job_id):
     job._name = flask.request.form['job_name']
     return 'Changed job name from "%s" to "%s"' % (old_name, job.name())
 
+@app.route('/jobs/notes/<job_id>', methods=['PUT'])
+@autodoc('jobs')
+def edit_job_notes(job_id):
+    """
+    Edit the notes of a job
+    """
+    job = scheduler.get_job(job_id)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
+    old_notes = job.notes()
+    job._notes = flask.request.form['job_notes']
+    return 'Changed job notes from "%s" to "%s"' % (old_notes, job.notes())
+
 @app.route('/datasets/<job_id>/status', methods=['GET'])
 @app.route('/models/<job_id>/status', methods=['GET'])
 @app.route('/jobs/<job_id>/status', methods=['GET'])
