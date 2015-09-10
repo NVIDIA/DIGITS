@@ -50,11 +50,8 @@ class CreateDbTask(Task):
         self.db_name = db_name
         self.backend = backend
         if backend == 'hdf5':
-            # store a textfile that contains a path to the hdf5 file
-            self.textfile = '%s.txt' % self.db_name
-            with open(self.path(self.textfile), 'w') as outfile:
-                # XXX - this works because the model job will be in an adjacent folder
-                outfile.write('../%s/%s' % (self.job_id, self.db_name))
+            # the list of hdf5 files is stored in a textfile
+            self.textfile = os.path.join(self.db_name, 'list.txt')
         self.image_dims = image_dims
         if image_dims[2] == 3:
             self.image_channel_order = 'BGR'
@@ -165,6 +162,8 @@ class CreateDbTask(Task):
             args.append('--encoding=%s' % self.encoding)
         if self.compression and self.compression != 'none':
             args.append('--compression=%s' % self.compression)
+        if self.backend == 'hdf5':
+            args.append('--hdf5_dset_limit=%d' % 2**31)
 
         return args
 
@@ -237,6 +236,17 @@ class CreateDbTask(Task):
     def after_run(self):
         super(CreateDbTask, self).after_run()
         self.create_db_log.close()
+
+        if self.backend == 'hdf5':
+            # add more path information to the list of h5 files
+            lines = None
+            with open(self.path(self.textfile)) as infile:
+                lines = infile.readlines()
+            with open(self.path(self.textfile), 'w') as outfile:
+                for line in lines:
+                    # XXX this works because the model job will be in an adjacent folder
+                    outfile.write('%s\n' % os.path.join(
+                        '..', self.job_id, self.db_name, line.strip()))
 
     def get_labels(self):
         """
