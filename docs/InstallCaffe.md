@@ -55,8 +55,9 @@ It will try to find the correct paths to every library needed to build Caffe.
 If you are using [cuDNN](https://developer.nvidia.com/cudnn) (for faster performance) and [CNMeM](https://github.com/NVIDIA/cnmem) (better GPU memory utilization for faster performance and fewer out-of-memory-errors), then you may want to configure CMake like this:
 
     % cmake \
-      -DCUDNN_INCLUDE=$CUDNN_HOME/include -DCUDNN_INCLUDE=$CUDNN_HOME/lib64/libcudnn.so \
-      -DCNMEM_INCLUDE=$CNMEM_HOME/include -DCNMEM_INCLUDE=$CNMEM_HOME/lib64/libcudnn.so \
+      -DUSE_CNMEM=ON \
+      -DCUDNN_INCLUDE=$CUDNN_HOME/include -DCUDNN_LIBRARY=$CUDNN_HOME/lib64/libcudnn.so \
+      -DCNMEM_INCLUDE=$CNMEM_HOME/include -DCNMEM_LIBRARY=$CNMEM_HOME/build/libcnmem.so \
       ..
 
 #### Using Make
