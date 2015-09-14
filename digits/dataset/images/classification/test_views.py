@@ -409,6 +409,20 @@ class TestCreated(BaseViewsTestWithDataset):
         pil_image = PIL.Image.open(buff)
         assert pil_image.size == (self.IMAGE_WIDTH, self.IMAGE_HEIGHT), 'image size is %s' % (pil_image.size,)
 
+    def test_edit_name(self):
+        status = self.edit_job(
+                self.dataset_id,
+                name='new name'
+                )
+        assert status == 200, 'failed with %s' % status
+
+    def test_edit_notes(self):
+        status = self.edit_job(
+                self.dataset_id,
+                notes='new notes'
+                )
+        assert status == 200, 'failed with %s' % status
+
 
 class TestCreatedGrayscale(TestCreated):
     IMAGE_CHANNELS = 1

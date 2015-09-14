@@ -365,6 +365,20 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert content['id'] == self.model_id, 'expected different job_id'
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
+    def test_edit_name(self):
+        status = self.edit_job(
+                self.dataset_id,
+                name='new name'
+                )
+        assert status == 200, 'failed with %s' % status
+
+    def test_edit_notes(self):
+        status = self.edit_job(
+                self.dataset_id,
+                notes='new notes'
+                )
+        assert status == 200, 'failed with %s' % status
+
     def test_infer_one(self):
         image_path = os.path.join(self.imageset_folder, self.test_image)
         with open(image_path,'rb') as infile:

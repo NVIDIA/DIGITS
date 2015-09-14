@@ -18,6 +18,7 @@ import dataset.views
 import model.views
 from digits.utils import errors
 from digits.utils.routing import request_wants_json
+from digits.log import logger
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
@@ -122,29 +123,29 @@ def show_job(job_id):
 @autodoc('jobs')
 def edit_job(job_id):
     """
-    Edit the name of a job
+    Edit a job's name and/or notes
     """
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
-    old_name = job.name()
-    job._name = flask.request.form['job_name']
-    return 'Changed job name from "%s" to "%s"' % (old_name, job.name())
+    # Edit name
+    if 'job_name' in flask.request.form:
+        name = flask.request.form['job_name'].strip()
+        if not name:
+            raise werkzeug.exceptions.BadRequest('name cannot be blank')
+        job._name = name
+        logger.info('Set name to "%s".' % job.name(), job_id=job.id())
 
-@app.route('/jobs/notes/<job_id>', methods=['PUT'])
-@autodoc('jobs')
-def edit_job_notes(job_id):
-    """
-    Edit the notes of a job
-    """
-    job = scheduler.get_job(job_id)
-    if job is None:
-        raise werkzeug.exceptions.NotFound('Job not found')
+    # Edit notes
+    if 'job_notes' in flask.request.form:
+        notes = flask.request.form['job_notes'].strip()
+        if not notes:
+            notes = None
+        job._notes = notes
+        logger.info('Updated notes.', job_id=job.id())
 
-    old_notes = job.notes()
-    job._notes = flask.request.form['job_notes']
-    return 'Changed job notes from "%s" to "%s"' % (old_notes, job.notes())
+    return '%s updated.' % job.job_type()
 
 @app.route('/datasets/<job_id>/status', methods=['GET'])
 @app.route('/models/<job_id>/status', methods=['GET'])
