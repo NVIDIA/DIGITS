@@ -8,6 +8,8 @@ import platform
 
 from nose.tools import raises, assert_raises
 import mock
+import numpy as np
+import PIL.Image
 
 from . import parse_folder as _
 
@@ -278,4 +280,27 @@ class TestSplitIndices():
 
         assert abs(ideala-idxa) <= 2, 'split should be close to {}, is {}'.format(ideala, idxa)
         assert abs(idealb-idxb) <= 2, 'split should be close to {}, is {}'.format(idealb, idxb)
+
+class TestParseFolder():
+
+    def test_all_train(self):
+        tmpdir = tempfile.mkdtemp()
+        img = PIL.Image.fromarray(np.zeros((10,10,3), dtype='uint8'))
+        classes = ['A','B','C']
+        for cls in classes:
+            os.makedirs(os.path.join(tmpdir, cls))
+            img.save(os.path.join(tmpdir, cls, 'image1.png'))
+            img.save(os.path.join(tmpdir, cls, 'image2.jpg'))
+
+        labels_file = os.path.join(tmpdir, 'labels.txt')
+        train_file = os.path.join(tmpdir, 'train.txt')
+
+        _.parse_folder(tmpdir, labels_file, train_file=train_file,
+                percent_train=100, percent_val=0, percent_test=0)
+
+        with open(labels_file) as infile:
+            parsed_classes = [line.strip() for line in infile]
+            assert parsed_classes == classes, '%s != %s' % (parsed_classes, classes)
+
+        shutil.rmtree(tmpdir)
 

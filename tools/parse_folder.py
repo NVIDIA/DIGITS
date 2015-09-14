@@ -331,6 +331,8 @@ def parse_folder(folder, labels_file,
             logger.error('folder does not exist')
             return False
 
+    subdirs.sort()
+
     if len(subdirs) < 2:
         logger.error('folder must contain at least two subdirectories')
         return False
