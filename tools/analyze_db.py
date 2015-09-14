@@ -9,6 +9,8 @@ import logging
 import operator
 from collections import Counter
 
+import lmdb
+
 try:
     import digits
 except ImportError:
@@ -18,13 +20,8 @@ import digits.config
 digits.config.load_config()
 from digits import log
 
-# must call digits.config.load_config() before caffe to set the path
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
-import lmdb
+# Run load_config() first to set path to Caffe
+import caffe_pb2
 
 logger = logging.getLogger('digits.tools.analyze_db')
 

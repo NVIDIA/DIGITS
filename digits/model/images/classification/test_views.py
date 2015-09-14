@@ -18,12 +18,7 @@ from bs4 import BeautifulSoup
 import PIL.Image
 from urlparse import urlparse
 from cStringIO import StringIO
-
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
+import caffe_pb2
 
 import digits.webapp
 import digits.test_views

@@ -245,10 +245,9 @@ class CaffeOption(config_option.FrameworkOption):
                 print 'Did you forget to "make pycaffe"?'
                 raise
 
-            if platform.system() == 'Darwin' or platform.system() == 'Windows':
-                # Strange issue with protocol buffers and pickle - see issue #32
-                sys.path.insert(0, os.path.join(
-                    os.path.dirname(caffe.__file__), 'proto'))
+            # Strange issue with protocol buffers and pickle - see issue #32
+            sys.path.insert(0, os.path.join(
+                os.path.dirname(caffe.__file__), 'proto'))
 
             # Turn GLOG output back on for subprocess calls
             if GLOG_minloglevel is None:

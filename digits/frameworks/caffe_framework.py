@@ -10,12 +10,8 @@ from digits.model.tasks import CaffeTrainTask
 from digits.utils import subclass, override
 
 from google.protobuf import text_format
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
 import caffe.draw
+import caffe_pb2
 
 @subclass
 class CaffeFramework(Framework):
