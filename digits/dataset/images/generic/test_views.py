@@ -212,3 +212,17 @@ class TestCreated(BaseViewsTestWithDataset):
         content = json.loads(rv.data)
         assert content['id'] == self.dataset_id, 'expected different job_id'
 
+    def test_edit_name(self):
+        status = self.edit_job(
+                self.dataset_id,
+                name='new name'
+                )
+        assert status == 200, 'failed with %s' % status
+
+    def test_edit_notes(self):
+        status = self.edit_job(
+                self.dataset_id,
+                notes='new notes'
+                )
+        assert status == 200, 'failed with %s' % status
+

@@ -109,6 +109,19 @@ class BaseViewsTest(object):
             time.sleep(polling_period)
 
     @classmethod
+    def edit_job(cls, job_id, name=None, notes=None):
+        """
+        Edit the name of a job
+        """
+        data = {}
+        if name:
+            data['job_name'] = name
+        if notes:
+            data['job_notes'] = notes
+        rv = cls.app.put('/jobs/%s' % job_id, data=data)
+        return rv.status_code
+
+    @classmethod
     def delete_job(cls, job_id, job_type='jobs'):
         """
         Delete a job
