@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Sep 01, 2015*
+*Generated Sep 10, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -115,6 +115,16 @@ Location: [`digits/views.py`](../digits/views.py)
 > Returns a JSON objecting representing the status of a job
 
 Methods: **GET**
+
+Arguments: `job_id`
+
+Location: [`digits/views.py`](../digits/views.py)
+
+### `/jobs/notes/<job_id>`
+
+> Edit the notes of a job
+
+Methods: **PUT**
 
 Arguments: `job_id`
 

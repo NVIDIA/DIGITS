@@ -55,6 +55,7 @@ class Job(StatusCls):
         self.pickver_job = PICKLE_VERSION
         self.tasks = []
         self.exception = None
+        self._notes = None
 
         os.mkdir(self._dir)
 
@@ -131,6 +132,12 @@ class Job(StatusCls):
 
     def name(self):
         return self._name
+
+    def notes(self):
+        if hasattr(self, '_notes'):
+            return self._notes
+        else:
+            return None
 
     def job_type(self):
         """

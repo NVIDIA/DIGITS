@@ -219,6 +219,42 @@ $('#delete-job').on('click', function(event) {
         </div>
         </div>
         <div class="gpu-utilization-info" style="display:none;"></div>
+
+        <div id="notes-information" class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Notes</h4>
+            </div>
+            <div class="panel-body">
+                <div id="show-job-notes" class="col-sm-12">
+                    <p style="display:inline;">{{ job.notes() }}</p>
+                    <a href=# onClick="$('#show-job-notes').hide(); $('#edit-job-notes').show(); return false;"><span class="glyphicon glyphicon-edit"></span></a>
+                </div>
+
+                <div id="edit-job-notes" class="col-sm-12" style="display:none;">
+                    <script type="text/javascript">
+                        function updateJobNotes() {
+                        var newNotes = $("textarea[name=job-notes]").val();
+                        $.ajax("{{url_for('edit_job_notes', job_id=job.id())}}",
+                                {
+                                    type: "PUT",
+                                    data: {"job_notes": newNotes}
+                                    }
+                              )
+                        .done(function() {
+                                $("#show-job-notes p").html(newNotes);
+                                $('#edit-job-notes').hide(); $('#show-job-notes').show();
+                                })
+                        .fail(function(data) { errorAlert(data); });
+                        return false;
+                    }
+                    </script>
+                    <textarea name="job-notes" class="form-control" placeholder="Enter notes" rows="5">{% if job.notes() %}{{ job.notes() }}{% endif %}</textarea> 
+                    <a href=# class="btn btn-primary" onClick="return updateJobNotes();">Update</a>
+                    <a href=# class="btn btn-info" onClick="$('#edit-job-notes').hide(); $('#show-job-notes').show(); return false;">Cancel</a>
+                </div>
+            </div>
+
+        </div>
     </div>
 
 </div>
