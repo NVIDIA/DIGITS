@@ -7,6 +7,7 @@ import cStringIO
 import PIL.Image
 import numpy as np
 import scipy.misc
+import math
 
 from . import is_url, HTTP_TIMEOUT, errors
 
@@ -80,6 +81,26 @@ def load_image(path):
         return new
     else:
         raise errors.LoadImageError, 'Image mode "%s" not supported' % image.mode
+
+def upscale(image, ratio):
+    """
+    return upscaled image array
+
+    Arguments:
+    image -- a (H,W,C) numpy.ndarray
+    ratio -- scaling factor (>1)
+    """
+    if not isinstance(image, np.ndarray):
+        raise ValueError('Expected ndarray')
+    if ratio<1:
+        raise ValueError('Ratio must be greater than 1 (ratio=%f)' % ratio)
+    width = int(math.ceil(image.shape[1] * ratio))
+    height = int(math.ceil(image.shape[0] * ratio))
+    channels = image.shape[2]
+    out = np.ndarray((height, width, channels),dtype=np.uint8)
+    for x, y in np.ndindex((width,height)):
+        out[y,x] = image[math.floor(y/ratio), math.floor(x/ratio)]
+    return out
 
 def resize_image(image, height, width,
         channels=None,
