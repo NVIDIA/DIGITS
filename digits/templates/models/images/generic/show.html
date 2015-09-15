@@ -12,6 +12,8 @@
     <div class="col-sm-6">
         <div class="well">
             <dl>
+                <dt>Disk Size</dt>
+                <dd>{{job.disk_size_fmt()}}</dd>
                 <dt>Solver</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.solver_file, relative=True))}}">{{task.solver_file}}</a></dd>
                 <dt>Network (train/val)</dt>

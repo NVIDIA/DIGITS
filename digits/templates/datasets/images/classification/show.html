@@ -21,6 +21,10 @@
         <dt>Resize Transformation</dt>
         <dd>{{ job.resize_mode_name() }}</dd>
     </dl>
+    <dl>
+        <dt>Dataset size</dt>
+        <dd>{{job.disk_size_fmt()}}</dd>
+    </dl>
 </div>
 {% endmacro %}
 
