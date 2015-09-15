@@ -15,6 +15,29 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
     Defines the form used to create a new ImageClassificationDatasetJob
     """
 
+    backend = wtforms.SelectField('DB backend',
+            choices = [
+                ('lmdb', 'LMDB'),
+                ('hdf5', 'HDF5'),
+                ],
+            default='lmdb',
+            )
+
+    def validate_backend(form, field):
+        if field.data == 'lmdb':
+            form.compression.data = 'none'
+        elif field.data == 'hdf5':
+            form.encoding.data = 'none'
+
+    compression = utils.forms.SelectField('DB compression',
+            choices = [
+                ('none', 'None'),
+                ('gzip', 'GZIP'),
+                ],
+            default='none',
+            tooltip='Compressing the dataset may significantly decrease the size of your database files, but it may increase read and write times.',
+            )
+
     # Use a SelectField instead of a HiddenField so that the default value
     # is used when nothing is provided (through the REST API)
     method = wtforms.SelectField(u'Dataset type',

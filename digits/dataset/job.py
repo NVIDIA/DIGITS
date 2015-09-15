@@ -25,12 +25,23 @@ class DatasetJob(Job):
 
         if verbose:
             d.update({
-                'ParseFolderTasks': [{"name":        t.name(),
-                                      "label_count": t.label_count,
-                                      "train_count": t.train_count,
-                                      "val_count":   t.val_count,
-                                      "test_count":  t.test_count,
-                                      } for t in self.parse_folder_tasks()],
+                'ParseFolderTasks': [{
+                    "name":        t.name(),
+                    "label_count": t.label_count,
+                    "train_count": t.train_count,
+                    "val_count":   t.val_count,
+                    "test_count":  t.test_count,
+                    } for t in self.parse_folder_tasks()],
+                'CreateDbTasks': [{
+                    "name":             t.name(),
+                    "entries":          t.entries_count,
+                    "image_width":      t.image_dims[0],
+                    "image_height":     t.image_dims[1],
+                    "image_channels":   t.image_dims[2],
+                    "backend":          t.backend,
+                    "encoding":         t.encoding,
+                    "compression":      t.compression,
+                                      } for t in self.create_db_tasks()],
                 })
         return d
 

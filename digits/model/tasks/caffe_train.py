@@ -140,8 +140,8 @@ class CaffeTrainTask(TrainTask):
         loss_layers = []
         accuracy_layers = []
         for layer in self.network.layer:
-            assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
-            if layer.type == 'Data':
+            assert layer.type not in ['DummyData', 'ImageData', 'MemoryData', 'WindowData'], 'unsupported data layer type'
+            if layer.type in ['Data', 'HDF5Data']:
                 for rule in layer.include:
                     if rule.phase == caffe_pb2.TRAIN:
                         assert train_data_layer is None, 'cannot specify two train data layers'
@@ -192,13 +192,22 @@ class CaffeTrainTask(TrainTask):
 
         train_val_network = caffe_pb2.NetParameter()
 
+        dataset_backend = self.dataset.train_db_task().backend
+
         # data layers
         if train_data_layer is not None:
-            if train_data_layer.HasField('data_param'):
+            if dataset_backend == 'lmdb':
+                assert train_data_layer.type == 'Data', 'expecting a Data layer'
+            elif dataset_backend == 'hdf5':
+                assert train_data_layer.type == 'HDF5Data', 'expecting an HDF5Data layer'
+            if dataset_backend == 'lmdb' and train_data_layer.HasField('data_param'):
                 assert not train_data_layer.data_param.HasField('source'), "don't set the data_param.source"
                 assert not train_data_layer.data_param.HasField('backend'), "don't set the data_param.backend"
+            if dataset_backend == 'hdf5' and train_data_layer.HasField('hdf5_data_param'):
+                assert not train_data_layer.hdf5_data_param.HasField('source'), "don't set the hdf5_data_param.source"
             max_crop_size = min(self.dataset.image_dims[0], self.dataset.image_dims[1])
             if self.crop_size:
+                assert dataset_backend != 'hdf5', 'HDF5Data layer does not support cropping'
                 assert self.crop_size <= max_crop_size, 'crop_size is larger than the image size'
                 train_data_layer.transform_param.crop_size = self.crop_size
             elif train_data_layer.transform_param.HasField('crop_size'):
@@ -211,36 +220,58 @@ class CaffeTrainTask(TrainTask):
             train_val_network.layer.add().CopyFrom(train_data_layer)
             train_data_layer = train_val_network.layer[-1]
             if val_data_layer is not None and has_val_set:
-                if val_data_layer.HasField('data_param'):
+                if dataset_backend == 'lmdb':
+                    assert val_data_layer.type == 'Data', 'expecting a Data layer'
+                elif dataset_backend == 'hdf5':
+                    assert val_data_layer.type == 'HDF5Data', 'expecting an HDF5Data layer'
+                if dataset_backend == 'lmdb' and val_data_layer.HasField('data_param'):
                     assert not val_data_layer.data_param.HasField('source'), "don't set the data_param.source"
                     assert not val_data_layer.data_param.HasField('backend'), "don't set the data_param.backend"
+                if dataset_backend == 'hdf5' and val_data_layer.HasField('hdf5_data_param'):
+                    assert not val_data_layer.hdf5_data_param.HasField('source'), "don't set the hdf5_data_param.source"
                 if self.crop_size:
                     # use our error checking from the train layer
                     val_data_layer.transform_param.crop_size = self.crop_size
                 train_val_network.layer.add().CopyFrom(val_data_layer)
                 val_data_layer = train_val_network.layer[-1]
         else:
-            train_data_layer = train_val_network.layer.add(type = 'Data', name = 'data')
+            layer_type = 'Data'
+            if dataset_backend == 'hdf5':
+                layer_type = 'HDF5Data'
+            train_data_layer = train_val_network.layer.add(type = layer_type, name = 'data')
             train_data_layer.top.append('data')
             train_data_layer.top.append('label')
             train_data_layer.include.add(phase = caffe_pb2.TRAIN)
-            train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+            if dataset_backend == 'lmdb':
+                train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+            elif dataset_backend == 'hdf5':
+                train_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
             if self.crop_size:
+                assert dataset_backend != 'hdf5', 'HDF5Data layer does not support cropping'
                 train_data_layer.transform_param.crop_size = self.crop_size
             if has_val_set:
-                val_data_layer = train_val_network.layer.add(type = 'Data', name = 'data')
+                val_data_layer = train_val_network.layer.add(type = layer_type, name = 'data')
                 val_data_layer.top.append('data')
                 val_data_layer.top.append('label')
                 val_data_layer.include.add(phase = caffe_pb2.TEST)
-                val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+                if dataset_backend == 'lmdb':
+                    val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+                elif dataset_backend == 'hdf5':
+                    val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
                 if self.crop_size:
                     val_data_layer.transform_param.crop_size = self.crop_size
-        train_data_layer.data_param.source = self.dataset.path(self.dataset.train_db_task().db_name)
-        train_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
-        if val_data_layer is not None and has_val_set:
-            val_data_layer.data_param.source = self.dataset.path(self.dataset.val_db_task().db_name)
-            val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
+        if dataset_backend == 'lmdb':
+            train_data_layer.data_param.source = self.dataset.path(self.dataset.train_db_task().db_name)
+            train_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
+            if val_data_layer is not None and has_val_set:
+                val_data_layer.data_param.source = self.dataset.path(self.dataset.val_db_task().db_name)
+                val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
+        elif dataset_backend == 'hdf5':
+            train_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.train_db_task().textfile)
+            if val_data_layer is not None and has_val_set:
+                val_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.val_db_task().textfile)
         if self.use_mean:
+            assert dataset_backend != 'hdf5', 'HDF5Data layer does not support mean subtraction'
             mean_pixel = None
             with open(self.dataset.path(self.dataset.train_db_task().mean_file),'rb') as f:
                 blob = caffe_pb2.BlobProto()
@@ -259,14 +290,25 @@ class CaffeTrainTask(TrainTask):
                 for value in mean_pixel:
                     val_data_layer.transform_param.mean_value.append(value)
         if self.batch_size:
-            train_data_layer.data_param.batch_size = self.batch_size
-            if val_data_layer is not None and has_val_set:
-                val_data_layer.data_param.batch_size = self.batch_size
+            if dataset_backend == 'lmdb':
+                train_data_layer.data_param.batch_size = self.batch_size
+                if val_data_layer is not None and has_val_set:
+                    val_data_layer.data_param.batch_size = self.batch_size
+            elif dataset_backend == 'hdf5':
+                train_data_layer.hdf5_data_param.batch_size = self.batch_size
+                if val_data_layer is not None and has_val_set:
+                    val_data_layer.hdf5_data_param.batch_size = self.batch_size
         else:
-            if not train_data_layer.data_param.HasField('batch_size'):
-                train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
-            if val_data_layer is not None and has_val_set and not val_data_layer.data_param.HasField('batch_size'):
-                val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+            if dataset_backend == 'lmdb':
+                if not train_data_layer.data_param.HasField('batch_size'):
+                    train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+                if val_data_layer is not None and has_val_set and not val_data_layer.data_param.HasField('batch_size'):
+                    val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+            elif dataset_backend == 'hdf5':
+                if not train_data_layer.hdf5_data_param.HasField('batch_size'):
+                    train_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
+                if val_data_layer is not None and has_val_set and not val_data_layer.hdf5_data_param.HasField('batch_size'):
+                    val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
         # hidden layers
         train_val_network.MergeFrom(hidden_layers)

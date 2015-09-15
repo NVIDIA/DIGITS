@@ -34,15 +34,6 @@ New Image Classification Dataset
                 </div>
             </div>
             <div class="row">
-                <div class="form-group{{ ' has-error' if form.encoding.errors else '' }}">
-                    <div class="form-group{{' has-error' if form.encoding.errors}}">
-                        {{form.encoding.label}}
-                        {{form.encoding.tooltip}}
-                        {{form.encoding(class='form-control')}}
-                    </div>
-                </div>
-            </div>
-            <div class="row">
                 <div class="form-group{{ ' has-error' if form.resize_width.errors or form.resize_height.errors else '' }}">
                     <label>Image size</label>
                     <span name="resize_dims_explanation"
@@ -82,6 +73,7 @@ function showResizeExample()
                 "width":    $("#resize_width").val(),
                 "height":   $("#resize_height").val(),
                 "resize_mode":   $("#resize_mode").val(),
+                "backend": $("#backend").val(),
                 "encoding": $("#encoding").val(),
             },
             function(response) {
@@ -369,6 +361,49 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
 
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
+            <div class="form-group{{ ' has-error' if form.backend.errors else '' }}">
+                {{ form.backend.label }}
+                {{ form.backend.tooltip }}
+                {{ form.backend(class='form-control') }}
+            </div>
+            <div id="backend-hdf5-warning" class="alert alert-warning" style="display:none;">
+                <b>NOTE:</b> HDF5 is not fully supported by Caffe or by DIGITS
+                <ul>
+                    <li>The standard networks will need some minor customizations before use (change <i>Data</i> layers to <i>HDF5Data</i> layers)</li>
+                    <li><i>HDF5Data</i> layers do not support mean subtraction</li>
+                </ul>
+            </div>
+            <div class="form-group{{ ' has-error' if form.compression.errors else '' }}">
+                <div class="form-group{{' has-error' if form.compression.errors}}">
+                    {{form.compression.label}}
+                    {{form.compression.tooltip}}
+                    {{form.compression(class='form-control')}}
+                </div>
+            </div>
+            <div class="form-group{{ ' has-error' if form.encoding.errors else '' }}">
+                <div class="form-group{{' has-error' if form.encoding.errors}}">
+                    {{form.encoding.label}}
+                    {{form.encoding.tooltip}}
+                    {{form.encoding(class='form-control')}}
+                </div>
+            </div>
+            <script>
+function backendChanged()
+{
+    val = $("#backend").val();
+    if (val == 'lmdb') {
+        $("#compression").parent().hide();
+        $("#encoding").parent().show();
+        $("#backend-hdf5-warning").hide();
+    } else if (val == 'hdf5') {
+        $("#encoding").parent().hide();
+        $("#compression").parent().show();
+        $("#backend-hdf5-warning").show();
+    }
+}
+$("#backend").change(backendChanged);
+backendChanged();
+            </script>
             <div class="form-group{{ ' has-error' if form.dataset_name.errors else '' }}">
                 {{ form.dataset_name.label }}
                 {{ form.dataset_name(class='form-control') }}

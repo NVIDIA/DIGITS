@@ -229,3 +229,7 @@ class TestLmdbCreation(BaseCreationTest):
 class TestHdf5Creation(BaseCreationTest):
     BACKEND = 'hdf5'
 
+    def test_dset_limit(self):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 1, 'hdf5', hdf5_dset_limit=10*10)
+

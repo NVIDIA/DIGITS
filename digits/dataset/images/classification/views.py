@@ -84,7 +84,9 @@ def from_folders(job, form):
 
     ### Add CreateDbTasks
 
+    backend = form.backend.data
     encoding = form.encoding.data
+    compression = form.compression.data
 
     job.tasks.append(
             tasks.CreateDbTask(
@@ -92,9 +94,11 @@ def from_folders(job, form):
                 parents     = parse_train_task,
                 input_file  = utils.constants.TRAIN_FILE,
                 db_name     = utils.constants.TRAIN_DB,
+                backend     = backend,
                 image_dims  = job.image_dims,
                 resize_mode = job.resize_mode,
                 encoding    = encoding,
+                compression = compression,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
                 labels_file = job.labels_file,
                 )
@@ -107,9 +111,11 @@ def from_folders(job, form):
                     parents     = val_parents,
                     input_file  = utils.constants.VAL_FILE,
                     db_name     = utils.constants.VAL_DB,
+                    backend     = backend,
                     image_dims  = job.image_dims,
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
+                    compression = compression,
                     labels_file = job.labels_file,
                     )
                 )
@@ -121,9 +127,11 @@ def from_folders(job, form):
                     parents     = test_parents,
                     input_file  = utils.constants.TEST_FILE,
                     db_name     = utils.constants.TEST_DB,
+                    backend     = backend,
                     image_dims  = job.image_dims,
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
+                    compression = compression,
                     labels_file = job.labels_file,
                     )
                 )
@@ -141,8 +149,10 @@ def from_files(job, form):
                 )
         job.labels_file = utils.constants.LABELS_FILE
 
-    encoding = form.encoding.data
     shuffle = bool(form.textfile_shuffle.data)
+    backend = form.backend.data
+    encoding = form.encoding.data
+    compression = form.compression.data
 
     ### train
     if form.textfile_use_local_files.data:
@@ -162,10 +172,12 @@ def from_files(job, form):
                 job_dir     = job.dir(),
                 input_file  = train_file,
                 db_name     = utils.constants.TRAIN_DB,
+                backend     = backend,
                 image_dims  = job.image_dims,
                 image_folder= image_folder,
                 resize_mode = job.resize_mode,
                 encoding    = encoding,
+                compression = compression,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
                 labels_file = job.labels_file,
                 shuffle     = shuffle,
@@ -192,10 +204,12 @@ def from_files(job, form):
                     job_dir     = job.dir(),
                     input_file  = val_file,
                     db_name     = utils.constants.VAL_DB,
+                    backend     = backend,
                     image_dims  = job.image_dims,
                     image_folder= image_folder,
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
+                    compression = compression,
                     labels_file = job.labels_file,
                     shuffle     = shuffle,
                     )
@@ -221,10 +235,12 @@ def from_files(job, form):
                     job_dir     = job.dir(),
                     input_file  = test_file,
                     db_name     = utils.constants.TEST_DB,
+                    backend     = backend,
                     image_dims  = job.image_dims,
                     image_folder= image_folder,
                     resize_mode = job.resize_mode,
                     encoding    = encoding,
+                    compression = compression,
                     labels_file = job.labels_file,
                     shuffle     = shuffle,
                     )
