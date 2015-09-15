@@ -2,7 +2,7 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import sys
-import os.path
+import os
 import time
 import argparse
 import logging
@@ -61,6 +61,144 @@ class Hdf5DatasetExtendError(Error):
     """Failed to extend an hdf5 dataset"""
     pass
 
+
+class DbWriter(object):
+    """
+    Abstract class for writing to databases
+    """
+
+    def __init__(self, output_dir, image_height, image_width, image_channels):
+        self._dir = output_dir
+        os.makedirs(output_dir)
+        self._image_height = image_height
+        self._image_width = image_width
+        self._image_channels = image_channels
+        self._count = 0
+
+    def write_batch(self, batch):
+        raise NotImplementedError
+
+    def count(self):
+        return self._count
+
+class LmdbWriter(DbWriter):
+    # TODO
+    pass
+
+class Hdf5Writer(DbWriter):
+    """
+    A class for writing to HDF5 files
+    """
+    LIST_FILENAME = 'list.txt'
+    DTYPE = 'float32'
+
+    def __init__(self, **kwargs):
+        """
+        Keyword arguments:
+        compression -- the type of dataset compression
+        dset_limit -- the dataset size limit
+        """
+        self._compression = kwargs.pop('compression', None)
+        self._dset_limit = kwargs.pop('dset_limit', None)
+        super(Hdf5Writer, self).__init__(**kwargs)
+        self._db = None
+
+        if self._dset_limit is not None:
+            self._max_count = self._dset_limit / (
+                    self._image_height * self._image_width * self._image_channels)
+        else:
+            self._max_count = None
+
+    def write_batch(self, batch):
+        # convert batch to numpy arrays
+        if batch[0][0].ndim == 2:
+            # add channel axis for grayscale images
+            data_batch = np.array([i[0][...,np.newaxis] for i in batch])
+        else:
+            data_batch = np.array([i[0] for i in batch])
+        # Transpose to (channels, height, width)
+        data_batch = data_batch.transpose((0,3,1,2))
+        label_batch = np.array([i[1] for i in batch])
+
+        # first batch
+        if self._db is None:
+            self._create_new_file(len(batch))
+            self._db['data'][:] = data_batch
+            self._db['label'][:] = label_batch
+            self._count += len(batch)
+            return
+
+        current_count = self._db['data'].len()
+
+        # will fit in current dataset
+        if current_count + len(batch) <= self._max_count:
+            self._db['data'].resize(current_count+len(batch),axis=0)
+            self._db['label'].resize(current_count+len(batch),axis=0)
+            self._db['data'][-len(batch):] = data_batch
+            self._db['label'][-len(batch):] = label_batch
+            self._count += len(batch)
+            return
+
+        # calculate how many will fit in current dataset
+        split = current_count + len(batch) - self._max_count
+
+        if split > 0:
+            # put what we can into the current dataset
+            self._db['data'].resize(self._max_count,axis=0)
+            self._db['label'].resize(self._max_count,axis=0)
+            self._db['data'][-split:] = data_batch[:split]
+            self._db['label'][-split:] = label_batch[:split]
+            self._count += split
+
+        self._create_new_file(len(batch) - split)
+        self._db['data'][:] = data_batch[split:]
+        self._db['label'][:] = label_batch[split:]
+        self._count += len(batch) - split
+
+    def _create_new_file(self, initial_count):
+        assert self._max_count is None or initial_count <= self._max_count, \
+                'Your batch size is too large for your dataset limit - %d vs %d' % \
+                (initial_count, self._max_count)
+
+        # close the old file
+        if self._db is not None:
+            self._db.close()
+            mode = 'a'
+        else:
+            mode = 'w'
+
+        # get the filename
+        filename = self._new_filename()
+        logger.info('Creating HDF5 database at "%s" ...' %
+                os.path.join(*filename.split(os.sep)[-2:]))
+
+        # update the list
+        with open(self._list_filename(), mode) as outfile:
+            outfile.write('%s\n' % filename)
+
+        # create the new file
+        self._db = h5py.File(os.path.join(self._dir, filename), 'w')
+
+        # initialize the datasets
+        self._db.create_dataset('data',
+                (initial_count,self._image_channels,
+                    self._image_height,self._image_width),
+                maxshape=(self._max_count,self._image_channels,
+                    self._image_height,self._image_width),
+                chunks=True, compression=self._compression, dtype=self.DTYPE)
+        self._db.create_dataset('label',
+                (initial_count,),
+                maxshape=(self._max_count,),
+                chunks=True, compression=self._compression, dtype=self.DTYPE)
+
+
+    def _list_filename(self):
+        return os.path.join(self._dir, self.LIST_FILENAME)
+
+    def _new_filename(self):
+        return '%s.h5' % self.count()
+
+
 def create_db(input_file, output_dir,
         image_width, image_height, image_channels,
         backend,
@@ -96,7 +234,6 @@ def create_db(input_file, output_dir,
             shutil.rmtree(output_dir, ignore_errors=True)
         else:
             os.remove(output_dir)
-    os.makedirs(output_dir)
     if image_width <= 0:
         raise ValueError('invalid image width')
     if image_height <= 0:
@@ -257,9 +394,14 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
     batch = []
     compute_mean = bool(mean_files)
 
-    db_list = open(os.path.join(output_dir, 'list.txt'), 'w')
-    db = _create_hdf5_db(output_dir, images_written, hdf5_dset_limit,
-            compression, image_channels, image_height, image_width, db_list)
+    writer = Hdf5Writer(
+            output_dir      = output_dir,
+            image_height    = image_height,
+            image_width     = image_width,
+            image_channels  = image_channels,
+            dset_limit      = hdf5_dset_limit,
+            compression     = compression,
+            )
 
     while (threads_done < num_threads) or not write_queue.empty():
 
@@ -286,17 +428,7 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
             batch.append(write_queue.get())
 
             if len(batch) == batch_size:
-                try:
-                    _write_batch_hdf5(db, batch)
-                except Hdf5DatasetExtendError:
-                    logger.info('Reached HDF5 dataset size limit')
-                    db.close()
-                    db = _create_hdf5_db(output_dir, images_written,
-                            hdf5_dset_limit, compression, image_channels,
-                            image_height, image_width, db_list)
-                    # try again
-                    _write_batch_hdf5(db, batch)
-
+                writer.write_batch(batch)
                 images_written += len(batch)
                 batch = []
             processed_something = True
@@ -305,18 +437,10 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
             time.sleep(0.2)
 
     if len(batch) > 0:
-        try:
-            _write_batch_hdf5(db, batch)
-        except Hdf5DatasetExtendError:
-            logger.info('Reached HDF5 dataset size limit')
-            db.close()
-            db = _create_hdf5_db(output_dir, images_written, hdf5_dset_limit,
-                    compression, image_channels, image_height, image_width,
-                    db_list)
-            # try again
-            _write_batch_hdf5(db, batch)
-
+        writer.write_batch(batch)
         images_written += len(batch)
+
+    assert images_written == writer.count()
 
     if images_loaded == 0:
         raise LoadError('no images loaded from input file')
@@ -328,9 +452,6 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
 
     if compute_mean:
         _save_means(image_sum, images_written, mean_files)
-
-    db.close()
-    db_list.close()
 
 def _fill_load_queue(filename, queue, shuffle):
     """
@@ -536,58 +657,6 @@ def _write_batch_lmdb(db, batch, image_count):
                 raise e
         # try again
         _write_batch_lmdb(db, batch, image_count)
-
-def _create_hdf5_db(output_dir, images_written, dset_limit, compression,
-        image_channels, image_height, image_width, db_list):
-    """
-    Create an HDF5 database, with empty datasets
-    Also add this new database to the list of DBs
-    """
-    filename = '%d.h5' % images_written
-    logger.info('Creating HDF5 database at "%s" ...' % os.path.join(os.path.basename(output_dir),filename))
-    db_list.write('%s\n' % filename)
-    db_list.flush()
-    db = h5py.File(os.path.join(output_dir, filename), 'w')
-
-    if dset_limit is not None:
-        max_images_per_dset = dset_limit / (image_channels * image_height * image_width)
-    else:
-        max_images_per_dset = None
-
-    db.create_dataset('data', (0,image_channels,image_height,image_width), maxshape=(max_images_per_dset,image_channels,image_height,image_width),
-            chunks=True, compression=compression, dtype='float32')
-    db.create_dataset('label', (0,), maxshape=(max_images_per_dset,),
-            chunks=True, compression=compression, dtype='float32')
-    return db
-
-def _write_batch_hdf5(db, batch):
-    """
-    Write a batch to an HDF5 database
-    """
-    if batch[0][0].ndim == 2:
-        data_batch = np.array([i[0][...,np.newaxis] for i in batch])
-    else:
-        data_batch = np.array([i[0] for i in batch])
-    # Transpose to (channels, height, width)
-    data_batch = data_batch.transpose((0,3,1,2))
-    label_batch = np.array([i[1] for i in batch])
-
-    # resize dataset
-    try:
-        if db['data'].len() == 0:
-            db['data'].resize(data_batch.shape)
-            db['label'].resize(label_batch.shape)
-        else:
-            db['data'].resize(db['data'].len()+len(batch),axis=0)
-            db['label'].resize(db['label'].len()+len(batch),axis=0)
-    except ValueError as e:
-        if 'extend dataset' in e.message:
-            raise Hdf5DatasetExtendError
-        else:
-            raise
-
-    db['data'][-len(batch):] = data_batch
-    db['label'][-len(batch):] = label_batch
 
 def _save_means(image_sum, image_count, mean_files):
     """
