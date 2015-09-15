@@ -10,6 +10,7 @@ from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
+import digits
 from . import dataset, model
 from config import config_value
 from webapp import app, socketio, scheduler, autodoc
@@ -38,12 +39,17 @@ def home():
     completed_models    = get_job_list(model.ModelJob, False)
 
     if request_wants_json():
-        return flask.jsonify({
-            'datasets': [j.json_dict()
-                for j in running_datasets + completed_datasets],
-            'models': [j.json_dict()
-                for j in running_models + completed_models],
-            })
+        data = {
+                'version': digits.__version__,
+                'jobs_dir': config_value('jobs_dir'),
+                'datasets': [j.json_dict()
+                    for j in running_datasets + completed_datasets],
+                'models': [j.json_dict()
+                    for j in running_models + completed_models],
+                }
+        if config_value('server_name'):
+            data['server_name'] = config_value('server_name')
+        return flask.jsonify(data)
     else:
         new_dataset_options = [
                 ('Images', [
