@@ -120,6 +120,7 @@ class Hdf5Writer(DbWriter):
         data_batch = data_batch.transpose((0,3,1,2))
         label_batch = np.array([i[1] for i in batch])
 
+
         # first batch
         if self._db is None:
             self._create_new_file(len(batch))
@@ -140,7 +141,7 @@ class Hdf5Writer(DbWriter):
             return
 
         # calculate how many will fit in current dataset
-        split = current_count + len(batch) - self._max_count
+        split = self._max_count - current_count
 
         if split > 0:
             # put what we can into the current dataset

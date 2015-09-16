@@ -230,6 +230,10 @@ class TestHdf5Creation(BaseCreationTest):
     BACKEND = 'hdf5'
 
     def test_dset_limit(self):
-        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+        db_dir = os.path.join(self.empty_dir, 'db')
+        _.create_db(self.good_file[1], db_dir,
                 10, 10, 1, 'hdf5', hdf5_dset_limit=10*10)
+        with open(os.path.join(db_dir, 'list.txt')) as infile:
+            lines = infile.readlines()
+            assert len(lines) == self.image_count, '%d != %d' % (len(lines), self.image_count)
 
