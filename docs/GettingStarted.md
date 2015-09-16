@@ -31,21 +31,20 @@ The first time DIGITS is run, you may be asked to provide some configuration opt
 
 ```
 % ./digits-devserver
-  ___ ___ ___ ___ _____ ___
- |   \_ _/ __|_ _|_   _/ __|
- | |) | | (_ || |  | | \__ \
- |___/___\___|___| |_| |___/
-
-DIGITS requires at least one DL backend to run.
 ==================================== Caffe =====================================
 Where is caffe installed?
 
-        Suggested values:
-        (P*) [PATH/PYTHONPATH] <PATHS>
+    Suggested values:
+    (P*) [PATH/PYTHONPATH] <PATHS>
 >> ~/caffe
 Using "/home/username/caffe"
 
 Saved config to /home/username/digits/digits/digits.cfg
+  ___ ___ ___ ___ _____ ___
+ |   \_ _/ __|_ _|_   _/ __|
+ | |) | | (_ || |  | | \__ \
+ |___/___\___|___| |_| |___/ 2.2.0
+
  * Running on http://0.0.0.0:5000/
 ```
 
@@ -62,7 +61,7 @@ Now that DIGITS is running, open a browser and go to http://localhost:5000.  You
 
 ![Home page](images/home-page-1.jpg)
 
-For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network. Both are generously made available by Yann LeCun on his [website](http://yann.lecun.com/).
+For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network. Both are generously made available by Yann LeCun on [his website](http://yann.lecun.com/).
 
 If you are not using the web installer, you can use the script at `tools/download_data/main.py` to download the MNIST dataset. See [Standard Datasets](StandardDatasets.md) for details.
 
@@ -70,46 +69,50 @@ If you are not using the web installer, you can use the script at `tools/downloa
 
 In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Dataset" page.
 
-* Change the image type to `Grayscale`
-* Change the image size to 28 x 28
 * Type in the path to the MNIST training images
   * `/home/username/digits-2.0/mnist/train` if you are using the web installer
+* Change the `Image Type` to `Grayscale`
+* Change the `Image size` to 28 x 28
 * Give the dataset a name
 * Click on the `Create` button
 
 ![New dataset](images/new-dataset.jpg)
 
-While the model creation job is running, you should see the expected completion time on the right side:
+While the job is running, you should see the expected completion time on the right side:
 
 ![Creating dataset](images/creating-dataset.jpg)
 
-When the data set has completed training, go back to the home page, by clicking `DIGITS` in the top left hand part of the page.  You should now see that there is a trained data set.
+When the job is finished, go back to the home page by clicking `DIGITS` in the top left hand part of the page.
+You should now see your dataset listed.
 
 ![Home page with dataset](images/home-page-2.jpg)
 
 ### Training a Model
 
 In the Models section on the right side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Model" page.  For this example, do the following:
-* Choose the MNIST dataset in the "Select Dataset" field
-* Choose the `LeNet` network in the "Standard Networks" tab
+* Choose the "MNIST" dataset in the `Select Dataset` field
+* Choose the `LeNet` network in the `Standard Networks` tab
 * Give the model a name
 * Click on the `Create` button
 
-![New model](images/new-model.jpg)
+![New model (top)](images/new-model-top-half.jpg)
+![New model (bottom)](images/new-model-bottom-half.jpg)
 
 While training the model, you should see the expected completion time on the right side:
 
 ![Training model](images/training-model.jpg)
 
-To test the model, scroll to the bottom of the page.  On the left side are tools for testing the model.
-* Click on the `Upload Image` field which will bring up a local file browser and choose a file
+To test the model, scroll to the bottom of the page.
+* Click on the `Upload image` button and choose a file
   * If you've used the web installer, choose one in `/home/username/digits-2.0/mnist/test`
 * Or, find an image on the web and paste the URL into the `Image URL` field
-* Click on `Classify One Image`
+* Check the `Show visualizations and statistics` box
+* Click on `Classify One`
 
 ![Classifying one image](images/classifying-one-image.jpg)
 
-DIGITS will display the top five classifications and corresponding confidence values.
+At the top of the page, DIGITS displays the top five classifications and corresponding confidence values.
+DIGITS also provides visualizations and statistics about the weights and activations of each layer in your network.
 
 ![Classified one image](images/classified-one-image.jpg)
 
@@ -119,3 +122,4 @@ DIGITS will display the top five classifications and corresponding confidence va
 Use your favorite tool (`curl`, `wget`, etc.) to interact with DIGITS through the [REST API](API.md).
 
     curl localhost:5000/index.json
+
