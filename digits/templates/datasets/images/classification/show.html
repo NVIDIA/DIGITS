@@ -25,6 +25,10 @@
         <dt>DB Compression</dt>
         <dd>{{job.train_db_task().compression}}</dd>
     </dl>
+    <dl>
+        <dt>Dataset size</dt>
+        <dd>{{job.disk_size_fmt()}}</dd>
+    </dl>
 </div>
 {% endmacro %}
 
