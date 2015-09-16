@@ -9,6 +9,9 @@ import numpy as np
 import scipy.misc
 import math
 
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 from . import is_url, HTTP_TIMEOUT, errors
 
 # Library defaults:
