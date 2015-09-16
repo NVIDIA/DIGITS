@@ -7,26 +7,11 @@ DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is is a webapp fo
 
 Table of Contents
 =================
-* [Get help](#get-help)
 * [Installation](#installation)
   * [Prerequisites](#prerequisites)
   * [Install DIGITS](#install-digits)
 * [Starting the server](#starting-the-server)
-
-# Get help
-
-### Installation issues
-* First, check out the instructions below
-* Then, ask questions on our [user group](https://groups.google.com/d/forum/digits-users)
-
-### Usage questions
-* First, check out the [Getting Started](docs/GettingStarted.md) page
-* Then, ask questions on our [user group](https://groups.google.com/d/forum/digits-users)
-
-### Bugs and feature requests
-* Please let us know by [filing a new issue](https://github.com/NVIDIA/DIGITS/issues/new)
-* Bonus points if you want to contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)!
-  * You will need to send a signed copy of the [Contributor License Agreement](CLA) to digits [at] nvidia [dot] com before your change can be accepted.
+* [Get help](#get-help)
 
 # Installation
 
@@ -101,6 +86,18 @@ Starts a production server (gunicorn) that listens on port 8080 (`http://localho
 
 If you have installed the nginx.site to your nginx sites-enabled/ directory, then you can view your app at `http://localhost/`.
 
-# Usage
+# Get help
 
-Check out the [Getting Started](docs/GettingStarted.md) page.
+### Installation issues
+* First, check out the instructions below
+* Then, ask questions on our [user group](https://groups.google.com/d/forum/digits-users)
+
+### Usage questions
+* First, check out the [Getting Started](docs/GettingStarted.md) page
+* Then, ask questions on our [user group](https://groups.google.com/d/forum/digits-users)
+
+### Bugs and feature requests
+* Please let us know by [filing a new issue](https://github.com/NVIDIA/DIGITS/issues/new)
+* Bonus points if you want to contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)!
+  * You will need to send a signed copy of the [Contributor License Agreement](CLA) to digits@nvidia.com before your change can be accepted.
+
