@@ -51,7 +51,10 @@ def get_transformer(deploy_file, mean_file=None):
     with open(deploy_file) as infile:
         text_format.Merge(infile.read(), network)
 
-    dims = network.input_dim
+    if network.input_shape:
+        dims = network.input_shape[0].dim
+    else:
+        dims = network.input_dim[:4]
 
     t = caffe.io.Transformer(
             inputs = {'data': dims}
