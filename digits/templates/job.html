@@ -234,7 +234,7 @@ $('#delete-job').on('click', function(event) {
                     <script type="text/javascript">
                         function updateJobNotes() {
                         var newNotes = $("textarea[name=job-notes]").val();
-                        $.ajax("{{url_for('edit_job_notes', job_id=job.id())}}",
+                        $.ajax("{{url_for('edit_job', job_id=job.id())}}",
                                 {
                                     type: "PUT",
                                     data: {"job_notes": newNotes}
