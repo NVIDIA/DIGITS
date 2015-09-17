@@ -427,7 +427,9 @@ frameworks['{{ fw.get_id() }}'] = framework;
                 <div id="network-tab-previous" class="tab-pane">
 
                     <div class="tab-content">
-                        {% for batch in form.previous_networks|batch(10) %}
+                        {% set batch_size = 10 %}
+                        {% for batch in form.previous_networks|batch(batch_size) %}
+                        {% set batch_loop_index = loop.index0 %}
                         <div class="tab-pane{{' active' if loop.index==1}}" id="previous_networks-page-{{loop.index}}">
 
                             <table class="table">
@@ -437,16 +439,17 @@ frameworks['{{ fw.get_id() }}'] = framework;
                                     <th></th>
                                 </tr>
                                 {% for network in batch %}
-                                {% set each_previous_network = previous_networks_fullinfo[loop.index0] %}
+                                {% set inner_index = batch_loop_index * batch_size + loop.index0 %}
+                                {% set previous_job = previous_networks_fullinfo[inner_index] %}
                                 <tr>
                                     <td>
                                         {{network}}
                                         {{network.label}}
                                         <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
-                                        <span class="badge">{{each_previous_network.train_task().get_framework_id()}}</span>
+                                        <span class="badge">{{previous_job.train_task().get_framework_id()}}</span>
                                     </td>
                                     <td>
-                                        {% set snapshot_list = previous_network_snapshots[loop.index0] %}
+                                        {% set snapshot_list = previous_network_snapshots[inner_index] %}
                                         {% if snapshot_list|length %}
                                         <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
                                             {% for each_epoch in snapshot_list %}
@@ -455,7 +458,7 @@ frameworks['{{ fw.get_id() }}'] = framework;
                                         </select>
                                         {% endif %}
                                     </td>
-                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{each_previous_network.train_task().get_framework_id()}}' );">Customize</a></td>
+                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{previous_job.train_task().get_framework_id()}}' );">Customize</a></td>
                                 </tr>
                                 {% else %}
                                 <tr>
@@ -468,10 +471,10 @@ frameworks['{{ fw.get_id() }}'] = framework;
                         {% endfor %}
                     </div>
 
-                    {% if form.previous_networks.choices|length > 10 %}
+                    {% if form.previous_networks.choices|length > batch_size %}
                     <div class="text-center">
                         <ul class="pagination">
-                            {% for i in range((form.previous_networks.choices|length/10)|round(0,'ceil')|int) %}
+                            {% for i in range((form.previous_networks.choices|length/batch_size)|round(0,'ceil')|int) %}
                             <li class="{{'active' if i==0}}"><a href="#previous_networks-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
                             {% endfor %}
                         </ul>
