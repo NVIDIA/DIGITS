@@ -1048,8 +1048,12 @@ class CaffeTrainTask(TrainTask):
                         else:
                             vis = None
                         mean, std, hist = self.get_layer_statistics(data)
-                        weight_count = reduce(operator.mul, net.params[layer.name][0].data.shape, 1)
-                        bias_count = reduce(operator.mul, net.params[layer.name][1].data.shape, 1)
+                        params = net.params[layer.name]
+                        weight_count = reduce(operator.mul, params[0].data.shape, 1)
+                        if len(params) > 1:
+                            bias_count = reduce(operator.mul, params[1].data.shape, 1)
+                        else:
+                            bias_count = 0
                         parameter_count = weight_count + bias_count
                         visualizations.append(
                                 {
