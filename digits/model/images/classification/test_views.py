@@ -363,6 +363,20 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert content['dataset_id'] == self.dataset_id, 'dataset_id %s != %s' % (content['dataset_id'], self.dataset_id)
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
+    def test_edit_name(self):
+        status = self.edit_job(
+                self.dataset_id,
+                name='new name'
+                )
+        assert status == 200, 'failed with %s' % status
+
+    def test_edit_notes(self):
+        status = self.edit_job(
+                self.dataset_id,
+                notes='new notes'
+                )
+        assert status == 200, 'failed with %s' % status
+
     def test_classify_one(self):
         category = self.imageset_paths.keys()[0]
         image_path = self.imageset_paths[category][0]

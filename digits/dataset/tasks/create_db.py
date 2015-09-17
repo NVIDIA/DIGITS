@@ -94,9 +94,9 @@ class CreateDbTask(Task):
                 self.encoding = 'none'
         self.pickver_task_createdb = PICKLE_VERSION
 
-        if not hasattr(self, 'backend'):
+        if not hasattr(self, 'backend') or self.backend is None:
             self.backend = 'lmdb'
-        if not hasattr(self, 'compression'):
+        if not hasattr(self, 'compression') or self.compression is None:
             self.compression = 'none'
 
     @override
