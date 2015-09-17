@@ -65,6 +65,8 @@ class BaseViewsTestWithImageset(BaseViewsTest):
     IMAGE_HEIGHT    = 10
     IMAGE_WIDTH     = 10
     IMAGE_CHANNELS  = 3
+    BACKEND         = 'lmdb'
+    COMPRESSION     = 'none'
 
     UNBALANCED_CATEGORY = False
 
@@ -103,6 +105,8 @@ class BaseViewsTestWithImageset(BaseViewsTest):
                 'resize_channels':  cls.IMAGE_CHANNELS,
                 'resize_width':     cls.IMAGE_WIDTH,
                 'resize_height':    cls.IMAGE_HEIGHT,
+                'backend':          cls.BACKEND,
+                'compression':      cls.COMPRESSION,
                 }
         data.update(kwargs)
 
@@ -423,6 +427,11 @@ class TestCreated(BaseViewsTestWithDataset):
                 )
         assert status == 200, 'failed with %s' % status
 
+    def test_backend_selection(self):
+        rv = self.app.get('/datasets/%s.json' % self.dataset_id)
+        content = json.loads(rv.data)
+        for task in content['CreateDbTasks']:
+            assert task['backend'] == self.BACKEND
 
 class TestCreatedGrayscale(TestCreated):
     IMAGE_CHANNELS = 1
@@ -432,4 +441,17 @@ class TestCreatedWide(TestCreated):
 
 class TestCreatedTall(TestCreated):
     IMAGE_HEIGHT = 20
+
+class TestCreatedHdf5(TestCreated):
+    BACKEND = 'hdf5'
+
+    def test_compression_method(self):
+        rv = self.app.get('/datasets/%s.json' % self.dataset_id)
+        content = json.loads(rv.data)
+        for task in content['CreateDbTasks']:
+            assert task['compression'] == self.COMPRESSION
+
+class TestCreatedHdf5Gzip(TestCreatedHdf5):
+    COMPRESSION = 'gzip'
+
 
