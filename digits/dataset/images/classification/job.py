@@ -3,6 +3,7 @@
 from digits.utils import subclass, override
 from digits.status import Status
 from ..job import ImageDatasetJob
+from digits.dataset import tasks
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 2
@@ -62,4 +63,14 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
     @override
     def job_type(self):
         return 'Image Classification Dataset'
+
+    @override
+    def train_db_task(self):
+        """
+        Return the task that creates the training set
+        """
+        for t in self.tasks:
+            if isinstance(t, tasks.CreateDbTask) and 'train' in t.name().lower():
+                return t
+        return None
 
