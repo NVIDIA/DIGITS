@@ -94,8 +94,8 @@ def upscale(image, ratio):
         raise ValueError('Expected ndarray')
     if ratio<1:
         raise ValueError('Ratio must be greater than 1 (ratio=%f)' % ratio)
-    width = int(math.ceil(image.shape[1] * ratio))
-    height = int(math.ceil(image.shape[0] * ratio))
+    width = int(math.floor(image.shape[1] * ratio))
+    height = int(math.floor(image.shape[0] * ratio))
     channels = image.shape[2]
     out = np.ndarray((height, width, channels),dtype=np.uint8)
     for x, y in np.ndindex((width,height)):
