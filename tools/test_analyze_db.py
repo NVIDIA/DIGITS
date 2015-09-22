@@ -10,11 +10,7 @@ import numpy as np
 from . import analyze_db as _
 
 import caffe.io
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
+import caffe_pb2
 
 
 class BaseTestWithDB(object):

@@ -30,11 +30,7 @@ import h5py
 from cStringIO import StringIO
 # must call digits.config.load_config() before caffe to set the path
 import caffe.io
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
+import caffe_pb2
 
 logger = logging.getLogger('digits.tools.create_db')
 

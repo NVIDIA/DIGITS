@@ -22,11 +22,8 @@ if __name__ == '__main__':
     from digits.config.load  import load_config
     load_config()
 
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
+# Run load_config() first to set the path to Caffe
+import caffe_pb2
 
 
 IMAGE_SIZE  = 10

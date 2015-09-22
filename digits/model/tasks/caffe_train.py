@@ -10,11 +10,7 @@ import operator
 import numpy as np
 from google.protobuf import text_format
 import caffe
-try:
-    import caffe_pb2
-except ImportError:
-    # See issue #32
-    from caffe.proto import caffe_pb2
+import caffe_pb2
 
 from train import TrainTask
 from digits.config import config_value
