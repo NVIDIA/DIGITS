@@ -213,15 +213,15 @@ hasTestFolderChanged();
                     <div class="row">
                         <table class="table">
                             <tr>
-                                <th>Set</th>
+                                <th width="20%">Set</th>
 
-                                <th>Text file <span name="text_file_explanation"
+                                <th width="40%">Text file <span name="text_file_explanation"
                           class="explanation-tooltip glyphicon glyphicon-question-sign"
                                     data-container="body"
                                     title="Each line in the file should be formatted as '<PATH> <LABEL>' where <PATH> specifies image path either on the local filesystem or a URL, and the <LABEL> is a numeric label that matches the uploaded labels file"
                                 ></span></th>
 
-                                <th>Image folder <i>(optional)</i> <span name="image_folder_explanation"
+                                <th width="40%">Image folder <i>(optional)</i> <span name="image_folder_explanation"
                                     class="explanation-tooltip glyphicon glyphicon-question-sign"
                                     data-container="body"
                                     title="Paths in the text files will be appended with this value before reading"
@@ -328,11 +328,25 @@ function textfile_image_sets_disabled() {
         $(".cl-upload-files").show();
         $(".cl-local-files").hide();
     }
-    $("#textfile_val_images").prop("disabled", !value);
+
+     if (value) {
+         $("#textfile_val_images_btn").removeClass("disabled");
+     } else {
+         $("#textfile_val_images_btn").addClass("disabled");
+     }
+
+    $("#textfile_val_images_text").prop("disabled", !value);
     $("#textfile_local_val_images").prop("disabled", !value);
     $("#textfile_val_folder").prop("disabled", !value);
     value = $("#textfile_use_test").prop("checked");
-    $("#textfile_test_images").prop("disabled", !value);
+
+     if (value) {
+         $("#textfile_test_images_btn").removeClass("disabled");
+     } else {
+         $("#textfile_test_images_btn").addClass("disabled");
+     }
+
+    $("#textfile_test_images_text").prop("disabled", !value);
     $("#textfile_local_test_images").prop("disabled", !value);
     $("#textfile_test_folder").prop("disabled", !value);
 }

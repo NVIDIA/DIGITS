@@ -177,13 +177,35 @@ class StringField(wtforms.StringField):
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
 
 
+class FileInput(object):
+    """
+    Renders a file input chooser field.
+    """
+
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault('id', field.id)
+        return wtforms.widgets.HTMLString(
+            ('<div class="input-group">' +
+             '  <span class="input-group-btn">' +
+             '    <span class="btn btn-info btn-file" %s>' +
+             '      Browse&hellip;' +
+             '      <input %s>' +
+             '    </span>' +
+             '  </span>' +
+             '  <input class="form-control" %s readonly>' +
+             '</div>') % (wtforms.widgets.html_params(id=field.name + '_btn', name=field.name + '_btn'),
+                          wtforms.widgets.html_params(name=field.name, type='file', **kwargs),
+                          wtforms.widgets.html_params(id=field.id + '_text', name=field.name + '_text', type='text')))
+
 class FileField(wtforms.FileField):
+    # Comment out the following line to use the native file input
+    widget = FileInput()
+
     def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
         super(FileField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
-
 
 class TextAreaField(wtforms.TextAreaField):
     def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
