@@ -34,6 +34,7 @@ class AnalyzeDbTask(Task):
 
         self.database = database
         self.purpose = purpose
+        self.backend = 'lmdb'
 
         # Results
         self.image_count = None
@@ -51,6 +52,8 @@ class AnalyzeDbTask(Task):
 
     def __setstate__(self, state):
         super(AnalyzeDbTask, self).__setstate__(state)
+        if not hasattr(self, 'backend') or self.backend is None:
+            self.backend = 'lmdb'
 
     @override
     def name(self):

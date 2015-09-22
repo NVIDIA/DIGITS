@@ -61,10 +61,7 @@ class DatasetJob(Job):
         """
         Return the task that creates the training set
         """
-        for t in self.tasks:
-            if isinstance(t, tasks.CreateDbTask) and 'train' in t.name().lower():
-                return t
-        return None
+        raise NotImplementedError('Please implement me')
 
     def val_db_task(self):
         """
