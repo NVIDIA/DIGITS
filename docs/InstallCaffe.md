@@ -20,9 +20,8 @@ Set an environment variable so DIGITS knows where Caffe is installed (optional):
 If you are not on Ubuntu 14.04, you can try [Caffe's installation instructions](http://caffe.berkeleyvision.org/installation.html).
 If you are, simply install these aptitude packages:
 
-    % sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler libatlas-base-dev
+    % sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler libatlas-base-dev python-dev python-pip python-numpy gfortran
     % sudo apt-get install --no-install-recommends libboost-all-dev
-    % sudo apt-get install python-dev python-pip python-numpy gfortran
 
 ### Python dependencies
 
