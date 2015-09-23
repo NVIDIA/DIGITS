@@ -198,6 +198,8 @@ class Task(StatusCls):
 
         unrecognized_output = []
 
+        import sys
+        env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

@@ -22,6 +22,7 @@ from digits.status import Status
 import platform
 from digits.utils import errors
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
+from digits.utils import filesystem as fs
 
 NAMESPACE   = '/models/images/classification'
 
@@ -186,6 +187,14 @@ def image_classification_model_create():
             else:
                 selected_gpus = [str(form.select_gpu.data)]
                 gpu_count = None
+
+        # Python Layer File may be on the server or copied from the client.
+        fs.copy_python_layer_file(
+            bool(form.python_layer_from_client.data),
+            job.dir(),
+            (flask.request.files[form.python_layer_client_file.name]
+             if form.python_layer_client_file.name in flask.request.files
+             else ''), form.python_layer_server_file.data)
 
         job.tasks.append(fw.create_train_task(
                     job_dir         = job.dir(),

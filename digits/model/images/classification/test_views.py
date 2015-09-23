@@ -9,6 +9,7 @@ import time
 import unittest
 import itertools
 import urllib
+import tempfile
 
 import mock
 import flask
@@ -875,3 +876,93 @@ class TestTorchLeNetHdf5(TestTorchLeNet):
 class TestTorchLeNetHdf5Shuffle(TestTorchLeNetHdf5):
     SHUFFLE = True
 
+class TestPythonLayer(BaseViewsTestWithDataset):
+    FRAMEWORK = 'caffe'
+    CAFFE_NETWORK = """\
+layer {
+    name: "hidden"
+    type: 'InnerProduct'
+    inner_product_param {
+        num_output: 500
+        weight_filler {
+            type: "xavier"
+        }
+        bias_filler {
+             type: "constant"
+        }
+    }
+    bottom: "data"
+    top: "output"
+}
+layer {
+    name: "loss"
+    type: "SoftmaxWithLoss"
+    bottom: "output"
+    bottom: "label"
+    top: "loss"
+}
+layer {
+    name: "accuracy"
+    type: "Accuracy"
+    bottom: "output"
+    bottom: "label"
+    top: "accuracy"
+    include {
+        phase: TEST
+    }
+}
+layer {
+    name: "py_test"
+    type: "Python"
+    bottom: "output"
+    top: "py_test"
+    python_param {
+        module: "py_test"
+        layer: "PythonLayer"
+    }
+}
+
+"""
+    def write_python_layer_script(self, filename):
+        with open(filename, 'w') as f:
+            f.write("""\
+import caffe
+import numpy as np
+
+class PythonLayer(caffe.Layer):
+
+    def setup(self, bottom, top):
+        print 'PythonLayer::setup'
+        if len(bottom) != 1:
+            raise Exception("Need one input.")
+
+    def reshape(self, bottom, top):
+        print 'PythonLayer::reshape'
+        top[0].reshape(1)
+
+    def forward(self, bottom, top):
+        print 'PythonLayer::forward'
+        top[0].data[...] = np.sum(bottom[0].data) / 2. / bottom[0].num
+""")
+
+    ## This test makes a temporary python layer file whose path is set
+    ## as py_layer_server_file.  The job creation process copies that
+    ## file to the job_dir.  The CAFFE_NETWORK above, requires that
+    ## python script to be in the correct spot. If there is an error
+    ## in the script or if the script is named incorrectly, or does
+    ## not exist in the job_dir, then the test will fail.
+    def test_python_layer(self):
+        tmpdir = tempfile.mkdtemp()
+        py_file = tmpdir + '/py_test.py'
+        self.write_python_layer_script(py_file)
+
+        job_id = self.create_model(python_layer_server_file=py_file)
+
+        # remove the temporary python script.
+        shutil.rmtree(tmpdir)
+
+        assert self.model_wait_completion(job_id) == 'Done', 'first job failed'
+        rv = self.app.get('/models/%s.json' % job_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content = json.loads(rv.data)
+        assert len(content['snapshots']), 'should have at least snapshot'

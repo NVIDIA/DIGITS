@@ -33,8 +33,45 @@ New Image Model
                     {{form.dataset(class='form-control', size=5)}}
                 </div>
             </div>
+            <div class="col">
+                <div class="well">
+                    <label for="{{form.python_layer_from_client.name}}">
+                        {{form.python_layer_from_client}}
+                        {{form.python_layer_from_client.label}}
+                    </label>
+                    <div class="form-group{{' has-error' if form.python_layer_client_file.errors}} python-layer-client-side-file">
+                        {{form.python_layer_client_file.label}}
+                        {{form.python_layer_client_file.tooltip}}
+                        {{form.python_layer_client_file(class='form-control')}}
+                    </div>
+                    <div class="form-group{{' has-error' if form.python_layer_server_file.errors}} python-layer-server-side-file">
+                        {{form.python_layer_server_file.label}}
+                        {{form.python_layer_server_file.tooltip}}
+                        {{form.python_layer_server_file(class='form-control autocomplete_path')}}
+                    </div>
+                </div>
+            </div>
         </div>
         <script>
+
+         // Show/home python_layer_file form fields according to the checkbox
+         function python_layer_file_state() {
+             var from_client = $("#python_layer_from_client").prop("checked");
+             if (from_client) {
+                 $(".python-layer-server-side-file").hide();
+                 $(".python-layer-client-side-file").show();
+             }
+             else{
+                 $(".python-layer-server-side-file").show();
+                 $(".python-layer-client-side-file").hide();
+             }
+         }
+
+         $("#python_layer_from_client").click(function() {
+             python_layer_file_state();
+         });
+         python_layer_file_state();
+
 $("#dataset").change(function() {
         $.ajax("/datasets/images/generic/summary?job_id=" + $(this).val(),
             {

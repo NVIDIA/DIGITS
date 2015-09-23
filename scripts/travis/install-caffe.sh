@@ -29,6 +29,19 @@ sudo chown travis:travis -R /home/travis/.cache
 cp Makefile.config.example Makefile.config
 sed -i 's/# CPU_ONLY/CPU_ONLY/g' Makefile.config
 sed -i 's/USE_CUDNN/#USE_CUDNN/g' Makefile.config
+sed -i 's/# WITH_PYTHON_LAYER/WITH_PYTHON_LAYER/g' Makefile.config
+
+# Use miniconda
+sed -i 's/# ANACONDA_HOME/ANACONDA_HOME/' Makefile.config
+sed -i 's/# PYTHON_INCLUDE/PYTHON_INCLUDE/' Makefile.config
+sed -i 's/# $(ANACONDA_HOME)/$(ANACONDA_HOME)/' Makefile.config
+sed -i 's/# PYTHON_LIB/PYTHON_LIB/' Makefile.config
+sed -i 's/ANACONDA/MINICONDA/g' Makefile.config
+sed -i 's/Anaconda/Miniconda/g' Makefile.config
+sed -i 's/anaconda/miniconda/g' Makefile.config
+echo 'LINKFLAGS += -Wl,-rpath,/home/travis/miniconda/lib' >> Makefile.config
+
+# compile
 make --jobs=$NUM_THREADS all
 make --jobs=$NUM_THREADS pycaffe
 
