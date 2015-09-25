@@ -5,8 +5,11 @@ import os.path
 import requests
 import cStringIO
 import PIL.Image
+import PIL.ImageEnhance
 import numpy as np
 import scipy.misc
+import scipy.ndimage
+import matplotlib.colors
 import math
 
 from . import is_url, HTTP_TIMEOUT, errors
@@ -253,6 +256,130 @@ def resize_image(image, height, width,
 
         return image
 
+def rotate_image(image, angle):
+    """
+    Rotates an image and returns it as a np.array
+
+    Arguments:
+    image -- a PIL.Image 
+    angle -- the angle of the rotation
+
+    Keyword Arguments:
+    """
+    if angle is None:
+        raise ValueError('bad value for angle')
+
+    if isinstance(image, PIL.Image.Image):            
+        image_mode = image.mode
+        if image_mode != 'L' and image_mode != 'RGB':
+            raise ValueError('unknown image mode "%s"' % image_mode)
+    elif isinstance(image, np.ndarray):
+        if image.dtype != np.uint8:
+            image = image.astype(np.uint8)
+        if image.ndim == 3 and image.shape[2] == 1:
+            image = image.reshape(image.shape[:2])
+        if image.ndim == 2:
+            image_mode = 'L'
+        elif image.ndim == 3 and image.shape[2] == 3:
+            image_mode = 'RGB'
+        else:
+            raise ValueError('invalid image shape: %s' % (image.shape,))
+        image = PIL.Image.fromarray(image)
+    else:
+        raise ValueError('rotate_image() expected a PIL.Image.Image or numpy.ndarray')
+    
+    image_rot = image.rotate(angle).convert('RGBA')
+    image_fill = np.random.randint(0, 255, image_rot.size).astype('uint8')
+    image_fill = PIL.Image.fromarray(image_fill).convert('RGBA')
+    image_array = PIL.Image.composite(image_rot, image_fill, image_rot).convert(image_mode)
+    image_array = np.array(image_array)        
+
+    return image_array
+
+def translate_image(image, dx, dy):
+    """
+    Apply an translation to the image and returns it as a np.array
+
+    Arguments:
+    image -- a PIL.Image 
+    dx -- the horizontal shift
+    dy -- the vertical shift
+
+    Keyword Arguments:
+    """
+
+    if isinstance(image, PIL.Image.Image):            
+        image_mode = image.mode
+        if image_mode != 'L' and image_mode != 'RGB':
+            raise ValueError('unknown image mode "%s"' % image_mode)
+        image = np.array(image)
+    elif isinstance(image, np.ndarray):
+        if image.dtype != np.uint8:
+            image = image.astype(np.uint8)
+        if image.ndim == 3 and image.shape[2] == 1:
+            image = image.reshape(image.shape[:2])
+        if image.ndim == 2:
+            image_mode = 'L'
+        elif image.ndim == 3 and image.shape[2] == 3:
+            image_mode = 'RGB'
+        else:
+            raise ValueError('invalid image shape: %s' % (image.shape,))
+    else:
+        raise ValueError('rotate_image() expected a PIL.Image.Image or numpy.ndarray')
+
+    size = image.shape
+    if image_mode == 'L':
+        image_translated = scipy.ndimage.shift(image, (dx * size[0], dy * size[1]), mode='nearest') 
+    else:
+        image_translated = scipy.ndimage.shift(image, (dx * size[0], dy * size[1], 0.0), mode='nearest') 
+    image_translated = PIL.Image.fromarray(image_translated).convert('RGBA')
+    image_fill = np.random.randint(0, 255, image_translated.size).astype('uint8')
+    image_fill = PIL.Image.fromarray(image_fill).convert('RGBA')
+    image_array = PIL.Image.composite(image_translated, image_fill, image_translated).convert(image_mode)
+    image_array = np.array(image_array)
+
+    return image_array
+
+def modulate_contrast_image(image, strength):
+    """
+    Modulate the contrast of an image and returns it as a np.array
+
+    Arguments:
+    image -- a PIL.Image 
+    strength -- the strength of the modulation
+
+    Keyword Arguments:
+    """
+    if strength is None or strength < 0 or strength > 2.0:
+        raise ValueError('bad value for strength')
+   
+ 
+    if isinstance(image, PIL.Image.Image):
+        image_mode = image.mode
+        if image_mode != 'L' and image_mode != 'RGB':
+            raise ValueError('unknown image mode "%s"' % image_mode)
+    elif isinstance(image, np.ndarray):        
+        if image.dtype != np.uint8:
+            image = image.astype(np.uint8)
+        if image.ndim == 3 and image.shape[2] == 1:
+            image = image.reshape(image.shape[:2])
+
+        if image.ndim == 2:
+            image_mode = 'L'
+        elif image.ndim == 3 and image.shape[2] == 3:
+            image_mode = 'RGB'
+        else:
+            raise ValueError('invalid image shape: %s' % (image.shape,))
+
+        image = PIL.Image.fromarray(image)
+    else:
+        raise ValueError('modulate_contrast_image() expected a PIL.Image.Image')
+        
+    enhancer = PIL.ImageEnhance.Contrast(image)
+    image_array = enhancer.enhance(strength)
+    image_array = np.array(image_array.convert(image_mode))
+    return image_array
+
 def embed_image_html(image):
     """
     Returns an image embedded in HTML base64 format
@@ -378,3 +505,45 @@ def get_color_map(name):
         greenmap    = [0,0,0.5,1,1,1,0.5,0,0]
         bluemap     = [0.5,1,1,1,0.5,0,0,0,0]
     return 255.0 * np.array(redmap), 255.0 * np.array(greenmap), 255.0 * np.array(bluemap)
+
+def modulate_hue_image(image, angle):
+    """
+    Modulate the hue of an image and returns it as a np.array
+
+    Arguments:
+    image -- a PIL.Image 
+    angle -- the hue shift angle
+
+    Keyword Arguments:
+    """
+    if angle is None or angle < 0 or angle > 360:
+        raise ValueError('bad value for angle')
+ 
+    if isinstance(image, PIL.Image.Image):        
+        image_mode = image.mode
+        if image_mode != 'L' and image_mode != 'RGB':
+            raise ValueError('unknown image mode "%s"' % image_mode)
+        image = np.array(image)  
+    elif isinstance(image, np.ndarray):        
+        if image.dtype != np.uint8:
+            image = image.astype(np.uint8)
+        if image.ndim == 3 and image.shape[2] == 1:
+            image = image.reshape(image.shape[:2])
+
+        if image.ndim == 2:
+            image_mode = 'L'
+        elif image.ndim == 3 and image.shape[2] == 3:
+            image_mode = 'RGB'
+        else:
+            raise ValueError('invalid image shape: %s' % (image.shape,))
+    else:
+        raise ValueError('modulate_hue_image() expected a PIL.Image.Image or numpy.ndarray')      
+
+    if image_mode == 'L':
+        raise ValueError('modulate_hue_image() expected a RGB image and got a grayscale image instead')
+
+    hsv = matplotlib.colors.rgb_to_hsv(image/255.0)
+    hsv[:,:, 0] = angle / 360.0
+    image_array = matplotlib.colors.hsv_to_rgb(hsv) * 255.0
+    image_array = image_array.astype(np.uint8) 
+    return image_array 

@@ -223,6 +223,44 @@ class BaseCreationTest(BaseTest):
         _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
                 10, 10, 1, self.BACKEND, mean_files=mean_files)
 
+    def test_augmentation_rotation(self):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 1, self.BACKEND, augmentation_rotation=True, 
+                augmentation_rotation_probability=0.75,
+                augmentation_rotation_angle_min=-90,
+                augmentation_rotation_angle_max=90)
+
+    def test_augmentation_rotation_color(self):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 3, self.BACKEND, augmentation_rotation=True, 
+                augmentation_rotation_probability=0.75,
+                augmentation_rotation_angle_min=-90,
+                augmentation_rotation_angle_max=90)
+
+    def test_augmentation_contrast(self):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 1, self.BACKEND, augmentation_contrast=True, 
+                augmentation_contrast_probability=0.75,
+                augmentation_contrast_strength_min=0.75,
+                augmentation_contrast_strength_max=1.25)
+
+    def test_augmentation_hue(self):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 3, self.BACKEND, augmentation_hue=True, 
+                augmentation_hue_probability=0.75,
+                augmentation_hue_angle_min=66,
+                augmentation_hue_angle_max=122)
+
+    def test_augmentation_translation(self):
+        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+                10, 10, 3, self.BACKEND, augmentation_translation=True, 
+                augmentation_translation_probability=0.75,
+                augmentation_translation_dx_min=-0.5,
+                augmentation_translation_dx_max=0.5,
+                augmentation_translation_dy_min=-0.5,
+                augmentation_translation_dy_max=0.5)
+ 
+
 class TestLmdbCreation(BaseCreationTest):
     BACKEND = 'lmdb'
 

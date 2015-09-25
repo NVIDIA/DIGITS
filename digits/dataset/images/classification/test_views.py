@@ -66,7 +66,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
     IMAGE_WIDTH     = 10
     IMAGE_CHANNELS  = 3
     BACKEND         = 'lmdb'
-    COMPRESSION     = 'none'
+    COMPRESSION     = 'none' 
 
     UNBALANCED_CATEGORY = False
 
@@ -383,6 +383,23 @@ class TestMinPerClass(BaseViewsTestWithImageset):
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
 
+class TestAugmentedDataset(BaseViewsTestWithImageset):
+
+    def test_augmented_rotation_dataset_creation(self):
+        # create dataset with rotations
+        data = {}
+        data['has_augmentation_rotation'] = True
+        data['augmentation_rotation_angle_min'] = -90
+        data['augmentation_rotation_angle_max'] = 90
+        data['augmentation_rotation_probability'] = 1.0
+
+        job_id = self.create_dataset(**data)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.dataset_info(job_id)
+ 
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
 class TestCreated(BaseViewsTestWithDataset):
     """
     Tests on a dataset that has already been created
@@ -441,6 +458,9 @@ class TestCreatedWide(TestCreated):
 
 class TestCreatedTall(TestCreated):
     IMAGE_HEIGHT = 20
+
+class TestCreatedAugmentation(TestCreated):
+    IMAGE_CHANNELS = 1
 
 class TestCreatedHdf5(TestCreated):
     BACKEND = 'hdf5'

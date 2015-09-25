@@ -199,10 +199,14 @@ class Hdf5Writer(DbWriter):
 def create_db(input_file, output_dir,
         image_width, image_height, image_channels,
         backend,
-        resize_mode     = None,
-        image_folder    = None,
-        shuffle         = True,
-        mean_files      = None,
+        resize_mode             = None,
+        image_folder            = None,
+        shuffle                 = True,
+        mean_files              = None,
+        augmentation_rotation   = False,
+        augmentation_contrast   = False,
+        augmentation_hue        = False,
+        augmentation_translation= False,
         **kwargs):
     """
     Create a database of images from a list of image paths
@@ -220,6 +224,10 @@ def create_db(input_file, output_dir,
     resize_mode -- passed to utils.image.resize_image()
     shuffle -- if True, shuffle the images in the list before creating
     mean_files -- a list of mean files to save
+    augmentation_rotation -- if True, generates new rotated images
+    augmentation_contrast -- if True, generates new contrast enhanced images
+    augmentation_hue -- if True, generates new hue modulated images
+    augmentation_translation -- if True, generates new translated images
     """
     ### Validate arguments
 
@@ -252,6 +260,66 @@ def create_db(input_file, output_dir,
                 if not os.path.exists(dirname):
                     raise ValueError('Cannot save mean file at "%s"' % mean_file)
     compute_mean = bool(mean_files)
+    augmentation = {}
+    image_count_estimate_factor = 0.0
+    if augmentation_rotation:
+        augmentation['rotation'] = {}
+        augmentation['rotation']['probability'] = kwargs.get('augmentation_rotation_probability')
+        augmentation['rotation']['angle_min'] = kwargs.get('augmentation_rotation_angle_min')
+        augmentation['rotation']['angle_max'] = kwargs.get('augmentation_rotation_angle_max')
+        if augmentation['rotation']['probability'] is None or  augmentation['rotation']['probability'] < 0.0 or  augmentation['rotation']['probability'] > 1.0:
+            raise ValueError('invalid augmentation_rotation_probability')
+        if augmentation['rotation']['angle_min'] is None or  augmentation['rotation']['angle_min'] < -360 or  augmentation['rotation']['angle_min'] > 360:
+            raise ValueError('invalid augmentation_rotation_angle_min')
+        if augmentation['rotation']['angle_max'] is None or  augmentation['rotation']['angle_max'] < -360 or  augmentation['rotation']['angle_max'] > 360:
+            raise ValueError('invalid augmentation_rotation_angle_max')
+        image_count_estimate_factor += augmentation['rotation']['probability']
+
+    if augmentation_contrast:
+        augmentation['contrast'] = {}
+        augmentation['contrast']['probability'] = kwargs.get('augmentation_contrast_probability')
+        augmentation['contrast']['strength_min'] = kwargs.get('augmentation_contrast_strength_min')
+        augmentation['contrast']['strength_max'] = kwargs.get('augmentation_contrast_strength_max')
+        if augmentation['contrast']['probability'] is None or  augmentation['contrast']['probability'] < 0.0 or  augmentation['contrast']['probability'] > 1.0:
+            raise ValueError('invalid augmentation_contrast_probability')
+        if augmentation['contrast']['strength_min'] is None or  augmentation['contrast']['strength_min'] < 0.0 or  augmentation['contrast']['strength_min'] > 2.0:
+            raise ValueError('invalid augmentation_contrast_strength_min')
+        if augmentation['contrast']['strength_max'] is None or  augmentation['contrast']['strength_max'] <= augmentation['contrast']['strength_min'] or  augmentation['contrast']['strength_max'] > 2.0:
+            raise ValueError('invalid augmentation_contrast_strength_max')
+        image_count_estimate_factor += augmentation['contrast']['probability']
+
+    if augmentation_hue:
+        augmentation['hue'] = {}
+        augmentation['hue']['probability'] = kwargs.get('augmentation_hue_probability')
+        augmentation['hue']['angle_min'] = kwargs.get('augmentation_hue_angle_min')
+        augmentation['hue']['angle_max'] = kwargs.get('augmentation_hue_angle_max')
+        if augmentation['hue']['probability'] is None or  augmentation['hue']['probability'] < 0.0 or  augmentation['hue']['probability'] > 1.0:
+            raise ValueError('invalid augmentation_hue_probability')
+        if augmentation['hue']['angle_min'] is None or  augmentation['hue']['angle_min'] < 0 or  augmentation['hue']['angle_min'] > 360:
+            raise ValueError('invalid augmentation_hue_angle_min')
+        if augmentation['hue']['angle_max'] is None or  augmentation['hue']['angle_max'] <= augmentation['hue']['angle_min'] or  augmentation['hue']['angle_max'] > 360:
+            raise ValueError('invalid augmentation_hue_angle_max')
+        image_count_estimate_factor += augmentation['hue']['probability']
+
+    if augmentation_translation:
+        augmentation['translation'] = {}
+        augmentation['translation']['probability'] = kwargs.get('augmentation_translation_probability')
+        augmentation['translation']['dx_min'] = kwargs.get('augmentation_translation_dx_min')
+        augmentation['translation']['dy_min'] = kwargs.get('augmentation_translation_dy_min')
+        augmentation['translation']['dx_max'] = kwargs.get('augmentation_translation_dx_max')
+        augmentation['translation']['dy_max'] = kwargs.get('augmentation_translation_dy_max')
+        if augmentation['translation']['probability'] is None or  augmentation['translation']['probability'] < 0.0 or  augmentation['translation']['probability'] > 1.0:
+            raise ValueError('invalid augmentation_translation_probability')
+        if augmentation['translation']['dx_min'] is None or augmentation['translation']['dx_min']  < -1.0 or augmentation['translation']['dx_min'] > 1.0:
+            raise ValueError('invalid augmentation_translation_dx_min')
+        if augmentation['translation']['dx_max'] is None or  augmentation['translation']['dx_max'] < augmentation['translation']['dx_min']  or augmentation['translation']['dx_max']  < -1.0 or augmentation['translation']['dx_max'] > 1.0:
+            raise ValueError('invalid augmentation_translation_dx_max')
+        if augmentation['translation']['dy_min'] is None  or augmentation['translation']['dy_min']  < -1.0 or augmentation['translation']['dy_min'] > 1.0:
+            raise ValueError('invalid augmentation_translation_dy_min')
+        if augmentation['translation']['dy_max'] is None or  augmentation['translation']['dy_max'] < augmentation['translation']['dy_min']  or augmentation['translation']['dy_max']  < -1.0 or augmentation['translation']['dy_max'] > 1.0:
+            raise ValueError('invalid augmentation_translation_dy_max')
+        image_count_estimate_factor += augmentation['translation']['probability']
+
 
     ### Load lines from input_file into a load_queue
 
@@ -260,7 +328,7 @@ def create_db(input_file, output_dir,
 
     # Start some load threads
 
-    batch_size = _calculate_batch_size(image_count,
+    batch_size = _calculate_batch_size(image_count + image_count_estimate_factor * image_count,
             bool(backend=='hdf5'), kwargs.get('hdf5_dset_limit'),
             image_channels, image_height, image_width)
     num_threads = _calculate_num_threads(batch_size, shuffle)
@@ -271,7 +339,7 @@ def create_db(input_file, output_dir,
         p = threading.Thread(target=_load_thread,
                 args=(load_queue, write_queue, summary_queue,
                     image_width, image_height, image_channels,
-                    resize_mode, image_folder, compute_mean)
+                    resize_mode, image_folder, compute_mean, augmentation),
                 )
         p.daemon = True
         p.start()
@@ -279,11 +347,19 @@ def create_db(input_file, output_dir,
     start = time.time()
 
     if backend == 'lmdb':
-        _create_lmdb(image_count, write_queue, batch_size, output_dir,
-                summary_queue, num_threads,
+        image_count_estimate = image_count
+        for k in augmentation:
+            image_count_estimate += image_count * augmentation[k]['probability']
+
+        _create_lmdb(image_count_estimate, write_queue, batch_size, output_dir,
+                summary_queue, num_threads, 
                 mean_files, **kwargs)
     elif backend == 'hdf5':
-        _create_hdf5(image_count, write_queue, batch_size, output_dir,
+        image_count_estimate = image_count
+        for k in augmentation:
+            image_count_estimate += image_count * augmentation[k]['probability']
+            
+        _create_hdf5(image_count_estimate, write_queue, batch_size, output_dir,
                 image_width, image_height, image_channels,
                 summary_queue, num_threads,
                 mean_files, **kwargs)
@@ -292,7 +368,7 @@ def create_db(input_file, output_dir,
 
     logger.info('Database created after %d seconds.' % (time.time() - start))
 
-def _create_lmdb(image_count, write_queue, batch_size, output_dir,
+def _create_lmdb(image_count_estimate, write_queue, batch_size, output_dir,
         summary_queue, num_threads,
         mean_files      = None,
         encoding        = None,
@@ -312,6 +388,7 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
     image_sum = None
     batch = []
     compute_mean = bool(mean_files)
+    distribution = Counter()
 
     db = lmdb.open(output_dir,
             map_size=lmdb_map_size,
@@ -322,13 +399,14 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
 
         # Send update every 2 seconds
         if time.time() - wait_time > 2:
-            logger.debug('Processed %d/%d' % (images_written, image_count))
+            logger.debug('Processed %d/%d' % (images_written, image_count_estimate))
             wait_time = time.time()
 
         processed_something = False
 
         if not summary_queue.empty():
-            result_count, result_sum = summary_queue.get()
+            result_count, result_sum, result_distribution = summary_queue.get()
+            distribution += result_distribution
             images_loaded += result_count
             # Update total_image_sum
             if compute_mean and result_count > 0 and result_sum is not None:
@@ -365,12 +443,15 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
         raise WriteError('no images written to database')
     logger.info('%s images written to database' % images_written)
 
+    for key in sorted(distribution):
+        logger.debug('Category %s has %d images.' % (key, distribution[key]))
+
     if compute_mean:
         _save_means(image_sum, images_written, mean_files)
 
     db.close()
 
-def _create_hdf5(image_count, write_queue, batch_size, output_dir,
+def _create_hdf5(image_count_estimate, write_queue, batch_size, output_dir,
         image_width, image_height, image_channels,
         summary_queue, num_threads,
         mean_files      = None,
@@ -390,6 +471,7 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
     image_sum = None
     batch = []
     compute_mean = bool(mean_files)
+    distribution = Counter()
 
     writer = Hdf5Writer(
             output_dir      = output_dir,
@@ -404,14 +486,15 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
 
         # Send update every 2 seconds
         if time.time() - wait_time > 2:
-            logger.debug('Processed %d/%d' % (images_written, image_count))
+            logger.debug('Processed %d/%d' % (images_written, image_count_estimate))
             wait_time = time.time()
 
         processed_something = False
 
         if not summary_queue.empty():
-            result_count, result_sum = summary_queue.get()
+            result_count, result_sum, result_distribution = summary_queue.get()
             images_loaded += result_count
+            distribution += result_distribution
             # Update total_image_sum
             if compute_mean and result_count > 0 and result_sum is not None:
                 if image_sum is None:
@@ -446,6 +529,9 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
     if images_written == 0:
         raise WriteError('no images written to database')
     logger.info('%s images written to database' % images_written)
+
+    for key in sorted(distribution):
+        logger.debug('Category %s has %d images.' % (key, distribution[key]))
 
     if compute_mean:
         _save_means(image_sum, images_written, mean_files)
@@ -538,13 +624,14 @@ def _calculate_num_threads(batch_size, shuffle):
 
 def _load_thread(load_queue, write_queue, summary_queue,
         image_width, image_height, image_channels,
-        resize_mode, image_folder, compute_mean):
+        resize_mode, image_folder, compute_mean, augmentation):
     """
     Consumes items in load_queue
     Produces items to write_queue
     Stores cumulative results in summary_queue
     """
     images_added = 0
+    images_distrib = Counter()
     if compute_mean:
         image_sum = _initial_image_sum(image_width, image_height, image_channels)
     else:
@@ -566,19 +653,71 @@ def _load_thread(load_queue, write_queue, summary_queue,
             logger.warning('[%s] %s: %s' % (path, type(e).__name__, e) )
             continue
 
-        image = utils.image.resize_image(image,
+        image_array = utils.image.resize_image(image,
                 image_height, image_width,
                 channels    = image_channels,
                 resize_mode = resize_mode,
                 )
 
         if compute_mean:
-            image_sum += image
+            image_sum += image_array
 
-        write_queue.put((image, label))
+        write_queue.put((image_array, label))
         images_added += 1
+        images_distrib[label] += 1
 
-    summary_queue.put((images_added, image_sum))
+        if 'rotation' in augmentation:
+            if random.random() <= augmentation['rotation']['probability']:
+                angle = random.randint(augmentation['rotation']['angle_min'], augmentation['rotation']['angle_max'])
+                image_rot = utils.image.rotate_image(image_array, angle)
+
+                if compute_mean:
+                    image_sum += image_rot
+
+                write_queue.put((image_rot, label))
+                images_added += 1 
+                images_distrib[label] += 1
+
+        if 'contrast' in augmentation:
+            if random.random() <= augmentation['contrast']['probability']:
+                strength = random.uniform(augmentation['contrast']['strength_min'], augmentation['contrast']['strength_max'])
+                image_mod = utils.image.modulate_contrast_image(image_array, strength)
+
+                if compute_mean:
+                    image_sum += image_mod
+
+                write_queue.put((image_mod, label))
+                images_added += 1 
+                images_distrib[label] += 1
+
+        if 'hue' in augmentation:
+            if random.random() <= augmentation['hue']['probability']:
+                angle = random.randint(augmentation['hue']['angle_min'], augmentation['hue']['angle_max'])
+                image_mod = utils.image.modulate_hue_image(image_array, angle)
+
+                if compute_mean:
+                    image_sum += image_mod
+
+                write_queue.put((image_mod, label))
+                images_added += 1 
+                images_distrib[label] += 1
+
+        if 'translation' in augmentation:
+            if random.random() <= augmentation['translation']['probability']:
+                dx = random.uniform(augmentation['translation']['dx_min'], augmentation['translation']['dx_max'])
+                dy = random.uniform(augmentation['translation']['dy_min'], augmentation['translation']['dy_max'])
+
+                image_mod = utils.image.translate_image(image_array, dx, dy)
+
+                if compute_mean:
+                    image_sum += image_mod
+
+                write_queue.put((image_mod, label))
+                images_added += 1 
+                images_distrib[label] += 1
+
+
+    summary_queue.put((images_added, image_sum, images_distrib))
 
 def _initial_image_sum(width, height, channels):
     """
@@ -745,6 +884,75 @@ if __name__ == '__main__':
     parser.add_argument('--hdf5_dset_limit',
             type=int,
             help = 'The size limit for HDF5 datasets')
+    parser.add_argument('--augmentation_rotation',
+            action='store_true',
+            help = 'Performs rotation augmentation')
+    parser.add_argument('--augmentation_rotation_angle_min',
+            type=int,
+            default=-90,
+            help = 'Min rotation angle (in degrees)')
+    parser.add_argument('--augmentation_rotation_angle_max',
+            type=int,
+            default=90,
+            help = 'Max rotation angle (in degrees)')
+    parser.add_argument('--augmentation_rotation_probability',
+            type=float,
+            default=0.75,
+            help = 'Probability of performing rotation on an image')
+    parser.add_argument('--augmentation_contrast',
+            action='store_true',
+            help = 'Performs contrast modulation')
+    parser.add_argument('--augmentation_contrast_strength_min',
+            type=float,
+            default=0.75,
+            help = 'Min contrast strength (between 0.0 and 2.0)')
+    parser.add_argument('--augmentation_contrast_strength_max',
+            type=float,
+            default=1.25,
+            help = 'Max contrast strength (between 0.0 and 2.0)')
+    parser.add_argument('--augmentation_contrast_probability',
+            type=float,
+            default=0.75,
+            help = 'Probability of performing contrast on an image')
+    parser.add_argument('--augmentation_hue',
+            action='store_true',
+            help = 'Performs hue modulation')
+    parser.add_argument('--augmentation_hue_angle_min',
+            type=int,
+            default=66,
+            help = 'Min hue angle (between 0 and 360)')
+    parser.add_argument('--augmentation_hue_angle_max',
+            type=int,
+            default=122,
+            help = 'Max hue angle (between 0 and 360)')
+    parser.add_argument('--augmentation_hue_probability',
+            type=float,
+            default=0.75,
+            help = 'Probability of performing hue on an image')
+    parser.add_argument('--augmentation_translation',
+            action='store_true',
+            help = 'Performs translation')
+    parser.add_argument('--augmentation_translation_dx_min',
+            type=float,
+            default=-0.5,
+            help = 'Minimum horizontal translation')
+    parser.add_argument('--augmentation_translation_dx_max',
+            type=float,
+            default=0.5,
+            help = 'Maximum horizontal translation')
+    parser.add_argument('--augmentation_translation_dy_min',
+            type=float,
+            default=-0.5,
+            help = 'Minimum vertical translation')
+    parser.add_argument('--augmentation_translation_dy_max',
+            type=float,
+            default=0.5,
+            help = 'Maximum vertical translation')
+    parser.add_argument('--augmentation_translation_probability',
+            type=float,
+            default=0.75,
+            help = 'Probability of performing translation on an image')
+
 
     args = vars(parser.parse_args())
 
@@ -764,6 +972,24 @@ if __name__ == '__main__':
                 compression     = args['compression'],
                 lmdb_map_size   = args['lmdb_map_size'],
                 hdf5_dset_limit = args['hdf5_dset_limit'],
+                augmentation_rotation             = args['augmentation_rotation'],
+                augmentation_rotation_probability = args['augmentation_rotation_probability'],
+                augmentation_rotation_angle_min   = args['augmentation_rotation_angle_min'],
+                augmentation_rotation_angle_max   = args['augmentation_rotation_angle_max'],
+                augmentation_contrast             = args['augmentation_contrast'],
+                augmentation_contrast_probability = args['augmentation_contrast_probability'],
+                augmentation_contrast_strength_min= args['augmentation_contrast_strength_min'],
+                augmentation_contrast_strength_max= args['augmentation_contrast_strength_max'],
+                augmentation_hue                  = args['augmentation_hue'],
+                augmentation_hue_probability      = args['augmentation_hue_probability'],
+                augmentation_hue_angle_min        = args['augmentation_hue_angle_min'],
+                augmentation_hue_angle_max        = args['augmentation_hue_angle_max'],
+                augmentation_translation                  = args['augmentation_translation'],
+                augmentation_translation_probability      = args['augmentation_translation_probability'],
+                augmentation_translation_dx_min        = args['augmentation_translation_dx_min'],
+                augmentation_translation_dx_max        = args['augmentation_translation_dx_max'],
+                augmentation_translation_dy_min        = args['augmentation_translation_dy_min'],
+                augmentation_translation_dy_max        = args['augmentation_translation_dy_max'],
                 )
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))

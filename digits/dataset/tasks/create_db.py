@@ -33,6 +33,7 @@ class CreateDbTask(Task):
         compression -- 'none' or 'gzip'
         mean_file -- save mean file to this location
         labels_file -- used to print category distribution
+        augmentation -- used to perform data augmentation
         """
         # Take keyword arguments out of kwargs
         self.image_folder = kwargs.pop('image_folder', None)
@@ -42,6 +43,7 @@ class CreateDbTask(Task):
         self.compression = kwargs.pop('compression', None)
         self.mean_file = kwargs.pop('mean_file', None)
         self.labels_file = kwargs.pop('labels_file', None)
+        self.augmentation = kwargs.pop('augmentation', None)
 
         super(CreateDbTask, self).__init__(**kwargs)
         self.pickver_task_createdb = PICKLE_VERSION
@@ -91,13 +93,15 @@ class CreateDbTask(Task):
                     self.encoding = 'none'
                 delattr(self, 'encode')
             else:
-                self.encoding = 'none'
+                self.encoding = 'none' 
         self.pickver_task_createdb = PICKLE_VERSION
 
         if not hasattr(self, 'backend') or self.backend is None:
             self.backend = 'lmdb'
         if not hasattr(self, 'compression') or self.compression is None:
             self.compression = 'none'
+        if not hasattr(self, 'augmentation'):
+            self.augmentation = None
 
     @override
     def name(self):
@@ -164,6 +168,12 @@ class CreateDbTask(Task):
             args.append('--compression=%s' % self.compression)
         if self.backend == 'hdf5':
             args.append('--hdf5_dset_limit=%d' % 2**31)
+        # Data augmentation
+        if self.augmentation is not None:
+            for k in self.augmentation:
+                args.append('--augmentation_%s' % k)
+                for attribute in self.augmentation[k]:
+                    args.append('--augmentation_{0}_{1}={2}'.format(k, attribute, self.augmentation[k][attribute]))
 
         return args
 

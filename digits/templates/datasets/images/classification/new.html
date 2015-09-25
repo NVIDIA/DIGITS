@@ -360,7 +360,164 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
     </script>
 
     <div class="row">
-        <div class="col-sm-6 col-sm-offset-3 well">
+        <div class="col-sm-4 well">
+            <!-- Dataset augmentation -->
+            <h4>Dataset augmentation</h4>
+            <!-- Rotation -->
+            {{form.has_augmentation_rotation}}
+            {{form.has_augmentation_rotation.label}}
+            {{form.has_augmentation_rotation.tooltip}} 
+            <div class="row cl-augmentation-rotation">
+                <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_rotation_angle_min.errors else '' }}">
+                    {{ form.augmentation_rotation_angle_min.label }}
+                    {{ form.augmentation_rotation_angle_min.tooltip }}
+                    {{ form.augmentation_rotation_angle_min(class='form-control') }}
+                </div>
+                <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_rotation_angle_max.errors else '' }}">
+                    {{ form.augmentation_rotation_angle_max.label }}
+                    {{ form.augmentation_rotation_angle_max.tooltip }}
+                    {{ form.augmentation_rotation_angle_max(class='form-control') }}
+                </div>
+                <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_rotation_probability.errors else '' }}">
+                    {{ form.augmentation_rotation_probability.label }}
+                    {{ form.augmentation_rotation_probability.tooltip }}
+                    {{ form.augmentation_rotation_probability(class='form-control') }}
+                </div>
+            </div>
+<script>
+function hasAugmentationRotationChanged() {
+    if ($("#has_augmentation_rotation").prop("checked"))
+    {
+        $(".cl-augmentation-rotation").show();
+    }
+    else
+    {
+        $(".cl-augmentation-rotation").hide();
+    }
+}
+$("#has_augmentation_rotation").click(hasAugmentationRotationChanged);
+hasAugmentationRotationChanged();
+</script>            
+            <!-- Hue -->
+            <br>
+            {{form.has_augmentation_hue}}
+            {{form.has_augmentation_hue.label}} 
+            {{form.has_augmentation_hue.tooltip}} 
+            <div class="row cl-augmentation-hue">
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_hue_angle_min.errors else '' }}">
+                    {{ form.augmentation_hue_angle_min.label }}
+                    {{ form.augmentation_hue_angle_min.tooltip }}
+                    {{ form.augmentation_hue_angle_min(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_hue_angle_max.errors else '' }}">
+                    {{ form.augmentation_hue_angle_max.label }}
+                    {{ form.augmentation_hue_angle_max.tooltip }}
+                    {{ form.augmentation_hue_angle_max(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_hue_probability.errors else '' }}">
+                    {{ form.augmentation_hue_probability.label }}
+                    {{ form.augmentation_hue_probability.tooltip }}
+                    {{ form.augmentation_hue_probability(class='form-control') }}
+                </div>
+            </div>
+<script>
+function hasAugmentationHueChanged() {
+    if ($("#has_augmentation_hue").prop("checked"))
+    {
+        $(".cl-augmentation-hue").show();
+    }
+    else
+    {
+        $(".cl-augmentation-hue").hide();
+    }
+}
+$("#has_augmentation_hue").click(hasAugmentationHueChanged);
+hasAugmentationHueChanged();
+</script>
+            <!-- Contrast -->
+            <br>
+            {{form.has_augmentation_contrast}}
+            {{form.has_augmentation_contrast.label}} 
+            {{form.has_augmentation_contrast.tooltip}} 
+            <div class="row cl-augmentation-contrast">
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_contrast_strength_min.errors else '' }}">
+                    {{ form.augmentation_contrast_strength_min.label }}
+                    {{ form.augmentation_contrast_strength_min.tooltip }}
+                    {{ form.augmentation_contrast_strength_min(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_contrast_strength_max.errors else '' }}">
+                    {{ form.augmentation_contrast_strength_max.label }}
+                    {{ form.augmentation_contrast_strength_max.tooltip }}
+                    {{ form.augmentation_contrast_strength_max(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_contrast_probability.errors else '' }}">
+                    {{ form.augmentation_contrast_probability.label }}
+                    {{ form.augmentation_contrast_probability.tooltip }}
+                    {{ form.augmentation_contrast_probability(class='form-control') }}
+                </div>
+            </div>
+<script>
+function hasAugmentationContrastChanged() {
+    if ($("#has_augmentation_contrast").prop("checked"))
+    {
+        $(".cl-augmentation-contrast").show();
+    }
+    else
+    {
+        $(".cl-augmentation-contrast").hide();
+    }
+}
+$("#has_augmentation_contrast").click(hasAugmentationContrastChanged);
+hasAugmentationContrastChanged();
+</script> 
+            <!-- Translation -->
+            <br>
+            {{form.has_augmentation_translation}}
+            {{form.has_augmentation_translation.label}} 
+            {{form.has_augmentation_translation.tooltip}} 
+            <div class="row cl-augmentation-translation">
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_translation_dx_min.errors else '' }}">
+                    {{ form.augmentation_translation_dx_min.label }}
+                    {{ form.augmentation_translation_dx_min.tooltip }}
+                    {{ form.augmentation_translation_dx_min(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_translation_dx_max.errors else '' }}">
+                    {{ form.augmentation_translation_dx_max.label }}
+                    {{ form.augmentation_translation_dx_max.tooltip }}
+                    {{ form.augmentation_translation_dx_max(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_translation_dy_min.errors else '' }}">
+                    {{ form.augmentation_translation_dy_min.label }}
+                    {{ form.augmentation_translation_dy_min.tooltip }}
+                    {{ form.augmentation_translation_dy_min(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_translation_dy_max.errors else '' }}">
+                    {{ form.augmentation_translation_dy_max.label }}
+                    {{ form.augmentation_translation_dy_max.tooltip }}
+                    {{ form.augmentation_translation_dy_max(class='form-control') }}
+                </div>
+                 <div class="form-group col-sm-6{{ ' has-error' if form.augmentation_translation_probability.errors else '' }}">
+                    {{ form.augmentation_translation_probability.label }}
+                    {{ form.augmentation_translation_probability.tooltip }}
+                    {{ form.augmentation_translation_probability(class='form-control') }}
+                </div>
+            </div>
+<script>
+function hasAugmentationTranslationChanged() {
+    if ($("#has_augmentation_translation").prop("checked"))
+    {
+        $(".cl-augmentation-translation").show();
+    }
+    else
+    {
+        $(".cl-augmentation-translation").hide();
+    }
+}
+$("#has_augmentation_translation").click(hasAugmentationTranslationChanged);
+hasAugmentationTranslationChanged();
+</script> 
+        </div> 
+        <div class="col-sm-6 col-sm-offset-1 well">
             <div class="form-group{{ ' has-error' if form.backend.errors else '' }}">
                 {{ form.backend.label }}
                 {{ form.backend.tooltip }}
