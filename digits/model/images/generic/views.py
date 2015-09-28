@@ -13,6 +13,7 @@ from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import GenericImageDatasetJob
+from digits import frameworks
 from digits.model import tasks
 from forms import GenericImageModelForm
 from job import GenericImageModelJob
@@ -36,6 +37,7 @@ def generic_image_model_new():
 
     return flask.render_template('models/images/generic/new.html',
             form = form,
+            frameworks = frameworks.get_frameworks(),
             previous_network_snapshots = prev_network_snapshots,
             previous_networks_fullinfo = get_previous_networks_fulldetails(),
             multi_gpu = config_value('caffe_root')['multi_gpu'],
@@ -63,6 +65,7 @@ def generic_image_model_create():
         else:
             return flask.render_template('models/images/generic/new.html',
                     form = form,
+                    frameworks = frameworks.get_frameworks(),
                     previous_network_snapshots = prev_network_snapshots,
                     previous_networks_fullinfo = get_previous_networks_fulldetails(),
                     multi_gpu = config_value('caffe_root')['multi_gpu'],
@@ -81,7 +84,7 @@ def generic_image_model_create():
                 )
 
         # get framework (hard-coded to caffe for now)
-        fw = frameworks.get_framework_by_id('caffe')
+        fw = frameworks.get_framework_by_id(form.framework.data)
 
         pretrained_model = None
         #if form.method.data == 'standard':
@@ -177,6 +180,7 @@ def generic_image_model_create():
                     network         = network,
                     random_seed     = form.random_seed.data,
                     solver_type     = form.solver_type.data,
+                    shuffle         = form.shuffle.data,
                     )
                 )
 

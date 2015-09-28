@@ -43,6 +43,8 @@ Usage details:
 -v,--validation (default '') location in which validation db exists.
 -w,--weightDecay (default 1e-4) L2 penalty on the weights
 
+--train_labels (default '') location in which train labels db exists. Optional, use this if train db does not contain target labels.
+--validation_labels (default '') location in which validation labels db exists. Optional, use this if validation db does not contain target labels.
 --dbbackend (default 'lmdb') Specifies which DB backend was used to create datasets. Valid backends: hdf5, lmdb
 --seed (default '') fixed input seed for repeatable experiments
 --weights (default '') filename for weights of a model to use for fine-tuning
@@ -51,9 +53,9 @@ Usage details:
 --randomState (default '') Specifies path to a random number state to reload from
 --lrpolicyState (default '') Specifies path to a lrpolicy state to reload from
 --networkDirectory (default '') directory in which network exists
---mean (default mean.jpg) mean file. Mean file is used to preprocess images and it is also required to get the details of image channel, height and width.
+--mean (default '') mean image file.
 --subtractMean (default yes) If yes, subtracts the mean from images
---labels (default labels.txt) file contains label definitions
+--labels (default '') file contains label definitions
 --snapshotPrefix (default '') prefix of the weights/snapshots
 --snapshotInterval (default 1) specifies the training epochs to be completed before taking a snapshot
 --useMeanPixel (default 'no') by default pixel-wise subtraction is done using the full mean matrix. If this option is 'yes' then mean pixel will be used instead of mean matrix
@@ -89,13 +91,21 @@ Usage details:
 -- Precautions should be taken while restoring these options.
 -----------------------------------------------------------------------------------------------------------------------------
 
+-- Convert boolean options
+opt.crop = opt.crop == 'yes' or false
+opt.mirror = opt.mirror == 'yes' or false
+opt.subtractMean = opt.subtractMean == 'yes' or false
+opt.useMeanPixel = opt.useMeanPixel == 'yes' or false
+opt.shuffle = opt.shuffle == 'yes' or false
+opt.visualizeModel = opt.visualizeModel == 'yes' or false
+
 -- Set the seed of the random number generator to the given number.
 if opt.seed ~= '' then
     torch.manualSeed(tonumber(opt.seed))
 end
 
 -- validate options
-if opt.crop == 'yes' and opt.croplen == 0 then
+if opt.crop and opt.croplen == 0 then
     logmessage.display(2,'crop length is missing')
     os.exit(-1)
 end
@@ -142,13 +152,13 @@ elseif opt.policy ~= 'torch_sgd' then
     os.exit(-1)
 end
 
-if opt.useMeanPixel ~= 'yes' and opt.useMeanPixel ~= 'no' then
-    logmessage.display(2,'invalid --useMeanPixel parameter value - '.. opt.useMeanPixel .. '. Only "yes" or "no" is allowed')
-    os.exit(-1)
+if opt.mean == '' and opt.subtractMean then
+    opt.subtractMean = false
+    logmessage.display(0,'subtractMean parameter is not considered as mean image path is unset')
 end
 
-if opt.useMeanPixel == 'yes' and opt.subtractMean ~= 'no' then
-    opt.useMeanPixel = 'no'
+if opt.useMeanPixel and opt.subtractMean then
+    opt.useMeanPixel = false
     logmessage.display(0,'useMeanPixel parameter is not considered as subtractMean value is provided as "yes"')
 end
 
@@ -169,24 +179,25 @@ torch.setnumthreads(opt.threads)
 package.path = paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
 logmessage.display(0,'Loading network definition from ' .. paths.concat(opt.networkDirectory, opt.network))
 -- retrieve network definition
+local network_func = require (opt.network)
+assert(type(network_func)=='function', "Network definition should return a Lua function - see documentation")
 local parameters = {
         ngpus = (opt.type =='cuda') and 1 or 0
     }
-local network = require (opt.network)(parameters)
-
+network = network_func(parameters)
 local model = network.model
 
 -- loss defaults to nn.ClassNLLCriterion() if unspecified
 local loss = network.loss or nn.ClassNLLCriterion()
 
 -- unless specified on command line, inherit croplen from network
-if opt.crop == 'no' and network.croplen then
-    opt.crop = 'yes'
+if not opt.crop and network.croplen then
+    opt.crop = true
     opt.croplen = network.croplen
 end
 
 -- model visualization
-if opt.visualizeModel == 'yes' then
+if opt.visualizeModel then
     logmessage.display(0,'Network definition:')
     print('\nModel: \n' .. model:__tostring())
     print('\nCriterion: \n' .. loss:__tostring())
@@ -205,26 +216,33 @@ end
 -- load
 local data = require 'data'
 
-logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
-local mean_t = data.loadMean(opt.mean, opt.useMeanPixel)
-
-logmessage.display(0,'Loading label definitions from '.. opt.labels ..' file')
--- classes
-local classes = data.loadLabels(opt.labels)
-
-if classes == nil then
-    logmessage.display(2,'labels file '.. opt.labels ..' not found')
-    os.exit(-1)
+local mean_t
+if opt.mean ~= '' then
+    logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
+    mean_t = data.loadMean(opt.mean, opt.useMeanPixel)
 end
 
-logmessage.display(0,'found ' .. #classes .. ' categories')
+local classes
+if opt.labels ~= '' then
+    logmessage.display(0,'Loading label definitions from '.. opt.labels ..' file')
+    -- classes
+    classes = data.loadLabels(opt.labels)
 
--- fix final output dimension of network
-utils.correctFinalOutputDim(model, #classes)
+    if classes == nil then
+        logmessage.display(2,'labels file '.. opt.labels ..' not found')
+        os.exit(-1)
+    end
+
+    logmessage.display(0,'found ' .. #classes .. ' categories')
+
+    -- fix final output dimension of network
+    utils.correctFinalOutputDim(model, #classes)
+end
+
 logmessage.display(0,'Network definition: \n' .. model:__tostring__())
 logmessage.display(0,'Network definition ends')
 
-if opt.mirror == 'yes' then
+if opt.mirror then
     --torch.manualSeed(os.time())
     logmessage.display(0,'mirror option was selected, so during training for some of the random images, mirror view will be considered instead of original image view')
 end
@@ -243,13 +261,17 @@ end
 
 ----------------------------------------------------------------------
 
--- This matrix records the current confusion across classes
-local confusion = optim.ConfusionMatrix(classes)
+local confusion
+local validation_confusion
+if classes ~= nil then
+    -- This matrix records the current confusion across classes
+    confusion = optim.ConfusionMatrix(classes)
 
--- seperate validation matrix for validation data
-local validation_confusion = nil
-if opt.validation ~= '' then
-    validation_confusion = optim.ConfusionMatrix(classes)
+    -- seperate validation matrix for validation data
+    validation_confusion = nil
+    if opt.validation ~= '' then
+        validation_confusion = optim.ConfusionMatrix(classes)
+    end
 end
 
 -- NOTE: currently retrain option wasn't used in DIGITS. This option was provided to be used from command line, if required.
@@ -303,14 +325,7 @@ logmessage.display(0,'creating worker threads')
 do
     -- pass these variables through upvalue
     local options = opt
-    local mean = mean_t
     local package_path = package.path
-    local shuffle
-    if opt.shuffle == 'yes' then
-        shuffle = true
-    else
-        shuffle = false
-    end
 
     threadPool = threads.Threads(
         1,
@@ -319,9 +334,10 @@ do
             package.path = package_path
             require('data')
             -- executes in reader thread, variables are local to this thread
-            logmessage.display(0,'opening train DB file: ' .. options.train)
-            db = DBSource:new(options.train, options.dbbackend, options.mirror, options.crop, options.croplen,
-                    mean_t, options.subtractMean, true, shuffle)
+            db = DBSource:new(options.dbbackend, options.train, options.train_labels,
+                              options.mirror, options.crop,
+                              options.croplen, mean_t, options.subtractMean,
+                              true, options.shuffle)
         end
     )
 end
@@ -351,15 +367,16 @@ logmessage.display(0,'found ' .. trainSize .. ' images in train db' .. opt.train
 local val, valSize
 
 if opt.validation ~= '' then
-    logmessage.display(0,'opening validation DB file: ' .. opt.validation)
     -- for the images in validation dataset, no need to do random mirrorring.
-    val = DBSource:new(opt.validation, opt.dbbackend, 'no', opt.crop, opt.croplen, mean_t, opt.subtractMean, false, false)
+    val = DBSource:new(opt.dbbackend, opt.validation, opt.validation_labels,
+                       false, opt.crop,
+                       opt.croplen, mean_t, opt.subtractMean, false)
     valSize = val:totalRecords()
     logmessage.display(0,'found ' .. valSize .. ' images in train db' .. opt.validation)
 end
 
 -- validate "crop length" input parameter
-if opt.crop == 'yes' then
+if opt.crop then
     if opt.croplen > imageSizeY then
         logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image width ' .. imageSizeY)
         os.exit(-1)
@@ -462,7 +479,9 @@ if opt.optimState ~= '' then
 end
 
 local function updateConfusion(y,yt)
-    confusion:batchAdd(y,yt)
+    if confusion ~= nil then
+        confusion:batchAdd(y,yt)
+    end
 end
 
 -- Optimization configuration
@@ -599,7 +618,9 @@ local function Validation()
         local y = model:forward(inputs)
         local err = loss:forward(y,targets)
         loss_sum = loss_sum + err
-        validation_confusion:batchAdd(y,targets)
+        if validation_confusion then
+            validation_confusion:batchAdd(y,targets)
+        end
 
         if math.fmod(NumBatches,50)==0 then
             collectgarbage()
@@ -656,7 +677,7 @@ local function Train(epoch, threadPool)
 
         if t%1024==1 then
             print(string.format("input mean=%f std=%f",inputs:mean(),inputs:std()))
-            for idx=1,opt.batchSize do
+            for idx=1,thisBatchSize do
                 print(classes[targets[idx]])
             end
             if itorch then
@@ -694,12 +715,18 @@ local function Train(epoch, threadPool)
         end
 
         if opt.validation ~= '' and current_epoch >= next_validation then
-            validation_confusion:zero()
+            if validation_confusion ~= nil then
+                validation_confusion:zero()
+            end
             val:reset()
             local avg_loss=Validation()
-            validation_confusion:updateValids()
             -- log details at the end of validation
-            logmessage.display(0, 'Validation (epoch ' .. current_epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+            if validation_confusion ~= nil then
+                validation_confusion:updateValids()
+                logmessage.display(0, 'Validation (epoch ' .. current_epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+            else
+                logmessage.display(0, 'Validation (epoch ' .. current_epoch .. '): loss = ' .. avg_loss )
+            end
 
             next_validation = (utils.round(current_epoch/opt.interval) + 1) * opt.interval -- To find next nearest epoch value that exactly divisible by opt.interval
             last_validation_epoch = current_epoch
@@ -732,33 +759,49 @@ logmessage.display(0,'started training the model')
 -- run an initial validation before the first train epoch
 if opt.validation ~= '' then
     model:evaluate()
-    validation_confusion:zero()
+    if validation_confusion ~= nil then
+        validation_confusion:zero()
+    end
     val:reset()
     local avg_loss=Validation()
-    validation_confusion:updateValids()
     -- log details at the end of validation
-    logmessage.display(0, 'Validation (epoch ' .. epoch-1 .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+    if validation_confusion ~= nil then
+        validation_confusion:updateValids()
+        logmessage.display(0, 'Validation (epoch ' .. epoch-1 .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+    else
+        logmessage.display(0, 'Validation (epoch ' .. epoch-1 .. '): loss = ' .. avg_loss )
+    end
     model:training() -- to reset model to training
 end
 
 while epoch<=opt.epoch do
     local ErrTrain = 0
-    confusion:zero()
+    if confusion ~= nil then
+        confusion:zero()
+    end
     Train(epoch, threadPool)
-    confusion:updateValids()
-    --print(confusion)
-    ErrTrain = (1-confusion.totalValid)
+    if confusion ~= nil then
+        confusion:updateValids()
+        --print(confusion)
+        ErrTrain = (1-confusion.totalValid)
+    end
     epoch = epoch+1
 end
 
 -- if required, perform validation at the end
 if opt.validation ~= '' and opt.epoch > last_validation_epoch then
-    validation_confusion:zero()
+    if validation_confusion ~= nil then
+        validation_confusion:zero()
+    end
     val:reset()
     local avg_loss=Validation()
-    validation_confusion:updateValids()
     -- log details at the end of validation
-    logmessage.display(0, 'Validation (epoch ' .. opt.epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+    if validation_confusion ~= nil then
+        validation_confusion:updateValids()
+        logmessage.display(0, 'Validation (epoch ' .. opt.epoch .. '): loss = ' .. avg_loss .. ', accuracy = ' .. validation_confusion.totalValid)
+    else
+        logmessage.display(0, 'Validation (epoch ' .. opt.epoch .. '): loss = ' .. avg_loss )
+    end
 end
 
 -- if required, save snapshot at the end
@@ -780,4 +823,3 @@ if opt.validation ~= '' then
     val:close()
 end
 
---print(confusion)

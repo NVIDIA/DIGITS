@@ -77,6 +77,14 @@ $("#dataset").change(function() {
             <div class="well">
                 <h4>Solver Options</h4>
 
+                <div class="form-group{{' has-error' if form.shuffle.errors}}" id="shuffle-data" style="display:none;">
+                    <label for={{form.shuffle.name}}>
+                        {{form.shuffle}}
+                        {{form.shuffle.label.text}}
+                    </label>
+                    {{ form.shuffle.tooltip }}
+                </div>
+
                 <!-- Length -->
 
                 <div class="form-group{{' has-error' if form.train_epochs.errors}}">
@@ -296,12 +304,12 @@ showHideAdvancedLROptions();
         </div>
         <div class="col-sm-8">
             <script>
-function customizeNetwork(network, snapshot_list) {
-    function fillCustomTab(network, snapshot_list) {
+function customizeNetwork(network, snapshot_list, framework) {
+    function fillCustomTab(network, snapshot_list, framework) {
         data = null;
         if (snapshot_list)
             data = {'snapshot_epoch': $('#'+snapshot_list).val()};
-        $.ajax("{{url_for('models_customize')}}?network=" + network + "&framework=caffe",
+        $.ajax("{{url_for('models_customize')}}?network=" + network + "&framework="+framework,
                 {
                     type: "POST",
                     data: data
@@ -321,16 +329,34 @@ function customizeNetwork(network, snapshot_list) {
                 errorAlert(data);
                 });
         $('#network-tabs a:last').tab('show');
+        $('#customFramework a[href="'+"#"+framework+"_custom"+'"]').tab('show');
     }
 
     if ($('textarea[name=custom_network]').val() != "") {
         bootbox.confirm(
                 'This will overwrite data in the Custom Network tab. Continue?',
-                function(result) { if (result) fillCustomTab(network, snapshot_list); }
+                function(result) { if (result) fillCustomTab(network, snapshot_list, framework); }
                 );
     } else {
-        fillCustomTab(network, snapshot_list);
+        fillCustomTab(network, snapshot_list, framework);
     }
+}
+
+var frameworks = {};
+{% for fw in frameworks %}
+framework = {
+    name : '{{ fw.get_name() }}',
+    can_shuffle : '{{ fw.can_shuffle_data() }}'=='True'
+    };
+frameworks['{{ fw.get_id() }}'] = framework;
+{% endfor %}
+function setFramework(fwid)
+{
+    $('#framework').val(fwid);
+    if (frameworks[fwid].can_shuffle)
+        $("#shuffle-data").show();
+    else
+        $("#shuffle-data").hide();
 }
             </script>
 
@@ -384,7 +410,7 @@ function customizeNetwork(network, snapshot_list) {
                                         </select>
                                         {% endif %}
                                     </td>
-                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot');">Customize</a></td>
+                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{previous_job.train_task().get_framework_id()}}');">Customize</a></td>
                                 </tr>
                                 {% else %}
                                 <tr>
@@ -429,6 +455,8 @@ function customizeNetwork(network, snapshot_list) {
                             $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
                             $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
                         }
+                        var framework_badge = $(this).parents('td').find(".badge").text();
+                        setFramework(framework_badge);
                         $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
                         $(this).parents('tr').find(".form-control").css('visibility', 'visible');
                         $prevtab_prev_clicked_tr = $(this).parents('tr');
@@ -448,9 +476,20 @@ function customizeNetwork(network, snapshot_list) {
 
                 </script>
                 <div id="network-tab-custom" class="tab-pane">
+                    <ul class="nav nav-tabs" id="customFramework">
+                        {% for fw in frameworks %}
+                        <li id="{{ fw.get_id() }}"><a href="#{{ fw.get_id() }}_custom" data-toggle="tab">{{ fw.get_name() }}</a></li>
+                        {% endfor %}
+                    </ul>
                     <script>
+$('#customFramework li').first().addClass("active");
+$('#customFramework li').on('shown.bs.tab', function(e) {
+                                                setFramework($(this).attr('id'));
+});
+
 function visualizeNetwork() {
-    $.ajax("{{url_for('models_visualize_network')}}?framework=caffe",
+    framework = $('#framework').val();
+    $.ajax("{{url_for('models_visualize_network')}}?framework="+framework,
         {
             type: "POST",
             data: $("#custom_network").serialize()

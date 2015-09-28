@@ -442,6 +442,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert status == 200, 'failed with %s' % status
 
     def test_classify_one(self):
+        # carry out one inference test per category in dataset
         for category in self.imageset_paths.keys():
             image_path = self.imageset_paths[category][0]
             image_path = os.path.join(self.imageset_folder, image_path)
