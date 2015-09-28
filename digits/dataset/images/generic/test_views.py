@@ -20,7 +20,7 @@ import digits.test_views
 from test_lmdb_creator import create_lmdbs
 
 # May be too short on a slow system
-TIMEOUT_DATASET = 15
+TIMEOUT_DATASET = 20
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)
