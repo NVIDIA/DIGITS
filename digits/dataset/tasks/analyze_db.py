@@ -85,8 +85,6 @@ class AnalyzeDbTask(Task):
         else:
             args.append('--only-count')
 
-        print args
-
         return args
 
     @override
