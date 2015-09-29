@@ -93,7 +93,7 @@ class CreateDbTask(Task):
                     self.encoding = 'none'
                 delattr(self, 'encode')
             else:
-                self.encoding = 'none' 
+                self.encoding = 'none'
         self.pickver_task_createdb = PICKLE_VERSION
 
         if not hasattr(self, 'backend') or self.backend is None:
@@ -101,7 +101,7 @@ class CreateDbTask(Task):
         if not hasattr(self, 'compression') or self.compression is None:
             self.compression = 'none'
         if not hasattr(self, 'augmentation'):
-            self.augmentation = None
+            self.augmentation = {}
 
     @override
     def name(self):

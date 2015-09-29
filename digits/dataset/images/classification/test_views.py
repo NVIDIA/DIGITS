@@ -66,7 +66,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
     IMAGE_WIDTH     = 10
     IMAGE_CHANNELS  = 3
     BACKEND         = 'lmdb'
-    COMPRESSION     = 'none' 
+    COMPRESSION     = 'none'
 
     UNBALANCED_CATEGORY = False
 
