@@ -396,7 +396,54 @@ class TestAugmentedDataset(BaseViewsTestWithImageset):
         job_id = self.create_dataset(**data)
         assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
         info = self.dataset_info(job_id)
- 
+
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+    def test_augmented_hue_dataset_creation(self):
+        # create dataset with rotations
+        data = {}
+        data['has_augmentation_hue'] = True
+        data['augmentation_hue_angle_min'] = 0
+        data['augmentation_hue_angle_max'] = 360
+        data['augmentation_hue_probability'] = 1.0
+
+        job_id = self.create_dataset(**data)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.dataset_info(job_id)
+
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+    def test_augmented_contrast_dataset_creation(self):
+        # create dataset with rotations
+        data = {}
+        data['has_augmentation_contrast'] = True
+        data['augmentation_contrast_strength_min'] = 0.5
+        data['augmentation_contrast_strength_max'] = 1.5
+        data['augmentation_contrast_probability'] = 1.0
+
+        job_id = self.create_dataset(**data)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.dataset_info(job_id)
+
+        assert self.delete_dataset(job_id) == 200, 'delete failed'
+        assert not self.dataset_exists(job_id), 'dataset exists after delete'
+
+    def test_augmented_translation_dataset_creation(self):
+        # create dataset with rotations
+        data = {}
+        data['has_augmentation_translation'] = True
+        data['augmentation_translation_dx_min'] = -0.5
+        data['augmentation_translation_dx_max'] = 0.5
+        data['augmentation_translation_dy_min'] = -0.5
+        data['augmentation_translation_dy_max'] = 0.5
+        data['augmentation_translation_probability'] = 1.0
+
+        job_id = self.create_dataset(**data)
+        assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.dataset_info(job_id)
+
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
@@ -458,9 +505,6 @@ class TestCreatedWide(TestCreated):
 
 class TestCreatedTall(TestCreated):
     IMAGE_HEIGHT = 20
-
-class TestCreatedAugmentation(TestCreated):
-    IMAGE_CHANNELS = 1
 
 class TestCreatedHdf5(TestCreated):
     BACKEND = 'hdf5'
