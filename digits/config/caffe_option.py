@@ -6,6 +6,7 @@ import sys
 import imp
 import platform
 import subprocess
+import pkg_resources
 
 from digits import device_query
 import config_option
@@ -123,7 +124,7 @@ class CaffeOption(config_option.FrameworkOption):
         Arguments:
         executable -- path to a caffe executable
         """
-        minimum_version = (0,11)
+        minimum_version = pkg_resources.parse_version("0.11")
 
         version = cls.get_version(executable)
         if version is None:
@@ -178,11 +179,11 @@ class CaffeOption(config_option.FrameworkOption):
                             % (filename, NVIDIA_SUFFIX))
 
                 # parse the version string
-                match = re.match(r'%s%s\.so\.((\d|\.)+)$'
+                match = re.match(r'%s%s\.so\.(\S+)$'
                         % (libname, NVIDIA_SUFFIX), filename)
                 if match:
                     version_str = match.group(1)
-                    return tuple(int(n) for n in version_str.split('.'))
+                    return pkg_resources.parse_version(version_str)
                 else:
                     return None
 
