@@ -118,7 +118,7 @@ class TorchTrainTask(TrainTask):
         return True
 
     @override
-    def task_arguments(self, resources):
+    def task_arguments(self, resources, env):
         if config_value('torch_root') == '<PATHS>':
             torch_bin = 'th'
         else:
@@ -201,7 +201,10 @@ class TorchTrainTask(TrainTask):
             for identifier, value in resources['gpus']:
                 identifiers.append(int(identifier))
             if len(identifiers) == 1:
-                args.append('--devid=%s' % (identifiers[0]+1,))
+                # only one device must be visible to the th process
+                # to prevent Torch from loading libraries on all GPUs
+                env['CUDA_VISIBLE_DEVICES'] = str(identifiers[0])
+                args.append('--devid=1')
             elif len(identifiers) > 1:
                 raise NotImplementedError("Multi-GPU with Torch not supported yet")
         else:

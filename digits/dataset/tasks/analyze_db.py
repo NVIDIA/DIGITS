@@ -74,7 +74,7 @@ class AnalyzeDbTask(Task):
         return None
 
     @override
-    def task_arguments(self, resources):
+    def task_arguments(self, resources, env):
         args = [sys.executable, os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(digits.__file__))),
             'tools', 'analyze_db.py'),

@@ -157,13 +157,14 @@ class Task(StatusCls):
         """
         raise NotImplementedError
 
-    def task_arguments(self, resources):
+    def task_arguments(self, resources, env):
         """
         Returns args used by subprocess.Popen to execute the task
         Returns False if the args cannot be set properly
 
         Arguments:
         resources -- the resources assigned by the scheduler for this task
+        environ   -- os.environ instance to run process in
         """
         raise NotImplementedError
 
@@ -183,7 +184,8 @@ class Task(StatusCls):
         """
         self.before_run()
 
-        args = self.task_arguments(resources)
+        env = os.environ.copy()
+        args = self.task_arguments(resources, env )
         if not args:
             self.logger.error('Could not create the arguments for Popen')
             self.status = Status.ERROR
@@ -201,6 +203,7 @@ class Task(StatusCls):
                 stderr=subprocess.STDOUT,
                 cwd=self.job_dir,
                 close_fds=False if platform.system() == 'Windows' else True,
+                env=env,
                 )
 
         try:

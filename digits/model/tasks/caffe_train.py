@@ -690,7 +690,7 @@ class CaffeTrainTask(TrainTask):
         return float(it * self.train_epochs) / self.solver.max_iter
 
     @override
-    def task_arguments(self, resources):
+    def task_arguments(self, resources, env):
         args = [config_value('caffe_root')['executable'],
                 'train',
                 '--solver=%s' % self.path(self.solver_file),
