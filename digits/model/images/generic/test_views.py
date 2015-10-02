@@ -166,7 +166,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
             print 'Status code:', rv.status_code
-            s = BeautifulSoup(rv.data)
+            s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
                 raise RuntimeError(div[0])
@@ -206,7 +206,7 @@ class BaseTestViews(BaseViewsTest):
         rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
                 data = {'custom_network': self.network()}
                 )
-        s = BeautifulSoup(rv.data)
+        s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         image = s.select('img')
@@ -399,7 +399,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
                     'show_visualizations': 'y',
                     }
                 )
-        s = BeautifulSoup(rv.data)
+        s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
 
@@ -431,7 +431,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 '/models/images/generic/infer_many?job_id=%s' % self.model_id,
                 data = {'image_list': file_upload}
                 )
-        s = BeautifulSoup(rv.data)
+        s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         headers = s.select('table.table th')

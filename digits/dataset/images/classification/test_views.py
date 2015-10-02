@@ -125,7 +125,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
-            s = BeautifulSoup(rv.data)
+            s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
                 raise RuntimeError(div[0])
