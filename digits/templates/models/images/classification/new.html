@@ -353,8 +353,30 @@ framework = {
 frameworks['{{ fw.get_id() }}'] = framework;
 {% endfor %}
 
+function setFramework(fwid)
+{
+    $('#framework').val(fwid);
+    if (frameworks[fwid].can_shuffle)
+        $("#shuffle-data").show();
+    else
+        $("#shuffle-data").hide();
+    if (fwid == 'torch')
+        $("#torch-warning").show();
+    else
+        $("#torch-warning").hide();
+    $('#stdnetRole a[href="'+"#"+fwid+"_standard"+'"]').tab('show');
+    $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
+}
             </script>
 
+            <div id="torch-warning" class="alert alert-warning" style="display:none;">
+                <b>NOTE:</b> Torch7 is currently supported as an experimental feature in DIGITS. The following limitations apply:
+                <ul>
+                    <li>Multi-GPU training is not supported</li>
+                    <li>Models don't automatically adjust to images with different sizes/channels</li>
+                    <li>Model fine tuning is not supported</li>
+                </ul>
+            </div>
             <ul class="nav nav-tabs" id="network-tabs">
                 <li class="active"><a href="#network-tab-standard" data-toggle="tab">Standard Networks</a></li>
                 <li><a href="#network-tab-previous" data-toggle="tab">Previous Networks</a></li>
@@ -365,7 +387,7 @@ frameworks['{{ fw.get_id() }}'] = framework;
                 <div id="network-tab-standard" class="tab-pane active">
                     <ul class="nav nav-tabs" id="stdnetRole">
                         {% for fw in frameworks %}
-                        <li id="{{ fw.get_id() }}"><a href="#network-tab-standard-contents" data-toggle="tab">{{ fw.get_name() }}</a></li>
+                        <li id="{{ fw.get_id() }}"><a href="#{{ fw.get_id() }}_standard" data-toggle="tab">{{ fw.get_name() }}</a></li>
                         {% endfor %}
                     </ul>
                     <div id="network-tab-standard-contents" class="tab-pane active">
@@ -374,12 +396,7 @@ frameworks['{{ fw.get_id() }}'] = framework;
                             $('#stdnetRole li').on('click', function(e) {
                                  $(this).addClass('active');
                                  $(this).siblings().removeClass('active');
-                                 $('#framework').val($(this).attr('id'));
-                                 $('#customFramework a[href="'+"#"+$(this).attr('id')+"_custom"+'"]').tab('show');
-                                 if (frameworks[$(this).attr('id')].can_shuffle)
-                                     $("#shuffle-data").show();
-                                 else
-                                     $("#shuffle-data").hide();
+                                 setFramework($(this).attr('id'));
                             });
                         </script>
                         <table class="table">
@@ -505,11 +522,7 @@ frameworks['{{ fw.get_id() }}'] = framework;
                             $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'hidden');
                         }
                         var framework_badge = $(this).parents('td').find(".badge").text();
-                        $('#framework').val(framework_badge);  //sets the framework value based on the job selected in previous networks tab.
-                        if(frameworks[framework_badge].can_shuffle)
-                            $("#shuffle-data").show();
-                        else
-                            $("#shuffle-data").hide();
+                        setFramework(framework_badge);  //sets the framework value based on the job selected in previous networks tab.
                         $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
                         $(this).parents('tr').find(".form-control").css('visibility', 'visible');
                         $prevtab_prev_clicked_tr = $(this).parents('tr');
@@ -537,17 +550,12 @@ frameworks['{{ fw.get_id() }}'] = framework;
                     <br>
                     <script>
                         $('#customFramework li').first().addClass("active");
-                        $('#customFramework li').on('shown.bs.tab', function(e) {
-                             $('#framework').val($(this).attr('id'));
-                             if (frameworks[$(this).attr('id')].can_shuffle)
-                                 $("#shuffle-data").show();
-                             else
-                                 $("#shuffle-data").hide();
-                        });
+                        $('#customFramework li').on('click', function(e) {
+                                 $(this).addClass('active');
+                                 $(this).siblings().removeClass('active');
+                                 setFramework($(this).attr('id'));
 
-                    </script>
-
-                    <script>
+                            });
 
 function visualizeNetwork() {
     framework = $('#framework').val();

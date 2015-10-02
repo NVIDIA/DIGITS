@@ -64,6 +64,26 @@ layer {
 }
 """
 
+    TORCH_NETWORK = \
+"""
+require 'nn'
+local model = nn.Sequential()
+model:add(nn.View(-1):setNumInputDims(3)) -- 10*10*3 -> 300
+model:add(nn.Linear(300, 3))
+model:add(nn.LogSoftMax())
+return function(params)
+    return {
+        model = model
+    }
+end
+"""
+
+    @classmethod
+    def setUpClass(cls):
+        super(BaseViewsTest, cls).setUpClass()
+        if cls.FRAMEWORK=='torch' and not config_value('torch_root'):
+            raise unittest.SkipTest('Torch not found')
+
     @classmethod
     def model_exists(cls, job_id):
         return cls.job_exists(job_id, 'models')
@@ -89,7 +109,7 @@ layer {
 
     @classmethod
     def network(cls):
-        return cls.CAFFE_NETWORK
+        return cls.TORCH_NETWORK if cls.FRAMEWORK=='torch' else cls.CAFFE_NETWORK
 
 class BaseViewsTestWithDataset(BaseViewsTest,
         digits.dataset.images.classification.test_views.BaseViewsTestWithDataset):
@@ -99,6 +119,10 @@ class BaseViewsTestWithDataset(BaseViewsTest,
 
     # Inherited classes may want to override these attributes
     CROP_SIZE = None
+    TRAIN_EPOCHS = 1
+    SHUFFLE = False
+    LR_POLICY = None
+    LEARNING_RATE = None
 
     @classmethod
     def setUpClass(cls):
@@ -113,7 +137,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         super(BaseViewsTestWithDataset, cls).tearDownClass()
 
     @classmethod
-    def create_model(cls, **kwargs):
+    def create_model(cls, network=None, **kwargs):
         """
         Create a model
         Returns the job_id
@@ -122,17 +146,24 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         Keyword arguments:
         **kwargs -- data to be sent with POST request
         """
+        if network is None:
+            network = cls.network()
         data = {
                 'model_name':       'test_model',
                 'dataset':          cls.dataset_id,
                 'method':           'custom',
-                'custom_network':   cls.network(),
+                'custom_network':   network,
                 'batch_size':       10,
-                'train_epochs':     1,
-                'framework' :       cls.FRAMEWORK
+                'train_epochs':     cls.TRAIN_EPOCHS,
+                'framework' :       cls.FRAMEWORK,
+                'shuffle':          'true' if cls.SHUFFLE else 'false'
                 }
         if cls.CROP_SIZE is not None:
             data['crop_size'] = cls.CROP_SIZE
+        if cls.LR_POLICY is not None:
+            data['lr_policy'] = cls.LR_POLICY
+        if cls.LEARNING_RATE is not None:
+            data['learning_rate'] = cls.LEARNING_RATE
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -197,6 +228,11 @@ class BaseTestViews(BaseViewsTest):
         image = s.select('img')
         assert image is not None, "didn't return an image"
 
+    def test_customize(self):
+        rv = self.app.post('/models/customize?network=lenet&framework='+self.FRAMEWORK)
+        s = BeautifulSoup(rv.data)
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
 
 class BaseTestCreation(BaseViewsTestWithDataset):
     """
@@ -270,6 +306,8 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         gpu_list = config_value('gpu_list').split(',')
         for i in xrange(len(gpu_list)):
             for combination in itertools.combinations(gpu_list, i+1):
+                if self.FRAMEWORK=='torch' and len(combination)>1:
+                    raise unittest.SkipTest('Torch not tested with multi-GPU')
                 yield self.check_select_gpus, combination
 
     def check_select_gpus(self, gpu_list):
@@ -315,6 +353,37 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         options_3['%s-snapshot' % job2_id] = -1
         job3_id = self.create_model(**options_3)
         assert self.model_wait_completion(job3_id) == 'Done', 'third job failed'
+
+    def test_bad_network_definition(self):
+        if self.FRAMEWORK == 'caffe':
+            bogus_net = """
+                layer {
+                    name: "hidden"
+                    type: 'BogusCode'
+                    bottom: "data"
+                    top: "output"
+                }
+                layer {
+                    name: "loss"
+                    type: "SoftmaxWithLoss"
+                    bottom: "output"
+                    bottom: "label"
+                    top: "loss"
+                }
+                """
+        elif self.FRAMEWORK == 'torch':
+            bogus_net = """
+                local model = BogusCode(0)
+                return function(params)
+                    return {
+                        model = model
+                    }
+                end
+                """
+        job_id = self.create_model(json=True, network=bogus_net)
+        assert self.model_wait_completion(job_id) == 'Error', 'job should have failed'
+        job_info = self.job_info_html(job_id=job_id, job_type='models')
+        assert 'BogusCode' in job_info
 
 
 class BaseTestCreated(BaseViewsTestWithModel):
@@ -633,6 +702,22 @@ class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
 class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'caffe'
 
+class TestTorchViews(BaseTestViews):
+    FRAMEWORK = 'torch'
+
+class TestTorchCreation(BaseTestCreation):
+    FRAMEWORK = 'torch'
+
+class TestTorchCreated(BaseTestCreated):
+    FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 10
+
+class TestTorchCreatedHdf5(TestTorchCreated):
+    BACKEND = 'hdf5'
+
+class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
+    FRAMEWORK = 'torch'
+
 class TestCaffeLeNet(TestCaffeCreated):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
@@ -643,3 +728,22 @@ class TestCaffeLeNet(TestCaffeCreated):
                 'standard-networks', 'caffe', 'lenet.prototxt')
             ).read()
 
+class TestTorchLeNet(TestTorchCreated):
+    IMAGE_WIDTH = 28
+    IMAGE_HEIGHT = 28
+    IMAGE_CHANNELS = 1
+    TRAIN_EPOCHS = 20
+    # need more aggressive learning rate
+    # on such a small dataset
+    LR_POLICY = 'fixed'
+    LEARNING_RATE = 0.1
+
+    TORCH_NETWORK=open(
+            os.path.join(
+                os.path.dirname(digits.__file__),
+                'standard-networks', 'torch', 'lenet.lua')
+            ).read()
+
+
+class TestTorchHdf5LeNet(TestTorchLeNet):
+    BACKEND = 'hdf5'

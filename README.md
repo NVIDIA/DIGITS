@@ -40,7 +40,8 @@ For greater performance, you can also install cuDNN.
 
 At least one deep learning framework backend is required.
 
-* Caffe (NVIDIA's fork) - [installation instructions](docs/InstallCaffe.md)
+* [Mandatory] Caffe (NVIDIA's fork) - [installation instructions](docs/InstallCaffe.md)
+* [Optional] Torch7 - [installation instructions](docs/InstallTorch.md)
 
 ## Install DIGITS
 

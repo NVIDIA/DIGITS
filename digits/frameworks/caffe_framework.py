@@ -98,6 +98,7 @@ class CaffeFramework(Framework):
             ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
         return network
 
+    @override
     def get_network_visualization(self, desc):
         """
         return visualization of network

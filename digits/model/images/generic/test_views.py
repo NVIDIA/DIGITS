@@ -66,6 +66,18 @@ layer {
 }
 """
 
+    TORCH_NETWORK = \
+"""
+require 'nn'
+require 'cunn'
+local model = nn.Sequential()
+model:add(nn.View(-1):setNumInputDims(3)) -- 10*10*3 -> 300
+model:add(nn.Linear(300, 3))
+model:add(nn.LogSoftMax())
+model:cuda()
+return model
+"""
+
     @classmethod
     def model_exists(cls, job_id):
         return cls.job_exists(job_id, 'models')
@@ -91,7 +103,7 @@ layer {
 
     @classmethod
     def network(cls):
-        return cls.CAFFE_NETWORK
+        return cls.TORCH_NETWORK if cls.FRAMEWORK=='torch' else cls.CAFFE_NETWORK
 
 
 class BaseViewsTestWithDataset(BaseViewsTest,
