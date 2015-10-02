@@ -7,6 +7,7 @@ from random import uniform
 from urlparse import urlparse
 from io import BlockingIOError
 import inspect
+import pkg_resources
 import platform
 
 
@@ -125,6 +126,31 @@ def sizeof_fmt(size, suffix='B'):
         return '%s %s%s' % (s, size_name[i], suffix)
     else:
         return '0 %s' % suffix
+
+def parse_version(*args):
+    """
+    Returns a sortable version
+
+    Arguments:
+    args -- a string, tuple, or list of arguments to be joined with "."'s
+    """
+    v = None
+    if len(args) == 1:
+        a = args[0]
+        if isinstance(a, tuple):
+            v = '.'.join(str(x) for x in a)
+        else:
+            v = str(a)
+    else:
+        v = '.'.join(str(a) for a in args)
+
+    if v.startswith('v'):
+        v = v[1:]
+
+    try:
+        return pkg_resources.SetuptoolsVersion(v)
+    except AttributeError:
+        return pkg_resources.parse_version(v)
 
 ### Import the other utility functions
 
