@@ -2,12 +2,14 @@
 
 import os.path
 
+import io
 import requests
 import cStringIO
 import PIL.Image
 import numpy as np
 import scipy.misc
 import math
+import base64
 
 from . import is_url, HTTP_TIMEOUT, errors
 
@@ -461,3 +463,14 @@ def get_color_map(name):
         greenmap    = [0,0,0.5,1,1,1,0.5,0,0]
         bluemap     = [0.5,1,1,1,0.5,0,0,0,0]
     return 255.0 * np.array(redmap), 255.0 * np.array(greenmap), 255.0 * np.array(bluemap)
+
+def image_to_base64(image):
+    if isinstance(image, np.ndarray):
+        image = PIL.Image.fromarray(image)
+    elif not isinstance(image, PIL.Image.Image):
+        raise ValueError('image must be a PIL.Image or a np.ndarray')
+    bytesio = io.BytesIO()
+    image.save(bytesio, image.format)
+    byte_value = bytesio.getvalue()
+    b64 = base64.b64encode(byte_value)
+    return 'data:image/%s;base64,%s' % (image.format.lower(), b64)

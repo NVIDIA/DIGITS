@@ -97,9 +97,17 @@
         {% endautoescape %}
         );
     </script>
-    {% if task.status=='D' and task.mean_file %}
+    {% if task.status=='D' %}
+    {% if task.mean_file %}
     <b>Image Mean:</b>
     <img src="{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}" />
+    {% endif %}
+    {% if task.backend=='lmdb' %}
+    <dl>
+        <br/>
+        <a href="{{url_for('image_classification_dataset_explore', job_id=job.id(), db=task.db_name.lower())}}" class="btn btn-primary">Explore the db</a>
+    </dl>
+    {% endif %}
     {% endif %}
     {% endif %}
 </div>
@@ -212,4 +220,3 @@
 {% endfor %}
 
 {% endblock %}
-

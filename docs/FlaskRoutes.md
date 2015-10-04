@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Sep 16, 2015*
+*Generated Oct 04, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -177,6 +177,14 @@ Location: [`digits/dataset/views.py`](../digits/dataset/views.py)
 > Returns JSON when requested: {job_id,name,status} or {errors:[]}
 
 Methods: **POST**
+
+Location: [`digits/dataset/images/classification/views.py`](../digits/dataset/images/classification/views.py)
+
+### `/datasets/images/classification/explore`
+
+> Returns a gallery consisting of the images of one of the dbs
+
+Methods: **GET**
 
 Location: [`digits/dataset/images/classification/views.py`](../digits/dataset/images/classification/views.py)
 
