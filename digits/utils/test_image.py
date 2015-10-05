@@ -185,3 +185,174 @@ class TestResizeImage():
         shape=%s""" % args
 
 
+class TestRotateImage():
+
+    @classmethod
+    def setup_class(cls):
+        cls.np_gray = np.random.randint(0, 255, (10,10)).astype('uint8')
+        cls.pil_gray = PIL.Image.fromarray(cls.np_gray)
+        cls.np_color = np.random.randint(0, 255, (10,10,3)).astype('uint8')
+        cls.pil_color = PIL.Image.fromarray(cls.np_color)
+
+    def test_configs(self):
+        # lots of configs tested here
+        for angle in [-3, 3]:
+            for t in ['gray', 'color']:
+                yield self.verify_pil, (angle, t)
+                yield self.verify_np, (angle, t)
+ 
+
+    def verify_pil(self, args):
+        # pass a PIL.Image to resize_image and check the returned dimensions
+        a, t = args
+        if t == 'gray':
+            i = self.pil_gray
+        else:
+            i = self.pil_color
+        r = _.rotate_image(i, a)
+        assert r.shape == np.array(i).shape, 'Rotated PIL.Image (orig=%s) should have been %s, but was %s %s' % (i.size, i.size, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def verify_np(self, args):
+        # pass a numpy.ndarray to resize_image and check the returned dimensions
+        a, t = args
+        if t == 'gray':
+            i = self.np_gray
+        else:
+            i = self.np_color
+        r = _.rotate_image(i, a)
+        assert r.shape == i.shape, 'Rotated np.ndarray (orig=%s) should have been %s, but was %s %s' % (i.shape, i.shape, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def args_to_str(self, args):
+        return """
+        angle=%s
+        image_type=%s""" % args
+
+class TestTranslateImage():
+
+    @classmethod
+    def setup_class(cls):
+        cls.np_gray = np.random.randint(0, 255, (10,10)).astype('uint8')
+        cls.pil_gray = PIL.Image.fromarray(cls.np_gray)
+        cls.np_color = np.random.randint(0, 255, (10,10,3)).astype('uint8')
+        cls.pil_color = PIL.Image.fromarray(cls.np_color)
+
+    def test_configs(self):
+        # lots of configs tested here
+        for dx in [-0.1, 0.1]:
+            for dy in [-0.1, 0.1]:
+                for t in ['gray', 'color']:
+                    yield self.verify_pil, (dx, dy, t)
+                    yield self.verify_np, (dx, dy, t)
+ 
+
+    def verify_pil(self, args):
+        # pass a PIL.Image to resize_image and check the returned dimensions
+        dx, dy, t = args
+        if t == 'gray':
+            i = self.pil_gray
+        else:
+            i = self.pil_color
+        r = _.translate_image(i, dx, dy)
+        assert r.shape == np.array(i).shape, 'Rotated PIL.Image (orig=%s) should have been %s, but was %s %s' % (i.size, i.size, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def verify_np(self, args):
+        # pass a numpy.ndarray to resize_image and check the returned dimensions
+        dx, dy, t = args
+        if t == 'gray':
+            i = self.np_gray
+        else:
+            i = self.np_color
+        r = _.translate_image(i, dx, dy)
+        assert r.shape == i.shape, 'Rotated np.ndarray (orig=%s) should have been %s, but was %s %s' % (i.shape, i.shape, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def args_to_str(self, args):
+        return """
+        dx=%s
+        dy=%s
+        image_type=%s""" % args
+
+class TestModulateContrastImage():
+
+    @classmethod
+    def setup_class(cls):
+        cls.np_gray = np.random.randint(0, 255, (10,10)).astype('uint8')
+        cls.pil_gray = PIL.Image.fromarray(cls.np_gray)
+        cls.np_color = np.random.randint(0, 255, (10,10,3)).astype('uint8')
+        cls.pil_color = PIL.Image.fromarray(cls.np_color)
+
+    def test_configs(self):
+        # lots of configs tested here
+        for s in [0.5, 1.0, 1.5]:
+            for t in ['gray', 'color']:
+                yield self.verify_pil, (s, t)
+                yield self.verify_np, (s, t)
+
+
+    def verify_pil(self, args):
+        # pass a PIL.Image to resize_image and check the returned dimensions
+        s, t = args
+        if t == 'gray':
+            i = self.pil_gray
+        else:
+            i = self.pil_color
+        r = _.modulate_contrast_image(i, s)
+        assert r.shape == np.array(i).shape, 'Contrast modulated PIL.Image (orig=%s) should have been %s, but was %s %s' % (i.size, i.size, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def verify_np(self, args):
+        # pass a numpy.ndarray to resize_image and check the returned dimensions
+        s, t = args
+        if t == 'gray':
+            i = self.np_gray
+        else:
+            i = self.np_color
+        r = _.modulate_contrast_image(i, s)
+        assert r.shape == i.shape, 'Contrast modulated np.ndarray (orig=%s) should have been %s, but was %s %s' % (i.shape, i.shape, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def args_to_str(self, args):
+        return """
+        strength=%s
+        image_type=%s""" % args
+
+class TestModulateHueImage():
+
+    @classmethod
+    def setup_class(cls):
+        cls.np_gray = np.random.randint(0, 255, (10,10)).astype('uint8')
+        cls.pil_gray = PIL.Image.fromarray(cls.np_gray)
+        cls.np_color = np.random.randint(0, 255, (10,10,3)).astype('uint8')
+        cls.pil_color = PIL.Image.fromarray(cls.np_color)
+
+    def test_configs(self):
+        # lots of configs tested here
+        t = 'color'
+        for a in [0, 66, 122, 360]:
+            yield self.verify_pil, (a, t)
+            yield self.verify_np, (a, t)
+
+
+    def verify_pil(self, args):
+        # pass a PIL.Image to resize_image and check the returned dimensions
+        a, t = args
+        i = self.pil_color
+        r = _.modulate_hue_image(i, a)
+        assert r.shape == np.array(i).shape, 'Hue modulated PIL.Image (orig=%s) should have been %s, but was %s %s' % (i.size, i.size, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def verify_np(self, args):
+        # pass a numpy.ndarray to resize_image and check the returned dimensions
+        a, t = args
+        i = self.np_color
+        r = _.modulate_hue_image(i, a)
+        assert r.shape == i.shape, 'Hue modulated np.ndarray (orig=%s) should have been %s, but was %s %s' % (i.shape, i.shape, r.shape, self.args_to_str(args))
+        assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
+
+    def args_to_str(self, args):
+        return """
+        a=%s
+        image_type=%s""" % args

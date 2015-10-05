@@ -13,3 +13,4 @@ lmdb>=0.87
 h5py>=2.2.1
 pydot2
 Flask-SocketIO
+matplotlib

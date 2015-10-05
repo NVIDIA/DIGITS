@@ -47,7 +47,7 @@
         <dd>{{task.label_count}}</dd>
         {% endif %}
         {% if task.train_count %}
-        <dt>Training Images</dt>
+        <dt>Original Training Images</dt>
         <dd>{{task.train_count}}</dd>
         {% endif %}
         {% if task.val_count %}
@@ -100,6 +100,19 @@
     {% if task.status=='D' and task.mean_file %}
     <b>Image Mean:</b>
     <img src="{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}" />
+    {% endif %}
+    <br/>
+    {% if task.augmentation|length != 0 %}
+    <b>Augmentations:</b>
+    <br/>
+    <pre>
+{% for a, v in task.augmentation.iteritems() %}
+<b>{{ a }} parameters:</b>
+    {% for key, value in v.iteritems()  %}
+    {{ key }}: {{ value }} 
+    {% endfor %}
+
+{% endfor %}</pre>
     {% endif %}
     {% endif %}
 </div>

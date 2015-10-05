@@ -13,6 +13,42 @@ from job import ImageClassificationDatasetJob
 
 NAMESPACE = '/datasets/images/classification'
 
+
+def augmentation_from_form(form, job):
+    augmentation = {}
+
+    if form.has_augmentation_contrast.data:
+        augmentation['contrast'] = {
+            'strength_min': form.augmentation_contrast_strength_min.data,
+            'strength_max': form.augmentation_contrast_strength_max.data,
+            'probability': form.augmentation_contrast_probability.data
+        }
+
+    if form.has_augmentation_hue.data and job.image_dims[2] == 3:
+        augmentation['hue'] = {
+            'angle_min': form.augmentation_hue_angle_min.data,
+            'angle_max': form.augmentation_hue_angle_max.data,
+            'probability': form.augmentation_hue_probability.data
+        }
+
+    if form.has_augmentation_rotation.data:
+        augmentation['rotation'] = {
+            'angle_min': form.augmentation_rotation_angle_min.data,
+            'angle_max': form.augmentation_rotation_angle_max.data,
+            'probability': form.augmentation_rotation_probability.data
+        }
+
+    if form.has_augmentation_translation.data:
+        augmentation['translation'] = {
+            'dx_min': form.augmentation_translation_dx_min.data,
+            'dx_max': form.augmentation_translation_dx_max.data,
+            'dy_min': form.augmentation_translation_dy_min.data,
+            'dy_max': form.augmentation_translation_dy_max.data,
+            'probability': form.augmentation_translation_probability.data
+        }
+    return augmentation
+
+
 def from_folders(job, form):
     """
     Add tasks for creating a dataset by parsing folders of images
@@ -88,19 +124,22 @@ def from_folders(job, form):
     encoding = form.encoding.data
     compression = form.compression.data
 
+    augmentation = augmentation_from_form(form, job)
+
     job.tasks.append(
             tasks.CreateDbTask(
-                job_dir     = job.dir(),
-                parents     = parse_train_task,
-                input_file  = utils.constants.TRAIN_FILE,
-                db_name     = utils.constants.TRAIN_DB,
-                backend     = backend,
-                image_dims  = job.image_dims,
-                resize_mode = job.resize_mode,
-                encoding    = encoding,
-                compression = compression,
-                mean_file   = utils.constants.MEAN_FILE_CAFFE,
-                labels_file = job.labels_file,
+                job_dir      = job.dir(),
+                parents      = parse_train_task,
+                input_file   = utils.constants.TRAIN_FILE,
+                db_name      = utils.constants.TRAIN_DB,
+                backend      = backend,
+                image_dims   = job.image_dims,
+                resize_mode  = job.resize_mode,
+                encoding     = encoding,
+                compression  = compression,
+                mean_file    = utils.constants.MEAN_FILE_CAFFE,
+                labels_file  = job.labels_file,
+                augmentation = augmentation,
                 )
             )
 
@@ -117,6 +156,7 @@ def from_folders(job, form):
                     encoding    = encoding,
                     compression = compression,
                     labels_file = job.labels_file,
+                    augmentation= {},
                     )
                 )
 
@@ -133,6 +173,7 @@ def from_folders(job, form):
                     encoding    = encoding,
                     compression = compression,
                     labels_file = job.labels_file,
+                    augmentation= {},
                     )
                 )
 
@@ -167,6 +208,8 @@ def from_files(job, form):
     if not image_folder:
         image_folder = None
 
+    augmentation = augmentation_from_form(form, job)
+
     job.tasks.append(
             tasks.CreateDbTask(
                 job_dir     = job.dir(),
@@ -181,6 +224,7 @@ def from_files(job, form):
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
                 labels_file = job.labels_file,
                 shuffle     = shuffle,
+                augmentation= augmentation,
                 )
             )
 
@@ -212,6 +256,7 @@ def from_files(job, form):
                     compression = compression,
                     labels_file = job.labels_file,
                     shuffle     = shuffle,
+                    augmentation= {},
                     )
                 )
 
@@ -243,6 +288,7 @@ def from_files(job, form):
                     compression = compression,
                     labels_file = job.labels_file,
                     shuffle     = shuffle,
+                    augmentation= {},
                     )
                 )
 

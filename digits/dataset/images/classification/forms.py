@@ -38,6 +38,158 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
             tooltip='Compressing the dataset may significantly decrease the size of your database files, but it may increase read and write times.',
             )
 
+    ### Data augmentation - rotation 
+    has_augmentation_rotation = utils.forms.BooleanField('Perform rotations on images',
+            default = False,
+            tooltip = "You can augment your dataset by performing rotation on images.",
+            validators=[ 
+                ]
+            )
+
+    augmentation_rotation_angle_min = utils.forms.IntegerField(u'angle min',
+            default=-90,
+            validators=[ 
+                validators.NumberRange(min=-360, max=360)
+                ],
+            tooltip = "The minimum rotation angle that can be performed during augmentation."
+            )
+
+    augmentation_rotation_angle_max = utils.forms.IntegerField(u'angle max',
+            default=90,
+            validators=[ 
+                validators.NumberRange(min=-360, max=360)
+                ],
+            tooltip = "The maximum rotation angle that can be performed during augmentation."
+            )
+
+    augmentation_rotation_probability = utils.forms.FloatField(u'probability',
+            default=0.75,
+            validators=[ 
+                validators.NumberRange(min=0.0, max=1.0)
+                ],
+            tooltip = "The probability for an image to be rotated during augmentation."
+            )
+
+    ### Data augmentation - hue 
+    has_augmentation_hue = utils.forms.BooleanField('Perform hue modulation on images',
+            tooltip="You can augment your dataset by performing hue modulation on images.",
+            default=False,
+            validators=[ 
+                ]
+            )
+ 
+    augmentation_hue_angle = utils.forms.FloatField(u'angle',
+            default=0.5,
+            validators=[ 
+                validators.NumberRange(min=0.0, max=1.0)
+                ],
+            tooltip = "The maximum angle of the hue modulation."
+            )
+
+    augmentation_hue_angle_min = utils.forms.IntegerField(u'angle min',
+            default=66,
+            validators=[ 
+                validators.NumberRange(min=0, max=360)
+                ],
+            tooltip = "The minimum angle of the hue modulation."
+            )
+    augmentation_hue_angle_max = utils.forms.IntegerField(u'angle max',
+            default=122,
+            validators=[ 
+                validators.NumberRange(min=0, max=360)
+                ],
+            tooltip = "The maximum angle of the hue modulation."
+            )
+
+    augmentation_hue_probability = utils.forms.FloatField(u'probability',
+            default=0.75,
+            validators=[ 
+                validators.NumberRange(min=0.0, max=1.0)
+                ],
+            tooltip = "The probability for an image to be hue-modulated during augmentation."
+            )
+
+    ### Data augmentation - contrast
+    has_augmentation_contrast = utils.forms.BooleanField('Perform contrast modulation on images',
+            tooltip="You can augment your dataset by performing contrast modulation on images.",
+            default=False,
+            validators=[ 
+                ]
+            )
+ 
+    augmentation_contrast_strength_min = utils.forms.FloatField(u'strength min',
+            default=0.75,
+            validators=[ 
+                validators.NumberRange(min=0.0, max=2.0)
+                ],
+            tooltip = "The minimum strength of the contrast modulation."
+            )
+
+    augmentation_contrast_strength_max = utils.forms.FloatField(u'strength max',
+            default=1.25,
+            validators=[ 
+                validators.NumberRange(min=0.0, max=2.0)
+                ],
+            tooltip = "The maximum strength of the contrast modulation."
+            )
+
+    augmentation_contrast_probability = utils.forms.FloatField(u'probability',
+            default=0.75,
+            validators=[ 
+                validators.NumberRange(min=0.0, max=1.0)
+                ],
+            tooltip = "The probability for an image to be contrast-modulated during augmentation."
+            )
+
+    ### Data augmentation - translation
+    has_augmentation_translation = utils.forms.BooleanField('Perform translation on images',
+            tooltip="You can augment your dataset by performing translation on images.",
+            default=False,
+            validators=[ 
+                ]
+            )
+ 
+    augmentation_translation_dx_min = utils.forms.FloatField(u'dx min',
+            default=-0.5,
+            validators=[ 
+                validators.NumberRange(min=-1.0, max=1.0)
+                ],
+            tooltip = "The minimum dx of the translation."
+            )
+
+    augmentation_translation_dx_max = utils.forms.FloatField(u'dx max',
+            default=0.5,
+            validators=[ 
+                validators.NumberRange(min=-1.0, max=1.0)
+                ],
+            tooltip = "The maximum dx of the translation."
+            )
+
+    augmentation_translation_dy_min = utils.forms.FloatField(u'dy min',
+            default=-0.5,
+            validators=[ 
+                validators.NumberRange(min=-1.0, max=1.0)
+                ],
+            tooltip = "The minimum dy of the translation."
+            )
+
+    augmentation_translation_dy_max = utils.forms.FloatField(u'dy max',
+            default=0.5,
+            validators=[ 
+                validators.NumberRange(min=-1.0, max=1.0)
+                ],
+            tooltip = "The maximum dy of the translation."
+            )
+
+    augmentation_translation_probability = utils.forms.FloatField(u'probability',
+            default=0.75,
+            validators=[ 
+                validators.NumberRange(min=0.0, max=1.0)
+                ],
+            tooltip = "The probability for an image to be translation-modulated during augmentation."
+            )
+
+
     # Use a SelectField instead of a HiddenField so that the default value
     # is used when nothing is provided (through the REST API)
     method = wtforms.SelectField(u'Dataset type',

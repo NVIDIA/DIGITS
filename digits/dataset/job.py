@@ -41,6 +41,7 @@ class DatasetJob(Job):
                     "backend":          t.backend,
                     "encoding":         t.encoding,
                     "compression":      t.compression,
+                    "augmentation":     t.augmentation,
                                       } for t in self.create_db_tasks()],
                 })
         return d
