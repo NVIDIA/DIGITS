@@ -703,7 +703,11 @@ class CaffeTrainTask(TrainTask):
             if len(identifiers) == 1:
                 args.append('--gpu=%s' % identifiers[0])
             elif len(identifiers) > 1:
-                args.append('--gpus=%s' % ','.join(identifiers))
+                if config_value('caffe_root')['version'] < utils.parse_version('0.14.0-alpha'):
+                    # Prior to version 0.14, NVcaffe used the --gpus switch
+                    args.append('--gpus=%s' % ','.join(identifiers))
+                else:
+                    args.append('--gpu=%s' % ','.join(identifiers))
         if self.pretrained_model:
             args.append('--weights=%s' % self.path(self.pretrained_model))
 
