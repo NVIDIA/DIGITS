@@ -58,3 +58,13 @@ input[readonly]:disabled {
     cursor: not-allowed !important;
 }
 
+a.active {
+	font-weight: 900;
+	color: black;
+}
+
+ul.inline li {
+	display: inline-block;
+}
+
+

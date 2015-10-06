@@ -1,0 +1,65 @@
+{# Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "layout.html" %}
+
+{% block title %}
+{{job.name()}} - Explorer
+{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{ url_for('show_job', job_id=job.id()) }}">{{job.job_type()}}</a></li>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <h2>Exploring {{job.name()}} ({{ db }}) images</h2>
+    </div>
+    <div class="row">
+        <ul class="list-unstyled list-inline">
+            <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}">Show all images</a></li>
+            <li>or</li>
+            <li><h5>filter by class:</h5></li>
+        {% for l in labels %}
+            <li><a {% if label==loop.index0 %}class="active"{% endif %} href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{loop.index0}}">{{l}}</a></li>
+        {% endfor %}
+        </ul>
+    </div>
+    <div class="row">Items per page: <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=10&label={{label}}" {% if size==10 %}class="active"{% endif %}>10</a> - <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=25&label={{label}}" {% if size==25 %}class="active"{% endif %}>25</a> - <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=50&label={{label}}" {% if size==50 %}class="active"{% endif %}>50</a> - <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=100&label={{label}}" {% if size==100 %}class="active"{% endif %}>100</a></div>
+    <div class="row">
+    <ul class="pagination">
+        <li {% if page == 0 %}class="disabled"{%endif%}>
+          <a href="?job_id={{job.id()}}&page={{ page - 1 }}&size={{size}}&db={{db}}&label={{label}}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+        {% if pages[0] != 0 %}
+        <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{label}}">0</a></li>
+        <li class="disabled"><a href="#">...</a></li>
+        {% endif %}
+        {% for p in pages %}
+        <li {% if p == page %}class="active"{% endif %}><a href="?job_id={{job.id()}}&page={{ p }}&size={{size}}&db={{db}}&label={{label}}">{{p}}</a></li>
+        {% endfor %}
+        {% if pages[-1] != (total_entries-1)//size %}
+        <li class="disabled"><a href="#">...</a></li>
+        <li><a href="?job_id={{job.id()}}&page={{(total_entries-1)//size}}&size={{size}}&db={{db}}&label={{label}}">{{(total_entries-1)//size}}</a></li>
+        {% endif %}
+        {% if page != (total_entries-1)//size %}<li>
+          <a href="?job_id={{job.id()}}&page={{ page + 1 }}&size={{size}}&db={{db}}&label={{label}}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>{%endif %}
+    </ul>
+    </div>
+    <div class="row">
+    {% for i in imgs %}
+        <div class="col-sm-3">
+            <div class="row text-center"><img src="{{ i.b64 }}"/></div>
+            <div class="row text-center"><h5>{{ i.label }}</h5></div>
+            <br/>
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}

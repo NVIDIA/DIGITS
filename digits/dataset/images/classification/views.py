@@ -11,6 +11,11 @@ from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
 from job import ImageClassificationDatasetJob
 
+import lmdb
+import PIL.Image
+from StringIO import StringIO
+import caffe_pb2
+
 NAMESPACE = '/datasets/images/classification'
 
 def from_folders(job, form):
@@ -320,3 +325,97 @@ def image_classification_dataset_summary():
 
     return flask.render_template('datasets/images/classification/summary.html', dataset=job)
 
+class DbReader(object):
+    """
+    Reads a database
+    """
+
+    def __init__(self, location):
+        """
+        Arguments:
+        location -- where is the database
+        """
+        self._db = lmdb.open(location,
+                map_size=1024**3, # 1MB
+                readonly=True, lock=False)
+
+        with self._db.begin() as txn:
+            self.total_entries = txn.stat()['entries']
+
+    def entries(self):
+        """
+        Generator returning all entries in the DB
+        """
+        with self._db.begin() as txn:
+            cursor = txn.cursor()
+            for item in cursor:
+                yield item
+
+@app.route(NAMESPACE + '/explore', methods=['GET'])
+@autodoc('datasets')
+def image_classification_dataset_explore():
+    """
+    Returns a gallery consisting of the images of one of the dbs
+    """
+    job = job_from_request()
+    # Get LMDB
+    db = flask.request.args.get('db', 'train')
+    if 'train' in db.lower():
+        task = job.train_db_task()
+    elif 'val' in db.lower():
+        task = job.val_db_task()
+    elif 'test' in db.lower():
+        task = job.test_db_task()
+    if task == None:
+        raise ValueError('No create_db task for {0}'.format(db))
+    if task.status != 'D':
+        raise ValueError("This create_db task's status should be 'D' but is '{0}'".format(task.status))
+    if task.backend != 'lmdb':
+        raise ValueError("Backend is {0} while expected backend is lmdb".format(task.backend))
+    db_path = job.path(task.db_name)
+    labels = task.get_labels()
+
+    page = int(flask.request.args.get('page', 0))
+    size = int(flask.request.args.get('size', 25))
+    label = flask.request.args.get('label', None)
+
+    if label is not None:
+        try:
+            label = int(label)
+            label_str = labels[label]
+        except ValueError:
+            label = None
+
+    reader = DbReader(db_path)
+    count = 0
+    imgs = []
+
+    min_page = max(0, page - 5)
+    if label is None:
+        total_entries = reader.total_entries
+    else:
+        total_entries = task.distribution[str(label)]
+
+    max_page = min((total_entries-1) / size, page + 5)
+    pages = range(min_page, max_page + 1)
+    for key, value in reader.entries():
+        if count >= page*size:
+            datum = caffe_pb2.Datum()
+            datum.ParseFromString(value)
+            if label is None or datum.label == label:
+                s = StringIO()
+                s.write(datum.data)
+                s.seek(0)
+                img = PIL.Image.open(s)
+                imgs.append({"label":labels[datum.label], "b64": utils.image.image_to_base64(img)})
+        if label is None:
+            count += 1
+        else:
+            datum = caffe_pb2.Datum()
+            datum.ParseFromString(value)
+            if datum.label == int(label):
+                count += 1
+        if len(imgs) >= size:
+            break
+
+    return flask.render_template('datasets/images/classification/explore.html', page=page, size=size, job=job, imgs=imgs, labels=labels, pages=pages, label=label, total_entries=total_entries, db=db)
