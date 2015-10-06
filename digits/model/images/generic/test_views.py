@@ -313,6 +313,42 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job_id = self.create_model(select_gpus_list=','.join(gpu_list), batch_size=len(gpu_list))
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
 
+    def infer_one_for_job(self, job_id):
+        # carry out one inference test per category in dataset
+        image_path = os.path.join(self.imageset_folder, self.test_image)
+        with open(image_path,'rb') as infile:
+            # StringIO wrapping is needed to simulate POST file upload.
+            image_upload = (StringIO(infile.read()), 'image.png')
+
+        rv = self.app.post(
+                '/models/images/generic/infer_one?job_id=%s' % job_id,
+                data = {
+                    'image_file': image_upload,
+                    'show_visualizations': 'y',
+                    }
+                )
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
+    def test_infer_one_mean_image(self):
+        # test the creation
+        job_id = self.create_model(use_mean = 'image')
+        assert self.model_wait_completion(job_id) == 'Done', 'job failed'
+        self.infer_one_for_job(job_id)
+
+    def test_infer_one_mean_pixel(self):
+        # test the creation
+        job_id = self.create_model(use_mean = 'pixel')
+        assert self.model_wait_completion(job_id) == 'Done', 'job failed'
+        self.infer_one_for_job(job_id)
+
+    def test_infer_one_mean_none(self):
+        # test the creation
+        job_id = self.create_model(use_mean = 'none')
+        assert self.model_wait_completion(job_id) == 'Done', 'job failed'
+        self.infer_one_for_job(job_id)
+
     def test_retrain(self):
         job1_id = self.create_model()
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
@@ -370,7 +406,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
             'lr_inv_gamma': 0.1,
             'lr_poly_power': 3.0,
             'lr_exp_gamma': 0.95,
-            'use_mean': 1,
+            'use_mean': 'image',
             'custom_network_snapshot': '',
             'lr_multistep_gamma': 0.5,
             'lr_policy': 'step',

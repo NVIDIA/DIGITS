@@ -318,6 +318,47 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job_id = self.create_model(select_gpus_list=','.join(gpu_list), batch_size=len(gpu_list))
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
 
+    def classify_one_for_job(self, job_id, test_misclassification = True):
+        # carry out one inference test per category in dataset
+        for category in self.imageset_paths.keys():
+            image_path = self.imageset_paths[category][0]
+            image_path = os.path.join(self.imageset_folder, image_path)
+            with open(image_path,'rb') as infile:
+                # StringIO wrapping is needed to simulate POST file upload.
+                image_upload = (StringIO(infile.read()), 'image.png')
+
+            rv = self.app.post(
+                    '/models/images/classification/classify_one?job_id=%s' % job_id,
+                    data = {
+                        'image_file': image_upload,
+                        }
+                    )
+            s = BeautifulSoup(rv.data, 'html.parser')
+            body = s.select('body')
+            assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+            # gets an array of arrays [[confidence, label],...]
+            predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
+            if test_misclassification:
+                assert predictions[0][1] == category, 'image misclassified'
+
+    def test_classify_one_mean_image(self):
+        # test the creation
+        job_id = self.create_model(use_mean = 'image')
+        assert self.model_wait_completion(job_id) == 'Done', 'job failed'
+        self.classify_one_for_job(job_id)
+
+    def test_classify_one_mean_pixel(self):
+        # test the creation
+        job_id = self.create_model(use_mean = 'pixel')
+        assert self.model_wait_completion(job_id) == 'Done', 'job failed'
+        self.classify_one_for_job(job_id)
+
+    def test_classify_one_mean_none(self):
+        # test the creation
+        job_id = self.create_model(use_mean = 'none')
+        assert self.model_wait_completion(job_id) == 'Done', 'job failed'
+        self.classify_one_for_job(job_id, False)
+
     def test_retrain(self):
         job1_id = self.create_model()
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
@@ -398,7 +439,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
             'lr_inv_gamma': 0.1,
             'lr_poly_power': 3.0,
             'lr_exp_gamma': 0.9,
-            'use_mean': 0,
+            'use_mean': 'image',
             'lr_multistep_gamma': 0.5,
             'lr_policy': 'exp',
             'val_interval': 3.0,
@@ -782,6 +823,7 @@ class TestTorchViews(BaseTestViews):
 
 class TestTorchCreation(BaseTestCreation):
     FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 10
 
 class TestTorchCreated(BaseTestCreated):
     FRAMEWORK = 'torch'

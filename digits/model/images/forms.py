@@ -23,13 +23,13 @@ class ImageModelForm(ModelForm):
     # for an unchecked checkbox. Since we want to use a REST API and have
     # this default to True when nothing is supplied, we have to use a
     # SelectField
-    use_mean = utils.forms.SelectField('Subtract Mean File',
+    use_mean = utils.forms.SelectField('Subtract Mean',
             choices = [
-                (1, 'Yes'),
-                (0, 'No'),
+                ('none', 'None'),
+                ('image', 'Image'),
+                ('pixel', 'Pixel'),
                 ],
-            coerce=int,
-            default=1,
-            tooltip = "Subtract the mean file for this dataset from each image."
+            default='image',
+            tooltip = "Subtract the mean file or mean pixel for this dataset from each image."
             )
 

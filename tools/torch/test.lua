@@ -39,11 +39,8 @@ opt = lapp[[
 
 --testMany (default no) If this option is 'yes', then "image" input parameter should specify the file with all the images to be tested
 --testUntil (default -1) specifies how many images in the "image" file to be tested. This parameter is only valid when testMany is set to "yes"
---crop (default no) If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter
---croplen (default 0) crop length. This is required parameter when crop option is provided
---subtractMean (default yes) If yes, subtracts the mean from images
+--subtractMean (default 'image') Select mean subtraction method. Possible values are 'image', 'pixel' or 'none'.
 --labels (default '') file contains label definitions
---useMeanPixel (default 'no') by default pixel-wise subtraction is done using the full mean matrix. If this option is 'yes' then mean pixel will be used instead of mean matrix
 --snapshotPrefix (default '') prefix of the weights/snapshots
 --networkDirectory (default '') directory in which network exists
 --allPredictions (default no) If 'yes', displays all the predictions of an image instead of formatted topN results
@@ -83,36 +80,12 @@ else
     assert(opt.allPredictions == 'yes', 'Regression problems must return all predictions')
 end
 
-local img_mean
-if opt.mean ~= '' then
-    img_mean=data.loadMean(opt.mean, opt.useMeanPixel == 'yes' or false)
-else
-    assert(opt.subtractMean == 'no', 'Unspecified image mean')
+local meanTensor
+if opt.subtractMean ~= 'none' then
+    assert(opt.mean ~= '', 'subtractMean parameter not set to "none" yet mean image path is unset')
+    logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
+    meanTensor = data.loadMean(opt.mean, opt.subtractMean == 'pixel')
 end
-
-local crop = opt.crop
-
-local req_x = nil
-local req_y = nil
-
--- if subtraction has to be done using the full mean matrix instead of mean pixel, then image cropping is possible only after subtracting the image from full mean matrix. In other cases, we can crop the image before subtracting mean.
-
-if (opt.useMeanPixel == 'yes' or opt.subtractMean == 'no') and crop == 'yes' then
-    req_x = opt.croplen
-    req_y = opt.croplen
-    crop = 'no' -- as resize_image.py will take care of cropping as well
-elseif opt.subtractMean == 'yes' then
-    req_x = img_mean["width"]
-    req_y = img_mean["height"]
-end
-
-local cropX = nil
-local cropY = nil
-if crop == 'yes' then
-    cropX = math.floor((img_mean["height"] - opt.croplen)/2) + 1
-    cropY = math.floor((img_mean["width"] - opt.croplen)/2) + 1
-end
-
 
 -- If epoch for the trained model is not provided then select the latest trained model.
 if opt.epoch == -1 then
@@ -191,28 +164,32 @@ local function preprocess(img_path)
         end
     end
 
-    local im = image.load(img_path)
+    local im = image.load(img_path):type('torch.FloatTensor'):contiguous()
 
-    -- resize image to match with the required size. Required size may be mean file size or crop size input
-    if req_x and req_y then
-        if (img_mean["channels"] ~= im:size(1)) or (req_y ~= im:size(2)) or (req_x ~= im:size(3)) then
-            im = utils.resizeImage(im, req_y, req_x, img_mean["channels"],opt.resizeMode)
-        end
-    end
     -- Torch image.load() always loads image with each pixel value between 0-1. As during training, images were taken from LMDB directly, their pixel values ranges from 0-255. As, model was trained with images whose pixel values are between 0-255, we may have to convert test image also to have 0-255 for each pixel.
     im=im*255
 
     -- Depending on the function arguments, image preprocess may include conversion from RGB to BGR and mean subtraction, image resize after mean subtraction
-    local image_preprocessed = data.PreProcess(im, img_mean and img_mean["mean"],
-                                               opt.subtractMean == 'yes' or false, img_mean and img_mean["channels"],
-                                               false, crop == 'yes' or false, false, cropX, cropY, opt.croplen)
+    local image_preprocessed = data.PreProcess(im, -- input image
+                                               meanTensor, -- mean
+                                               false, -- do not mirror
+                                               false, -- do not crop
+                                               false, -- test mode
+                                               nil, nil, nil -- crop parameters (all nil)
+                                               )
 
     -- crop to match network expected input dimensions
     if network.croplen then
         image_size = image_preprocessed:size()
         assert(image_size[2] == image_size[3], "Expected square image")
         c = (image_size[2]-network.croplen)/2 + 1
-        image_preprocessed = data.PreProcess(image_preprocessed, nil, false, nil, false, true, false, c, c, network.croplen)
+        image_preprocessed = data.PreProcess(image_preprocessed, -- input image
+                                             nil, -- no mean subtraction (this was done before)
+                                             false, -- do not mirror
+                                             true, -- crop
+                                             false, -- test mode
+                                             c, c, network.croplen -- crop parameters
+                                             )
     end
     return image_preprocessed
 end

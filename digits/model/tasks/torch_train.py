@@ -33,7 +33,6 @@ PICKLE_VERSION = 1
 # Constants
 TORCH_MODEL_FILE = 'model.lua'
 TORCH_SNAPSHOT_PREFIX = 'snapshot'
-TORCH_USE_MEAN_PIXEL = True
 
 @subclass
 class TorchTrainTask(TrainTask):
@@ -169,7 +168,7 @@ class TorchTrainTask(TrainTask):
                 args.append('--validation=%s' % val_image_db.path(val_image_db.database))
             if val_labels_db:
                 args.append('--validation_labels=%s' % val_labels_db.path(val_labels_db.database))
-            if self.use_mean:
+            if self.use_mean != 'none':
                 assert self.dataset.mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
                 blob = caffe_pb2.BlobProto()
                 with open(task.path(self.dataset.mean_file),'rb') as infile:
@@ -217,10 +216,12 @@ class TorchTrainTask(TrainTask):
             args.append('--crop=yes')
             args.append('--croplen=%d' % self.crop_size)
 
-        if self.use_mean:
-            args.append('--subtractMean=yes')
+        if self.use_mean == 'pixel':
+            args.append('--subtractMean=pixel')
+        elif self.use_mean == 'image':
+            args.append('--subtractMean=image')
         else:
-            args.append('--subtractMean=no')
+            args.append('--subtractMean=none')
 
         if self.random_seed is not None:
             args.append('--seed=%s' % self.random_seed)
@@ -513,27 +514,22 @@ class TorchTrainTask(TrainTask):
             args.append('--labels=%s' % self.dataset.path(self.dataset.labels_file))
             args.append('--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE))
             args.append('--allPredictions=no')
-            if self.use_mean:
-                args.append('--subtractMean=yes')
-            else:
-                args.append('--subtractMean=no')
         elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            if self.use_mean:
+            if self.use_mean != 'none':
                 args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
-                args.append('--subtractMean=yes')
-            else:
-                args.append('--subtractMean=no')
             args.append('--allPredictions=yes')
 
         if snapshot_epoch:
             args.append('--epoch=%d' % int(snapshot_epoch))
-        if TORCH_USE_MEAN_PIXEL:
-            args.append('--useMeanPixel=yes')
         if self.trained_on_cpu:
             args.append('--type=float')
 
-        # input image has been resized to network input dimensions by caller
-        args.append('--crop=no')
+        if self.use_mean == 'pixel':
+            args.append('--subtractMean=pixel')
+        elif self.use_mean == 'image':
+            args.append('--subtractMean=image')
+        else:
+            args.append('--subtractMean=none')
 
         if layers=='all':
             args.append('--visualization=yes')
@@ -817,26 +813,21 @@ class TorchTrainTask(TrainTask):
                 labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
                 args.append('--labels=%s' % self.dataset.path(self.dataset.labels_file))
                 args.append('--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE))
-                if self.use_mean:
-                    args.append('--subtractMean=yes')
-                else:
-                    args.append('--subtractMean=no')
             elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-                if self.use_mean:
+                if self.use_mean != 'none':
                     args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
-                    args.append('--subtractMean=yes')
-                else:
-                    args.append('--subtractMean=no')
 
             if snapshot_epoch:
                 args.append('--epoch=%d' % int(snapshot_epoch))
-            if TORCH_USE_MEAN_PIXEL:
-                args.append('--useMeanPixel=yes')
             if self.trained_on_cpu:
                 args.append('--type=float')
 
-            # input images have been resized to network input dimensions by caller
-            args.append('--crop=no')
+            if self.use_mean == 'pixel':
+                args.append('--subtractMean=pixel')
+            elif self.use_mean == 'image':
+                args.append('--subtractMean=image')
+            else:
+                args.append('--subtractMean=none')
 
             # Convert them all to strings
             args = [str(x) for x in args]

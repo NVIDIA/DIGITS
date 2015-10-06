@@ -55,11 +55,10 @@ Usage details:
 --lrpolicyState (default '') Specifies path to a lrpolicy state to reload from
 --networkDirectory (default '') directory in which network exists
 --mean (default '') mean image file.
---subtractMean (default yes) If yes, subtracts the mean from images
+--subtractMean (default 'image') Select mean subtraction method. Possible values are 'image', 'pixel' or 'none'.
 --labels (default '') file contains label definitions
 --snapshotPrefix (default '') prefix of the weights/snapshots
 --snapshotInterval (default 1) specifies the training epochs to be completed before taking a snapshot
---useMeanPixel (default 'no') by default pixel-wise subtraction is done using the full mean matrix. If this option is 'yes' then mean pixel will be used instead of mean matrix
 --visualizeModel (default 'no') Visualize model. If this options is set to 'yes' no model will be trained.
 
 -q,--policy (default torch_sgd) Learning Rate Policy. Valid policies : fixed, step, exp, inv, multistep, poly, sigmoid and torch_sgd. Note: when power value is -1, then "inv" policy with "gamma" is similar to "torch_sgd" with "learningRateDecay".
@@ -88,15 +87,13 @@ Usage details:
 --Almost all the required routines are already implemented. Below are some remaining tasks,
 -- 1) while recovering from crash, we should only consider the below options and discard all other inputs like epoch
 -- --retrain, --optimState, --randomState, --lrpolicyState, --networkDirectory, --network, --save, --train, --validation, --mean, --labels, --snapshotPrefix
--- 2) We should also save and restore some information like epoch, batch size, snapshot interval, subtractMean and useMeanPizel option, shuffle, mirror, crop, croplen
+-- 2) We should also save and restore some information like epoch, batch size, snapshot interval, subtractMean, shuffle, mirror, crop, croplen
 -- Precautions should be taken while restoring these options.
 -----------------------------------------------------------------------------------------------------------------------------
 
 -- Convert boolean options
 opt.crop = opt.crop == 'yes' or false
 opt.mirror = opt.mirror == 'yes' or false
-opt.subtractMean = opt.subtractMean == 'yes' or false
-opt.useMeanPixel = opt.useMeanPixel == 'yes' or false
 opt.shuffle = opt.shuffle == 'yes' or false
 opt.visualizeModel = opt.visualizeModel == 'yes' or false
 
@@ -151,16 +148,6 @@ if opt.policy == 'fixed' or opt.policy == 'step' or opt.policy == 'exp' or opt.p
 elseif opt.policy ~= 'torch_sgd' then
     logmessage.display(2,'invalid learning rate policy - '.. opt.policy .. '. Valid policies : fixed, step, exp, inv, multistep, poly, sigmoid and torch_sgd')
     os.exit(-1)
-end
-
-if opt.mean == '' and opt.subtractMean then
-    opt.subtractMean = false
-    logmessage.display(0,'subtractMean parameter is not considered as mean image path is unset')
-end
-
-if opt.useMeanPixel and opt.subtractMean then
-    opt.useMeanPixel = false
-    logmessage.display(0,'useMeanPixel parameter is not considered as subtractMean value is provided as "yes"')
 end
 
 if opt.retrain ~= '' and opt.weights ~= '' then
@@ -222,10 +209,11 @@ end
 -- load
 local data = require 'data'
 
-local mean_t
-if opt.mean ~= '' then
+local meanTensor
+if opt.subtractMean ~= 'none' then
+    assert(opt.mean ~= '', 'subtractMean parameter not set to "none" yet mean image path is unset')
     logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
-    mean_t = data.loadMean(opt.mean, opt.useMeanPixel)
+    meanTensor = data.loadMean(opt.mean, opt.subtractMean == 'pixel')
 end
 
 local classes
@@ -343,7 +331,7 @@ do
             -- executes in reader thread, variables are local to this thread
             db = DBSource:new(options.dbbackend, options.train, options.train_labels,
                               options.mirror, options.crop,
-                              options.croplen, mean_t, options.subtractMean,
+                              options.croplen, meanTensor,
                               true, -- train
                               options.shuffle,
                               classification -- whether this is a classification task
@@ -380,7 +368,7 @@ if opt.validation ~= '' then
     val = DBSource:new(opt.dbbackend, opt.validation, opt.validation_labels,
                        false, -- no need to do random mirrorring
                        opt.crop, opt.croplen,
-                       mean_t, opt.subtractMean,
+                       meanTensor,
                        false, -- train
                        false, -- shuffle
                        classes ~= nil -- whether this is a classification task
