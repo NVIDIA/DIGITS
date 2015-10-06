@@ -25,7 +25,7 @@ local utils = require 'utils'
 opt = lapp[[
 Usage details:
 -a,--threads            (default 8)              number of threads
--b,--batchSize (default 128) batch size
+-b,--batchSize (default 0) batch size
 -c,--learningRateDecay (default 1e-6) learning rate decay (in # samples)
 -d,--devid (default 1) device ID (if using CUDA)
 -e,--epoch (default 1) number of epochs to train -1 for unbounded
@@ -197,6 +197,19 @@ if not opt.crop and network.croplen then
     opt.croplen = network.croplen
 end
 
+-- unless specified on command line, inherit train and validation batch size from network
+local trainBatchSize
+local validationBatchSize
+if opt.batchSize==0 then
+    local defaultBatchSize = 16
+    trainBatchSize = network.trainBatchSize or defaultBatchSize
+    validationBatchSize = network.validationBatchSize or defaultBatchSize
+else
+    trainBatchSize = opt.batchSize
+    validationBatchSize = opt.batchSize
+end
+logmessage.display(0,'Train batch size is '.. trainBatchSize .. ' and validation batch size is ' .. validationBatchSize)
+
 -- model visualization
 if opt.visualizeModel then
     logmessage.display(0,'Network definition:')
@@ -204,14 +217,6 @@ if opt.visualizeModel then
     print('\nCriterion: \n' .. loss:__tostring())
     logmessage.display(0,'Network definition ends')
     os.exit(-1)
-end
-
--- check whether ccn2 is used in network and then check whether given batchsize is valid or not
-if ccn2 ~= nil then
-    if opt.batchSize % 32 ~= 0 then
-        logmessage.display(2,'invalid batch size : ' .. opt.batchSize .. '. Batch size should be multiple of 32 when ccn2 is used in the network')
-        os.exit(-1)
-    end
 end
 
 -- load
@@ -413,7 +418,7 @@ logmessage.display(0,'initializing the parameters for learning rate policy: ' ..
 local lrpolicy = {}
 if opt.policy ~= 'torch_sgd' then
 
-    local max_iterations = (math.ceil(trainSize/opt.batchSize))*opt.epoch
+    local max_iterations = (math.ceil(trainSize/trainBatchSize))*opt.epoch
     --local stepsize = math.floor((max_iterations*opt.step/100)+0.5) --adding 0.5 to round the value
 
     if max_iterations < #stepvalues_list then
@@ -537,7 +542,7 @@ end
 
 -- epoch value will be calculated for every batch size. To maintain unique epoch value between batches, it needs to be rounded to the required number of significant digits.
 local epoch_round = 0 -- holds the required number of significant digits for round function.
-local tmp_batchsize = opt.batchSize
+local tmp_batchsize = trainBatchSize
 while tmp_batchsize <= trainSize do
     tmp_batchsize = tmp_batchsize * 10
     epoch_round = epoch_round + 1
@@ -610,12 +615,12 @@ local function Validation()
     local loss_sum = 0
     local inputs, targets
 
-    for t = 1,valSize,opt.batchSize do
+    for t = 1,valSize,validationBatchSize do
 
         -- create mini batch
         NumBatches = NumBatches + 1
 
-        inputs,targets = val:nextBatch(math.min(valSize-t+1,opt.batchSize))
+        inputs,targets = val:nextBatch(math.min(valSize-t+1,validationBatchSize))
 
         if opt.type =='cuda' then
             inputs=inputs:cuda()
@@ -657,10 +662,10 @@ local function Train(epoch, threadPool)
 
     local data = {}
 
-    for t = 1,trainSize,opt.batchSize do
+    for t = 1,trainSize,trainBatchSize do
 
         NumBatches = NumBatches + 1
-        local thisBatchSize = math.min(trainSize-t+1,opt.batchSize)
+        local thisBatchSize = math.min(trainSize-t+1,trainBatchSize)
 
         local a = torch.Timer()
         local m = a:time().real
@@ -678,7 +683,7 @@ local function Train(epoch, threadPool)
         targets = data.outputs
 
         -- kick off next data load job
-        nextBatchSize = math.min(trainSize-thisBatchSize-t+1,opt.batchSize)
+        nextBatchSize = math.min(trainSize-thisBatchSize-t+1,trainBatchSize)
         if nextBatchSize>0 then
             launchDataLoad(threadPool, nextBatchSize, data, false)
         end
@@ -714,7 +719,7 @@ local function Train(epoch, threadPool)
             collectgarbage()
         end
 
-        local current_epoch = (epoch-1)+utils.round((math.min(t+opt.batchSize-1,trainSize))/trainSize, epoch_round)
+        local current_epoch = (epoch-1)+utils.round((math.min(t+trainBatchSize-1,trainSize))/trainSize, epoch_round)
 
         -- log details on first iteration, or when required number of images are processed
         curr_images_cnt = curr_images_cnt + thisBatchSize

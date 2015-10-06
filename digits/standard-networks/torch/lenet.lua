@@ -36,7 +36,9 @@ return function(params)
     assert(params.ngpus<=1, 'Model supports only CPU or single-GPU')
     return {
         model = lenet,
-        loss = nn.ClassNLLCriterion()
+        loss = nn.ClassNLLCriterion(),
+        trainBatchSize = 64,
+        validationBatchSize = 100,
     }
 end
 
