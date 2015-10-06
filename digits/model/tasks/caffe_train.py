@@ -8,6 +8,7 @@ import subprocess
 import operator
 
 import numpy as np
+import scipy
 from google.protobuf import text_format
 import caffe
 import caffe_pb2
@@ -117,6 +118,93 @@ class CaffeTrainTask(TrainTask):
         self.receiving_val_output = False
         self.last_train_update = None
         return True
+
+    def get_mean_image(self, mean_file, resize = False):
+        mean_image = None
+        with open(self.dataset.path(mean_file), 'rb') as f:
+            blob = caffe_pb2.BlobProto()
+            blob.MergeFromString(f.read())
+
+            if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
+                mean_image = np.reshape(blob.data,
+                                        (
+                                            self.dataset.image_dims[2],
+                                            self.dataset.image_dims[0],
+                                            self.dataset.image_dims[1],
+                                        )
+                                    )
+            elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
+                task = self.dataset.analyze_db_tasks()[0]
+                mean_image = np.reshape(blob.data,
+                                        (
+                                            task.image_channels,
+                                            task.image_height,
+                                            task.image_width,
+                                        )
+                                    )
+
+            # Resize the mean image if crop_size exists
+            if mean_image is not None and resize:
+                # Get the image size needed
+                network = caffe_pb2.NetParameter()
+                with open(self.path(self.deploy_file)) as infile:
+                    text_format.Merge(infile.read(), network)
+
+                if network.input_shape:
+                    data_shape = network.input_shape[0].dim
+                else:
+                    data_shape = network.input_dim[:4]
+                assert len(data_shape) == 4, 'Bad data shape.'
+
+                # Get the image
+                mean_image = mean_image.astype('uint8')
+                mean_image = mean_image.transpose(1,2,0)
+
+                shape = list(mean_image.shape)
+                # imresize will not resize if the depth is anything
+                # other than 3 or 4.  If it's 1, imresize expects an
+                # array.
+                if (len(shape) == 2 or (len(shape) == 3 and (shape[2] == 3 or shape[2] == 4))):
+                    mean_image = scipy.misc.imresize(mean_image, (data_shape[2], data_shape[3]))
+                else:
+                    mean_image = scipy.misc.imresize(mean_image[:,:,0],
+                                                     (data_shape[2], data_shape[3]))
+                    mean_image = np.expand_dims(mean_image, axis=2)
+                mean_image = mean_image.transpose(2,0,1)
+                mean_image = mean_image.astype('float')
+
+        return mean_image
+
+    def get_mean_pixel(self, mean_file):
+        mean_image = self.get_mean_image(mean_file)
+        mean_pixel = None
+        if mean_image is not None:
+            mean_pixel = mean_image.mean(1).mean(1)
+        return mean_pixel
+
+    def set_mean_value(self, layer, mean_pixel):
+        # remove any values that may already be in the network
+        if layer.transform_param.HasField('mean_file'):
+            layer.transform_param.ClearField('mean_file')
+            self.logger.warning('Ignoring mean_file from network ...')
+
+        if len(layer.transform_param.mean_value) > 0:
+            layer.transform_param.ClearField('mean_value')
+            self.logger.warning('Ignoring mean_value from network ...')
+
+        layer.transform_param.mean_value.extend(list(mean_pixel))
+
+    def set_mean_file(self, layer, mean_file):
+        # remove any values that may already be in the network
+        if layer.transform_param.HasField('mean_file'):
+            layer.transform_param.ClearField('mean_file')
+            self.logger.warning('Ignoring mean_file from network ...')
+
+        if len(layer.transform_param.mean_value) > 0:
+            layer.transform_param.ClearField('mean_value')
+            self.logger.warning('Ignoring mean_value from network ...')
+
+        layer.transform_param.mean_file = mean_file
 
     # TODO merge these monolithic save_files functions
     # TODO break them up into separate functions
@@ -266,25 +354,19 @@ class CaffeTrainTask(TrainTask):
             train_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.train_db_task().textfile)
             if val_data_layer is not None and has_val_set:
                 val_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.val_db_task().textfile)
-        if self.use_mean:
+
+        if self.use_mean == 'pixel':
             assert dataset_backend != 'hdf5', 'HDF5Data layer does not support mean subtraction'
-            mean_pixel = None
-            with open(self.dataset.path(self.dataset.train_db_task().mean_file),'rb') as f:
-                blob = caffe_pb2.BlobProto()
-                blob.MergeFromString(f.read())
-                mean = np.reshape(blob.data,
-                        (
-                            self.dataset.image_dims[2],
-                            self.dataset.image_dims[0],
-                            self.dataset.image_dims[1],
-                            )
-                        )
-                mean_pixel = mean.mean(1).mean(1)
-            for value in mean_pixel:
-                train_data_layer.transform_param.mean_value.append(value)
+            mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.train_db_task().mean_file))
+            self.set_mean_value(train_data_layer, mean_pixel)
             if val_data_layer is not None and has_val_set:
-                for value in mean_pixel:
-                    val_data_layer.transform_param.mean_value.append(value)
+                self.set_mean_value(val_data_layer, mean_pixel)
+
+        elif self.use_mean == 'image':
+            self.set_mean_file(train_data_layer, self.dataset.path(self.dataset.train_db_task().mean_file))
+            if val_data_layer is not None and has_val_set:
+                self.set_mean_file(val_data_layer, self.dataset.path(self.dataset.train_db_task().mean_file))
+
         if self.batch_size:
             if dataset_backend == 'lmdb':
                 train_data_layer.data_param.batch_size = self.batch_size
@@ -676,8 +758,13 @@ class CaffeTrainTask(TrainTask):
             layer.data_param.batch_size = self.batch_size
 
         # mean
-        if name == 'data' and self.use_mean and self.dataset.mean_file:
-            layer.transform_param.mean_file = self.dataset.path(self.dataset.mean_file)
+        if name == 'data' and self.dataset.mean_file:
+            if self.use_mean == 'pixel':
+                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.mean_file))
+                ## remove any values that may already be in the network
+                self.set_mean_value(layer, mean_pixel)
+            elif self.use_mean == 'image':
+                self.set_mean_file(layer, self.dataset.path(self.dataset.mean_file))
 
         # crop size
         if name == 'data' and self.crop_size:
@@ -1296,6 +1383,7 @@ class CaffeTrainTask(TrainTask):
         data_shape = None
         channel_swap = None
         mean_pixel = None
+        mean_image = None
 
         network = caffe_pb2.NetParameter()
         with open(self.path(self.deploy_file)) as infile:
@@ -1311,17 +1399,10 @@ class CaffeTrainTask(TrainTask):
                 # XXX see issue #59
                 channel_swap = (2,1,0)
 
-            if self.use_mean:
-                with open(self.dataset.path(self.dataset.train_db_task().mean_file),'rb') as infile:
-                    blob = caffe_pb2.BlobProto()
-                    blob.MergeFromString(infile.read())
-                    mean_pixel = np.reshape(blob.data,
-                            (
-                                self.dataset.image_dims[2],
-                                self.dataset.image_dims[0],
-                                self.dataset.image_dims[1],
-                                )
-                            ).mean(1).mean(1)
+            if self.use_mean == 'pixel':
+                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.train_db_task().mean_file))
+            elif self.use_mean == 'image':
+                mean_image = self.get_mean_image(self.dataset.path(self.dataset.train_db_task().mean_file), True)
 
         elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
             task = self.dataset.analyze_db_tasks()[0]
@@ -1331,19 +1412,13 @@ class CaffeTrainTask(TrainTask):
                 channel_swap = (2,1,0)
 
             if self.dataset.mean_file:
-                with open(self.dataset.path(self.dataset.mean_file),'rb') as infile:
-                    blob = caffe_pb2.BlobProto()
-                    blob.MergeFromString(infile.read())
-                    mean_pixel = np.reshape(blob.data,
-                            (
-                                task.image_channels,
-                                task.image_height,
-                                task.image_width,
-                                )
-                            ).mean(1).mean(1)
+                if self.use_mean == 'pixel':
+                    mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.mean_file))
+                elif self.use_mean == 'image':
+                    mean_image = self.get_mean_image(self.dataset.path(self.dataset.mean_file), True)
 
         t = caffe.io.Transformer(
-                inputs = {'data':  data_shape}
+                inputs = {'data': tuple(data_shape)}
                 )
 
         # transpose to (channels, height, width)
@@ -1353,9 +1428,11 @@ class CaffeTrainTask(TrainTask):
             # swap color channels
             t.set_channel_swap('data', channel_swap)
 
-        if mean_pixel is not None:
-            # set mean
+        # set mean
+        if self.use_mean == 'pixel' and mean_pixel is not None:
             t.set_mean('data', mean_pixel)
+        elif self.use_mean == 'image' and mean_image is not None:
+            t.set_mean('data', mean_image)
 
         #t.set_raw_scale('data', 255) # [0,255] range instead of [0,1]
 

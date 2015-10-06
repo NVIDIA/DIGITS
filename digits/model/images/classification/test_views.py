@@ -318,6 +318,20 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job_id = self.create_model(select_gpus_list=','.join(gpu_list), batch_size=len(gpu_list))
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
 
+    def test_mean_image(self):
+        options = {
+            'use_mean': 'image',
+        }
+        job_id = self.create_model(**options)
+        assert self.model_wait_completion(job_id) == 'Done', 'second job failed'
+
+    def test_mean_pixel(self):
+        options = {
+            'use_mean': 'pixel',
+        }
+        job_id = self.create_model(**options)
+        assert self.model_wait_completion(job_id) == 'Done', 'second job failed'
+
     def test_retrain(self):
         job1_id = self.create_model()
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
@@ -550,6 +564,52 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
         assert 'classifications' in data, 'invalid response'
+
+    def test_classify_one_mean_pixel(self):
+        # carry out one inference test per category in dataset
+        for category in self.imageset_paths.keys():
+            image_path = self.imageset_paths[category][0]
+            image_path = os.path.join(self.imageset_folder, image_path)
+            with open(image_path,'rb') as infile:
+                # StringIO wrapping is needed to simulate POST file upload.
+                image_upload = (StringIO(infile.read()), 'image.png')
+
+            rv = self.app.post(
+                    '/models/images/classification/classify_one?job_id=%s' % self.model_id,
+                    data = {
+                        'image_file': image_upload,
+                        'use_mean': 'pixel',
+                        }
+                    )
+            s = BeautifulSoup(rv.data, 'html.parser')
+            body = s.select('body')
+            assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+            # gets an array of arrays [[confidence, label],...]
+            predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
+            assert predictions[0][1] == category, 'image misclassified'
+
+    def test_classify_one_mean_image(self):
+        # carry out one inference test per category in dataset
+        for category in self.imageset_paths.keys():
+            image_path = self.imageset_paths[category][0]
+            image_path = os.path.join(self.imageset_folder, image_path)
+            with open(image_path,'rb') as infile:
+                # StringIO wrapping is needed to simulate POST file upload.
+                image_upload = (StringIO(infile.read()), 'image.png')
+
+            rv = self.app.post(
+                    '/models/images/classification/classify_one?job_id=%s' % self.model_id,
+                    data = {
+                        'image_file': image_upload,
+                        'use_mean': 'image',
+                        }
+                    )
+            s = BeautifulSoup(rv.data, 'html.parser')
+            body = s.select('body')
+            assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+            # gets an array of arrays [[confidence, label],...]
+            predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
+            assert predictions[0][1] == category, 'image misclassified'
 
     def test_top_n(self):
         textfile_images = ''
