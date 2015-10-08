@@ -14,11 +14,8 @@ from collections import Counter
 import threading
 import Queue
 
-try:
-    import digits
-except ImportError:
-    # Add path for DIGITS package
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add path for DIGITS package
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
 digits.config.load_config()
 from digits import utils, log
