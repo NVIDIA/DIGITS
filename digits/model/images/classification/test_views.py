@@ -442,45 +442,45 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert status == 200, 'failed with %s' % status
 
     def test_classify_one(self):
-        category = self.imageset_paths.keys()[0]
-        image_path = self.imageset_paths[category][0]
-        image_path = os.path.join(self.imageset_folder, image_path)
-        with open(image_path,'rb') as infile:
-            # StringIO wrapping is needed to simulate POST file upload.
-            image_upload = (StringIO(infile.read()), 'image.png')
+        for category in self.imageset_paths.keys():
+            image_path = self.imageset_paths[category][0]
+            image_path = os.path.join(self.imageset_folder, image_path)
+            with open(image_path,'rb') as infile:
+                # StringIO wrapping is needed to simulate POST file upload.
+                image_upload = (StringIO(infile.read()), 'image.png')
 
-        rv = self.app.post(
-                '/models/images/classification/classify_one?job_id=%s' % self.model_id,
-                data = {
-                    'image_file': image_upload,
-                    'show_visualizations': 'y',
-                    }
-                )
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-        # gets an array of arrays [[confidence, label],...]
-        predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
-        assert predictions[0][1] == category, 'image misclassified'
+            rv = self.app.post(
+                    '/models/images/classification/classify_one?job_id=%s' % self.model_id,
+                    data = {
+                        'image_file': image_upload,
+                        'show_visualizations': 'y',
+                        }
+                    )
+            s = BeautifulSoup(rv.data, 'html.parser')
+            body = s.select('body')
+            assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+            # gets an array of arrays [[confidence, label],...]
+            predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
+            assert predictions[0][1] == category, 'image misclassified'
 
     def test_classify_one_json(self):
-        category = self.imageset_paths.keys()[0]
-        image_path = self.imageset_paths[category][0]
-        image_path = os.path.join(self.imageset_folder, image_path)
-        with open(image_path,'rb') as infile:
-            # StringIO wrapping is needed to simulate POST file upload.
-            image_upload = (StringIO(infile.read()), 'image.png')
+        for category in self.imageset_paths.keys():
+            image_path = self.imageset_paths[category][0]
+            image_path = os.path.join(self.imageset_folder, image_path)
+            with open(image_path,'rb') as infile:
+                # StringIO wrapping is needed to simulate POST file upload.
+                image_upload = (StringIO(infile.read()), 'image.png')
 
-        rv = self.app.post(
-                '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
-                data = {
-                    'image_file': image_upload,
-                    'show_visualizations': 'y',
-                    }
-                )
-        assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
-        data = json.loads(rv.data)
-        assert data['predictions'][0][0] == category, 'image misclassified'
+            rv = self.app.post(
+                    '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
+                    data = {
+                        'image_file': image_upload,
+                        'show_visualizations': 'y',
+                        }
+                    )
+            assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+            data = json.loads(rv.data)
+            assert data['predictions'][0][0] == category, 'image misclassified'
 
     def test_classify_many(self):
         textfile_images = ''
@@ -712,8 +712,14 @@ class TestTorchCreated(BaseTestCreated):
     FRAMEWORK = 'torch'
     TRAIN_EPOCHS = 10
 
+class TestTorchCreatedShuffle(TestTorchCreated):
+    SHUFFLE = True
+
 class TestTorchCreatedHdf5(TestTorchCreated):
     BACKEND = 'hdf5'
+
+class TestTorchCreatedHdf5Shuffle(TestTorchCreatedHdf5):
+    SHUFFLE = True
 
 class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'torch'
@@ -731,7 +737,6 @@ class TestCaffeLeNet(TestCaffeCreated):
 class TestTorchLeNet(TestTorchCreated):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
-    IMAGE_CHANNELS = 1
     TRAIN_EPOCHS = 20
     # need more aggressive learning rate
     # on such a small dataset
@@ -741,9 +746,15 @@ class TestTorchLeNet(TestTorchCreated):
     TORCH_NETWORK=open(
             os.path.join(
                 os.path.dirname(digits.__file__),
-                'standard-networks', 'torch', 'lenet.lua')
+                'standard-networks', 'torch', 'lenet-color.lua')
             ).read()
 
+class TestTorchLeNetShuffle(TestTorchLeNet):
+    SHUFFLE = True
 
-class TestTorchHdf5LeNet(TestTorchLeNet):
+class TestTorchLeNetHdf5(TestTorchLeNet):
     BACKEND = 'hdf5'
+
+class TestTorchLeNetHdf5Shuffle(TestTorchLeNetHdf5):
+    SHUFFLE = True
+
