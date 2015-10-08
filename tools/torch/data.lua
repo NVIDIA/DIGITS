@@ -148,10 +148,25 @@ function LMDBSource:get(key)
 end
 
 -- Meta class
-DBSource = {mean = nil, ImageChannels = 0, ImageSizeY = 0, ImageSizeX = 0, total=0, mirror=false, crop=false, croplen=0, cropY=0, cropX=0, subtractMean=true, train=false}
+DBSource = {mean = nil, ImageChannels = 0, ImageSizeY = 0, ImageSizeX = 0, total=0,
+            mirror=false, crop=false, croplen=0, cropY=0, cropX=0, subtractMean=true,
+            train=false, classification=false}
 
 -- Derived class method new
-function DBSource:new (backend, db_name, labels_db_name, mirror, crop, croplen, mean_t, subtractMean, isTrain, shuffle)
+-- Creates a new instance of a database
+-- Parameters:
+--  backend (string): 'lmdb' or 'hdf5'
+--  db_path (string): path to database
+--  labels_db_path (string): path to labels database, or nil
+--  mirror (boolean): whether samples must be mirrored
+--  crop (boolean): whether samples must be cropped
+--  croplen (int): crop length, if crop==true
+--  mean_t (table): table containing mean tensor for mean image, if subtractMean==true
+--  subtractMean (boolean): whether mean image should be subtracted from samples
+--  isTrain (boolean): whether this is a training database (e.g. mirroring not applied to validation database)
+--  shuffle (boolean): whether samples should be shuffled
+--  classification (boolean): whether this is a classification task
+function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, mean_t, subtractMean, isTrain, shuffle, classification)
     local self = copy(DBSource)
     local paths = require('paths')
 
@@ -160,11 +175,11 @@ function DBSource:new (backend, db_name, labels_db_name, mirror, crop, croplen, 
         self.datum = pb.require"datum"
         local lightningmdb_lib=check_require("lightningmdb")
         self.lightningmdb = _VERSION=="Lua 5.2" and lightningmdb_lib or lightningmdb
-        self.lmdb_data, self.total = LMDBSource:new(self.lightningmdb, db_name)
+        self.lmdb_data, self.total = LMDBSource:new(self.lightningmdb, db_path)
         self.keys = self:lmdb_getKeys()
         -- do we have a separate database for labels/targets?
-        if labels_db_name~='' then
-            self.lmdb_labels, total_labels = LMDBSource:new(self.lightningmdb, labels_db_name)
+        if labels_db_path~='' then
+            self.lmdb_labels, total_labels = LMDBSource:new(self.lightningmdb, labels_db_path)
             assert(self.total == total_labels, "Number of records="..self.total.." does not match number of labels=" ..total_labels)
             -- read first entry to check label dimensions
             local v = self.lmdb_labels:get(self.keys[1])
@@ -187,20 +202,21 @@ function DBSource:new (backend, db_name, labels_db_name, mirror, crop, croplen, 
         self.ImageSizeX = msg.width
         self.ImageSizeY = msg.height
     elseif backend == 'hdf5' then
-        assert(labels_db_name == '', "hdf5 separate label DB not implemented yet")
+        assert(classification, "hdf5 only supports classification yet")
+        assert(labels_db_path == '', "hdf5 separate label DB not implemented yet")
         check_require('hdf5')
         -- assume scalar label (e.g. classification)
         self.label_width = 1
         -- list.txt contains list of HDF5 databases --
-        logmessage.display(0,'opening HDF5 database: ' .. db_name)
-        list_path = paths.concat(db_name, 'list.txt')
+        logmessage.display(0,'opening HDF5 database: ' .. db_path)
+        list_path = paths.concat(db_path, 'list.txt')
         local file = io.open(list_path)
         assert(file,"unable to open "..list_path)
         -- go through all DBs in list.txt and store required info
         self.dbs = {}
         self.total = 0
         for line in file:lines() do
-            db_path = paths.concat(db_name, paths.basename(line))
+            db_path = paths.concat(db_path, paths.basename(line))
             -- get number of records
             local myFile = hdf5.open(db_path,'r')
             local dim = myFile:read('/data'):dataspaceSize()
@@ -242,6 +258,11 @@ function DBSource:new (backend, db_name, labels_db_name, mirror, crop, croplen, 
     self.subtractMean = subtractMean
     self.train = isTrain
     self.shuffle = shuffle
+    self.classification = classification
+
+    if self.classification then
+        assert(self.label_width == 1, 'expect scalar labels for classification tasks')
+    end
 
     if crop then
         if self.train == true then
@@ -293,10 +314,10 @@ function DBSource:lmdb_getSample(shuffle)
     local msg = self.datum.Datum():Parse(v)
 
     if not self.lmdb_labels then
-        -- assume classification label
-        label = tonumber(msg.label) + 1
+        -- read label from sample database
+        label = msg.label
     else
-        -- read label from separate database
+        -- read label from label database
         v = self.lmdb_labels:get(key)
         local label_msg = self.datum.Datum():Parse(v)
         label = torch.FloatTensor(label_msg.width):contiguous()
@@ -350,7 +371,7 @@ function DBSource:hdf5_getSample (shuffle)
     end
     y = self.hdf5_data[idx]
     channels = y:size()[1]
-    label = self.hdf5_labels[idx]+1
+    label = self.hdf5_labels[idx]
     self.cursor = self.cursor + 1
     return y, label
 end
@@ -380,6 +401,11 @@ function DBSource:nextBatch (batchsize)
     for i=1,batchsize do
         -- get next sample
         y, label = self:getSample(self.shuffle)
+
+        if self.classification then
+            -- label is index from array and Lua array indices are 1-based
+            label = label + 1
+        end
 
         Images[i] = PreProcess(y, self.mean, self.subtractMean, self.ImageChannels, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
 

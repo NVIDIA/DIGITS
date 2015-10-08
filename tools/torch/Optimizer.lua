@@ -1,4 +1,4 @@
---[[ 
+--[[
 Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
 
 Copyright (c) 2004 Elad Hoffer
@@ -24,7 +24,8 @@ function Optimizer:__init(...)
     {arg='OptFunction', type = 'function', help = 'Optimization function' ,req = true},
     {arg='OptState', type = 'table', help='Optimization configuration', default = {}, req=false},
     {arg='HookFunction', type = 'function', help='Hook function of type fun(y,yt,err)', req = false},
-    {arg='lrPolicy', type = 'table', help='learning rate policy', req = true}
+    {arg='lrPolicy', type = 'table', help='learning rate policy', req = true},
+    {arg='LabelFunction', type = 'function', help = 'Label function', req = true}
     )
     self.Model = args.Model
     self.Loss = args.Loss
@@ -33,12 +34,13 @@ function Optimizer:__init(...)
     self.OptState = args.OptState
     self.HookFunction = args.HookFunction
     self.lrPolicy = args.lrPolicy
-  
+    self.LabelFunction = args.LabelFunction
+
     if self.Parameters == nil then
         self.Parameters = {}
         self.Weights, self.Gradients = self.Model:getParameters()
-    else	
-        self.Weights, self.Gradients = self.Parameters[1], self.Parameters[2] 
+    else
+        self.Weights, self.Gradients = self.Parameters[1], self.Parameters[2]
     end
 end
 
@@ -46,12 +48,14 @@ function Optimizer:optimize(x,yt)
     local f_eval = function()
         self.Gradients:zero()
         local y = self.Model:forward(x)
-        local err = self.Loss:forward(y,yt)
-        local dE_dy = self.Loss:backward(y,yt)
+        -- get label
+        label = self.LabelFunction(x,yt)
+        local err = self.Loss:forward(y,label)
+        local dE_dy = self.Loss:backward(y,label)
         local value = nil
         self.Model:backward(x, dE_dy)
         if self.HookFunction then
-            value = self.HookFunction(y,yt,err)
+            value = self.HookFunction(y,label,err)
         end
         return err, self.Gradients
     end

@@ -23,7 +23,9 @@ from digits.status import Status
 from digits import utils, dataset
 from digits.utils import subclass, override, constants, errors
 from digits.dataset import ImageClassificationDatasetJob
-#from digits.frameworks.errors import InferenceError
+
+# to read mean file in .binaryproto format
+import caffe_pb2
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
@@ -162,9 +164,32 @@ class TorchTrainTask(TrainTask):
                     val_labels_db = task
             assert train_image_db is not None, 'Training images are required'
             args.append('--train=%s' % train_image_db.path(train_image_db.database))
-            args.append('--train_labels=%s' % train_labels_db.path(train_labels_db.database))
-            args.append('--validation=%s' % val_image_db.path(val_image_db.database))
-            args.append('--validation_labels=%s' % val_labels_db.path(val_labels_db.database))
+            if train_labels_db:
+                args.append('--train_labels=%s' % train_labels_db.path(train_labels_db.database))
+            if val_image_db:
+                args.append('--validation=%s' % val_image_db.path(val_image_db.database))
+            if val_labels_db:
+                args.append('--validation_labels=%s' % val_labels_db.path(val_labels_db.database))
+            if self.use_mean:
+                assert self.dataset.mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
+                blob = caffe_pb2.BlobProto()
+                with open(task.path(self.dataset.mean_file),'rb') as infile:
+                    blob.ParseFromString(infile.read())
+                data = np.array(blob.data, dtype=np.uint8).reshape(blob.channels, blob.height, blob.width)
+                if blob.channels == 3:
+                    # converting from BGR to RGB
+                    data = data[[2,1,0],...] # channel swap
+                    # convert to (height, width, channels)
+                    data = data.transpose((1,2,0))
+                else:
+                    assert blob.channels == 1
+                    # convert to (height, width)
+                    data = data[0]
+                 # save to file
+                filename = os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE)
+                image = PIL.Image.fromarray(data)
+                image.save(filename)
+                args.append('--mean=%s' % filename)
 
         #learning rate policy input parameters
         if self.lr_policy['policy'] == 'fixed':
@@ -478,7 +503,7 @@ class TorchTrainTask(TrainTask):
 
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
-		        '--image=%s' % temp_image_path,
+                '--image=%s' % temp_image_path,
                 '--network=%s' % self.model_file.split(".")[0],
                 '--networkDirectory=%s' % self.job_dir,
                 '--load=%s' % self.job_dir,
@@ -493,7 +518,11 @@ class TorchTrainTask(TrainTask):
             else:
                 args.append('--subtractMean=no')
         elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            args.append('--subtractMean=no')
+            if self.use_mean:
+                args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+                args.append('--subtractMean=yes')
+            else:
+                args.append('--subtractMean=no')
             args.append('--allPredictions=yes')
 
         if snapshot_epoch:
@@ -792,7 +821,11 @@ class TorchTrainTask(TrainTask):
                 else:
                     args.append('--subtractMean=no')
             elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-                args.append('--subtractMean=no')
+                if self.use_mean:
+                    args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+                    args.append('--subtractMean=yes')
+                else:
+                    args.append('--subtractMean=no')
 
             if snapshot_epoch:
                 args.append('--epoch=%d' % int(snapshot_epoch))

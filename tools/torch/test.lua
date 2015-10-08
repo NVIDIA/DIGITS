@@ -244,13 +244,12 @@ local function predictBatch(inputs)
     -- sort the outputs of SoftMax layer in decreasing order
     for i=1,counter do
         index = index + 1
-        if predictions:nDimension() == 2 then
-            val = predictions[{i,{}}]
-        else
+        if predictions:nDimension() == 1 then
             -- some networks drop the batch dimension when fed with only one training example
-            assert(predictions:nDimension() == 1, "Expect exactly one dimension - dim=" .. predictions:nDimension())
             assert(counter == 1, "Expect only one sample when prediction has dimensionality of 1 - counter=" .. counter)
-            val = predictions[{{}}]
+            val = predictions
+        else
+            val = predictions[i]
         end
         if opt.allPredictions == 'no' then
             --display topN predictions of each image
@@ -261,6 +260,8 @@ local function predictBatch(inputs)
             end
         else
             allPredictions = ''
+            -- flatten predictions for 'pretty' printing
+            val = val:view(-1)
             for j=1,val:size(1) do
                 if class_labels then
                     -- classification

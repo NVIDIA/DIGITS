@@ -6,6 +6,7 @@ require 'optim'
 require 'pl'
 require 'trepl'
 require 'lfs'
+require 'nn'
 local threads = require 'threads'
 
 local dir_path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]]
@@ -326,6 +327,7 @@ do
     -- pass these variables through upvalue
     local options = opt
     local package_path = package.path
+    local classification = classes ~= nil
 
     threadPool = threads.Threads(
         1,
@@ -337,7 +339,10 @@ do
             db = DBSource:new(options.dbbackend, options.train, options.train_labels,
                               options.mirror, options.crop,
                               options.croplen, mean_t, options.subtractMean,
-                              true, options.shuffle)
+                              true, -- train
+                              options.shuffle,
+                              classification -- whether this is a classification task
+                              )
         end
     )
 end
@@ -367,10 +372,14 @@ logmessage.display(0,'found ' .. trainSize .. ' images in train db' .. opt.train
 local val, valSize
 
 if opt.validation ~= '' then
-    -- for the images in validation dataset, no need to do random mirrorring.
     val = DBSource:new(opt.dbbackend, opt.validation, opt.validation_labels,
-                       false, opt.crop,
-                       opt.croplen, mean_t, opt.subtractMean, false)
+                       false, -- no need to do random mirrorring
+                       opt.crop, opt.croplen,
+                       mean_t, opt.subtractMean,
+                       false, -- train
+                       false, -- shuffle
+                       classes ~= nil -- whether this is a classification task
+                       )
     valSize = val:totalRecords()
     logmessage.display(0,'found ' .. valSize .. ' images in train db' .. opt.validation)
 end
@@ -494,7 +503,8 @@ local optimizer = Optimizer{
     OptState = optimState,
     Parameters = {Weights, Gradients},
     HookFunction = updateConfusion,
-    lrPolicy = lrpolicy
+    lrPolicy = lrpolicy,
+    LabelFunction = network.labelHook or function (input,dblabel) return dblabel end,
 }
 
 -- During training, loss rate should be displayed at max 8 times or for every 5000 images, whichever lower.
@@ -616,10 +626,11 @@ local function Validation()
         end
 
         local y = model:forward(inputs)
-        local err = loss:forward(y,targets)
+        local labels = network.labelHook and network.labelHook(inputs, targets) or targets
+        local err = loss:forward(y,labels)
         loss_sum = loss_sum + err
         if validation_confusion then
-            validation_confusion:batchAdd(y,targets)
+            validation_confusion:batchAdd(y,labels)
         end
 
         if math.fmod(NumBatches,50)==0 then
