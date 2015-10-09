@@ -2,6 +2,7 @@
 
 {% from "helper.html" import print_flashes %}
 {% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
 
 {% extends "layout.html" %}
 
@@ -26,7 +27,7 @@ New Image Model
     <div class="row">
         <div class="col-sm-4">
             <div class="well">
-                <div class="form-group{{' has-error' if form.dataset.errors}}">
+                <div class="form-group{{mark_errors([form.dataset])}}">
                     {{form.dataset.label}}
                     {{form.dataset.tooltip}}
                     {{form.dataset(class='form-control', size=5)}}
@@ -56,12 +57,12 @@ $("#dataset").change(function() {
         <div class="col-sm-4">
             <div class="well">
                 <h4>Data Transformations</h4>
-                <div class="form-group{{' has-error' if form.crop_size.errors}}">
+                <div class="form-group{{mark_errors([form.crop_size])}}">
                     {{form.crop_size.label}}
                     {{form.crop_size.tooltip}}
                     {{form.crop_size(class='form-control', placeholder='none')}}
                 </div>
-                <div class="form-group{{' has-error' if form.use_mean.errors}}">
+                <div class="form-group{{mark_errors([form.use_mean])}}">
                     {{form.use_mean.label}}
                     {{form.use_mean.tooltip}}
                     {{form.use_mean(class='form-control')}}
@@ -87,38 +88,38 @@ $("#dataset").change(function() {
 
                 <!-- Length -->
 
-                <div class="form-group{{' has-error' if form.train_epochs.errors}}">
+                <div class="form-group{{mark_errors([form.train_epochs])}}">
                     {{form.train_epochs.label}}
                     {{form.train_epochs.tooltip}}
                     {{form.train_epochs(class='form-control')}}
                 </div>
-                <div class="form-group{{' has-error' if form.snapshot_interval.errors}}">
+                <div class="form-group{{mark_errors([form.snapshot_interval])}}">
                     {{form.snapshot_interval.label}}
                     {{form.snapshot_interval.tooltip}}
                     {{form.snapshot_interval(class='form-control')}}
                 </div>
-                <div class="form-group{{' has-error' if form.val_interval.errors}}">
+                <div class="form-group{{mark_errors([form.val_interval])}}">
                     {{form.val_interval.label}}
                     {{form.val_interval.tooltip}}
                     {{form.val_interval(class='form-control')}}
                 </div>
                 {# TODO: neat progress bar #}
-                <div class="form-group{{' has-error' if form.random_seed.errors}}">
+                <div class="form-group{{mark_errors([form.random_seed])}}">
                     {{form.random_seed.label}}
                     {{form.random_seed.tooltip}}
                     {{form.random_seed(class='form-control', placeholder='[none]')}}
                 </div>
-                <div class="form-group{{' has-error' if form.batch_size.errors}}">
+                <div class="form-group{{mark_errors([form.batch_size])}}">
                     {{form.batch_size.label}}
                     {{form.batch_size.tooltip}}
                     {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
                 </div>
-                <div class="form-group{{' has-error' if form.solver_type.errors}}">
+                <div class="form-group{{mark_errors([form.solver_type])}}">
                     {{form.solver_type.label}}
                     {{form.solver_type.tooltip}}
                     {{form.solver_type(class='form-control')}}
                 </div>
-                <div class="form-group{{' has-error' if form.learning_rate.errors}}">
+                <div class="form-group{{mark_errors([form.learning_rate])}}">
                     {{form.learning_rate.label}}
                     {{form.learning_rate.tooltip}}
                     {{form.learning_rate(class='form-control learning-rate-option')}}
@@ -145,57 +146,57 @@ showHideAdvancedLROptions();
                 </script>
 
                 <div id="advanced-lr-options" style="display:none;">
-                    <div class="form-group{{' has-error' if form.lr_policy.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_policy])}}">
                         {{form.lr_policy.label}}
                         {{form.lr_policy(class='form-control learning-rate-option')}}
                     </div>
 
-                    <div class="form-group{{' has-error' if form.lr_step_size.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_step_size])}}">
                         {{form.lr_step_size.label}}
                         <div class="input-group">
                             {{form.lr_step_size(class='form-control learning-rate-option')}}
                             <span class="input-group-addon">%</span>
                         </div>
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_step_gamma.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_step_gamma])}}">
                         {{form.lr_step_gamma.label}}
                         {{form.lr_step_gamma(class='form-control learning-rate-option')}}
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_multistep_values.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_multistep_values])}}">
                         {{form.lr_multistep_values.label}}
                         <div class="input-group">
                             {{form.lr_multistep_values(class='form-control learning-rate-option')}}
                             <span class="input-group-addon">%</span>
                         </div>
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_multistep_gamma.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_multistep_gamma])}}">
                         {{form.lr_multistep_gamma.label}}
                         {{form.lr_multistep_gamma(class='form-control learning-rate-option')}}
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_exp_gamma.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_exp_gamma])}}">
                         {{form.lr_exp_gamma.label}}
                         {{form.lr_exp_gamma(class='form-control learning-rate-option')}}
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_inv_gamma.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_inv_gamma])}}">
                         {{form.lr_inv_gamma.label}}
                         {{form.lr_inv_gamma(class='form-control learning-rate-option')}}
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_inv_power.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_inv_power])}}">
                         {{form.lr_inv_power.label}}
                         {{form.lr_inv_power(class='form-control learning-rate-option')}}
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_poly_power.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_poly_power])}}">
                         {{form.lr_poly_power.label}}
                         {{form.lr_poly_power(class='form-control learning-rate-option')}}
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_sigmoid_step.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_sigmoid_step])}}">
                         {{form.lr_sigmoid_step.label}}
                         <div class="input-group">
                             {{form.lr_sigmoid_step(class='form-control learning-rate-option')}}
                             <span class="input-group-addon">%</span>
                         </div>
                     </div>
-                    <div class="form-group{{' has-error' if form.lr_sigmoid_gamma.errors}}">
+                    <div class="form-group{{mark_errors([form.lr_sigmoid_gamma])}}">
                         {{form.lr_sigmoid_gamma.label}}
                         {{form.lr_sigmoid_gamma(class='form-control learning-rate-option')}}
                     </div>
@@ -507,7 +508,7 @@ function visualizeNetwork() {
     return false;
 }
                     </script>
-                    <div class="form-group{{' has-error' if form.custom_network.errors}}">
+                    <div class="form-group{{mark_errors([form.custom_network])}}">
                         {{form.custom_network.label}}
                         {{form.custom_network.explanation(file='/models/images/generic/custom_network_explanation.html')}}
                         <div class="pull-right">
@@ -515,7 +516,7 @@ function visualizeNetwork() {
                         </div>
                         {{form.custom_network(class='form-control', rows=10)}}
                     </div>
-                    <div class="form-group{{' has-error' if form.custom_network_snapshot.errors}}">
+                    <div class="form-group{{mark_errors([form.custom_network_snapshot])}}">
                         {{form.custom_network_snapshot.label}}
                         {{form.custom_network_snapshot.tooltip}}
                         {{form.custom_network_snapshot(class='form-control autocomplete_path')}}
@@ -539,7 +540,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
             {% if form.select_gpu.choices|length > 2 and not multi_gpu %}
-            <div class="form-group{{' has-error' if form.select_gpu.errors}}">
+            <div class="form-group{{mark_errors([form.select_gpu])}}">
                 <b>{{form.select_gpu.label.text}}</b><br>
                 {% for choice in form.select_gpu %}
                 <div class="radio">
@@ -552,12 +553,12 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </div>
             {% endif %}
             {% if form.select_gpus.choices| length > 1 and multi_gpu %}
-            <div class="form-group{{' has-error' if form.select_gpu_count.errors}}">
+            <div class="form-group{{mark_errors([form.select_gpu_count])}}">
                 {{form.select_gpu_count.label}}
                 {{form.select_gpu_count(class='form-control')}}
             </div>
             <p class="text-center"><i>or</i></p>
-            <div class="form-group{{' has-error' if form.select_gpus.errors}}">
+            <div class="form-group{{mark_errors([form.select_gpus])}}">
                 {{form.select_gpus.label}}
                 {{form.select_gpus.tooltip}}
                 {{form.select_gpus(class='form-control', size=4)}}
@@ -568,7 +569,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
                 $("#select_gpu_count").change(function(){ $("#select_gpus").val(null);});
             </script>
             {% endif %}
-            <div class="form-group{{' has-error' if form.model_name.errors}}">
+            <div class="form-group{{mark_errors([form.model_name])}}">
                 {{form.model_name.label}}
                 {{form.model_name.tooltip}}
                 {{form.model_name(class='form-control')}}

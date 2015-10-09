@@ -28,4 +28,26 @@
             {% endfor %}
         </div>
     {% endif %}
+    {% if form.warnings %}
+        <div class="alert alert-warning">
+            {% for field_name, field in form._fields.iteritems() %}
+                {% if field.warnings %}
+                    <li><label>{{ field.label.text }}</label>
+                        <ul>
+                            {% for e in field.warnings %}
+                                <li>{{ e }}</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{% macro mark_errors(list) %}
+    {% for form in list %}
+        {{ ' has-error' if form.errors else '' }}
+        {{ ' has-warning' if form.warnings else '' }}
+    {% endfor %}
 {% endmacro %}

@@ -112,6 +112,11 @@ function updateJobName() {
         </div>
         <small>{{ job.job_type() }}</small>
         <div class="pull-right">
+            {% if job.form_data is defined %}
+            <a id="clone-job" class="btn btn-info" href="{{url_for('clone_job', clone=job.id())}}">Clone Job</a>
+            {% else %}
+            <a id="clone-job" class="btn btn-info " disabled>Clone Job</a>
+            {% endif %}
             <a id="abort-job" class="btn btn-warning{{ ' hidden' if not job.status.is_running() }}">Abort Job</a>
             <a id="delete-job" class="btn btn-danger">Delete Job</a>
         </div>

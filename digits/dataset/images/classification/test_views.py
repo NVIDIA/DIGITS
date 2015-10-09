@@ -153,6 +153,49 @@ class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
         cls.dataset_id = cls.create_dataset(json=True)
         assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
 
+    def test_clone(self):
+        options_1 = {
+            'encoding': 'png',
+            'folder_pct_test': 0,
+            'folder_pct_val': 25,
+            'folder_test': '',
+            'folder_test_max_per_class': None,
+            'folder_test_min_per_class': 2,
+            'folder_train_max_per_class': 3,
+            'folder_train_min_per_class': 1,
+            'folder_val_max_per_class': None,
+            'folder_val_min_per_class': 2,
+            'resize_mode': 'half_crop',
+        }
+
+        job1_id = self.create_dataset(**options_1)
+        assert self.dataset_wait_completion(job1_id) == 'Done', 'first job failed'
+        rv = self.app.get('/datasets/%s.json' % job1_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content1 = json.loads(rv.data)
+
+        ## Clone job1 as job2
+        options_2 = {
+            'clone': job1_id,
+        }
+
+        job2_id = self.create_dataset(**options_2)
+        assert self.dataset_wait_completion(job2_id) == 'Done', 'second job failed'
+        rv = self.app.get('/datasets/%s.json' % job2_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content2 = json.loads(rv.data)
+
+        ## These will be different
+        content1.pop('id')
+        content2.pop('id')
+        content1.pop('directory')
+        content2.pop('directory')
+        assert (content1 == content2), 'job content does not match'
+
+        job1 = digits.webapp.scheduler.get_job(job1_id)
+        job2 = digits.webapp.scheduler.get_job(job2_id)
+        assert (job1.form_data == job2.form_data), 'form content does not match'
+
 ################################################################################
 # Test classes
 ################################################################################

@@ -92,7 +92,6 @@ class BaseViewsTestWithImageset(BaseViewsTest):
                 'prebuilt_train_labels': os.path.join(cls.imageset_folder, 'train_labels'),
                 'prebuilt_val_images': os.path.join(cls.imageset_folder, 'val_images'),
                 'prebuilt_val_labels': os.path.join(cls.imageset_folder, 'val_labels'),
-                'prebuilt_val_labels': os.path.join(cls.imageset_folder, 'val_labels'),
                 'prebuilt_mean_file': os.path.join(cls.imageset_folder, 'train_mean.binaryproto'),
                 }
         data.update(kwargs)
@@ -190,6 +189,40 @@ class TestCreation(BaseViewsTestWithImageset):
     def test_no_force_same_shape(self):
         job_id = self.create_dataset(force_same_shape=0)
         assert self.dataset_wait_completion(job_id) == 'Done', 'create failed'
+
+    def test_clone(self):
+        options_1 = {
+            'resize_channels': '1',
+        }
+
+        job1_id = self.create_dataset(**options_1)
+        assert self.dataset_wait_completion(job1_id) == 'Done', 'first job failed'
+        rv = self.app.get('/datasets/%s.json' % job1_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content1 = json.loads(rv.data)
+
+        ## Clone job1 as job2
+        options_2 = {
+            'clone': job1_id,
+        }
+
+        job2_id = self.create_dataset(**options_2)
+        assert self.dataset_wait_completion(job2_id) == 'Done', 'second job failed'
+        rv = self.app.get('/datasets/%s.json' % job2_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content2 = json.loads(rv.data)
+
+        ## These will be different
+        content1.pop('id')
+        content2.pop('id')
+        content1.pop('directory')
+        content2.pop('directory')
+        assert (content1 == content2), 'job content does not match'
+
+        job1 = digits.webapp.scheduler.get_job(job1_id)
+        job2 = digits.webapp.scheduler.get_job(job2_id)
+
+        assert (job1.form_data == job2.form_data), 'form content does not match'
 
 class TestCreated(BaseViewsTestWithDataset):
     """

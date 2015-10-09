@@ -3,6 +3,10 @@
 from wtforms import validators
 from werkzeug.datastructures import FileStorage
 import wtforms
+from wtforms import SubmitField
+from sets import Set
+import re
+from digits.utils.routing import get_request_arg
 
 def validate_required_iff(**kwargs):
     """
@@ -220,3 +224,88 @@ class BooleanField(wtforms.BooleanField):
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
+
+## Used to save data to populate forms when cloning
+def add_warning(form, warning):
+    if not hasattr(form, 'warnings'):
+        form.warnings = tuple([])
+    form.warnings += tuple([warning])
+    return True
+
+## Iterate over the form looking for field data to either save to or
+## get from the job depending on function.
+def iterate_over_form(job, form, function, prefix = ['form'], indent = ''):
+
+    warnings = False
+    if not hasattr(form, '__dict__'): return False
+
+    # This is the list of Field types to save. SubmitField and
+    # FileField is excluded. SubmitField would cause it to post and
+    # FileField can not be populated.
+    whitelist_fields = [
+        'BooleanField', 'FloatField', 'HiddenField', 'IntegerField',
+        'RadioField', 'SelectField', 'SelectMultipleField',
+        'StringField', 'TextAreaField', 'TextField']
+
+    blacklist_fields = ['FileField', 'SubmitField']
+
+    for attr_name in vars(form):
+        if attr_name == 'csrf_token' or attr_name == 'flags':
+            continue
+        attr = getattr(form, attr_name)
+        if isinstance(attr, object):
+            if isinstance(attr, SubmitField): continue
+            warnings |= iterate_over_form(job, attr, function, prefix + [attr_name], indent + '    ')
+        if hasattr(attr, 'data') and hasattr(attr, 'type'):
+            if (isinstance(attr.data, int) or
+                isinstance(attr.data, float) or
+                isinstance(attr.data, basestring) or
+                attr.type in whitelist_fields):
+                key = '%s.%s.data' % ('.'.join(prefix), attr_name)
+                warnings |= function(job, attr, key, attr.data)
+
+            # Warn if certain field types are not cloned
+            if (len(attr.type) > 5 and attr.type[-5:] == 'Field' and
+                attr.type not in whitelist_fields and
+                attr.type not in blacklist_fields):
+                warnings |= add_warning(attr, 'Field type, %s, not cloned' % attr.type)
+    return warnings
+
+## function to pass to iterate_over_form to save data to job
+def set_data(job, form, key, value):
+    if not hasattr(job, 'form_data'): job.form_data = dict()
+    job.form_data[key] = value
+
+    if isinstance(value, basestring):
+        value = '\'' + value + '\''
+    # print '\'' + key + '\': ' + str(value) +','
+    return False
+
+## function to pass to iterate_over_form to get data from job
+def get_data(job, form, key, value):
+    if key not in job.form_data:
+        add_warning(form, 'Unable to recover data form source Job.')
+        return True
+    else:
+        form.data = job.form_data[key]
+    return False
+
+## Save to form field data in form to the job so the form can later be
+## populated with the sae settings during a clone event.
+def save_form_to_job(job, form):
+    iterate_over_form(job, form, set_data)
+
+## Populate the form with form field data saved in the job
+def fill_form_from_job(job, form):
+    form.warnings = iterate_over_form(job, form, get_data)
+
+## This logic if used in several functions where ?clone=<job_id> may
+## be added to the url. If ?clone=<job_id> is specified in the url,
+## fill the form with that job.
+def fill_form_if_cloned(form):
+    ## is there a request to clone a job.
+    from digits.webapp import scheduler
+    clone = get_request_arg('clone')
+    if clone is not None:
+        clone_job = scheduler.get_job(clone)
+        fill_form_from_job(clone_job, form)

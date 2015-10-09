@@ -11,6 +11,7 @@ from digits import frameworks
 from digits.config import config_value
 from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import GenericImageDatasetJob
 from digits import frameworks
@@ -35,6 +36,9 @@ def generic_image_model_new():
 
     prev_network_snapshots = get_previous_network_snapshots()
 
+    ## Is there a request to clone a job with ?clone=<job_id>
+    fill_form_if_cloned(form)
+
     return flask.render_template('models/images/generic/new.html',
             form = form,
             frameworks = frameworks.get_frameworks(),
@@ -58,6 +62,9 @@ def generic_image_model_create():
     form.previous_networks.choices = get_previous_networks()
 
     prev_network_snapshots = get_previous_network_snapshots()
+
+    ## Is there a request to clone a job with ?clone=<job_id>
+    fill_form_if_cloned(form)
 
     if not form.validate_on_submit():
         if request_wants_json():
@@ -183,6 +190,9 @@ def generic_image_model_create():
                     shuffle         = form.shuffle.data,
                     )
                 )
+
+        ## Save form data with the job so we can easily clone it later.
+        save_form_to_job(job, form)
 
         scheduler.add_job(job)
         if request_wants_json():

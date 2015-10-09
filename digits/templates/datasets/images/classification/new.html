@@ -2,6 +2,7 @@
 
 {% from "helper.html" import print_flashes %}
 {% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
 
 {% extends "layout.html" %}
 
@@ -27,14 +28,14 @@ New Image Classification Dataset
     <div class="row">
         <div class="col-sm-4 well">
             <div class="row">
-                <div class="form-group{{ ' has-error' if form.resize_channels.errors else '' }}">
+                <div class="form-group{{mark_errors([form.resize_channels])}}">
                     {{ form.resize_channels.label }}
                     {{ form.resize_channels.tooltip }}
                     {{ form.resize_channels(class='form-control') }}
                 </div>
             </div>
             <div class="row">
-                <div class="form-group{{ ' has-error' if form.resize_width.errors or form.resize_height.errors else '' }}">
+                <div class="form-group{{mark_errors([form.resize_width, form.resize_height])}}">
                     <label>Image size</label>
                     <span name="resize_dims_explanation"
                           class="explanation-tooltip glyphicon glyphicon-question-sign"
@@ -49,7 +50,7 @@ New Image Classification Dataset
                 </div>
             </div>
             <div class="row">
-                <div class="form-group{{ ' has-error' if form.resize_mode.errors else '' }}">
+                <div class="form-group{{mark_errors([form.resize_mode])}}">
                     {{ form.resize_mode.label }}
                     {{ form.resize_mode.tooltip }}
                     {{ form.resize_mode(class='form-control') }}
@@ -98,7 +99,7 @@ function showResizeExample()
             <div class="tab-content well">
                 <!-- Folder -->
                 <div class="tab-pane" id="db-folder">
-                    <div class="form-group{{ ' has-error' if form.folder_train.errors else '' }}">
+                    <div class="form-group{{mark_errors([form.folder_train])}}">
                         {{ form.folder_train.label }}
                         {{ form.folder_train.tooltip }}
                         {{ form.folder_train(class='form-control autocomplete_path', placeholder='folder or URL')}}
@@ -110,24 +111,24 @@ function showResizeExample()
                         </div>
                     </div>
                     <div class="row">
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_min_per_class.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_train_min_per_class])}}">
                             {{ form.folder_train_min_per_class.label }}
                             {{ form.folder_train_min_per_class.tooltip }}
                             {{ form.folder_train_min_per_class(class='form-control') }}
                         </div>
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_train_max_per_class.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_train_max_per_class])}}">
                             {{ form.folder_train_max_per_class.label }}
                             {{ form.folder_train_max_per_class.tooltip }}
                             {{ form.folder_train_max_per_class(class='form-control') }}
                         </div>
                     </div>
                     <div class="row">
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_pct_val.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_pct_val])}}">
                             {{ form.folder_pct_val.label }}
                             {{ form.folder_pct_val.tooltip }}
                             {{ form.folder_pct_val(class='form-control') }}
                         </div>
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_pct_test.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_pct_test])}}">
                             {{ form.folder_pct_test.label }}
                             {{ form.folder_pct_test.tooltip }}
                             {{ form.folder_pct_test(class='form-control') }}
@@ -136,17 +137,17 @@ function showResizeExample()
                     <br>
                     {{form.has_val_folder}}
                     {{form.has_val_folder.label}}
-                    <div style="display:none;" class="form-group{{ ' has-error' if form.folder_val.errors else '' }} cl-separate-val-folder">
+                    <div style="display:none;" class="form-group{{mark_errors([form.folder_val])}} cl-separate-val-folder">
                         {{ form.folder_val.label }}
                         {{ form.folder_val(class='form-control autocomplete_path') }}
                     </div>
                     <div class="row cl-separate-val-folder">
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_min_per_class.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_val_min_per_class])}}">
                             {{ form.folder_val_min_per_class.label }}
                             {{ form.folder_val_min_per_class.tooltip }}
                             {{ form.folder_val_min_per_class(class='form-control') }}
                         </div>
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_val_max_per_class.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_val_max_per_class])}}">
                             {{ form.folder_val_max_per_class.label }}
                             {{ form.folder_val_max_per_class.tooltip }}
                             {{ form.folder_val_max_per_class(class='form-control') }}
@@ -173,17 +174,17 @@ hasValFolderChanged();
                     <br>
                     {{form.has_test_folder}}
                     {{form.has_test_folder.label}}
-                    <div style="display:none;" class="form-group{{ ' has-error' if form.folder_test.errors else '' }} cl-separate-test-folder">
+                    <div style="display:none;" class="form-group{{mark_errors([form.folder_test])}} cl-separate-test-folder">
                         {{ form.folder_test.label }}
                         {{ form.folder_test(class='form-control autocomplete_path') }}
                     </div>
                     <div style="display:none;" class="row cl-separate-test-folder">
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_min_per_class.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_test_min_per_class])}}">
                             {{ form.folder_test_min_per_class.label }}
                             {{ form.folder_test_min_per_class.tooltip }}
                             {{ form.folder_test_min_per_class(class='form-control') }}
                         </div>
-                        <div class="form-group col-sm-6{{ ' has-error' if form.folder_test_max_per_class.errors else '' }}">
+                        <div class="form-group col-sm-6{{mark_errors([form.folder_test_max_per_class])}}">
                             {{ form.folder_test_max_per_class.label }}
                             {{ form.folder_test_max_per_class.tooltip }}
                             {{ form.folder_test_max_per_class(class='form-control') }}
@@ -244,13 +245,13 @@ hasTestFolderChanged();
                             </tr>
                             <tr>
                                 <td><b>Training</b></td>
-                                <td class="form-group{{' has-error' if form.textfile_train_images.errors}} cl-upload-files">
+                                <td class="form-group{{mark_errors([form.textfile_train_images])}} cl-upload-files">
                                     {{ form.textfile_train_images(class='form-control') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_local_train_images.errors}} cl-local-files">
+                                <td class="form-group{{mark_errors([form.textfile_local_train_images])}} cl-local-files">
                                     {{ form.textfile_local_train_images(class='form-control autocomplete_path',placeholder='enter path') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_train_folder.errors}}">
+                                <td class="form-group{{mark_errors([form.textfile_train_folder])}}">
                                     {{ form.textfile_train_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
@@ -261,13 +262,13 @@ hasTestFolderChanged();
                                         Validation
                                     </label>
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_val_images.errors}} cl-upload-files">
+                                <td class="form-group{{mark_errors([form.textfile_val_images])}} cl-upload-files">
                                     {{ form.textfile_val_images(class='form-control') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_local_val_images.errors}} cl-local-files">
+                                <td class="form-group{{mark_errors([form.textfile_local_val_images])}} cl-local-files">
                                     {{ form.textfile_local_val_images(class='form-control autocomplete_path',placeholder='enter path') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_val_folder.errors}}">
+                                <td class="form-group{{mark_errors([form.textfile_val_folder])}}">
                                     {{ form.textfile_val_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
@@ -278,13 +279,13 @@ hasTestFolderChanged();
                                         Test
                                     </label>
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_test_images.errors}} cl-upload-files">
+                                <td class="form-group{{mark_errors([form.textfile_test_images])}} cl-upload-files">
                                     {{ form.textfile_test_images(class='form-control') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_local_test_images.errors}} cl-local-files">
+                                <td class="form-group{{mark_errors([form.textfile_local_test_images])}} cl-local-files">
                                     {{ form.textfile_local_test_images(class='form-control autocomplete_path',placeholder='enter path') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.textfile_test_folder.errors}}">
+                                <td class="form-group{{mark_errors([form.textfile_test_folder])}}">
                                     {{ form.textfile_test_folder(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
@@ -292,17 +293,17 @@ hasTestFolderChanged();
                     </div>
                     <div class="row">
                         <div class="col-sm-6 col-sm-offset-1">
-                            <div class="form-group{{ ' has-error' if form.textfile_shuffle.errors else '' }}">
+                            <div class="form-group{{mark_errors([form.textfile_shuffle])}}">
                                 {{ form.textfile_shuffle.label }}
                                 {{ form.textfile_shuffle.tooltip }}
                                 {{ form.textfile_shuffle(class='form-control') }}
                             </div>
-                            <div class="form-group{{ ' has-error' if form.textfile_labels_file.errors else '' }} cl-upload-files">
+                            <div class="form-group{{mark_errors([form.textfile_labels_file])}} cl-upload-files">
                                 {{ form.textfile_labels_file.label }}
                                 {{ form.textfile_labels_file.tooltip }}
                                 {{ form.textfile_labels_file(class='form-control') }}
                             </div>
-                            <div class="form-group{{ ' has-error' if form.textfile_local_labels_file.errors else '' }} cl-local-files">
+                            <div class="form-group{{mark_errors([form.textfile_local_labels_file])}} cl-local-files">
                                 {{ form.textfile_local_labels_file.label }}
                                 {{ form.textfile_local_labels_file.tooltip }}
                                 {{ form.textfile_local_labels_file(class='form-control autocomplete_path',placeholder='enter path') }}
@@ -375,7 +376,7 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
 
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
-            <div class="form-group{{ ' has-error' if form.backend.errors else '' }}">
+            <div class="form-group{{mark_errors([form.backend])}}">
                 {{ form.backend.label }}
                 {{ form.backend.tooltip }}
                 {{ form.backend(class='form-control') }}
@@ -387,15 +388,15 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
                     <li><i>HDF5Data</i> layers do not support mean subtraction</li>
                 </ul>
             </div>
-            <div class="form-group{{ ' has-error' if form.compression.errors else '' }}">
-                <div class="form-group{{' has-error' if form.compression.errors}}">
+            <div class="form-group{{mark_errors([form.compression])}}">
+                <div class="form-group{{mark_errors([form.compression])}}">
                     {{form.compression.label}}
                     {{form.compression.tooltip}}
                     {{form.compression(class='form-control')}}
                 </div>
             </div>
-            <div class="form-group{{ ' has-error' if form.encoding.errors else '' }}">
-                <div class="form-group{{' has-error' if form.encoding.errors}}">
+            <div class="form-group{{mark_errors([form.encoding])}}">
+                <div class="form-group{{mark_errors([form.encoding])}}">
                     {{form.encoding.label}}
                     {{form.encoding.tooltip}}
                     {{form.encoding(class='form-control')}}
@@ -418,7 +419,7 @@ function backendChanged()
 $("#backend").change(backendChanged);
 backendChanged();
             </script>
-            <div class="form-group{{ ' has-error' if form.dataset_name.errors else '' }}">
+            <div class="form-group{{mark_errors([form.dataset_name])}}">
                 {{ form.dataset_name.label }}
                 {{ form.dataset_name(class='form-control') }}
             </div>
