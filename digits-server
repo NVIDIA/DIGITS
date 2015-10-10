@@ -1,7 +1,26 @@
 #!/bin/bash
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-$(command -v python) $(command -v gunicorn) \
+set -e
+
+function set_exe {
+    # Sets a global variable to the location of an executable
+    # Arguments:
+    # $1 -- the variable name
+    # $2 -- the executable
+
+    # Check to make sure the executable exists
+    hash $2 2>/dev/null || { echo >&2 "ERROR: \"$2\" executable not found!"; exit 1; }
+    # Print the path to the executable
+    local __resultvar=$1
+    eval $__resultvar="'$(command -v $2)'"
+}
+
+# Some hacking necessary to respect virtualenv installations
+set_exe PYTHON_EXE python
+set_exe GUNICORN_EXE gunicorn
+
+$PYTHON_EXE $GUNICORN_EXE \
     --config gunicorn_config.py \
     digits.webapp:app \
     $@
