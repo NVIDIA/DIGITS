@@ -18,7 +18,7 @@ import lmdb
 
 if __name__ == '__main__':
     dirname = os.path.dirname(os.path.realpath(__file__))
-    sys.path.append(os.path.join(dirname,'..','..','..','..'))
+    sys.path.insert(0, os.path.join(dirname,'..','..','..','..'))
     from digits.config.load  import load_config
     load_config()
 
