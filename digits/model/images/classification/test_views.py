@@ -26,8 +26,8 @@ import digits.dataset.images.classification.test_views
 from digits.config import config_value
 
 # May be too short on a slow system
-TIMEOUT_DATASET = 20
-TIMEOUT_MODEL = 30
+TIMEOUT_DATASET = 30
+TIMEOUT_MODEL = 40
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)
