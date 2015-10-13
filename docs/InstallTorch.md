@@ -70,7 +70,7 @@ return function(params)
 end
 ```
 
-#### External parameters
+### External parameters
 
 External parameters are provided by DIGITS:
 
@@ -78,7 +78,7 @@ Parameter name  | Type     | Description
 --------------- | -------- | --------
 ngpus           | number   | Tells how many GPUs are available (0 means CPU)
 
-#### Internal parameters
+### Internal parameters
 
 Those parameters are returned by the user-defined function:
 
@@ -86,11 +86,86 @@ Parameter name  | Type         | Mandatory | Description
 --------------- | ------------ | --------- | -------------
 model           | nn.module    | Yes       | A nn.module container that defines the model to use
 loss            | nn.criterion | No        | A nn.criterion to use during training. Defaults to nn.ClassNLLCriterion.
-crop            | number       | No        | If specified, inputs images will be cropped randomly to a square of the specified size
+croplen         | number       | No        | If specified, inputs images will be cropped randomly to a square of the specified size
+labelHook       | function     | No        | A function(input,dblabel) that returns the intended label(target) for the current batch given the provided input and label in database. By default the database label is used.
 
-#### Tensors
+### Tensors
 
 Networks are fed with Torch Tensor objects in the NxCxHxW format (index in batch x channels x height x width). If a GPU is available, Tensors are provided as Cuda tensors and the model and criterion are moved to GPUs through a call to their cuda() method. In the absence of GPUs, Tensors are provided as Float tensors.
+
+### Examples
+
+#### Selecting the NN backend
+
+Convolution layers are supported by a variety of backends (e.g. `nn`, `cunn`, `cudnn`, ...). The following snippet shows how to select between `nn`, `cunn`, `cudnn` based on their availability in the system:
+
+```
+if pcall(function() require('cudnn') end) then
+   backend = cudnn
+   convLayer = cudnn.SpatialConvolution
+else
+   pcall(function() require('cunn') end)
+   backend = nn -- works with cunn or nn
+   convLayer = nn.SpatialConvolutionMM
+end
+local net = nn.Sequential()
+lenet:add(backend.SpatialConvolution(1,20,5,5,1,1,0)) -- 1*28*28 -> 20*24*24
+lenet:add(backend.SpatialMaxPooling(2, 2, 2, 2)) -- 20*24*24 -> 20*12*12
+lenet:add(backend.SpatialConvolution(20,50,5,5,1,1,0)) -- 20*12*12 -> 50*8*8
+lenet:add(backend.SpatialMaxPooling(2,2,2,2)) --  50*8*8 -> 50*4*4
+lenet:add(nn.View(-1):setNumInputDims(3))  -- 50*4*4 -> 800
+lenet:add(nn.Linear(800,500))  -- 800 -> 500
+lenet:add(backend.ReLU())
+lenet:add(nn.Linear(500, 10))  -- 500 -> 10
+lenet:add(nn.LogSoftMax())
+```
+
+#### Supervised regression learning
+
+In supervised regression learning, labels may not be scalars like in classification learning. To learn a regression model, a generic dataset may be created using one database for input samples and one database for labels (only 1D row label vectors are supported presently). The appropriate loss function must be specified using the `loss` internal parameters. For example the following snippet defines a simple regression model on 1x10x10 images using MSE loss:
+
+```
+local net = nn.Sequential()
+net:add(nn.View(-1):setNumInputDims(3))  -- 1*10*10 -> 100
+net:add(nn.Linear(100,2))
+return function(params)
+    return {
+        model = net,
+        loss = nn.MSECriterion(),
+    }
+end
+```
+
+#### Unsupervised learning: defining an auto-encoder
+
+In unsupervised learning the examples given to the optimizer are unlabelled. To train an auto-encoder for example, the output of the network must be compared against its input. This is made possible in DIGITS through the use of a `labelHook`. A `labelHook` is a function which takes a batch of the inputs and labels (if specified in database, otherwise `nil`) of the network as parameters and returns the corresponding batch of targets to provide to the optimizer. This function is called between the forward and backward passes of backpropagation. For example, the following snippet defines a simple auto-encoder that takes 1x28x28 images as inputs and compresses them into a 100-neuron representation:
+
+```
+local autoencoder = nn.Sequential()
+autoencoder:add(nn.MulConstant(0.00390625))
+autoencoder:add(nn.View(-1):setNumInputDims(3))  -- 1*28*8 -> 784
+autoencoder:add(nn.Linear(784,500))
+autoencoder:add(backend.ReLU())
+autoencoder:add(nn.Linear(500,100))
+autoencoder:add(nn.Linear(100,500))
+autoencoder:add(backend.ReLU())
+autoencoder:add(nn.Linear(500,784))
+autoencoder:add(nn.View(1,28,28):setNumInputDims(1)) -- 784 -> 1*28*28
+
+function autoencoderLabelHook(input, dblabel)
+    -- label is the input
+    return input
+end
+
+-- return function that returns network definition
+return function(params)
+    return {
+        model = autoencoder,
+        loss = nn.MSECriterion(),
+        labelHook = autoencoderLabelHook,
+    }
+end
+```
 
 ## Example Classification with Torch7 model trained in DIGITS
 

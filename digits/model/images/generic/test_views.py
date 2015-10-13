@@ -69,13 +69,16 @@ layer {
     TORCH_NETWORK = \
 """
 require 'nn'
-require 'cunn'
-local model = nn.Sequential()
-model:add(nn.View(-1):setNumInputDims(3)) -- 10*10*3 -> 300
-model:add(nn.Linear(300, 3))
-model:add(nn.LogSoftMax())
-model:cuda()
-return model
+local net = nn.Sequential()
+net:add(nn.MulConstant(0.004))
+net:add(nn.View(-1):setNumInputDims(3))  -- 1*10*10 -> 100
+net:add(nn.Linear(100,2))
+return function(params)
+    return {
+        model = net,
+        loss = nn.MSECriterion(),
+    }
+end
 """
 
     @classmethod
@@ -114,6 +117,9 @@ class BaseViewsTestWithDataset(BaseViewsTest,
 
     # Inherited classes may want to override these attributes
     CROP_SIZE = None
+    TRAIN_EPOCHS = 3
+    LR_POLICY = None
+    LEARNING_RATE = None
 
     @classmethod
     def setUpClass(cls):
@@ -143,11 +149,15 @@ class BaseViewsTestWithDataset(BaseViewsTest,
                 'method':           'custom',
                 'custom_network':   cls.network(),
                 'batch_size':       10,
-                'train_epochs':     3,
+                'train_epochs':     cls.TRAIN_EPOCHS,
                 'framework':        cls.FRAMEWORK,
                 }
         if cls.CROP_SIZE is not None:
             data['crop_size'] = cls.CROP_SIZE
+        if cls.LR_POLICY is not None:
+            data['lr_policy'] = cls.LR_POLICY
+        if cls.LEARNING_RATE is not None:
+            data['learning_rate'] = cls.LEARNING_RATE
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -598,4 +608,16 @@ class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
 class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
     FRAMEWORK = 'caffe'
 
+class TestTorchViews(BaseTestViews):
+    FRAMEWORK = 'torch'
 
+class TestTorchCreation(BaseTestCreation):
+    FRAMEWORK = 'torch'
+
+class TestTorchCreated(BaseTestCreated):
+    LR_POLICY = 'fixed'
+    TRAIN_EPOCHS = 10
+    FRAMEWORK = 'torch'
+
+class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
+    FRAMEWORK = 'torch'
