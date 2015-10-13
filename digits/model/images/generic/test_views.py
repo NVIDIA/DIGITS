@@ -208,7 +208,11 @@ class BaseTestViews(BaseViewsTest):
                 )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        if rv.status_code != 200:
+            body = s.select('body')[0]
+            if 'InvocationException' in str(body):
+                raise unittest.SkipTest('GraphViz not installed')
+            raise AssertionError('POST failed with %s\n\n%s' % (rv.status_code, body))
         image = s.select('img')
         assert image is not None, "didn't return an image"
 
