@@ -80,6 +80,11 @@ return function(params)
     }
 end
 """
+    @classmethod
+    def setUpClass(cls):
+        super(BaseViewsTest, cls).setUpClass()
+        if cls.FRAMEWORK=='torch' and not config_value('torch_root'):
+            raise unittest.SkipTest('Torch not found')
 
     @classmethod
     def model_exists(cls, job_id):
