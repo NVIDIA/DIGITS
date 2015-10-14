@@ -272,10 +272,7 @@ def image_classification_model_classify_one():
         layers = 'all'
 
     predictions, visualizations = None, None
-    try:
-        predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
-    except frameworks.errors.InferenceError as e:
-        return e.__str__(), 403
+    predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
 
     # take top 5
     if predictions:
