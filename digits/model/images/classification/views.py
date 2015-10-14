@@ -364,7 +364,7 @@ def image_classification_model_classify_many():
         classifications.append(result)
 
     # replace ground truth indices with labels
-    ground_truths = [labels[x] if x is not None else None for x in ground_truths]
+    ground_truths = [labels[x] if x is not None and (0 <= x < len(labels)) else None for x in ground_truths]
 
     if request_wants_json():
         joined = dict(zip(paths, classifications))
