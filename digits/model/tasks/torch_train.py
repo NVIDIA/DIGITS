@@ -784,7 +784,8 @@ class TorchTrainTask(TrainTask):
             _, temp_imgfile_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
             temp_imgfile = open(temp_imgfile_path, "w")
             for image in images:
-                _, temp_image_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.jpeg')
+                temp_image_handle, temp_image_path = tempfile.mkstemp(
+                        dir=temp_dir_path, suffix='.jpeg')
                 image = PIL.Image.fromarray(image)
                 try:
                     image.save(temp_image_path, format='jpeg')
@@ -793,6 +794,7 @@ class TorchTrainTask(TrainTask):
                     self.logger.error(error_message)
                     raise digits.frameworks.errors.InferenceError(error_message)
                 temp_imgfile.write("%s\n" % temp_image_path)
+                os.close(temp_image_handle)
             temp_imgfile.close()
 
             if config_value('torch_root') == '<PATHS>':
