@@ -487,7 +487,8 @@ class TorchTrainTask(TrainTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        _, temp_image_path = tempfile.mkstemp(suffix='.jpeg')
+        temp_image_handle, temp_image_path = tempfile.mkstemp(suffix='.jpeg')
+        os.close(temp_image_handle)
         image = PIL.Image.fromarray(image)
         try:
             image.save(temp_image_path, format='jpeg')
@@ -781,8 +782,7 @@ class TorchTrainTask(TrainTask):
         # to store a list of paths to the images
         temp_dir_path = tempfile.mkdtemp()
         try: # this try...finally clause is used to clean up the temp directory in any case
-            _, temp_imgfile_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
-            temp_imgfile = open(temp_imgfile_path, "w")
+            temp_imglist_handle, temp_imglist_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
             for image in images:
                 temp_image_handle, temp_image_path = tempfile.mkstemp(
                         dir=temp_dir_path, suffix='.jpeg')
@@ -793,9 +793,9 @@ class TorchTrainTask(TrainTask):
                     error_message = 'Unable to save file to "%s"' % temp_image_path
                     self.logger.error(error_message)
                     raise digits.frameworks.errors.InferenceError(error_message)
-                temp_imgfile.write("%s\n" % temp_image_path)
+                os.write(temp_imglist_handle, "%s\n" % temp_image_path)
                 os.close(temp_image_handle)
-            temp_imgfile.close()
+            os.close(temp_imglist_handle)
 
             if config_value('torch_root') == '<PATHS>':
                 torch_bin = 'th'
@@ -806,7 +806,7 @@ class TorchTrainTask(TrainTask):
                     os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
                     '--testMany=yes',
                     '--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
-                    '--image=%s' % str(temp_imgfile_path),
+                    '--image=%s' % str(temp_imglist_path),
                     '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
                     '--network=%s' % self.model_file.split(".")[0],
                     '--networkDirectory=%s' % self.job_dir,

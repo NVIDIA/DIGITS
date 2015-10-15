@@ -94,9 +94,9 @@ class TorchFramework(Framework):
         return visualization of network
         """
         # save network description to temporary file
-        _, temp_network_path = tempfile.mkstemp(suffix='.lua')
-        with open(temp_network_path, "w") as outfile:
-            outfile.write(desc)
+        temp_network_handle, temp_network_path = tempfile.mkstemp(suffix='.lua')
+        os.write(temp_network_handle, desc)
+        os.close(temp_network_handle)
 
         try: # do this in a try..finally clause to make sure we delete the temp file
             # build command line
