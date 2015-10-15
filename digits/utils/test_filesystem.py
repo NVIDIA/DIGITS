@@ -39,11 +39,12 @@ class TestTreeSize():
             for i in range(n_files):
                 # create file with random size of up to 1MB
                 size = random.randint(1,2**20)
-                _,name = tempfile.mkstemp(dir=dir)
+                fd,name = tempfile.mkstemp(dir=dir)
                 f = open(name,"w")
                 f.seek(size-1)
                 f.write("\0")
                 f.close()
+                os.close(fd)
                 total_size += size
             tree_size = fs.get_tree_size(dir)
             assert tree_size == total_size, "Expected size=%d, got %d" % (total_size, tree_size)
