@@ -216,9 +216,9 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, 
         self.dbs = {}
         self.total = 0
         for line in file:lines() do
-            db_path = paths.concat(db_path, paths.basename(line))
+            local fileName = paths.concat(db_path, paths.basename(line))
             -- get number of records
-            local myFile = hdf5.open(db_path,'r')
+            local myFile = hdf5.open(fileName,'r')
             local dim = myFile:read('/data'):dataspaceSize()
             local n_records = dim[1]
             self.ImageChannels = dim[2]
@@ -227,7 +227,7 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, 
             myFile:close()
             -- store DB info
             self.dbs[#self.dbs + 1] = {
-                path = db_path,
+                path = fileName,
                 records = n_records
             }
             self.total = self.total + n_records
