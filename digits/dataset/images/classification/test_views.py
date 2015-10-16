@@ -20,7 +20,7 @@ import digits.test_views
 from test_imageset_creator import create_classification_imageset, IMAGE_SIZE as DUMMY_IMAGE_SIZE, IMAGE_COUNT as DUMMY_IMAGE_COUNT
 
 # May be too short on a slow system
-TIMEOUT_DATASET = 30
+TIMEOUT_DATASET = 45
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)
