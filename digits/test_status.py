@@ -1,16 +1,13 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
-from gevent import monkey; monkey.patch_all()
-from nose.tools import assert_raises
-import mock
+import os
 import pickle
 import tempfile
 
 from status import Status
-from config import config_value
 from job import Job
 
-class TestScheduler():
+class TestStatus():
 
     def test_run_too_soon(self):
         job = Job('test')
@@ -61,16 +58,16 @@ class TestScheduler():
 
         loaded_status = None
 
-        tmpfile_path = 'tmp.p'
+        tmpfile_fd, tmpfile_path = tempfile.mkstemp(suffix='.p')
+
         with open(tmpfile_path, 'wb') as tmpfile:
             pickle.dump(s, tmpfile)
-            tmpfile.close()
 
         with open(tmpfile_path, 'rb') as tmpfile:
             loaded_status = pickle.load(tmpfile)
-            tmpfile.close()
 
-        print loaded_status
+        os.close(tmpfile_fd)
+        os.remove(tmpfile_path)
 
         assert loaded_status == Status.WAIT, 'status should be WAIT'
 
