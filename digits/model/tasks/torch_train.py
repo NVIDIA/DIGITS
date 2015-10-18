@@ -217,14 +217,11 @@ class TorchTrainTask(TrainTask):
             args.append('--croplen=%d' % self.crop_size)
 
         if self.use_mean == 'pixel':
-            args.append('--useMeanPixel=yes')
-            args.append('--subtractMean=no')
+            args.append('--subtractMean=pixel')
         elif self.use_mean == 'image':
-            args.append('--useMeanPixel=no')
-            args.append('--subtractMean=yes')
+            args.append('--subtractMean=image')
         else:
-            args.append('--useMeanPixel=no')
-            args.append('--subtractMean=no')
+            args.append('--subtractMean=none')
 
         if self.random_seed is not None:
             args.append('--seed=%s' % self.random_seed)
@@ -527,18 +524,12 @@ class TorchTrainTask(TrainTask):
         if self.trained_on_cpu:
             args.append('--type=float')
 
-        # input image has been resized to network input dimensions by caller
-        args.append('--crop=no')
-
         if self.use_mean == 'pixel':
-            args.append('--useMeanPixel=yes')
-            args.append('--subtractMean=no')
+            args.append('--subtractMean=pixel')
         elif self.use_mean == 'image':
-            args.append('--useMeanPixel=no')
-            args.append('--subtractMean=yes')
+            args.append('--subtractMean=image')
         else:
-            args.append('--useMeanPixel=no')
-            args.append('--subtractMean=no')
+            args.append('--subtractMean=none')
 
         if layers=='all':
             args.append('--visualization=yes')
@@ -831,18 +822,12 @@ class TorchTrainTask(TrainTask):
             if self.trained_on_cpu:
                 args.append('--type=float')
 
-            # input images have been resized to network input dimensions by caller
-            args.append('--crop=no')
-
             if self.use_mean == 'pixel':
-                args.append('--useMeanPixel=yes')
-                args.append('--subtractMean=no')
+                args.append('--subtractMean=pixel')
             elif self.use_mean == 'image':
-                args.append('--useMeanPixel=no')
-                args.append('--subtractMean=yes')
+                args.append('--subtractMean=image')
             else:
-                args.append('--useMeanPixel=no')
-                args.append('--subtractMean=no')
+                args.append('--subtractMean=none')
 
             # Convert them all to strings
             args = [str(x) for x in args]

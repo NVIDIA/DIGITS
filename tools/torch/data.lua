@@ -33,10 +33,10 @@ local function all_keys(cursor_,key_,op_)
         end)
 end
 
-local PreProcess = function(y, mean, subtractMean, channels, mirror, crop, train, cropY, cropX, croplen)
-    if subtractMean then
-        for i=1,channels do
-            y[{ i,{},{} }]:add(-mean[i])
+local PreProcess = function(y, meanTensor, mirror, crop, train, cropY, cropX, croplen)
+    if meanTensor then
+        for i=1,meanTensor:size(1) do
+            y[i]:add(-meanTensor[i])
         end
     end
     if mirror and torch.FloatTensor.torch.uniform() > 0.49 then
@@ -78,21 +78,18 @@ end
 
 --loading mean tensor
 local loadMean = function(mean_file, use_mean_pixel)
-    local mean_t = {}
+    local meanTensor
     local mean_im = image.load(mean_file,nil,'byte'):type('torch.FloatTensor'):contiguous()
-    mean_t["channels"] = mean_im:size(1)
-    mean_t["height"] = mean_im:size(2)
-    mean_t["width"] = mean_im:size(3)
     if use_mean_pixel then
         mean_of_mean = torch.FloatTensor(mean_im:size(1))
         for i=1,mean_im:size(1) do
             mean_of_mean[i] = mean_im[i]:mean()
         end
-        mean_t["mean"] = mean_of_mean
+        meanTensor = mean_of_mean
     else
-        mean_t["mean"] = mean_im
+        meanTensor = mean_im
     end
-    return mean_t
+    return meanTensor
 end
 
 local function pt(t)
@@ -161,12 +158,11 @@ DBSource = {mean = nil, ImageChannels = 0, ImageSizeY = 0, ImageSizeX = 0, total
 --  mirror (boolean): whether samples must be mirrored
 --  crop (boolean): whether samples must be cropped
 --  croplen (int): crop length, if crop==true
---  mean_t (table): table containing mean tensor for mean image, if subtractMean==true
---  subtractMean (boolean): whether mean image should be subtracted from samples
+--  meanTensor (tensor): mean tensor to use for mean subtraction
 --  isTrain (boolean): whether this is a training database (e.g. mirroring not applied to validation database)
 --  shuffle (boolean): whether samples should be shuffled
 --  classification (boolean): whether this is a classification task
-function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, mean_t, subtractMean, isTrain, shuffle, classification)
+function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, meanTensor, isTrain, shuffle, classification)
     local self = copy(DBSource)
     local paths = require('paths')
 
@@ -243,11 +239,14 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, 
         self.reset = self.hdf5_reset
     end
 
-    if subtractMean then
-        self.mean = mean_t["mean"]
+    if meanTensor ~= nil then
+        self.mean = meanTensor
         assert(self.ImageChannels == self.mean:size()[1])
-        assert(self.ImageSizeY == self.mean:size()[2])
-        assert(self.ImageSizeX == self.mean:size()[3])
+        if self.mean:nDimension() > 1 then
+            -- mean matrix subtraction
+            assert(self.ImageSizeY == self.mean:size()[2])
+            assert(self.ImageSizeX == self.mean:size()[3])
+        end
     end
 
     logmessage.display(0,'Image channels are ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeY .. ' and Image height is ' .. self.ImageSizeX)
@@ -255,7 +254,6 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, 
     self.mirror = mirror
     self.crop = crop
     self.croplen = croplen
-    self.subtractMean = subtractMean
     self.train = isTrain
     self.shuffle = shuffle
     self.classification = classification
@@ -407,7 +405,7 @@ function DBSource:nextBatch (batchsize)
             label = label + 1
         end
 
-        Images[i] = PreProcess(y, self.mean, self.subtractMean, self.ImageChannels, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
+        Images[i] = PreProcess(y, self.mean, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
 
         Labels[i] = label
     end
