@@ -132,7 +132,6 @@ class TorchTrainTask(TrainTask):
                 '--save=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
                 '--snapshotInterval=%s' % self.snapshot_interval,
-                '--batchSize=%d' % self.batch_size,
                 '--learningRate=%s' % self.learning_rate,
                 '--policy=%s' % str(self.lr_policy['policy']),
                 '--dbbackend=%s' % dataset_backend

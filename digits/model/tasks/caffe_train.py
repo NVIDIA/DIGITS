@@ -195,6 +195,7 @@ class CaffeTrainTask(TrainTask):
         layer.transform_param.mean_value.extend(list(mean_pixel))
 
     def set_mean_file(self, layer, mean_file):
+        print 'set_mean_file'
         # remove any values that may already be in the network
         if layer.transform_param.HasField('mean_file'):
             layer.transform_param.ClearField('mean_file')
