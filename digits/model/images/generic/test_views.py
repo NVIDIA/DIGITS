@@ -73,6 +73,8 @@ local net = nn.Sequential()
 net:add(nn.MulConstant(0.004))
 net:add(nn.View(-1):setNumInputDims(3))  -- 1*10*10 -> 100
 net:add(nn.Linear(100,2))
+-- remove any non determinism
+net:apply(function(layer) if layer.weight then layer.weight:fill(0) end if layer.bias then layer.bias:fill(0) end end)
 return function(params)
     return {
         model = net,
@@ -139,7 +141,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         super(BaseViewsTestWithDataset, cls).tearDownClass()
 
     @classmethod
-    def create_model(cls, **kwargs):
+    def create_model(cls, learning_rate=None, **kwargs):
         """
         Create a model
         Returns the job_id
@@ -148,6 +150,8 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         Keyword arguments:
         **kwargs -- data to be sent with POST request
         """
+        if learning_rate is None:
+            learning_rate = cls.LEARNING_RATE
         data = {
                 'model_name':       'test_model',
                 'dataset':          cls.dataset_id,
@@ -161,8 +165,8 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             data['crop_size'] = cls.CROP_SIZE
         if cls.LR_POLICY is not None:
             data['lr_policy'] = cls.LR_POLICY
-        if cls.LEARNING_RATE is not None:
-            data['learning_rate'] = cls.LEARNING_RATE
+        if learning_rate is not None:
+            data['learning_rate'] = learning_rate
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -350,6 +354,13 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job3_id = self.create_model(**options_3)
         assert self.model_wait_completion(job3_id) == 'Done', 'third job failed'
 
+    def test_diverging_network(self):
+        if self.FRAMEWORK == 'caffe':
+            raise unittest.SkipTest('Test not implemented for Caffe')
+        job_id = self.create_model(json=True, learning_rate=1e15)
+        assert self.model_wait_completion(job_id) == 'Error', 'job should have failed'
+        job_info = self.job_info_html(job_id=job_id, job_type='models')
+        assert 'Try decreasing your learning rate' in job_info
 
 class BaseTestCreated(BaseViewsTestWithModel):
     """

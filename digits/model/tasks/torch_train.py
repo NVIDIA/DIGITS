@@ -287,19 +287,17 @@ class TorchTrainTask(TrainTask):
                 self.displaying_network = False
             return True
 
-        float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
+        # by default Lua prints infinite numbers as 'inf' however Torch tensor may use 'nan' to represent infinity
+        float_exp = '([-]?inf|nan|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         # loss and learning rate updates
         match = re.match(r'Training \(epoch (\d+\.?\d*)\): \w*loss\w* = %s, lr = %s'  % (float_exp, float_exp), message)
         if match:
             index = float(match.group(1))
             l = match.group(2)
-            assert l.lower() != '-inf', 'Network reported -inf for training loss. Try changing your learning rate.'       #TODO: messages needs to be corrected
-            assert l.lower() != 'inf', 'Network reported inf for training loss. Try decreasing your learning rate.'
+            assert not('inf' in l or 'nan' in l), 'Network reported %s for training loss. Try decreasing your learning rate.'  % l
             l = float(l)
             lr = match.group(4)
-            assert lr.lower() != '-inf', 'Network reported -inf for learning rate. Try changing your learning rate.'
-            assert lr.lower() != 'inf', 'Network reported inf for learning rate. Try decreasing your learning rate.'
             lr = float(lr)
             # epoch updates
             self.send_progress_update(index)
@@ -316,7 +314,9 @@ class TorchTrainTask(TrainTask):
             index = float(match.group(1))
             l = match.group(2)
             a = match.group(5)
-            if l.lower() != 'inf' and l.lower() != '-inf':
+            # note: validation loss could have diverged however if the training loss is still finite, there is a slim possibility
+            # that the network keeps learning something useful, so we don't treat infinite validation loss as a fatal error
+            if not('inf' in l or 'nan' in l):
                 l = float(l)
                 self.logger.debug('Network validation loss #%s: %s' % (index, l))
                 # epoch updates
@@ -715,14 +715,14 @@ class TorchTrainTask(TrainTask):
         if not message:
             return True
 
-        float_exp = '([-]?inf|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
+        float_exp = '([-]?inf|nan|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         # format of output while testing single image
         match = re.match(r'For image \d+, predicted class \d+: \d+ \((.*?)\) %s'  % (float_exp), message)
         if match:
             label = match.group(1)
             confidence = match.group(2)
-            assert confidence.lower() != 'nan', 'Network reported "nan" for confidence value. Please check image and network'
+            assert not('inf' in confidence or 'nan' in confidence), 'Network reported %s for confidence value. Please check image and network'  % l
             confidence = float(confidence)
             predictions.append((label, confidence))
             return True
