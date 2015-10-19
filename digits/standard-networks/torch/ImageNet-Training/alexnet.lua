@@ -74,9 +74,7 @@ return function(params)
     assert(params.ngpus<=1, 'Model supports only one GPU')
     return {
         model = createModel(1),
-        croplen = 224,
-        trainBatchSize = 100,
-        validationBatchSize = 100,
+        croplen = 224
     }
 end
 

@@ -121,6 +121,9 @@ class TorchTrainTask(TrainTask):
         else:
             torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
+        if self.batch_size is None:
+            self.batch_size = constants.DEFAULT_BATCH_SIZE
+
         dataset_backend = self.dataset.train_db_task().backend
         assert dataset_backend=='lmdb' or dataset_backend=='hdf5'
 
@@ -132,13 +135,11 @@ class TorchTrainTask(TrainTask):
                 '--save=%s' % self.job_dir,
                 '--snapshotPrefix=%s' % self.snapshot_prefix,
                 '--snapshotInterval=%s' % self.snapshot_interval,
+                '--batchSize=%d' % self.batch_size,
                 '--learningRate=%s' % self.learning_rate,
                 '--policy=%s' % str(self.lr_policy['policy']),
                 '--dbbackend=%s' % dataset_backend
                 ]
-
-        if self.batch_size is not None:
-            args.append('--batchSize=%d' % self.batch_size)
 
         if isinstance(self.dataset, ImageClassificationDatasetJob):
             args.append('--train=%s' % self.dataset.path(constants.TRAIN_DB))
@@ -296,7 +297,7 @@ class TorchTrainTask(TrainTask):
         if match:
             index = float(match.group(1))
             l = match.group(2)
-            assert not('inf' in l or 'nan' in l), 'Network reported %s for training loss. Try decreasing your learning rate.'  % l
+            assert not('inf' in l or 'nan' in l), 'Network reported %s for training loss. Try changing your learning rate.'  % l
             l = float(l)
             lr = match.group(4)
             lr = float(lr)
