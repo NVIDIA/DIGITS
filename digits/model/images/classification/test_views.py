@@ -332,6 +332,13 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job_id = self.create_model(**options)
         assert self.model_wait_completion(job_id) == 'Done', 'second job failed'
 
+    def test_mean_none(self):
+        options = {
+            'use_mean': 'none',
+        }
+        job_id = self.create_model(**options)
+        assert self.model_wait_completion(job_id) == 'Done', 'second job failed'
+
     def test_retrain(self):
         job1_id = self.create_model()
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
