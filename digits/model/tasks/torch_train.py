@@ -297,7 +297,7 @@ class TorchTrainTask(TrainTask):
         if match:
             index = float(match.group(1))
             l = match.group(2)
-            assert not('inf' in l or 'nan' in l), 'Network reported %s for training loss. Try changing your learning rate.'  % l
+            assert not('inf' in l or 'nan' in l), 'Network reported %s for training loss. Try decreasing your learning rate.'  % l
             l = float(l)
             lr = match.group(4)
             lr = float(lr)
