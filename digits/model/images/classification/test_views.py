@@ -318,7 +318,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job_id = self.create_model(select_gpus_list=','.join(gpu_list), batch_size=len(gpu_list))
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
 
-    def classify_one_for_job(self, job_id):
+    def classify_one_for_job(self, job_id, test_misclassification = True):
         # carry out one inference test per category in dataset
         for category in self.imageset_paths.keys():
             image_path = self.imageset_paths[category][0]
@@ -338,7 +338,8 @@ class BaseTestCreation(BaseViewsTestWithDataset):
             assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
             # gets an array of arrays [[confidence, label],...]
             predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
-            assert predictions[0][1] == category, 'image misclassified'
+            if test_misclassification:
+                assert predictions[0][1] == category, 'image misclassified'
 
     def test_classify_one_mean_image(self):
         # test the creation
@@ -356,7 +357,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         # test the creation
         job_id = self.create_model(use_mean = 'none')
         assert self.model_wait_completion(job_id) == 'Done', 'job failed'
-        self.classify_one_for_job(job_id)
+        self.classify_one_for_job(job_id, False)
 
     def test_retrain(self):
         job1_id = self.create_model()
