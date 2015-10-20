@@ -73,8 +73,6 @@ local net = nn.Sequential()
 net:add(nn.MulConstant(0.004))
 net:add(nn.View(-1):setNumInputDims(3))  -- 1*10*10 -> 100
 net:add(nn.Linear(100,2))
--- remove any non determinism
-net:apply(function(layer) if layer.weight then layer.weight:fill(0) end if layer.bias then layer.bias:fill(0) end end)
 return function(params)
     return {
         model = net,
@@ -159,6 +157,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
                 'custom_network':   cls.network(),
                 'batch_size':       10,
                 'train_epochs':     cls.TRAIN_EPOCHS,
+                'random_seed':      0xCAFEBABE,
                 'framework':        cls.FRAMEWORK,
                 }
         if cls.CROP_SIZE is not None:
