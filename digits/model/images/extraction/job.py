@@ -3,13 +3,13 @@
 import os.path
 
 from digits.utils import subclass, override
-from ..job import ImagePretrainedModelJob
+from ..job import ImageModelJob
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
 
 @subclass
-class FeatureExtractionModelJob(ImagePretrainedModelJob):
+class FeatureExtractionModelJob(ImageModelJob):
     """
     A Job that creates an image model for a feature extraction network
     """

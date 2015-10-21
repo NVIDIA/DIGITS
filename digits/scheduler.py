@@ -165,21 +165,7 @@ class Scheduler:
         for job in loaded_jobs:
             if isinstance(job, DatasetJob):
                 self.jobs.append(job)
-        
-        # add PretrainedModelJobs
-        for job in loaded_jobs:
-            if isinstance(job, PretrainedModelJob):
-                try:
-                    self.jobs.append(job)
-                except Exception as e:
-                    failed += 1
-                    if self.verbose:
-                        if str(e):
-                            print 'Caught %s while loading job "%s":' % (type(e).__name__, job.id())
-                            print '\t%s' % e
-                        else:
-                            print 'Caught %s while loading job "%s"' % (type(e).__name__, job.id())
-                            
+                                    
         # add ModelJobs
         for job in loaded_jobs:
             if isinstance(job, ModelJob):    
@@ -309,20 +295,6 @@ class Scheduler:
         """a query utility"""
         return sorted(
                 [j for j in self.jobs if isinstance(j, ModelJob) and not j.status.is_running()],
-                cmp=lambda x,y: cmp(y.id(), x.id())
-                )
-    
-    def running_pretrained_model_jobs(self):
-        """a query utility"""
-        return sorted(
-                [j for j in self.jobs if isinstance(j, PretrainedModelJob) and j.status.is_running()],
-                cmp=lambda x,y: cmp(y.id(), x.id())
-                )
-
-    def completed_pretrained_model_jobs(self):
-        """a query utility"""
-        return sorted(
-                [j for j in self.jobs if isinstance(j, PretrainedModelJob) and not j.status.is_running()],
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
