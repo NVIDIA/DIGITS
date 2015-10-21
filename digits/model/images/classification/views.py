@@ -40,7 +40,7 @@ def image_classification_model_new():
     """
     workspace = get_workspace(flask.request.url)
     form = ImageClassificationModelForm()
-    form.dataset.choices = get_datasets()
+    form.dataset.choices = get_datasets_workspace(workspace)
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
