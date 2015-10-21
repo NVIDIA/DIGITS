@@ -13,9 +13,9 @@ import gevent.queue
 from config import config_value
 from . import utils
 from status import Status
-from job import Job, PretrainedJob
+from job import Job
 from dataset import DatasetJob
-from model import ModelJob, PretrainedModelJob
+from model import ModelJob
 from digits.utils import errors
 from log import logger
 
