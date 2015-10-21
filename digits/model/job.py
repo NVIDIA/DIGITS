@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-from digits.job import Job, PretrainedJob
+#from digits.job import Job, PretrainedJob
 from . import tasks
 
 from digits.utils import override
