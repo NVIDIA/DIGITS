@@ -90,6 +90,7 @@ class Scheduler:
         """
         self.jobs = []
         self.verbose = verbose
+        self.workspace_jobs = {}
 
         # Keeps track of resource usage
         self.resources = {
