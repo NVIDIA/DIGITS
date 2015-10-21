@@ -104,6 +104,12 @@ class Scheduler:
 
         self.running = False
         self.shutdown = gevent.event.Event()
+        
+    def return_workspace_jobs(self , workspace):
+        if self.workspace_jobs.has_key(workspace):
+            return self.workspace_jobs[workspace]
+        else:
+            raise RuntimeError("Workpsace %s does not exist"%(workspace))
 
     def load_past_jobs(self):
         """
