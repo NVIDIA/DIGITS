@@ -156,6 +156,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
                 'batch_size':       10,
                 'train_epochs':     cls.TRAIN_EPOCHS,
                 'framework' :       cls.FRAMEWORK,
+                'random_seed':      0xCAFEBABE,
                 'shuffle':          'true' if cls.SHUFFLE else 'false'
                 }
         if cls.CROP_SIZE is not None:
