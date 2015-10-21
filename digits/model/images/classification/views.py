@@ -65,7 +65,7 @@ def image_classification_model_create():
     """
     workspace = get_workspace(flask.request.url)
     form = ImageClassificationModelForm()
-    form.dataset.choices = get_datasets()
+    form.dataset.choices = get_datasets_workspace(workspace)
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
@@ -583,7 +583,18 @@ def get_datasets():
         cmp=lambda x,y: cmp(y.id(), x.id())
         )
         ]
-
+    
+def get_datasets_workspace(workspace):
+        list_jobs =   scheduler.return_workspace_jobs(workspace)
+        for j in list_jobs:
+            print j.id()  , j.name()
+        
+        return [(j.id(), j.name()) for j in sorted(
+        [j for j in scheduler.return_workspace_jobs(workspace) if isinstance(j, ImageClassificationDatasetJob) and (j.status.is_running() or j.status == Status.DONE)],
+        cmp=lambda x,y: cmp(y.id(), x.id())
+        )
+        ]
+        
 def get_standard_networks():
     return [
             ('lenet', 'LeNet'),
