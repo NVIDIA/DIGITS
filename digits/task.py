@@ -266,6 +266,7 @@ class Task(StatusCls):
         if self.status.is_running():
             self.aborted.set()
 
+
     def preprocess_output_digits(self, line):
         """
         Takes line of output and parses it according to DIGITS's log format
@@ -325,3 +326,23 @@ class Task(StatusCls):
         """
         pass
 
+    def emit_progress_update(self):
+        """
+        Call socketio.emit for task progess update, and trigger job progress update.
+        """
+        from digits.webapp import socketio
+        socketio.emit('task update',
+                {
+                    'task': self.html_id(),
+                    'update': 'progress',
+                    'percentage': int(round(100*self.progress)),
+                    'eta': utils.time_filters.print_time_diff(self.est_done()),
+                    },
+                namespace='/jobs',
+                room=self.job_id,
+                )
+
+        from digits.webapp import scheduler
+        job = scheduler.get_job(self.job_id)
+        if job:
+            job.emit_progress_update()

@@ -182,16 +182,7 @@ class CreateDbTask(Task):
         match = re.match(r'Processed (\d+)\/(\d+)', message)
         if match:
             self.progress = float(match.group(1))/int(match.group(2))
-            socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'progress',
-                        'percentage': int(round(100*self.progress)),
-                        'eta': utils.time_filters.print_time_diff(self.est_done()),
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+            self.emit_progress_update()
             return True
 
         # distribution

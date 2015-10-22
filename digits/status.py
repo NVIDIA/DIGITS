@@ -117,6 +117,8 @@ class StatusCls(object):
         # If the status is Done, then force the progress to 100%
         if value == Status.DONE:
             self.progress = 1.0
+            if hasattr(self, 'emit_progress_update'):
+                self.emit_progress_update()
 
         # Don't invoke callback for INIT
         if value != Status.INIT:
