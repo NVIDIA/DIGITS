@@ -38,6 +38,7 @@
  // update ago every 5 seconds
  var update_ago_timer = $.timer(update_ago, 1000);
  function update_ago() {
+     return;
      $("small#ago" ).each(function(){
          var start = $(this).attr('start')
          var now = $.now() / 1000;
