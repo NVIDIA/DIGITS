@@ -5,6 +5,7 @@ import os
 import flask
 
 from digits import utils
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
@@ -259,6 +260,10 @@ def image_classification_dataset_new():
     Returns a form for a new ImageClassificationDatasetJob
     """
     form = ImageClassificationDatasetForm()
+
+    ## Is there a request to clone a job with ?clone=<job_id>
+    fill_form_if_cloned(form)
+
     return flask.render_template('datasets/images/classification/new.html', form=form)
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
@@ -271,6 +276,10 @@ def image_classification_dataset_create():
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
     form = ImageClassificationDatasetForm()
+
+    ## Is there a request to clone a job with ?clone=<job_id>
+    fill_form_if_cloned(form)
+
     if not form.validate_on_submit():
         if request_wants_json():
             return flask.jsonify({'errors': form.errors}), 400
@@ -297,6 +306,9 @@ def image_classification_dataset_create():
 
         else:
             raise ValueError('method not supported')
+
+        ## Save form data with the job so we can easily clone it later.
+        save_form_to_job(job, form)
 
         scheduler.add_job(job)
         if request_wants_json():

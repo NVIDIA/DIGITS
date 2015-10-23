@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Oct 04, 2015*
+*Generated Oct 09, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -39,6 +39,16 @@ Methods: **GET**
 Location: [`digits/views.py`](../digits/views.py)
 
 ## Jobs
+
+### `/clone/<clone>`
+
+> Clones a job with the id <clone>, populating the creation page with data saved in <clone>
+
+Methods: **GET**, **POST**
+
+Arguments: `clone`
+
+Location: [`digits/views.py`](../digits/views.py)
 
 ### `/datasets/<job_id>`
 

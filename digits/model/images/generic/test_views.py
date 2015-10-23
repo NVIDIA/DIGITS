@@ -361,6 +361,60 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job_info = self.job_info_html(job_id=job_id, job_type='models')
         assert 'Try decreasing your learning rate' in job_info
 
+    def test_clone(self):
+        options_1 = {
+            'shuffle': True,
+            'lr_step_size': 33.0,
+            'previous_networks': 'None',
+            'lr_inv_power': 0.5,
+            'lr_inv_gamma': 0.1,
+            'lr_poly_power': 3.0,
+            'lr_exp_gamma': 0.95,
+            'use_mean': 1,
+            'custom_network_snapshot': '',
+            'lr_multistep_gamma': 0.5,
+            'lr_policy': 'step',
+            'crop_size': None,
+            'val_interval': 3.0,
+            'random_seed': 123,
+            'learning_rate': 0.01,
+            'standard_networks': 'None',
+            'lr_step_gamma': 0.1,
+            'lr_sigmoid_step': 50.0,
+            'lr_sigmoid_gamma': 0.1,
+            'lr_multistep_values': '50,85',
+            'solver_type': 'SGD',
+        }
+
+        job1_id = self.create_model(**options_1)
+        assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
+        rv = self.app.get('/models/%s.json' % job1_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content1 = json.loads(rv.data)
+
+        ## Clone job1 as job2
+        options_2 = {
+            'clone': job1_id,
+        }
+
+        job2_id = self.create_model(**options_2)
+        assert self.model_wait_completion(job2_id) == 'Done', 'second job failed'
+        rv = self.app.get('/models/%s.json' % job2_id)
+        assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
+        content2 = json.loads(rv.data)
+
+        ## These will be different
+        content1.pop('id')
+        content2.pop('id')
+        content1.pop('directory')
+        content2.pop('directory')
+        assert (content1 == content2), 'job content does not match'
+
+        job1 = digits.webapp.scheduler.get_job(job1_id)
+        job2 = digits.webapp.scheduler.get_job(job2_id)
+
+        assert (job1.form_data == job2.form_data), 'form content does not match'
+
 class BaseTestCreated(BaseViewsTestWithModel):
     """
     Tests on a model that has already been created

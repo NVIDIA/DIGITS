@@ -21,6 +21,7 @@ from job import ImageClassificationModelJob
 from digits.status import Status
 import platform
 from digits.utils import errors
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 
 NAMESPACE   = '/models/images/classification'
 
@@ -37,6 +38,9 @@ def image_classification_model_new():
     form.previous_networks.choices = get_previous_networks()
 
     prev_network_snapshots = get_previous_network_snapshots()
+
+    ## Is there a request to clone a job with ?clone=<job_id>
+    fill_form_if_cloned(form)
 
     return flask.render_template('models/images/classification/new.html',
             form = form,
@@ -62,6 +66,9 @@ def image_classification_model_create():
     form.previous_networks.choices = get_previous_networks()
 
     prev_network_snapshots = get_previous_network_snapshots()
+
+    ## Is there a request to clone a job with ?clone=<job_id>
+    fill_form_if_cloned(form)
 
     if not form.validate_on_submit():
         if request_wants_json():
@@ -200,6 +207,9 @@ def image_classification_model_create():
                     shuffle         = form.shuffle.data,
                     )
                 )
+
+        ## Save form data with the job so we can easily clone it later.
+        save_form_to_job(job, form)
 
         scheduler.add_job(job)
         if request_wants_json():

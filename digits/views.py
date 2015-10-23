@@ -218,6 +218,30 @@ def abort_job(job_id):
     else:
         raise werkzeug.exceptions.Forbidden('Job not aborted')
 
+@app.route('/clone/<clone>', methods=['POST', 'GET'])
+@autodoc('jobs')
+def clone_job(clone):
+    """
+    Clones a job with the id <clone>, populating the creation page with data saved in <clone>
+    """
+
+    ## <clone> is the job_id to clone
+
+    job = scheduler.get_job(clone)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
+    if isinstance(job, dataset.ImageClassificationDatasetJob):
+        return flask.redirect(flask.url_for('image_classification_dataset_new') + '?clone=' + clone)
+    if isinstance(job, dataset.GenericImageDatasetJob):
+        return flask.redirect(flask.url_for('generic_image_dataset_new') + '?clone=' + clone)
+    if isinstance(job, model.ImageClassificationModelJob):
+        return flask.redirect(flask.url_for('image_classification_model_new') + '?clone=' + clone)
+    if isinstance(job, model.GenericImageModelJob):
+        return flask.redirect(flask.url_for('generic_image_model_new') + '?clone=' + clone)
+    else:
+        raise werkzeug.exceptions.BadRequest('Invalid job type')
+
 ### Error handling
 
 @app.errorhandler(Exception)

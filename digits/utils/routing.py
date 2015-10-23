@@ -10,11 +10,8 @@ def job_from_request():
     """
     from digits.webapp import scheduler
 
-    if 'job_id' in flask.request.args:
-        job_id = flask.request.args['job_id']
-    elif 'job_id' in flask.request.form:
-        job_id = flask.request.form['job_id']
-    else:
+    job_id = get_request_arg('job_id')
+    if job_id is None:
         raise werkzeug.exceptions.BadRequest('job_id is a required field')
 
     job = scheduler.get_job(job_id)
@@ -37,3 +34,11 @@ def request_wants_json():
         flask.request.accept_mimetypes[best] > \
         flask.request.accept_mimetypes['text/html']
 
+# check for arguments pass to url
+def get_request_arg(key):
+    value = None
+    if key in flask.request.args:
+        value = flask.request.args[key]
+    elif key in flask.request.form:
+        value = flask.request.form[key]
+    return value

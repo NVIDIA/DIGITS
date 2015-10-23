@@ -2,6 +2,7 @@
 
 {% from "helper.html" import print_flashes %}
 {% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
 
 {% extends "layout.html" %}
 
@@ -43,19 +44,19 @@ New Image Dataset
                             </tr>
                             <tr>
                                 <td><b>Training</b></td>
-                                <td class="form-group{{' has-error' if form.prebuilt_train_images.errors}}">
+                                <td class="form-group{{mark_errors([form.prebuilt_train_images])}}">
                                     {{ form.prebuilt_train_images(class='form-control autocomplete_path') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.prebuilt_train_labels.errors}}">
+                                <td class="form-group{{mark_errors([form.prebuilt_train_labels])}}">
                                     {{ form.prebuilt_train_labels(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
                             <tr>
                                 <td><b>Validation</b></td>
-                                <td class="form-group{{' has-error' if form.prebuilt_val_images.errors}}">
+                                <td class="form-group{{mark_errors([form.prebuilt_val_images])}}">
                                     {{ form.prebuilt_val_images(class='form-control autocomplete_path') }}
                                 </td>
-                                <td class="form-group{{' has-error' if form.prebuilt_val_labels.errors}}">
+                                <td class="form-group{{mark_errors([form.prebuilt_val_labels])}}">
                                     {{ form.prebuilt_val_labels(class='form-control autocomplete_path') }}
                                 </td>
                             </tr>
@@ -63,7 +64,7 @@ New Image Dataset
                     </div>
                     <div class="row">
                         <div class="col-sm-6 col-sm-offset-3">
-                            <div class="form-group{{ ' has-error' if form.force_same_shape.errors else '' }}">
+                            <div class="form-group{{mark_errors([form.force_same_shape])}}">
                                 {{ form.force_same_shape.label }}
                                 {{ form.force_same_shape.tooltip }}
                                 {{ form.force_same_shape(class='form-control') }}
@@ -72,7 +73,7 @@ New Image Dataset
                     </div>
                     <div class="row">
                         <div class="col-sm-6 col-sm-offset-3">
-                            <div class="form-group{{ ' has-error' if form.prebuilt_mean_file.errors else '' }}">
+                            <div class="form-group{{mark_errors([form.prebuilt_mean_file])}}">
                                 {{ form.prebuilt_mean_file.label }}
                                 {{ form.prebuilt_mean_file.tooltip }}
                                 {{ form.prebuilt_mean_file(class='form-control autocomplete_path') }}
@@ -97,7 +98,7 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
 
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
-            <div class="form-group{{ ' has-error' if form.dataset_name.errors else '' }}">
+            <div class="form-group{{mark_errors([form.dataset_name])}}">
                 {{ form.dataset_name.label }}
                 {{ form.dataset_name(class='form-control') }}
             </div>
