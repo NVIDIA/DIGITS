@@ -25,7 +25,7 @@ local utils = require 'utils'
 opt = lapp[[
 Usage details:
 -a,--threads            (default 8)              number of threads
--b,--batchSize (default 128) batch size
+-b,--batchSize (default 0) batch size
 -c,--learningRateDecay (default 1e-6) learning rate decay (in # samples)
 -d,--devid (default 1) device ID (if using CUDA)
 -e,--epoch (default 1) number of epochs to train -1 for unbounded
@@ -204,14 +204,6 @@ if opt.visualizeModel then
     print('\nCriterion: \n' .. loss:__tostring())
     logmessage.display(0,'Network definition ends')
     os.exit(-1)
-end
-
--- check whether ccn2 is used in network and then check whether given batchsize is valid or not
-if ccn2 ~= nil then
-    if opt.batchSize % 32 ~= 0 then
-        logmessage.display(2,'invalid batch size : ' .. opt.batchSize .. '. Batch size should be multiple of 32 when ccn2 is used in the network')
-        os.exit(-1)
-    end
 end
 
 -- load

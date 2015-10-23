@@ -775,6 +775,7 @@ class TestTorchViews(BaseTestViews):
 
 class TestTorchCreation(BaseTestCreation):
     FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 10
 
 class TestTorchCreated(BaseTestCreated):
     FRAMEWORK = 'torch'
