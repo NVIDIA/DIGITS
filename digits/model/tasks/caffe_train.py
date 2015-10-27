@@ -857,7 +857,7 @@ class CaffeTrainTask(TrainTask):
             # return the last 20 lines
             self.traceback = '\n'.join(lines[len(lines)-20:])
             if 'DIGITS_MODE_TEST' in os.environ:
-                print self.traceback
+                print output
 
     ### TrainTask overrides
 
