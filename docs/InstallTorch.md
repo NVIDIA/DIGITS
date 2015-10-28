@@ -44,28 +44,26 @@ Select one of the "torch" tabs on the model creation page:
 To define a Torch7 model in DIGITS you need to write a Lua function that takes a table of external network parameters as argument and returns a table of internal network parameters. For example, the following code defines a flavour of LeNet:
 
 ```
-require 'nn'
-
--- -- This is a LeNet model. For more information: http://yann.lecun.com/exdb/lenet/
-
-local lenet = nn.Sequential()
-lenet:add(nn.MulConstant(0.00390625))
-lenet:add(nn.SpatialConvolution(1,20,5,5,1,1,0)) -- 1*28*28 -> 20*24*24
-lenet:add(nn.SpatialMaxPooling(2, 2, 2, 2)) -- 20*24*24 -> 20*12*12
-lenet:add(nn.SpatialConvolution(20,50,5,5,1,1,0)) -- 20*12*12 -> 50*8*8
-lenet:add(nn.SpatialMaxPooling(2,2,2,2)) --  50*8*8 -> 50*4*4
-lenet:add(nn.View(-1):setNumInputDims(3))  -- 50*4*4 -> 800
-lenet:add(nn.Linear(800,500))  -- 800 -> 500
-lenet:add(nn.ReLU())
-lenet:add(nn.Linear(500, 10))  -- 500 -> 10
-lenet:add(nn.LogSoftMax())
-
--- return function that returns network definition
 return function(params)
-    assert(params.ngpus<=1, 'Model supports only CPU or single-GPU')
+    -- adjust to number of channels in input images - default to 1 channel
+    -- during model visualization
+    local channels = (params.inputShape and params.inputShape[1]) or 1
+    local lenet = nn.Sequential()
+    lenet:add(nn.MulConstant(0.00390625))
+    lenet:add(nn.SpatialConvolution(channels,20,5,5,1,1,0)) -- channels*28*28 -> 20*24*24
+    lenet:add(nn.SpatialMaxPooling(2, 2, 2, 2)) -- 20*24*24 -> 20*12*12
+    lenet:add(nn.SpatialConvolution(20,50,5,5,1,1,0)) -- 20*12*12 -> 50*8*8
+    lenet:add(nn.SpatialMaxPooling(2,2,2,2)) --  50*8*8 -> 50*4*4
+    lenet:add(nn.View(-1):setNumInputDims(3))  -- 50*4*4 -> 800
+    lenet:add(nn.Linear(800,500))  -- 800 -> 500
+    lenet:add(nn.ReLU())
+    lenet:add(nn.Linear(500, 10))  -- 500 -> 10
+    lenet:add(nn.LogSoftMax())
     return {
         model = lenet,
-        loss = nn.ClassNLLCriterion()
+        loss = nn.ClassNLLCriterion(),
+        trainBatchSize = 64,
+        validationBatchSize = 100,
     }
 end
 ```
@@ -77,6 +75,7 @@ External parameters are provided by DIGITS:
 Parameter name  | Type     | Description
 --------------- | -------- | --------
 ngpus           | number   | Tells how many GPUs are available (0 means CPU)
+inputShape      | Tensor   | Shape (1D Tensor) of first input Tensor. For image data this is set to {channels, height, width}. Note: this parameter is undefined during model visualization.
 
 ### Internal parameters
 
@@ -96,6 +95,24 @@ validationBatchSize   | number       | No        | If specified, sets validation
 Networks are fed with Torch Tensor objects in the NxCxHxW format (index in batch x channels x height x width). If a GPU is available, Tensors are provided as Cuda tensors and the model and criterion are moved to GPUs through a call to their cuda() method. In the absence of GPUs, Tensors are provided as Float tensors.
 
 ### Examples
+
+#### Adjusting model to input dimensions
+
+The following network defines a linear network that takes any 3D-tensor as input and produces three categorical outputs:
+```
+return function(p)
+    -- model should adjust to any 3D-input
+    nDim = 1
+    if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
+    local model = nn.Sequential()
+    model:add(nn.View(-1):setNumInputDims(3)) -- c*h*w -> chw (flattened)
+    model:add(nn.Linear(nDim, 3)) -- chw -> 3
+    model:add(nn.LogSoftMax())
+    return {
+        model = model
+    }
+end
+```
 
 #### Selecting the NN backend
 

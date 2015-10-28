@@ -531,6 +531,10 @@ class TorchTrainTask(TrainTask):
         else:
             args.append('--subtractMean=none')
 
+        if self.crop_size:
+            args.append('--crop=yes')
+            args.append('--croplen=%d' % self.crop_size)
+
         if layers=='all':
             args.append('--visualization=yes')
             args.append('--save=%s' % self.job_dir)
@@ -829,6 +833,10 @@ class TorchTrainTask(TrainTask):
             else:
                 args.append('--subtractMean=none')
 
+            if self.crop_size:
+                args.append('--crop=yes')
+                args.append('--croplen=%d' % self.crop_size)
+
             # Convert them all to strings
             args = [str(x) for x in args]
 
@@ -916,5 +924,4 @@ class TorchTrainTask(TrainTask):
         with open (os.path.join(self.job_dir,TORCH_MODEL_FILE), "r") as infile:
             desc = infile.read()
         return desc
-
 

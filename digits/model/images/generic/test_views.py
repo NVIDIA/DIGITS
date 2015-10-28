@@ -68,12 +68,13 @@ layer {
 
     TORCH_NETWORK = \
 """
-require 'nn'
-local net = nn.Sequential()
-net:add(nn.MulConstant(0.004))
-net:add(nn.View(-1):setNumInputDims(3))  -- 1*10*10 -> 100
-net:add(nn.Linear(100,2))
-return function(params)
+return function(p)
+    local nDim = 1
+    if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
+    local net = nn.Sequential()
+    net:add(nn.MulConstant(0.004))
+    net:add(nn.View(-1):setNumInputDims(3))  -- flatten
+    net:add(nn.Linear(nDim,2)) -- c*h*w -> 2
     return {
         model = net,
         loss = nn.MSECriterion(),
@@ -688,6 +689,23 @@ layer {
 }
 """
 
+    TORCH_NETWORK = \
+"""
+return function(p)
+    local croplen = 8, channels
+    if p.inputShape then channels=p.inputShape[1] else channels=1 end
+    local net = nn.Sequential()
+    net:add(nn.MulConstant(0.004))
+    net:add(nn.View(-1):setNumInputDims(3))  -- flatten
+    net:add(nn.Linear(channels*croplen*croplen,2)) -- c*croplen*croplen -> 2
+    return {
+        model = net,
+        loss = nn.MSECriterion(),
+        croplen = croplen
+    }
+end
+"""
+
 class BaseTestCreatedCropInForm(BaseTestCreated):
     CROP_SIZE = 8
 
@@ -720,6 +738,16 @@ class TestTorchCreation(BaseTestCreation):
     FRAMEWORK = 'torch'
 
 class TestTorchCreated(BaseTestCreated):
+    LR_POLICY = 'fixed'
+    TRAIN_EPOCHS = 10
+    FRAMEWORK = 'torch'
+
+class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
+    LR_POLICY = 'fixed'
+    TRAIN_EPOCHS = 10
+    FRAMEWORK = 'torch'
+
+class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
     LR_POLICY = 'fixed'
     TRAIN_EPOCHS = 10
     FRAMEWORK = 'torch'

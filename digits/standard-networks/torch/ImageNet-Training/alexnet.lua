@@ -19,7 +19,7 @@ else
    convLayerName = 'nn.SpatialConvolutionMM'
 end
 
-function createModel(nGPU)
+function createModel(nGPU, channels)
    assert(nGPU == 1 or nGPU == 2, '1-GPU or 2-GPU supported for AlexNet')
    local features
    if nGPU == 1 then
@@ -29,7 +29,7 @@ function createModel(nGPU)
    end
 
    local fb1 = nn.Sequential() -- branch 1
-   fb1:add(convLayer(3,48,11,11,4,4,2,2))       -- 224 -> 55
+   fb1:add(convLayer(channels,48,11,11,4,4,2,2))       -- 224 -> 55
    fb1:add(backend.ReLU(true))
    fb1:add(backend.SpatialMaxPooling(3,3,2,2))                   -- 55 ->  27
    fb1:add(convLayer(48,128,5,5,1,1,2,2))       --  27 -> 27
@@ -72,8 +72,15 @@ end
 -- return function that returns network definition
 return function(params)
     assert(params.ngpus<=1, 'Model supports only one GPU')
+    -- adjust to number of channels in input images
+    local channels = 1
+    -- params.inputShape may be nil during visualization
+    if params.inputShape then
+        channels = params.inputShape[1]
+        assert(params.inputShape[2]==256 and params.inputShape[3]==256, 'Network expects 256x256 images')
+    end
     return {
-        model = createModel(1),
+        model = createModel(1, channels),
         croplen = 224,
         trainBatchSize = 100,
         validationBatchSize = 100,

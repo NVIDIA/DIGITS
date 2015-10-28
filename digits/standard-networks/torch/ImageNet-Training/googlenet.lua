@@ -55,12 +55,12 @@ local function inception(input_size, config)
    return concat
 end
 
-function createModel(nGPU)
+function createModel(nGPU, nChannels)
    -- batch normalization added on top of convolutional layers in feature branch
    -- in order to help the network learn faster
    local features = nn.Sequential()
    features:add(nn.MulConstant(0.02))
-   features:add(convLayer(3,64,7,7,2,2,3,3)):add(nn.SpatialBatchNormalization(64,1e-3)):add(backend.ReLU(true))
+   features:add(convLayer(nChannels,64,7,7,2,2,3,3)):add(nn.SpatialBatchNormalization(64,1e-3)):add(backend.ReLU(true))
    features:add(backend.SpatialMaxPooling(3,3,2,2):ceil())
    features:add(convLayer(64,64,1,1)):add(nn.SpatialBatchNormalization(64,1e-3)):add(backend.ReLU(true))
    features:add(convLayer(64,192,3,3,1,1,1,1)):add(nn.SpatialBatchNormalization(192,1e-3)):add(backend.ReLU(true))
@@ -119,8 +119,15 @@ end
 -- return function that returns network definition
 return function(params)
     assert(params.ngpus<=1, 'Model supports only one GPU')
+    -- adjust to number of channels in input images
+    local channels = 1
+    -- params.inputShape may be nil during visualization
+    if params.inputShape then
+        channels = params.inputShape[1]
+        assert(params.inputShape[2]==256 and params.inputShape[3]==256, 'Network expects 256x256 images')
+    end
     return {
-        model = createModel(1),
+        model = createModel(1, channels),
         croplen = 224,
         trainBatchSize = 24,
         validationBatchSize = 24,
