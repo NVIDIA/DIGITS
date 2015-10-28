@@ -33,6 +33,8 @@ install:
 before_script:
     - export CAFFE_HOME=$(pwd)/deps/caffe
     - source $(pwd)/deps/torch/install/bin/torch-activate
+    # Disable OpenMP multi-threading
+    - export OMP_NUM_THREADS=1
 script:
     ./digits-test -v --with-coverage --cover-package=digits,tools,scripts
 after_success:
