@@ -2,6 +2,7 @@
 require 'torch' -- torch
 require 'nn' -- provides a normalization operator
 require 'utils' -- various utility functions
+local threads = require 'threads' -- for multi-threaded data loader
 check_require 'image' -- for color transforms
 
 package.path = debug.getinfo(1, "S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
@@ -115,19 +116,12 @@ function LMDBSource:new(lighningmdb, path)
     self.t = self.e:txn_begin(nil, self.lightningmdb.MDB_RDONLY)
     self.d = self.t:dbi_open(nil,0)
     self.c = self.t:cursor_open(self.d)
+    self.path = path
     return self, self.total
 end
 
-function LMDBSource:reset()
-    self.c:close()
-    self.e:dbi_close(self.d)
-    self.t:abort()
-    self.t = self.e:txn_begin(nil,self.lightningmdb.MDB_RDONLY)
-    self.d = self.t:dbi_open(nil,0)
-    self.c = self.t:cursor_open(self.d)
-end
-
 function LMDBSource:close()
+    logmessage.display(0,'closing LMDB database: ' .. self.path)
     self.total = 0
     self.c:close()
     self.e:dbi_close(self.d)
@@ -173,12 +167,20 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, 
         self.lightningmdb = _VERSION=="Lua 5.2" and lightningmdb_lib or lightningmdb
         self.lmdb_data, self.total = LMDBSource:new(self.lightningmdb, db_path)
         self.keys = self:lmdb_getKeys()
+        if #self.keys ~= self.total then
+            logmessage.display(2, 'thr-id=' .. __threadid .. ' will be disabled - failed to initialize DB - #keys=' .. #self.keys .. ' #records='.. self.total)
+            return nil
+        end
         -- do we have a separate database for labels/targets?
         if labels_db_path~='' then
             self.lmdb_labels, total_labels = LMDBSource:new(self.lightningmdb, labels_db_path)
             assert(self.total == total_labels, "Number of records="..self.total.." does not match number of labels=" ..total_labels)
             -- read first entry to check label dimensions
             local v = self.lmdb_labels:get(self.keys[1])
+            if not v then
+                logmessage.display(2, 'thr-id=' .. __threadid .. ' failed to initialize label DB')
+                return nil
+            end
             local msg = self.datum.Datum():Parse(v)
             -- assume row vector 1xN labels
             assert(msg.height == 1, "label height=" .. msg.height .. " not supported")
@@ -289,16 +291,17 @@ function DBSource:lmdb_getKeys ()
 end
 
 -- Derived class method getSample (LMDB flavour)
-function DBSource:lmdb_getSample(shuffle)
+function DBSource:lmdb_getSample(shuffle, idx)
     local label
 
     if shuffle then
-        key_idx = torch.ceil(torch.rand(1)[1] * self.total)
-    else
-        key = nil
+        idx = math.max(1,torch.ceil(torch.rand(1)[1] * self.total))
     end
 
+    key = self.keys[idx]
     v = self.lmdb_data:get(key)
+    assert(key~=nil, "lmdb read nil key at idx="..idx)
+    assert(v~=nil, "lmdb read nil value at idx="..idx.." key="..key)
 
     local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
     -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outiside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
@@ -345,7 +348,7 @@ function DBSource:lmdb_getSample(shuffle)
 end
 
 -- Derived class method getSample (HDF5 flavour)
-function DBSource:hdf5_getSample (shuffle)
+function DBSource:hdf5_getSample(shuffle)
     if not self.db_id or self.cursor>self.dbs[self.db_id].records then
         --local a = torch.Timer()
         --local m = a:time().real
@@ -363,7 +366,7 @@ function DBSource:hdf5_getSample (shuffle)
 
     local idx
     if shuffle then
-        idx = torch.ceil(torch.rand(1)[1] * self.dbs[self.db_id].records)
+        idx = math.max(1,torch.ceil(torch.rand(1)[1] * self.dbs[self.db_id].records))
     else
         idx = self.cursor
     end
@@ -375,7 +378,9 @@ function DBSource:hdf5_getSample (shuffle)
 end
 
 -- Derived class method nextBatch
-function DBSource:nextBatch (batchsize)
+-- @parameter batchSize Number of samples to load
+-- @parameter idx Current index within database
+function DBSource:nextBatch (batchsize, idx)
 
     local Images
     if self.crop then
@@ -398,7 +403,7 @@ function DBSource:nextBatch (batchsize)
 
     for i=1,batchsize do
         -- get next sample
-        y, label = self:getSample(self.shuffle)
+        y, label = self:getSample(self.shuffle, idx + i - 1)
 
         if self.classification then
             -- label is index from array and Lua array indices are 1-based
@@ -410,14 +415,6 @@ function DBSource:nextBatch (batchsize)
         Labels[i] = label
     end
     return Images, Labels
-end
-
--- Derived class method to reset cursor (LMDB flavour)
-function DBSource:lmdb_reset ()
-    self.lmdb_data:reset()
-    if self.lmdb_labels then
-        self.lmdb_labels:reset()
-    end
 end
 
 -- Derived class method to reset cursor (HDF5 flavour)
@@ -441,6 +438,154 @@ end
 
 -- Derived class method close (HDF5 flavour)
 function DBSource:hdf5_close (batchsize)
+end
+
+-- Meta class
+DataLoader = {}
+
+-- Derived class method new
+-- Creates a new instance of a database
+-- @param numThreads (int) number of reader threads to create
+-- @package_path (string) caller package path
+-- @param backend (string) 'lmdb' or 'hdf5'
+-- @param db_path (string) path to database
+-- @param labels_db_path (string) path to labels database, or nil
+-- @param mirror (boolean) whether samples must be mirrored
+-- @param crop (boolean) whether samples must be cropped
+-- @param croplen (int) crop length, if crop==true
+-- @param mean (Tensor) mean tensor for mean image
+-- @param subtractMean (boolean) whether mean image should be subtracted from samples
+-- @param isTrain (boolean) whether this is a training database (e.g. mirroring not applied to validation database)
+-- @param shuffle (boolean) whether samples should be shuffled
+-- @param classification (boolean) whether this is a classification task
+function DataLoader:new (numThreads, package_path, backend, db_path, labels_db_path, mirror, crop, croplen, mean, isTrain, shuffle, classification)
+    local self = copy(DataLoader)
+    self.backend = backend
+    if self.backend == 'hdf5' then
+        -- hdf5 wrapper does not support multi-threaded reader yet
+        numThreads = 1
+    end
+    -- create pool of threads
+    self.numThreads = numThreads
+    self.threadPool = threads.Threads(
+        self.numThreads,
+        function(threadid)
+            -- inherit package path from main thread
+            package.path = package_path
+            require('data')
+            -- executes in reader thread, variables are local to this thread
+            db = DBSource:new(backend, db_path, labels_db_path,
+                              mirror, crop,
+                              croplen, mean,
+                              isTrain,
+                              shuffle,
+                              classification
+                              )
+        end
+    )
+    -- use non-specific mode
+    self.threadPool:specific(false)
+    return self
+end
+
+function DataLoader:getInfo()
+    local datasetSize
+    local imageSizeX
+    local imageSizeY
+
+    -- switch to specific mode so we can specify which thread to add job to
+    self.threadPool:specific(true)
+    -- we need to iterate here as some threads may not have a valid DB
+    -- handle (as happens when opening too many concurrent instances)
+    for i=1,self.numThreads do
+        self.threadPool:addjob(
+                   i, -- thread to add job to
+                   function()
+                       -- executes in reader thread, return values passed to
+                       -- main thread through following function
+                       if db then
+                           return db:totalRecords(), db.ImageSizeX, db.ImageSizeY
+                       else
+                           return nil, nil, nil
+                       end
+                   end,
+                   function(totalRecords, sizeX, sizeY)
+                       -- executes in main thread
+                       datasetSize = totalRecords
+                       imageSizeX = sizeX
+                       imageSizeY = sizeY
+                   end
+                   )
+        self.threadPool:synchronize()
+        if datasetSize then
+            break
+        end
+    end
+    -- return to non-specific mode
+    self.threadPool:specific(false)
+    return datasetSize, imageSizeX, imageSizeY
+end
+
+-- schedule next data loader batch
+-- @param batchSize (int) Number of samples to load
+-- @param dataIdx (int) Current index in database
+-- @param dataTable (table) Table to store data into
+function DataLoader:scheduleNextBatch(batchSize, dataIdx, dataTable)
+    -- send reader thread a request to load a batch from the training DB
+    local backend = self.backend
+    self.threadPool:addjob(
+                function()
+                    if backend=='hdf5' and dataIdx==1 then
+                        db:reset()
+                    end
+                    -- executes in reader thread
+                    if db then
+                        inputs, targets =  db:nextBatch(batchSize, dataIdx)
+                        return batchSize, inputs, targets
+                    else
+                        return batchSize, nil, nil
+                    end
+                end,
+                function(batchSize, inputs, targets)
+                    -- executes in main thread
+                    dataTable.batchSize = batchSize
+                    dataTable.inputs = inputs
+                    dataTable.outputs = targets
+                end
+            )
+end
+
+-- returns whether data loader is able to accept more jobs
+function DataLoader:acceptsjob()
+    return self.threadPool:acceptsjob()
+end
+
+-- wait until next data loader job completes
+function DataLoader:waitNext()
+    -- check for errors in loader threads
+    if self.threadPool:haserror() then -- check for errors
+        self.threadPool:synchronize() -- finish everything and throw error
+    end
+    -- wait for next data loader job to complete
+    self.threadPool:dojob()
+end
+
+-- free data loader resources
+function DataLoader:close()
+    -- switch to specific mode so we can specify which thread to add job to
+    self.threadPool:specific(true)
+    for i=1,self.numThreads do
+        self.threadPool:addjob(
+                    i,
+                    function()
+                        if db then
+                            db:close()
+                        end
+                    end
+                )
+    end
+    -- return to non-specific mode
+    self.threadPool:specific(false)
 end
 
 return{
