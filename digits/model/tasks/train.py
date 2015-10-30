@@ -38,7 +38,7 @@ class TrainTask(Task):
         val_interval -- how many epochs between validating the model with an epoch of validation data
         pretrained_model -- filename for a model to use for fine-tuning
         crop_size -- crop each image down to a square of this size
-        use_mean -- subtract the dataset's mean file
+        use_mean -- subtract the dataset's mean file or mean pixel
         random_seed -- optional random seed
         """
         self.gpu_count = kwargs.pop('gpu_count', None)
