@@ -5,7 +5,7 @@ server {
 
     # Gunicorn server
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:34448;
         proxy_redirect off;
 
         proxy_set_header Host $host;
@@ -17,7 +17,7 @@ server {
 
     # Socketio
     location /socket.io {
-        proxy_pass http://127.0.0.1:8080/socket.io;
+        proxy_pass http://127.0.0.1:34448/socket.io;
         proxy_redirect off;
         proxy_buffering off;
 
