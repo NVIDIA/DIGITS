@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block content %}
+<body>
+<div class="page-header">
+		<h1>Workspaces in DIGITS</h1>
+</div>
+{% if error %}
+<div class="alert alert-danger">
+  <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+	  {{ error }}
+</div>
+{% endif %}
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="well">
+				
+				<h2>List of Workspaces</h2>
+				{% if workspaces %}
+					<ul>
+						{% for workspace in workspaces %}
+							<li> <a href="/?workspace={{ workspace }}">{{ workspace }}</a></li>
+						{% endfor %}
+					</ul>
+				{% else %}
+					<p>No Workspace Exist.</p>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="col-sm-6">
+			<div class="well">
+				<h2>Create a new Workspace</h2>	
+				<form action="/workspaces" method="post">
+					<div class="row">
+						<div class="col-md-8">
+							<input id="name" name="name" type="text" placeholder="Enter Workspace Name" class="form-control input-md" required="">
+						</div>
+						<div class="col-md-4">
+							<button id="submitbtn" name="submitbtn" class="btn btn-primary">Submit</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+
+	</div>	
+</body>
+{% endblock %}

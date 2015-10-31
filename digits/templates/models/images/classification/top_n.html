@@ -3,7 +3,7 @@
 {% extends "layout.html" %}
 
 {% block nav %}
-<li><a href="{{url_for('models_show', job_id=job.id())}}">{{job.job_type()}}</a></li>
+<li><a href="{{url_for('models_show', job_id=job.id())}}?workspace={{ workspace }}">{{job.job_type()}}</a></li>
 <li class="active"><a>Top N</a></li>
 {% endblock %}
 
