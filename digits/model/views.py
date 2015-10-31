@@ -98,9 +98,9 @@ def models_show(job_id):
         return flask.jsonify(job.json_dict(True))
     else:
         if isinstance(job, model_images.ImageClassificationModelJob):
-            return model_images.classification.views.show(job)
+            return model_images.classification.views.show(job, workspace)
         elif isinstance(job, model_images.GenericImageModelJob):
-            return model_images.generic.views.show(job)
+            return model_images.generic.views.show(job, workspace)
         else:
             raise werkzeug.exceptions.BadRequest(
                     'Invalid job type')

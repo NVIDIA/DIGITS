@@ -20,6 +20,7 @@ from job import ImageClassificationModelJob
 from digits.status import Status
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils import filesystem as fs
+from digits.workspaces import get_workspace
 
 NAMESPACE   = '/models/images/classification'
 
@@ -29,6 +30,7 @@ def image_classification_model_new():
     """
     Return a form for a new ImageClassificationModelJob
     """
+    workspace = get_workspace(flask.request.url)
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
     form.standard_networks.choices = get_standard_networks()
@@ -46,6 +48,7 @@ def image_classification_model_new():
             previous_network_snapshots = prev_network_snapshots,
             previous_networks_fullinfo = get_previous_networks_fulldetails(),
             multi_gpu = config_value('caffe_root')['multi_gpu'],
+            workspace = workspace,
             )
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
@@ -57,6 +60,7 @@ def image_classification_model_create():
 
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
+    workspace = get_workspace(flask.request.url)
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
     form.standard_networks.choices = get_standard_networks()
@@ -78,6 +82,7 @@ def image_classification_model_create():
                     previous_network_snapshots = prev_network_snapshots,
                     previous_networks_fullinfo = get_previous_networks_fulldetails(),
                     multi_gpu = config_value('caffe_root')['multi_gpu'],
+                    workspace = workspace,
                     ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
@@ -221,18 +226,18 @@ def image_classification_model_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('models_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('models_show', job_id=job.id())+'?workspace='+workspace)
 
     except:
         if job:
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, *args):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()])
+    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()], workspace = args[0])
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
 @autodoc('models')
@@ -240,9 +245,10 @@ def image_classification_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
     """
+    workspace = get_workspace(flask.request.url)
     job = job_from_request()
 
-    return flask.render_template('models/images/classification/large_graph.html', job=job)
+    return flask.render_template('models/images/classification/large_graph.html', job=job, workspace = workspace)
 
 @app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
@@ -254,7 +260,7 @@ def image_classification_model_classify_one():
     Returns JSON when requested: {predictions: {category: confidence,...}}
     """
     job = job_from_request()
-
+    workspace = get_workspace(flask.request.url)
     image = None
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
         image = utils.image.load_image(flask.request.form['image_url'])
@@ -300,6 +306,7 @@ def image_classification_model_classify_one():
                 predictions     = predictions,
                 visualizations  = visualizations,
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
+                workspace = workspace,
                 )
 
 @app.route(NAMESPACE + '/classify_many.json', methods=['POST'])
@@ -311,6 +318,7 @@ def image_classification_model_classify_many():
 
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
+    workspace = get_workspace(flask.request.url)
     job = job_from_request()
 
     image_list = flask.request.files.get('image_list')
@@ -385,7 +393,8 @@ def image_classification_model_classify_many():
                 paths           = paths,
                 classifications = classifications,
                 show_ground_truth= not(ground_truths == [None]*len(ground_truths)),
-                ground_truths   = ground_truths
+                ground_truths   = ground_truths,
+                workspace = workspace,
                 )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
@@ -394,6 +403,7 @@ def image_classification_model_top_n():
     """
     Classify many images and show the top N images per category by confidence
     """
+    workspace = get_workspace(flask.request.url)
     job = job_from_request()
 
     image_list = flask.request.files['image_list']
@@ -468,6 +478,7 @@ def image_classification_model_top_n():
     return flask.render_template('models/images/classification/top_n.html',
             job=job,
             results=results,
+            workspace=workspace,
             )
 
 def get_datasets():
