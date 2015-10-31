@@ -22,14 +22,14 @@ class Job(StatusCls):
     SAVE_FILE = 'status.pickle'
 
     @classmethod
-    def load(cls, job_id):
+    def load(cls, path_job):
         """
-        Loads a Job in the given job_id
+        Loads a Job in the given the job path
         Returns the Job or throws an exception
         """
         from digits.model.tasks import TrainTask
 
-        job_dir = os.path.join(config_value('jobs_dir'), job_id)
+        job_dir = os.path.join(config_value('jobs_dir'), path_job)
         filename = os.path.join(job_dir, cls.SAVE_FILE)
         with open(filename, 'rb') as savefile:
             job = pickle.load(savefile)
@@ -42,6 +42,9 @@ class Job(StatusCls):
                     task.detect_snapshots()
             return job
 
+    def get_path(self):
+        return self._dir
+    
     def __init__(self, name, workspace):
         """
         Arguments:
@@ -50,14 +53,13 @@ class Job(StatusCls):
         super(Job, self).__init__()
 
         # create a unique ID
+        super(Job, self).__init__()
         self._id = '%s-%s' % (time.strftime('%Y%m%d-%H%M%S'), os.urandom(2).encode('hex'))
-        self._dir = os.path.join(config_value('jobs_dir'), str(workspace+"/"+self._id))
+        self._dir = os.path.join(config_value('jobs_dir'), workspace, self._id)
         self._name = name
         self.pickver_job = PICKLE_VERSION
         self.tasks = []
         self.exception = None
-        self._notes = None
-
         os.mkdir(self._dir)
 
 
