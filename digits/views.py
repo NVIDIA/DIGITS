@@ -22,6 +22,7 @@ from digits.log import logger
 from flask import Flask, request, render_template
 from workspaces import get_workspace
 import shutil
+import os
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
