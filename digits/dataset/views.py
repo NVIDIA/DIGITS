@@ -30,7 +30,7 @@ def datasets_show(job_id):
         return flask.jsonify(job.json_dict(True))
     else:
         if isinstance(job, dataset_images.ImageClassificationDatasetJob):
-            return dataset_images.classification.views.show(jo, workspace)
+            return dataset_images.classification.views.show(job, workspace)
         elif isinstance(job, dataset_images.GenericImageDatasetJob):
             return dataset_images.generic.views.show(job, workspace)
         else:

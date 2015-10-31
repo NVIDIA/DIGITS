@@ -277,6 +277,7 @@ def image_classification_dataset_create():
 
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
+    workspace = get_workspace(flask.request.url)
     form = ImageClassificationDatasetForm()
 
     ## Is there a request to clone a job with ?clone=<job_id>
@@ -297,7 +298,8 @@ def image_classification_dataset_create():
                     int(form.resize_width.data),
                     int(form.resize_channels.data),
                     ),
-                resize_mode = form.resize_mode.data
+                resize_mode = form.resize_mode.data,
+                workspace = workspace,
                 )
 
         if form.method.data == 'folder':

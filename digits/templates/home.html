@@ -52,7 +52,7 @@ function deleteWorkspace(workspace) {
 
             <form action="/workspace/edit/{{ workspace }}" method="post">
             <div id="show-workspace-name" class="col-sm-12">
-                <h1 style="display:inline;">{{ workspace }}</h1>
+                <h2 style="display:inline;">{{ workspace }}</h2>
                 <a href=# onClick="$('#show-workspace-name').hide(); $('#edit-workspace-name').show(); return false;"><span class="glyphicon glyphicon-edit"></span></a>
             </div>
             <div id="edit-workspace-name" name="edit-workspace-name" class="col-sm-4" style="display:none;">

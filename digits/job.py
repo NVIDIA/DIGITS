@@ -49,9 +49,8 @@ class Job(StatusCls):
         """
         Arguments:
         name -- name of this job
+        workspace -- name of workspace to which the new job belongs to
         """
-        super(Job, self).__init__()
-
         # create a unique ID
         super(Job, self).__init__()
         self._id = '%s-%s' % (time.strftime('%Y%m%d-%H%M%S'), os.urandom(2).encode('hex'))
