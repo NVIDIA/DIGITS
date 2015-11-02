@@ -265,9 +265,6 @@ def image_classification_model_classify_one():
     db_task = job.train_task().dataset.train_db_task()
     height = db_task.image_dims[0]
     width = db_task.image_dims[1]
-    if job.train_task().crop_size:
-        height = job.train_task().crop_size
-        width = job.train_task().crop_size
     image = utils.image.resize_image(image, height, width,
             channels = db_task.image_dims[2],
             resize_mode = db_task.resize_mode,

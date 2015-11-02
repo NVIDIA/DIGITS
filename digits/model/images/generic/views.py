@@ -246,9 +246,6 @@ def generic_image_model_infer_one():
     db_task = job.train_task().dataset.analyze_db_tasks()[0]
     height = db_task.image_height
     width = db_task.image_width
-    if job.train_task().crop_size:
-        height = job.train_task().crop_size
-        width = job.train_task().crop_size
     image = utils.image.resize_image(image, height, width,
             channels = db_task.image_channels,
             resize_mode = 'squash',
@@ -298,9 +295,6 @@ def generic_image_model_infer_many():
     db_task = job.train_task().dataset.analyze_db_tasks()[0]
     height = db_task.image_height
     width = db_task.image_width
-    if job.train_task().crop_size:
-        height = job.train_task().crop_size
-        width = job.train_task().crop_size
     channels = db_task.image_channels
 
     for line in image_list.readlines():
