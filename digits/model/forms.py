@@ -2,6 +2,7 @@
 
 import os
 
+import flask
 from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
@@ -33,12 +34,59 @@ class ModelForm(Form):
         except frameworks.errors.BadNetworkError as e:
             raise validators.ValidationError('Bad network: %s' % e.message)
 
+    def validate_file_exists(form, field):
+        from_client = bool(form.python_layer_from_client.data)
+
+        filename = ''
+        if not from_client and field.type == 'StringField':
+            filename = field.data
+
+        if filename == '': return
+
+        if not os.path.isfile(filename):
+            raise validators.ValidationError('Server side file, %s, does not exist.' % filename)
+
+    def validate_py_ext(form, field):
+        from_client = bool(form.python_layer_from_client.data)
+
+        filename = ''
+        if from_client and field.type == 'FileField':
+            filename = flask.request.files[field.name].filename
+        elif not from_client and field.type == 'StringField':
+            filename = field.data
+
+        if filename == '': return
+
+        (root, ext) = os.path.splitext(filename)
+        if ext != '.py' and ext != '.pyc':
+            raise validators.ValidationError('Python file, %s, needs .py or .pyc extension.' % filename)
+
     ### Fields
 
     # The options for this get set in the view (since they are dynamic)
     dataset = utils.forms.SelectField('Select Dataset', choices=[],
                 tooltip = "Choose the dataset to use for this model."
             )
+
+
+    python_layer_from_client = wtforms.BooleanField(u'Use client side file',
+                                                default=False)
+
+    python_layer_client_file = utils.forms.FileField(
+        u'Python Layer File (client side)',
+        validators=[
+            validate_py_ext
+        ],
+        tooltip = "Choose the python file on the client containing layer functions."
+    )
+    python_layer_server_file = utils.forms.StringField(
+        u'Python Layer File (server side)',
+        validators=[
+            validate_file_exists,
+            validate_py_ext
+        ],
+        tooltip = "Choose the python file on the server containing layer functions."
+    )
 
     train_epochs = utils.forms.IntegerField('Training epochs',
             validators = [
