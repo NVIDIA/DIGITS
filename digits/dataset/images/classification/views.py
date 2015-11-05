@@ -415,11 +415,25 @@ def image_classification_dataset_explore():
             datum = caffe_pb2.Datum()
             datum.ParseFromString(value)
             if label is None or datum.label == label:
-                s = StringIO()
-                s.write(datum.data)
-                s.seek(0)
-                img = PIL.Image.open(s)
-                imgs.append({"label":labels[datum.label], "b64": utils.image.image_to_base64(img)})
+                if datum.encoded:
+                    s = StringIO()
+                    s.write(datum.data)
+                    s.seek(0)
+                    img = PIL.Image.open(s)
+                else:
+                    import caffe.io
+                    arr = caffe.io.datum_to_array(datum)
+                    # CHW -> HWC
+                    arr = arr.transpose((1,2,0))
+                    if arr.shape[2] == 1:
+                        # HWC -> HW
+                        arr = arr[:,:,0]
+                    elif arr.shape[2] == 3:
+                        # BGR -> RGB
+                        # XXX see issue #59
+                        arr = arr[:,:,[2,1,0]]
+                    img = PIL.Image.fromarray(arr)
+                imgs.append({"label":labels[datum.label], "b64": utils.image.embed_image_html(img)})
         if label is None:
             count += 1
         else:
