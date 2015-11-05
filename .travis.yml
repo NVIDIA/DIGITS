@@ -21,7 +21,7 @@ install:
     - ./scripts/travis/install-caffe.sh $(pwd)/deps/caffe
 
     # Torch
-    - ./scripts/travis/install-torch.sh $(pwd)/deps/torch
+    - travis_wait ./scripts/travis/install-torch-wrapper.sh $(pwd)/deps/torch $(pwd)/torch-install-log.txt
 
     # DIGITS
     - sudo apt-get install graphviz
