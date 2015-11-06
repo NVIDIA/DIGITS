@@ -18,8 +18,52 @@
 {% block content %}
 
 <div class="page-header">
-    <h1>Models</h1>
+    <div class="row">
+        <div class="pull-right">
+            <a id="delete-job" class="btn btn-danger">Delete Selected Jobs</a>
+        </div>
+        <h1>Models</h1>
+    </div>
 </div>
+
+<script>
+ $('#delete-job').on('click', function(event) {
+
+     var table = $('#job_table').dataTable();
+     var list = table._('tr', {"filter":"applied"});
+
+     if (list.length == 0) {
+         return;
+     }
+     bootbox.confirm(
+         'Are you sure you want to delete ' + list.length + ' jobs?<br><br>All related files will be permanently removed.',
+         function(result) {
+             if (result) {
+                 for (var i = 0; i < list.length; i++) {
+                     var job_id = list[i][1];
+                     var url = '/jobs/' + job_id
+
+                     if (i == list.length-1) {
+                         $.ajax(url, {type: "DELETE"})
+                          .done(function(data) {
+                              // refresh the page only after the last delete has completed
+                              window.location.reload(1);
+                          })
+                          .fail(function(data) {
+                              errorAlert(data);
+                          });
+                     } else {
+                         $.ajax(url, {type: "DELETE"})
+                          .fail(function(data) {
+                              errorAlert(data);
+                          });
+                     }
+                 }
+             }
+         });
+ });
+</script>
+
 
 {% if jobs|length > 0 %}
 <div class="row">
