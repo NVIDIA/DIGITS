@@ -2,6 +2,7 @@
 require 'torch' -- torch
 require 'nn' -- provides a normalization operator
 require 'utils' -- various utility functions
+require 'hdf5' -- import HDF5 now as it is unsafe to do it from a worker thread
 local threads = require 'threads' -- for multi-threaded data loader
 check_require 'image' -- for color transforms
 
@@ -358,6 +359,7 @@ function DBSource:hdf5_getSample(shuffle)
         local myFile = hdf5.open(self.dbs[self.db_id].path, 'r')
         self.hdf5_data = myFile:read('/data'):all()
         self.hdf5_labels = myFile:read('/label'):all()
+        myFile:close()
         -- make sure number of entries match number of labels
         assert(self.hdf5_data:size()[1] == self.hdf5_labels:size()[1], "data/label mismatch")
         self.cursor = 1
