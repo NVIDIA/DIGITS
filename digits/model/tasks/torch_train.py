@@ -125,7 +125,8 @@ class TorchTrainTask(TrainTask):
         assert dataset_backend=='lmdb' or dataset_backend=='hdf5'
 
         args = [torch_bin,
-                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','main.lua'),
+                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
+                'main.lua',
                 '--network=%s' % self.model_file.split(".")[0],
                 '--epoch=%d' % int(self.train_epochs),
                 '--networkDirectory=%s' % self.job_dir,
@@ -503,7 +504,8 @@ class TorchTrainTask(TrainTask):
             torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
         args = [torch_bin,
-                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
+                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
+                'test.lua',
                 '--image=%s' % temp_image_path,
                 '--network=%s' % self.model_file.split(".")[0],
                 '--networkDirectory=%s' % self.job_dir,
@@ -802,7 +804,8 @@ class TorchTrainTask(TrainTask):
                 torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
             args = [torch_bin,
-                    os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','test.lua'),
+                    os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
+                    'test.lua',
                     '--testMany=yes',
                     '--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
                     '--image=%s' % str(temp_imglist_path),
