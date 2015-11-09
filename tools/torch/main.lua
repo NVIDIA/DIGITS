@@ -39,7 +39,7 @@ Usage details:
 -p,--type (default cuda) float or cuda
 -r,--learningRate (default 0.001) learning rate
 -s,--save (default results) save directory
--t,--train (default train_db) location in which train db exists.
+-t,--train (default '') location in which train db exists. This parameter may be omitted only if visualizeModel is 'yes'.
 -v,--validation (default '') location in which validation db exists.
 -w,--weightDecay (default 1e-4) L2 penalty on the weights
 
@@ -89,6 +89,9 @@ Usage details:
 -- 2) We should also save and restore some information like epoch, batch size, snapshot interval, subtractMean, shuffle, mirror, crop, croplen
 -- Precautions should be taken while restoring these options.
 -----------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------
+-- Initial parameter checks
 
 -- Convert boolean options
 opt.crop = opt.crop == 'yes' or false
@@ -160,30 +163,127 @@ if opt.randomState ~= '' and opt.seed ~= '' then
 end
 
 torch.setnumthreads(opt.threads)
+
+----------------------------------------------------------------------
+-- Open Data sources:
+-- mean tensor,
+-- training database and optionally: labels,
+-- optionally: validation database and labels.
+
+local data = require 'data'
+
+local meanTensor
+if opt.subtractMean ~= 'none' then
+    assert(opt.mean ~= '', 'subtractMean parameter not set to "none" yet mean image path is unset')
+    logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
+    meanTensor = data.loadMean(opt.mean, opt.subtractMean == 'pixel')
+end
+
+local classes
+local confusion
+local validation_confusion
+
+if opt.labels ~= '' then
+    logmessage.display(0,'Loading label definitions from '.. opt.labels ..' file')
+    -- classes
+    classes = data.loadLabels(opt.labels)
+
+    if classes == nil then
+        logmessage.display(2,'labels file '.. opt.labels ..' not found')
+        os.exit(-1)
+    end
+
+    -- This matrix records the current confusion across classes
+    confusion = optim.ConfusionMatrix(classes)
+
+    -- separate validation matrix for validation data
+    validation_confusion = nil
+    if opt.validation ~= '' then
+        validation_confusion = optim.ConfusionMatrix(classes)
+    end
+
+    logmessage.display(0,'found ' .. #classes .. ' categories')
+end
+
+logmessage.display(0,'creating data readers')
+
+-- DataLoader objects take care of loading data from
+-- databases. Data loading and tensor manipulations
+-- (e.g. cropping, mean subtraction, mirroring) are
+-- performed from separate threads
+local trainDataLoader, trainSize, inputTensorShape
+local validationDataLoader, valSize
+
+if opt.train ~= '' then
+    -- create data loader for training dataset
+    trainDataLoader = DataLoader:new(4, -- num threads
+                                     package.path,
+                                     opt.dbbackend, opt.train, opt.train_labels,
+                                     opt.mirror, meanTensor,
+                                     true, -- train
+                                     opt.shuffle,
+                                     classes ~= nil -- whether this is a classification task
+                                     )
+    -- retrieve info from train DB (number of records and shape of input tensors)
+    trainSize, inputTensorShape = trainDataLoader:getInfo()
+    logmessage.display(0,'found ' .. trainSize .. ' images in train db' .. opt.train)
+    if opt.validation ~= '' then
+        local shape
+        validationDataLoader = DataLoader:new(4, -- num threads
+                                              package.path,
+                                              opt.dbbackend, opt.validation, opt.validation_labels,
+                                              false, -- no need to do random mirrorring
+                                              meanTensor,
+                                              false, -- train
+                                              false, -- shuffle
+                                              classes ~= nil -- whether this is a classification task
+                                              )
+        valSize, shape = validationDataLoader:getInfo()
+        logmessage.display(0,'found ' .. valSize .. ' images in train db' .. opt.validation)
+    end
+else
+    assert(opt.visualizeModel, 'Train DB should be specified')
+end
+
+-- update inputTensorShape if crop length specified
+-- this is necessary as the inputTensorShape is provided
+-- below to the user-defined function that defines the network
+if opt.crop and inputTensorShape then
+    inputTensorShape[2] = opt.croplen
+    inputTensorShape[3] = opt.croplen
+end
+
 ----------------------------------------------------------------------
 -- Model + Loss:
+-- this is where we retrieve the network definition
+-- from the user-defined function
 
 package.path = paths.concat(opt.networkDirectory, "?.lua") ..";".. package.path
 logmessage.display(0,'Loading network definition from ' .. paths.concat(opt.networkDirectory, opt.network))
--- retrieve network definition
 local network_func = require (opt.network)
 assert(type(network_func)=='function', "Network definition should return a Lua function - see documentation")
 local parameters = {
-        ngpus = (opt.type =='cuda') and 1 or 0
+        ngpus = (opt.type == 'cuda') and 1 or 0,
+        inputShape = inputTensorShape,
     }
 network = network_func(parameters)
 local model = network.model
 
--- loss defaults to nn.ClassNLLCriterion() if unspecified
+-- if the loss criterion was not defined in the network
+-- use nn.ClassNLLCriterion() by default
 local loss = network.loss or nn.ClassNLLCriterion()
 
--- unless specified on command line, inherit croplen from network
+-- if the crop length was not defined on command line then
+-- check if the network defined a preferred crop length
 if not opt.crop and network.croplen then
     opt.crop = true
     opt.croplen = network.croplen
 end
 
--- unless specified on command line, inherit train and validation batch size from network
+-- if batch size was not specified on command line then check
+-- whether the network defined a preferred batch size (there
+-- can be separate batch sizes for the training and validation
+-- sets)
 local trainBatchSize
 local validationBatchSize
 if opt.batchSize==0 then
@@ -196,7 +296,8 @@ else
 end
 logmessage.display(0,'Train batch size is '.. trainBatchSize .. ' and validation batch size is ' .. validationBatchSize)
 
--- model visualization
+-- if we were instructed to print a visualization of the model,
+-- do it now and return immediately
 if opt.visualizeModel then
     logmessage.display(0,'Network definition:')
     print('\nModel: \n' .. model:__tostring())
@@ -205,38 +306,7 @@ if opt.visualizeModel then
     os.exit(-1)
 end
 
--- load
-local data = require 'data'
-
-local meanTensor
-if opt.subtractMean ~= 'none' then
-    assert(opt.mean ~= '', 'subtractMean parameter not set to "none" yet mean image path is unset')
-    logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
-    meanTensor = data.loadMean(opt.mean, opt.subtractMean == 'pixel')
-end
-
-local classes
-if opt.labels ~= '' then
-    logmessage.display(0,'Loading label definitions from '.. opt.labels ..' file')
-    -- classes
-    classes = data.loadLabels(opt.labels)
-
-    if classes == nil then
-        logmessage.display(2,'labels file '.. opt.labels ..' not found')
-        os.exit(-1)
-    end
-
-    logmessage.display(0,'found ' .. #classes .. ' categories')
-
-    -- fix final output dimension of network
-    utils.correctFinalOutputDim(model, #classes)
-end
-
-logmessage.display(0,'Network definition: \n' .. model:__tostring__())
-logmessage.display(0,'Network definition ends')
-
 if opt.mirror then
-    --torch.manualSeed(os.time())
     logmessage.display(0,'mirror option was selected, so during training for some of the random images, mirror view will be considered instead of original image view')
 end
 
@@ -254,19 +324,6 @@ end
 
 ----------------------------------------------------------------------
 
-local confusion
-local validation_confusion
-if classes ~= nil then
-    -- This matrix records the current confusion across classes
-    confusion = optim.ConfusionMatrix(classes)
-
-    -- seperate validation matrix for validation data
-    validation_confusion = nil
-    if opt.validation ~= '' then
-        validation_confusion = optim.ConfusionMatrix(classes)
-    end
-end
-
 -- NOTE: currently retrain option wasn't used in DIGITS. This option was provided to be used from command line, if required.
 -- If preloading option is set, preload existing models appropriately
 if opt.retrain ~= '' then
@@ -278,6 +335,15 @@ if opt.retrain ~= '' then
         os.exit(-1)
     end
 end
+
+if classes then
+    -- for classification networks, and for the user's convenience, adjust
+    -- last layer to match number of classes
+    utils.correctFinalOutputDim(model, #classes)
+end
+
+logmessage.display(0,'Network definition: \n' .. model:__tostring__())
+logmessage.display(0,'Network definition ends')
 
 if opt.type == 'float' then
     logmessage.display(0,'switching to floats')
@@ -313,49 +379,14 @@ if lfs.mkdir(paths.concat(opt.save)) then
     logmessage.display(0,'created a directory ' .. paths.concat(opt.save) .. ' to save all the snapshots')
 end
 
-logmessage.display(0,'creating worker threads')
--- create data loader for training dataset
-trainDataLoader = DataLoader:new(4, -- num threads
-                                 package.path,
-                                 opt.dbbackend, opt.train, opt.train_labels,
-                                 opt.mirror, opt.crop,
-                                 opt.croplen, meanTensor,
-                                 true, -- train
-                                 opt.shuffle,
-                                 classes ~= nil -- whether this is a classification task
-                                 )
-
--- retrieve info from train DB
-local trainSize, imageSizeX, imageSizeY = trainDataLoader:getInfo()
-
-logmessage.display(0,'found ' .. trainSize .. ' images in train db' .. opt.train)
-
-local validationDataLoader, valSize
-
-if opt.validation ~= '' then
-    local imageSizeX, imageSizeY
-    validationDataLoader = DataLoader:new(4, -- num threads
-                                          package.path,
-                                          opt.dbbackend, opt.validation, opt.validation_labels,
-                                          false, -- no need to do random mirrorring
-                                          opt.crop, opt.croplen,
-                                          meanTensor,
-                                          false, -- train
-                                          false, -- shuffle
-                                          classes ~= nil -- whether this is a classification task
-                                          )
-    valSize, imageSizeX, imageSizeY = validationDataLoader:getInfo()
-    logmessage.display(0,'found ' .. valSize .. ' images in train db' .. opt.validation)
-end
-
 -- validate "crop length" input parameter
-if opt.crop then
-    if opt.croplen > imageSizeY then
-        logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image width ' .. imageSizeY)
-        os.exit(-1)
-    elseif opt.croplen > imageSizeX then
-        logmessage.display(2,'invalid crop length! crop length ' .. opt.croplen .. ' is less than image height ' .. imageSizeX)
-        os.exit(-1)
+if opt.crop and inputTensorShape then
+    -- make sure crop length is not bigger than image height or width
+    opt.croplen = math.min(opt.croplen, inputTensorShape[2], inputTensorShape[3])
+    -- set crop length in data readers
+    trainDataLoader:setCropLen(opt.croplen)
+    if validationDataLoader then
+        validationDataLoader:setCropLen(opt.croplen)
     end
 end
 
@@ -802,3 +833,5 @@ if opt.validation ~= '' then
     validationDataLoader:close()
 end
 
+-- enforce clean exit
+os.exit(0)

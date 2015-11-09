@@ -151,13 +151,11 @@ DBSource = {mean = nil, ImageChannels = 0, ImageSizeY = 0, ImageSizeX = 0, total
 --  db_path (string): path to database
 --  labels_db_path (string): path to labels database, or nil
 --  mirror (boolean): whether samples must be mirrored
---  crop (boolean): whether samples must be cropped
---  croplen (int): crop length, if crop==true
 --  meanTensor (tensor): mean tensor to use for mean subtraction
 --  isTrain (boolean): whether this is a training database (e.g. mirroring not applied to validation database)
 --  shuffle (boolean): whether samples should be shuffled
 --  classification (boolean): whether this is a classification task
-function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, meanTensor, isTrain, shuffle, classification)
+function DBSource:new (backend, db_path, labels_db_path, mirror, meanTensor, isTrain, shuffle, classification)
     local self = copy(DBSource)
     local paths = require('paths')
 
@@ -255,8 +253,6 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, 
     logmessage.display(0,'Image channels are ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeY .. ' and Image height is ' .. self.ImageSizeX)
 
     self.mirror = mirror
-    self.crop = crop
-    self.croplen = croplen
     self.train = isTrain
     self.shuffle = shuffle
     self.classification = classification
@@ -265,17 +261,35 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, crop, croplen, 
         assert(self.label_width == 1, 'expect scalar labels for classification tasks')
     end
 
-    if crop then
-        if self.train == true then
-            self.cropY = self.ImageSizeY - croplen + 1
-            self.cropX = self.ImageSizeX - croplen + 1
-        else
-            self.cropY = math.floor((self.ImageSizeY - croplen)/2) + 1
-            self.cropX = math.floor((self.ImageSizeX - croplen)/2) + 1
-        end
-    end
-
     return self
+end
+
+-- Derived class method setCropLen
+-- This method may be called in two cases:
+-- * when the crop command-line parameter is used
+-- * when the network definition defines a preferred crop length
+function DBSource:setCropLen(croplen)
+    self.crop = true
+    self.croplen = croplen
+
+    if self.train == true then
+        self.cropY = self.ImageSizeY - croplen + 1
+        self.cropX = self.ImageSizeX - croplen + 1
+    else
+        self.cropY = math.floor((self.ImageSizeY - croplen)/2) + 1
+        self.cropX = math.floor((self.ImageSizeX - croplen)/2) + 1
+    end
+end
+
+-- Derived class method inputTensorShape
+-- This returns the shape of the input samples in the database
+-- There is an assumption that all input samples have the same shape
+function DBSource:inputTensorShape()
+    local shape = torch.Tensor(3)
+    shape[1] = self.ImageChannels
+    shape[2] = self.ImageSizeY
+    shape[3] = self.ImageSizeX
+    return shape
 end
 
 -- Derived class method lmdb_getKeys
@@ -453,14 +467,12 @@ DataLoader = {}
 -- @param db_path (string) path to database
 -- @param labels_db_path (string) path to labels database, or nil
 -- @param mirror (boolean) whether samples must be mirrored
--- @param crop (boolean) whether samples must be cropped
--- @param croplen (int) crop length, if crop==true
 -- @param mean (Tensor) mean tensor for mean image
 -- @param subtractMean (boolean) whether mean image should be subtracted from samples
 -- @param isTrain (boolean) whether this is a training database (e.g. mirroring not applied to validation database)
 -- @param shuffle (boolean) whether samples should be shuffled
 -- @param classification (boolean) whether this is a classification task
-function DataLoader:new (numThreads, package_path, backend, db_path, labels_db_path, mirror, crop, croplen, mean, isTrain, shuffle, classification)
+function DataLoader:new (numThreads, package_path, backend, db_path, labels_db_path, mirror, mean, isTrain, shuffle, classification)
     local self = copy(DataLoader)
     self.backend = backend
     if self.backend == 'hdf5' then
@@ -477,8 +489,7 @@ function DataLoader:new (numThreads, package_path, backend, db_path, labels_db_p
             require('data')
             -- executes in reader thread, variables are local to this thread
             db = DBSource:new(backend, db_path, labels_db_path,
-                              mirror, crop,
-                              croplen, mean,
+                              mirror, mean,
                               isTrain,
                               shuffle,
                               classification
@@ -492,8 +503,7 @@ end
 
 function DataLoader:getInfo()
     local datasetSize
-    local imageSizeX
-    local imageSizeY
+    local inputTensorShape
 
     -- switch to specific mode so we can specify which thread to add job to
     self.threadPool:specific(true)
@@ -506,16 +516,15 @@ function DataLoader:getInfo()
                        -- executes in reader thread, return values passed to
                        -- main thread through following function
                        if db then
-                           return db:totalRecords(), db.ImageSizeX, db.ImageSizeY
+                           return db:totalRecords(), db:inputTensorShape()
                        else
-                           return nil, nil, nil
+                           return nil, nil
                        end
                    end,
-                   function(totalRecords, sizeX, sizeY)
+                   function(totalRecords, shape)
                        -- executes in main thread
                        datasetSize = totalRecords
-                       imageSizeX = sizeX
-                       imageSizeY = sizeY
+                       inputTensorShape = shape
                    end
                    )
         self.threadPool:synchronize()
@@ -525,7 +534,7 @@ function DataLoader:getInfo()
     end
     -- return to non-specific mode
     self.threadPool:specific(false)
-    return datasetSize, imageSizeX, imageSizeY
+    return datasetSize, inputTensorShape
 end
 
 -- schedule next data loader batch
@@ -582,6 +591,24 @@ function DataLoader:close()
                     function()
                         if db then
                             db:close()
+                        end
+                    end
+                )
+    end
+    -- return to non-specific mode
+    self.threadPool:specific(false)
+end
+
+-- set crop length (calls setCropLen() method of all DB intances)
+function DataLoader:setCropLen(croplen)
+    -- switch to specific mode so we can specify which thread to add job to
+    self.threadPool:specific(true)
+    for i=1,self.numThreads do
+        self.threadPool:addjob(
+                    i,
+                    function()
+                        if db then
+                            db:setCropLen(croplen)
                         end
                     end
                 )

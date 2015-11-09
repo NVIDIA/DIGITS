@@ -67,12 +67,14 @@ layer {
 
     TORCH_NETWORK = \
 """
-require 'nn'
-local model = nn.Sequential()
-model:add(nn.View(-1):setNumInputDims(3)) -- 10*10*3 -> 300
-model:add(nn.Linear(300, 3))
-model:add(nn.LogSoftMax())
-return function(params)
+return function(p)
+    -- model should adjust to any 3D input
+    local nDim = 1
+    if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
+    local model = nn.Sequential()
+    model:add(nn.View(-1):setNumInputDims(3)) -- c*h*w -> chw (flattened)
+    model:add(nn.Linear(nDim, 3)) -- chw -> 3
+    model:add(nn.LogSoftMax())
     return {
         model = model
     }
@@ -429,7 +431,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job_id = self.create_model(json=True, network=bogus_net)
         assert self.model_wait_completion(job_id) == 'Error', 'job should have failed'
         job_info = self.job_info_html(job_id=job_id, job_type='models')
-        assert 'BogusCode' in job_info
+        assert 'BogusCode' in job_info, "job_info: \n%s" % str(job_info)
 
     def test_clone(self):
         options_1 = {
@@ -790,6 +792,21 @@ layer {
     }
 }
 """
+    TORCH_NETWORK = \
+"""
+return function(p)
+    local croplen = 8, channels
+    if p.inputShape then channels=p.inputShape[1] else channels=1 end
+    local model = nn.Sequential()
+    model:add(nn.View(-1):setNumInputDims(3)) -- flatten
+    model:add(nn.Linear(channels*croplen*croplen, 3)) -- chw -> 3
+    model:add(nn.LogSoftMax())
+    return {
+        model = model,
+        croplen = croplen
+    }
+end
+"""
 
 ################################################################################
 # Test classes
@@ -852,6 +869,22 @@ class TestCaffeLeNet(TestCaffeCreated):
                 'standard-networks', 'caffe', 'lenet.prototxt')
             ).read()
 
+class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
+    FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 10
+
+class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
+    FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 10
+
+class TestTorchCreatedWide(BaseTestCreatedWide):
+    FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 10
+
+class TestTorchCreatedTall(BaseTestCreatedTall):
+    FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 10
+
 class TestTorchLeNet(TestTorchCreated):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
@@ -861,10 +894,12 @@ class TestTorchLeNet(TestTorchCreated):
     LR_POLICY = 'fixed'
     LEARNING_RATE = 0.1
 
+    # standard lenet model will adjust to color
+    # or grayscale images
     TORCH_NETWORK=open(
             os.path.join(
                 os.path.dirname(digits.__file__),
-                'standard-networks', 'torch', 'lenet-color.lua')
+                'standard-networks', 'torch', 'lenet.lua')
             ).read()
 
 class TestTorchLeNetShuffle(TestTorchLeNet):
