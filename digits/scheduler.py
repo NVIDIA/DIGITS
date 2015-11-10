@@ -5,6 +5,7 @@ import time
 import shutil
 import traceback
 import signal
+from collections import OrderedDict
 
 import gevent
 import gevent.event
@@ -88,7 +89,7 @@ class Scheduler:
         gpu_list -- a comma-separated string which is a list of GPU id's
         verbose -- if True, print more errors
         """
-        self.jobs = []
+        self.jobs = OrderedDict()
         self.verbose = verbose
 
         # Keeps track of resource usage
@@ -115,10 +116,9 @@ class Scheduler:
                 exists = False
 
                 # Make sure it hasn't already been loaded
-                for job in self.jobs:
-                    if job.id() == dir_name:
-                        exists = True
-                        break
+                if dir_name in self.jobs:
+                    exists = True
+                    break
 
                 if not exists:
                     try:
@@ -145,7 +145,7 @@ class Scheduler:
         # add DatasetJobs
         for job in loaded_jobs:
             if isinstance(job, DatasetJob):
-                self.jobs.append(job)
+                self.jobs[job.id()] = job
 
         # add ModelJobs
         for job in loaded_jobs:
@@ -153,7 +153,7 @@ class Scheduler:
                 try:
                     # load the DatasetJob
                     job.load_dataset()
-                    self.jobs.append(job)
+                    self.jobs[job.id()] = job
                 except Exception as e:
                     failed += 1
                     if self.verbose:
@@ -174,7 +174,7 @@ class Scheduler:
             logger.error('Scheduler not running. Cannot add job.')
             return False
         else:
-            self.jobs.append(job)
+            self.jobs[job.id()] = job
 
             # Need to fix this properly
             # if True or flask._app_ctx_stack.top is not None:
@@ -216,10 +216,7 @@ class Scheduler:
         """
         if job_id is None:
             return None
-        for j in self.jobs:
-            if j.id() == job_id:
-                return j
-        return None
+        return self.jobs.get(job_id, None)
 
     def abort_job(self, job_id):
         """
@@ -246,37 +243,37 @@ class Scheduler:
             raise ValueError('called delete_job with a %s' % type(job))
         dependent_jobs = []
         # try to find the job
-        for i, job in enumerate(self.jobs):
-            if job.id() == job_id:
-                if isinstance(job, DatasetJob):
-                    # check for dependencies
-                    for j in self.jobs:
-                        if isinstance(j, ModelJob) and j.dataset_id == job.id():
-                            logger.error('Cannot delete "%s" (%s) because "%s" (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
-                            dependent_jobs.append(j.name())
-                if len(dependent_jobs)>0:
-                    error_message = 'Cannot delete "%s" because %d model%s depend%s on it: %s' % (
-                            job.name(),
-                            len(dependent_jobs),
-                            ('s' if len(dependent_jobs) != 1 else ''),
-                            ('s' if len(dependent_jobs) == 1 else ''),
-                            ', '.join(['"%s"' % j for j in dependent_jobs]))
-                    raise errors.DeleteError(error_message)
-                self.jobs.pop(i)
-                job.abort()
-                if os.path.exists(job.dir()):
-                    shutil.rmtree(job.dir())
-                logger.info('Job deleted.', job_id=job_id)
-                from digits.webapp import socketio
-                socketio.emit('job update',
-                              {
-                                  'update': 'deleted',
-                                  'job_id': job.id()
-                              },
-                              namespace='/jobs',
-                              room='job_management',
-                )
-                return True
+        job = self.jobs.get(job_id, None)
+        if job:
+            if isinstance(job, DatasetJob):
+                # check for dependencies
+                for j in self.jobs.values():
+                    if isinstance(j, ModelJob) and j.dataset_id == job.id():
+                        logger.error('Cannot delete "%s" (%s) because "%s" (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
+                        dependent_jobs.append(j.name())
+            if len(dependent_jobs)>0:
+                error_message = 'Cannot delete "%s" because %d model%s depend%s on it: %s' % (
+                        job.name(),
+                        len(dependent_jobs),
+                        ('s' if len(dependent_jobs) != 1 else ''),
+                        ('s' if len(dependent_jobs) == 1 else ''),
+                        ', '.join(['"%s"' % j for j in dependent_jobs]))
+                raise errors.DeleteError(error_message)
+            self.jobs.pop(job_id, None)
+            job.abort()
+            if os.path.exists(job.dir()):
+                shutil.rmtree(job.dir())
+            logger.info('Job deleted.', job_id=job_id)
+            from digits.webapp import socketio
+            socketio.emit('job update',
+                          {
+                              'update': 'deleted',
+                              'job_id': job.id()
+                          },
+                          namespace='/jobs',
+                          room='job_management',
+            )
+            return True
 
         # see if the folder exists on disk
         path = os.path.join(config_value('jobs_dir'), job_id)
@@ -290,28 +287,28 @@ class Scheduler:
     def running_dataset_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs if isinstance(j, DatasetJob) and j.status.is_running()],
+                [j for j in self.jobs.values() if isinstance(j, DatasetJob) and j.status.is_running()],
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
     def completed_dataset_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs if isinstance(j, DatasetJob) and not j.status.is_running()],
+                [j for j in self.jobs.values() if isinstance(j, DatasetJob) and not j.status.is_running()],
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
     def running_model_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs if isinstance(j, ModelJob) and j.status.is_running()],
+                [j for j in self.jobs.values() if isinstance(j, ModelJob) and j.status.is_running()],
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
     def completed_model_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs if isinstance(j, ModelJob) and not j.status.is_running()],
+                [j for j in self.jobs.values() if isinstance(j, ModelJob) and not j.status.is_running()],
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 
@@ -352,7 +349,7 @@ class Scheduler:
             last_saved = None
             while not self.shutdown.is_set():
                 # Iterate backwards so we can delete jobs
-                for job in reversed(self.jobs):
+                for job in self.jobs.values():
                     if job.status == Status.INIT:
                         def start_this_job(job):
                             if isinstance(job, ModelJob):
@@ -413,7 +410,7 @@ class Scheduler:
 
                 # save running jobs every 15 seconds
                 if not last_saved or time.time()-last_saved > 15:
-                    for job in self.jobs:
+                    for job in self.jobs.values():
                         if job.status.is_running():
                             job.save()
                     last_saved = time.time()
@@ -423,7 +420,7 @@ class Scheduler:
             pass
 
         # Shutdown
-        for job in self.jobs:
+        for job in self.jobs.values():
             job.abort()
             job.save()
         self.running = False

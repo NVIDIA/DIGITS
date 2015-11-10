@@ -32,7 +32,7 @@ NAMESPACE = '/models/'
 @autodoc(['models'])
 def models_index():
     column_attrs = list(get_column_attrs())
-    raw_jobs = [j for j in scheduler.jobs if isinstance(j, ModelJob)]
+    raw_jobs = [j for j in scheduler.jobs.values() if isinstance(j, ModelJob)]
 
     column_types = [
         ColumnType('latest', False, lambda outs: outs[-1]),
@@ -297,6 +297,6 @@ class ColumnType(object):
 
 def get_column_attrs():
     job_outs = [set(j.train_task().train_outputs.keys() + j.train_task().val_outputs.keys())
-        for j in scheduler.jobs if isinstance(j, ModelJob)]
+        for j in scheduler.jobs.values() if isinstance(j, ModelJob)]
 
     return reduce(lambda acc, j: acc.union(j), job_outs, set())
