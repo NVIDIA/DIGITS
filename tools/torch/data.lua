@@ -112,7 +112,26 @@ function LMDBSource:new(lighningmdb, path)
     self.e = self.lightningmdb.env_create()
     local LMDB_MAP_SIZE = 1099511627776 -- 1 TB
     self.e:set_mapsize(LMDB_MAP_SIZE)
-    self.e:open(path, self.lightningmdb.MDB_RDONLY + self.lightningmdb.MDB_NOTLS,0664)
+    local flags = lightningmdb.MDB_RDONLY + lightningmdb.MDB_NOTLS
+    local db, err = self.e:open(path, flags, 0664)
+    if not db then
+        -- unable to open Database => this might be due to a permission error on
+        -- the lock file so we will try again with MDB_NOLOCK. MDB_NOLOCK is safe
+        -- in this process as we are opening the database in read-only mode.
+        -- However if another process is writing into the database we might have a
+        -- concurrency issue - note that this shouldn't happen in DIGITS since the
+        -- database is written only once during dataset creation
+        logmessage.display(0,'opening LMDB database failed with error: "' .. err .. '". Trying with MDB_NOLOCK')
+        flags = bit.bor(flags, lighningmdb.MDB_NOLOCK)
+        -- we need to close/re-open the LMDB environment
+        self.e:close()
+        self.e = self.lightningmdb.env_create()
+        self.e:set_mapsize(LMDB_MAP_SIZE)
+        db, err = self.e:open(path, flags ,0664)
+        if not db then
+            error('opening LMDB database failed with error: ' .. err)
+        end
+    end
     self.total = self.e:stat().ms_entries
     self.t = self.e:txn_begin(nil, self.lightningmdb.MDB_RDONLY)
     self.d = self.t:dbi_open(nil,0)
