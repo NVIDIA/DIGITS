@@ -23,6 +23,7 @@ from flask import Flask, request, render_template
 from workspaces import get_workspace
 import shutil
 import os
+from boto.ec2.autoscale import scheduled
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
@@ -102,9 +103,9 @@ def home():
                 workspace = workspace,
                 )
 
-def get_job_list(cls, running, *args):
+def get_job_list(cls, running, workspace):
     scheduler_jobs = [j._id for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running]
-    workspace_dir = os.path.join(config_value('jobs_dir'), args[0])
+    workspace_dir = os.path.join(config_value('jobs_dir'),workspace)
     workspace_jobs = next(os.walk(workspace_dir))[1]
     workspace_scheduled_jobs = list(set(workspace_jobs) & set(scheduler_jobs))
     return sorted(
@@ -126,7 +127,7 @@ def show_job(job_id):
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
-
+   
     if isinstance(job, dataset.DatasetJob):
         return flask.redirect(flask.url_for('datasets_show', job_id=job_id)+'?workspace='+workspace)
     if isinstance(job, model.ModelJob):

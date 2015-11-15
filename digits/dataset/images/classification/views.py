@@ -325,11 +325,10 @@ def image_classification_dataset_create():
             scheduler.delete_job(job)
         raise
 
-def show(job, *args):
+def show(job, workspace):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    workspace = args[0]
     return flask.render_template('datasets/images/classification/show.html', job=job, workspace=workspace)
 
 @app.route(NAMESPACE + '/summary', methods=['GET'])

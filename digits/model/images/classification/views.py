@@ -233,11 +233,11 @@ def image_classification_model_create():
             scheduler.delete_job(job)
         raise
 
-def show(job, *args):
+def show(job, workspace):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()], workspace = args[0])
+    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()], workspace = workspace)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
 @autodoc('models')
