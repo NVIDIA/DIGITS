@@ -22,14 +22,14 @@ class Job(StatusCls):
     SAVE_FILE = 'status.pickle'
 
     @classmethod
-    def load(cls, path_job):
+    def load(cls, job_path):
         """
         Loads a Job in the given the job path
         Returns the Job or throws an exception
         """
         from digits.model.tasks import TrainTask
 
-        job_dir = os.path.join(config_value('jobs_dir'), path_job)
+        job_dir = os.path.join(config_value('jobs_dir'), job_path)
         filename = os.path.join(job_dir, cls.SAVE_FILE)
         with open(filename, 'rb') as savefile:
             job = pickle.load(savefile)
