@@ -59,6 +59,7 @@ class Job(StatusCls):
         self.pickver_job = PICKLE_VERSION
         self.tasks = []
         self.exception = None
+        self._notes = None
         os.mkdir(self._dir)
 
 
