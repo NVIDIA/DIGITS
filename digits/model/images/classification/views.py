@@ -490,9 +490,6 @@ def get_datasets():
     
 def get_datasets_workspace(workspace):
         list_jobs =   scheduler.return_workspace_jobs(workspace)
-        for j in list_jobs:
-            print j.id()  , j.name()
-        
         return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.return_workspace_jobs(workspace) if isinstance(j, ImageClassificationDatasetJob) and (j.status.is_running() or j.status == Status.DONE)],
         cmp=lambda x,y: cmp(y.id(), x.id())

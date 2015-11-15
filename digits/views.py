@@ -329,7 +329,6 @@ def show_workspaces():
     """
     jobs_dir = config_value('jobs_dir')
     workspaces = next(os.walk(jobs_dir))[1]
-    print workspaces
     return render_template('workspaces.html', workspaces = workspaces)
 
 @app.route('/workspaces', methods=['POST'])
