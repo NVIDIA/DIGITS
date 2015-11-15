@@ -7,4 +7,5 @@ def get_workspace(url):
 			workspace_name = "Default"
 	except:
 		workspace_name = "Default"
+		
 	return workspace_name
