@@ -83,7 +83,7 @@ Then, you can view your server at `http://localhost:5000/`.
 
     % ./digits-server
 
-Starts a production server (gunicorn) that listens on port 8080 (`http://localhost:8080`). If you get any errors about an invalid configuration, use the development server first to set your configuration.
+Starts a production server (gunicorn) that listens on port 34448 (`http://localhost:34448`). If you get any errors about an invalid configuration, use the development server first to set your configuration.
 
 If you have installed the nginx.site to your nginx sites-enabled/ directory, then you can view your app at `http://localhost/`.
 
