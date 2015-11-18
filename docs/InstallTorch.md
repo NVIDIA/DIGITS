@@ -4,12 +4,30 @@ Follow these instructions to install Torch7 on Mac OS X and Ubuntu 12+:
 
 http://torch.ch/docs/getting-started.html
 
+After installing Torch, you may consider refreshing your bash dy doing `source ~/.bashrc`. This will conveniently add the Torch `th` executable to your executable search path, which will allow DIGITS to find it automatically.
+
+Note: at the time of writing, cudnn.torch defaults to CuDNNv3. If you wish to use CuDNNv4 you need to select the R4 branch:
+```
+% cd <path_to_torch>/extra/cudnn
+% git checkout origin/R4
+% luarocks make cudnn-scm-1.rockspec
+```
+You will need to make sure that `libcudnn.so.4` is in your library search path.
+
 ## Luarocks dependencies
 
 To use Torch7 in DIGITS, you need to install a few extra dependencies.
 
-    % luarocks install image
-    % luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
+If you haven't done so already, install the HDF5 package:
+```
+% sudo apt-get install libhdf5-serial-dev
+```
+
+Install extra Lua packages:
+```
+% luarocks install image
+% luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
+```
 
 ## Optional: LMDB
 
@@ -191,7 +209,7 @@ end
 DIGITS Lua wrappers may also be used from command line. For example, to classify an image using the snapshot at epoch `10` of a model job `20150921-141321-86c1` using a dataset `20150916-001059-e0cd`:
 
 ```
-th /fast-scratch/gheinrich/ws/digits/tools/torch/test.lua --image=/path/to/image.png --network=model --networkDirectory=/path/to/jobs/20150921-141321-86c1 --load=/path/to/20150921-141321-86c1 --snapshotPrefix=snapshot --mean=/path/to/jobs/20150916-001059-e0cd/mean.jpg --labels=/path/to/jobs/20150916-001059-e0cd/labels.txt --epoch=10 --useMeanPixel=yes --crop=no --subtractMean=yes
+th /fast-scratch/gheinrich/ws/digits/tools/torch/test.lua --image=/path/to/image.png --network=model --networkDirectory=/path/to/jobs/20150921-141321-86c1 --load=/path/to/20150921-141321-86c1 --snapshotPrefix=snapshot --mean=/path/to/jobs/20150916-001059-e0cd/mean.jpg --labels=/path/to/jobs/20150916-001059-e0cd/labels.txt --epoch=10 --crop=no --subtractMean=image
 2015-09-22 15:21:55 [INFO ] Loading network definition from /path/to/jobs/20150921-141321-86c1/model
 2015-09-22 15:21:55 [INFO ] Loading /path/to/jobs/20150921-141321-86c1/snapshot_10_Weights.t7 file
 2015-09-22 15:21:55 [INFO ] For image 1, predicted class 1: 10 (9) 0.99923830445863
@@ -200,4 +218,5 @@ th /fast-scratch/gheinrich/ws/digits/tools/torch/test.lua --image=/path/to/image
 2015-09-22 15:21:55 [INFO ] For image 1, predicted class 4: 4 (3) 2.9689886060496e-06
 2015-09-22 15:21:55 [INFO ] For image 1, predicted class 5: 5 (4) 9.7695222396362e-07
 ```
+
 
