@@ -171,4 +171,3 @@ class TestViews(BaseViewsTest):
         rv = self.app.get('/models', follow_redirects=True)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         assert 'Models' in rv.data, 'unexpected page format'
-
