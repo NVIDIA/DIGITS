@@ -248,6 +248,11 @@ function check_require(name)
     end
 end
 
+-- trim leading and trailing white spaces and line breaks
+function trim(s)
+  return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
 utilsClass.correctFinalOutputDim = correctFinalOutputDim
 return utilsClass
 
