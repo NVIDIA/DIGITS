@@ -11,21 +11,23 @@ Table of Contents
 
 ## Installation
 
-If you are using the web installer, check out this [installation page](WebInstall.md).
+Follow [these instructions](UbuntuInstall.md) to install via debian packages.
 
-If you are installing from source, check out the [README](../README.md#installation).
+Follow [these instructions](BuildDigits.md) to build from source.
 
 ## Starting the server
 
 If you are using the web installer use the `runme.sh` script:
-
-    % cd $HOME/digits-2.0
-    % ./runme.sh
+```sh
+% cd $HOME/digits-2.0
+% ./runme.sh
+```
 
 If you are not using the web installer, use the `digits-devserver` script:
-
-    % cd $HOME/digits
-    % ./digits-devserver
+```sh
+% cd $HOME/digits
+% ./digits-devserver
+```
 
 The first time DIGITS is run, you may be asked to provide some configuration options.
 
@@ -50,10 +52,12 @@ Saved config to /home/username/digits/digits/digits.cfg
 
  Most values are set silently by default. If you need more control over your configuration, try one of these commands:
 
-    # Set more options before starting the server
-    ./digits-devserver --config
-    # Advanced usage
-    python -m digits.config.edit --verbose
+```sh
+# Set more options before starting the server
+./digits-devserver --config
+# Advanced usage
+python -m digits.config.edit --verbose
+```
 
 ## Using the Webapp
 
@@ -120,6 +124,6 @@ DIGITS also provides visualizations and statistics about the weights and activat
 ## Using the REST API
 
 Use your favorite tool (`curl`, `wget`, etc.) to interact with DIGITS through the [REST API](API.md).
-
-    curl localhost:5000/index.json
-
+```sh
+curl localhost:5000/index.json
+```

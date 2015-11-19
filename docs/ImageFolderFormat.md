@@ -7,16 +7,15 @@ DIGITS can train models which classify images into different categories. This do
 * Create a folder (e.g. `my-images`).
 * For each category, create a folder within that folder (e.g. `my-images/cat`).
 * Fill each folder with pictures that you want to use for that category.
-
-<pre>
-    my-images/
-    ├── cat/
-    │   ├── 1.jpg
-    │   └── 2.jpg
-    └── dog/
-        ├── 1.jpg
-        └── 2.jpg
-</pre>
+```
+my-images/
+├── cat/
+│   ├── 1.jpg
+│   └── 2.jpg
+└── dog/
+    ├── 1.jpg
+    └── 2.jpg
+```
 
 Then use `/path/to/my-images` for your "Training Images" folder. It's as simple as that!
 
@@ -25,76 +24,79 @@ Then use `/path/to/my-images` for your "Training Images" folder. It's as simple 
 Currently, only 4 file formats are supported: PNG, JPEG, BMP and PPM. If you would like for DIGITS to support another file format, just ask!
 
 File extensions are case-insensitive and the format of your file name is not important. All of the following filenames are valid:
-
-    my-images/
-    ├── cat/
-    │   ├── 1.PNG
-    │   ├── 2.JPEG
-    │   └── lolcat.jpg
-    └── dog/
-        ├── 000000001.jpg
-        ├── 2.BMP
-        └── big-dog.png
+```
+my-images/
+├── cat/
+│   ├── 1.PNG
+│   ├── 2.JPEG
+│   └── lolcat.jpg
+└── dog/
+    ├── 000000001.jpg
+    ├── 2.BMP
+    └── big-dog.png
+```
 
 ### Subfolders
 
 Any subfolders within a category folder are essentially flattened. All files found in a recursive search are added to the dataset.
-
-    my-images/
-    ├── cat/
-    │   ├── other-cat.jpg
-    │   ├── siamese/
+```
+my-images/
+├── cat/
+│   ├── other-cat.jpg
+│   ├── siamese/
+│   │   └── 1.jpg
+│   └── tabby/
+│       └── 1.jpg
+└── dog/
+    ├── big/
+    │   ├── great-dane/
     │   │   └── 1.jpg
-    │   └── tabby/
-    │       └── 1.jpg
-    └── dog/
-        ├── big/
-        │   ├── great-dane/
-        │   │   └── 1.jpg
-        │   └── other-big-dog.jpg
-        ├── other-dog.jpg
-        └── small/
-            └── jack_russell/
-                └── 1.jpg
+    │   └── other-big-dog.jpg
+    ├── other-dog.jpg
+    └── small/
+        └── jack_russell/
+            └── 1.jpg
+```
 
 In this case, DIGITS will find 7 images in 2 categories:
+```
+<cat>
+my-images/cat/siamese/1.jpg
+my-images/cat/other-cat.jpg
+my-images/cat/tabby/1.jpg
 
-    <cat>
-    my-images/cat/siamese/1.jpg
-    my-images/cat/other-cat.jpg
-    my-images/cat/tabby/1.jpg
-    
-    <dog>
-    my-images/dog/big/great-dane/1.jpg
-    my-images/dog/big/other-big-dog.jpg
-    my-images/dog/other-dog.jpg
-    my-images/dog/small/jack_russell/1.jpg
+<dog>
+my-images/dog/big/great-dane/1.jpg
+my-images/dog/big/other-big-dog.jpg
+my-images/dog/other-dog.jpg
+my-images/dog/small/jack_russell/1.jpg
+```
 
 ### Multiple top-level folders
 
 If you have all of your data in one top-level folder, DIGITS can automatically split up your data for you. For example, if you have 6 cat images and 8 dog images, and you choose a 50/50 split between training and validation images, then you will have 3 cat and 4 dog images randomly selected for your training set, and the rest will be used in the validation set.
 
 But, if you need more control and you want to select which images should be used, then you can create another top-level folder, provided the categories match:
-
-    .
-    ├── train-images/
-    │   ├── cat/
-    │   │   └── 1.jpg
-    │   └── dog/
-    │       └── 1.jpg
-    └── val-images/
-        ├── cat/
-        │   └── 1.jpg
-        └── dog/
-            └── 1.jpg
+```
+.
+├── train-images/
+│   ├── cat/
+│   │   └── 1.jpg
+│   └── dog/
+│       └── 1.jpg
+└── val-images/
+    ├── cat/
+    │   └── 1.jpg
+    └── dog/
+        └── 1.jpg
+```
 
 Then, you can use `train-images` for your training images and `val-images` as a separate folder for validation images.
 
 ## Example use case - ImageNet subset
 
 As an example, these features can be combined to create small groupings of ImageNet categories for classification. In the example folder below, symlinks are used to avoid data replication on disk. First, the validation images need to be sorted by category folders as the training images already are. Then you can do something like this:
-
-<pre>
+```
 imagenet_subset1/
 ├── train
 │   ├── bear
@@ -146,4 +148,4 @@ imagenet_subset1/
     │   ├── n01729977 -> /data/images/imagenet12/val/n01729977
     │   ├── n01734418 -> /data/images/imagenet12/val/n01734418
     │   └── n01735189 -> /data/images/imagenet12/val/n01735189
-</pre>
+```
