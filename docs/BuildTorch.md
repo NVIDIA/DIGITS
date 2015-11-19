@@ -32,7 +32,7 @@ Install extra Lua packages:
 ## Optional: LMDB
 
 Follow these instructions if you wish to use Torch7 to train networks using LMDB-encoded datasets in DIGITS. You may skip this section if you wish to only use HDF5-encoded datasets:
-[LMDB installation instructions](InstallTorchLMDB.md)
+[LMDB installation instructions](BuildTorchLMDB.md)
 
 ## Enabling support for Torch7 in DIGITS
 
