@@ -321,11 +321,11 @@ def image_classification_dataset_create():
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    return flask.render_template('datasets/images/classification/show.html', job=job)
+    return flask.render_template('datasets/images/classification/show.html', job=job, related_jobs=related_jobs)
 
 @app.route(NAMESPACE + '/summary', methods=['GET'])
 @autodoc('datasets')

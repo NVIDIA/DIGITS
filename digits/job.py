@@ -242,3 +242,9 @@ class Job(StatusCls):
                       namespace='/jobs',
                       room='job_management'
                   )
+    def parent_jobs(self):
+        """
+        Returns the list of the jobs on which the job
+        depends
+        """
+        raise NotImplementedError('Implement me!')

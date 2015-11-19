@@ -15,6 +15,7 @@ from . import utils
 from status import Status
 from job import Job
 from dataset import DatasetJob
+from evaluation import EvaluationJob
 from model import ModelJob
 from digits.utils import errors
 from log import logger
@@ -94,6 +95,7 @@ class Scheduler:
         # Keeps track of resource usage
         self.resources = {
                 # TODO: break this into CPU cores, memory usage, IO usage, etc.
+                'compute_accuracy_task_pool': [Resource()],
                 'parse_folder_task_pool': [Resource()],
                 'create_db_task_pool': [Resource(max_value=2)],
                 'analyze_db_task_pool': [Resource(max_value=4)],
@@ -163,6 +165,22 @@ class Scheduler:
                         else:
                             print 'Caught %s while loading job "%s"' % (type(e).__name__, job.id())
 
+        # add EvaluationJobs
+        for job in loaded_jobs:
+            if isinstance(job, EvaluationJob):
+                try:
+                    # load the ModelJob
+                    job.load_model()
+                    self.jobs.append(job)
+                except Exception as e:
+                    failed += 1
+                    if self.verbose:
+                        if str(e):
+                            print 'Caught %s while loading job "%s":' % (type(e).__name__, job.id())
+                            print '\t%s' % e
+                        else:
+                            print 'Caught %s while loading job "%s"' % (type(e).__name__, job.id())
+
         if failed > 0 and self.verbose:
             print 'WARNING:', failed, 'jobs failed to load.'
 
@@ -221,6 +239,20 @@ class Scheduler:
                 return j
         return None
 
+    def get_related_jobs(self, job):
+        """
+        Look through self.jobs to try to find the Jobs
+        whose parent contains job
+        """
+        related_jobs = []
+        for j in self.jobs:
+            try:
+                if job in j.parent_jobs():
+                    related_jobs.append(j)
+            except NotImplementedError: 
+                pass
+        return related_jobs
+
     def abort_job(self, job_id):
         """
         Aborts a running Job
@@ -254,6 +286,14 @@ class Scheduler:
                         if isinstance(j, ModelJob) and j.dataset_id == job.id():
                             logger.error('Cannot delete "%s" (%s) because "%s" (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
                             dependent_jobs.append(j.name())
+
+                if isinstance(job, ModelJob):
+                    # check for dependencies
+                    for j in self.jobs:
+                        if isinstance(j, EvaluationJob) and job.id() in map(lambda x : x.id(), j.parent_jobs()):
+                            logger.error('Cannot delete "%s" (%s) because "%s" (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
+                            dependent_jobs.append(j.name())
+
                 if len(dependent_jobs)>0:
                     error_message = 'Cannot delete "%s" because %d model%s depend%s on it: %s' % (
                             job.name(),
@@ -312,6 +352,20 @@ class Scheduler:
         """a query utility"""
         return sorted(
                 [j for j in self.jobs if isinstance(j, ModelJob) and not j.status.is_running()],
+                cmp=lambda x,y: cmp(y.id(), x.id())
+                )
+
+    def running_evaluation_jobs(self):
+        """a query utility"""
+        return sorted(
+                [j for j in self.jobs if isinstance(j, EvaluationJob) and j.status.is_running()],
+                cmp=lambda x,y: cmp(y.id(), x.id())
+                )
+
+    def completed_evaluation_jobs(self):
+        """a query utility"""
+        return sorted(
+                [j for j in self.jobs if isinstance(j, EvaluationJob) and not j.status.is_running()],
                 cmp=lambda x,y: cmp(y.id(), x.id())
                 )
 

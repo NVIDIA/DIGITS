@@ -231,11 +231,11 @@ def image_classification_model_create():
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()])
+    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()], related_jobs=related_jobs)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
 @autodoc('models')
@@ -261,6 +261,8 @@ def image_classification_model_classify_one():
     image = None
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
         image = utils.image.load_image(flask.request.form['image_url'])
+    elif 'image_url' in flask.request.args:
+        image = utils.image.load_image(flask.request.args['image_url'])
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
         outfile = tempfile.mkstemp(suffix='.bin')
         flask.request.files['image_file'].save(outfile[1])

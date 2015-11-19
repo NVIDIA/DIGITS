@@ -1,6 +1,6 @@
 # Flask Routes
 
-*Generated Oct 09, 2015*
+*Generated Sep 07, 2015*
 
 Documentation on the various routes used internally for the web application.
 
@@ -12,6 +12,7 @@ These are all technically RESTful, but they return HTML pages. To get JSON respo
 * [Jobs](#jobs)
 * [Datasets](#datasets)
 * [Models](#models)
+* [Evaluations](#evaluations)
 * [Util](#util)
 
 ## Home
@@ -39,16 +40,6 @@ Methods: **GET**
 Location: [`digits/views.py`](../digits/views.py)
 
 ## Jobs
-
-### `/clone/<clone>`
-
-> Clones a job with the id <clone>, populating the creation page with data saved in <clone>
-
-Methods: **GET**, **POST**
-
-Arguments: `clone`
-
-Location: [`digits/views.py`](../digits/views.py)
 
 ### `/datasets/<job_id>`
 
@@ -80,6 +71,36 @@ Arguments: `job_id`
 
 Location: [`digits/views.py`](../digits/views.py)
 
+### `/evaluations/<job_id>`
+
+> Deletes a job
+
+Methods: **DELETE**
+
+Arguments: `job_id`
+
+Location: [`digits/views.py`](../digits/views.py)
+
+### `/evaluations/<job_id>/abort`
+
+> Aborts a running job
+
+Methods: **POST**
+
+Arguments: `job_id`
+
+Location: [`digits/views.py`](../digits/views.py)
+
+### `/evaluations/<job_id>/status`
+
+> Returns a JSON objecting representing the status of a job
+
+Methods: **GET**
+
+Arguments: `job_id`
+
+Location: [`digits/views.py`](../digits/views.py)
+
 ### `/jobs/<job_id>`
 
 > Redirects to the appropriate /datasets/ or /models/ page
@@ -92,7 +113,7 @@ Location: [`digits/views.py`](../digits/views.py)
 
 ### `/jobs/<job_id>`
 
-> Edit a job's name and/or notes
+> Edit the name of a job
 
 Methods: **PUT**
 
@@ -187,14 +208,6 @@ Location: [`digits/dataset/views.py`](../digits/dataset/views.py)
 > Returns JSON when requested: {job_id,name,status} or {errors:[]}
 
 Methods: **POST**
-
-Location: [`digits/dataset/images/classification/views.py`](../digits/dataset/images/classification/views.py)
-
-### `/datasets/images/classification/explore`
-
-> Returns a gallery consisting of the images of one of the dbs
-
-Methods: **GET**
 
 Location: [`digits/dataset/images/classification/views.py`](../digits/dataset/images/classification/views.py)
 
@@ -421,6 +434,42 @@ Location: [`digits/model/views.py`](../digits/model/views.py)
 Methods: **POST**
 
 Location: [`digits/model/views.py`](../digits/model/views.py)
+
+## Evaluations
+
+### `/evaluations/<job_id>`
+
+> Show an EvaluationJob
+
+> 
+
+> Returns JSON when requested:
+
+> {id, name, directory, status }
+
+Methods: **GET**
+
+Arguments: `job_id`
+
+Location: [`digits/evaluation/views.py`](../digits/evaluation/views.py)
+
+### `/evaluations/images/classification`
+
+> Create a new ImageClassificationModelJob
+
+> 
+
+> Returns JSON when requested: {job_id,name,status} or {errors:[]}
+
+Methods: **POST**
+
+Location: [`digits/evaluation/images/classification/views.py`](../digits/evaluation/images/classification/views.py)
+
+### `/evaluations/images/classification/new`
+
+Methods: **GET**
+
+Location: [`digits/evaluation/images/classification/views.py`](../digits/evaluation/images/classification/views.py)
 
 ## Util
 
