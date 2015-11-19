@@ -70,7 +70,10 @@ local loadLabels = function(labels_file)
     if file then
         for line in file:lines() do
             i=i+1
-            Classes[i] = line
+            -- labels file might contain Windows line endings
+            -- or other whitespaces => trim leading and trailing
+            -- spaces here
+            Classes[i] = trim(line)
         end
         return Classes
     else
