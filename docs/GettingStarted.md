@@ -3,74 +3,52 @@
 Table of Contents
 =================
 * [Installation](#installation)
-* [Starting the server](#starting-the-server)
 * [Using the webapp](#using-the-webapp)
     * [Creating a Dataset](#creating-a-dataset)
     * [Training a Model](#training-a-model)
-* [Using the REST API](#using-the-rest-api)
 
 ## Installation
 
-If you are using the web installer, check out this [installation page](WebInstall.md).
+Follow [these instructions](UbuntuInstall.md) to install via deb packages.
 
-If you are installing from source, check out the [README](../README.md#installation).
-
-## Starting the server
-
-If you are using the web installer use the `runme.sh` script:
-
-    % cd $HOME/digits-2.0
-    % ./runme.sh
-
-If you are not using the web installer, use the `digits-devserver` script:
-
-    % cd $HOME/digits
-    % ./digits-devserver
-
-The first time DIGITS is run, you may be asked to provide some configuration options.
-
-```
-% ./digits-devserver
-==================================== Caffe =====================================
-Where is caffe installed?
-
-    Suggested values:
-    (P*) [PATH/PYTHONPATH] <PATHS>
->> ~/caffe
-Using "/home/username/caffe"
-
-Saved config to /home/username/digits/digits/digits.cfg
-  ___ ___ ___ ___ _____ ___
- |   \_ _/ __|_ _|_   _/ __|
- | |) | | (_ || |  | | \__ \
- |___/___\___|___| |_| |___/ 2.2.0
-
- * Running on http://0.0.0.0:5000/
-```
-
- Most values are set silently by default. If you need more control over your configuration, try one of these commands:
-
-    # Set more options before starting the server
-    ./digits-devserver --config
-    # Advanced usage
-    python -m digits.config.edit --verbose
+Follow [these instructions](BuildDigits.md) to build from source.
 
 ## Using the Webapp
 
-Now that DIGITS is running, open a browser and go to http://localhost:5000.  You should see the DIGITS home screen:
+Once you have installed and started DIGITS, open up a web browser and navigate to the home screen.
+The server should be at either `http://localhost/` (if installed from deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
 
 ![Home page](images/home-page-1.jpg)
 
-For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network. Both are generously made available by Yann LeCun on [his website](http://yann.lecun.com/).
+For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network.
+Both are generously made available by Yann LeCun on [his website](http://yann.lecun.com/).
 
-If you are not using the web installer, you can use the script at `tools/download_data/main.py` to download the MNIST dataset. See [Standard Datasets](StandardDatasets.md) for details.
+Use the following command to download the MNIST dataset (for deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
+```
+$ tools/download_data/main.py mnist ~/mnist
+Downloading url=http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz ...
+Downloading url=http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz ...
+Downloading url=http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz ...
+Downloading url=http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz ...
+Uncompressing file=train-images-idx3-ubyte.gz ...
+Uncompressing file=train-labels-idx1-ubyte.gz ...
+Uncompressing file=t10k-images-idx3-ubyte.gz ...
+Uncompressing file=t10k-labels-idx1-ubyte.gz ...
+Reading labels from /home/username/mnist/train-labels.bin ...
+Reading images from /home/username/mnist/train-images.bin ...
+Reading labels from /home/username/mnist/test-labels.bin ...
+Reading images from /home/username/mnist/test-images.bin ...
+Dataset directory is created successfully at '/home/username/mnist'
+Done after 16.722807169 seconds.
+```
+See [Standard Datasets](StandardDatasets.md) for more details.
 
 ### Creating a Dataset
 
 In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Dataset" page.
 
 * Type in the path to the MNIST training images
-  * `/home/username/digits-2.0/mnist/train` if you are using the web installer
+  * You can also add the the folder of MNIST test images as a "Separate validation images folder", if you like. Don't use the "test images" fields - test images are not used for anything in DIGITS yet.
 * Change the `Image Type` to `Grayscale`
 * Change the `Image size` to 28 x 28
 * Give the dataset a name
@@ -104,7 +82,7 @@ While training the model, you should see the expected completion time on the rig
 
 To test the model, scroll to the bottom of the page.
 * Click on the `Upload image` button and choose a file
-  * If you've used the web installer, choose one in `/home/username/digits-2.0/mnist/test`
+  * There are plenty to choose from in `/home/username/mnist/test/`
 * Or, find an image on the web and paste the URL into the `Image URL` field
 * Check the `Show visualizations and statistics` box
 * Click on `Classify One`
@@ -115,11 +93,3 @@ At the top of the page, DIGITS displays the top five classifications and corresp
 DIGITS also provides visualizations and statistics about the weights and activations of each layer in your network.
 
 ![Classified one image](images/classified-one-image.jpg)
-
-
-## Using the REST API
-
-Use your favorite tool (`curl`, `wget`, etc.) to interact with DIGITS through the [REST API](API.md).
-
-    curl localhost:5000/index.json
-

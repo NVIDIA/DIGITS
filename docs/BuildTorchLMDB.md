@@ -3,8 +3,9 @@
 Follow these instructions if you wish to use Torch7 to train networks using LMDB-encoded datasets in DIGITS. You may skip this section if you wish to only use HDF5-encoded datasets.
 
 ## Support for Protobuf
-
-    % luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
+```sh
+% luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
+```
 
 ## LMDB and lightningmdb
 
@@ -16,7 +17,7 @@ If LMDB wasn’t already installed, install it using the command below:
 * On Mac OS X: `brew install lmdb`
 
 Other OS's:
-```
+```sh
 git clone https://gitorious.org/mdb/mdb.git ~/lmdb
 cd ~/lmdb/libraries/liblmdb
 make
@@ -34,10 +35,10 @@ During installation, lightningmdb requires the LMDB header and libraries, so lua
   * e.g. `/usr/lib/x86_64-linux-gnu`
 
 Install lightningmdb (you may need to edit the paths at the end for your specific LMDB installation):
+```sh
+# Ubuntu 14.04
+% luarocks install lightningmdb LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
 
-    # Ubuntu 14.04
-    % luarocks install lightningmdb LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
-
-    # From source
-    % luarocks install lightningmdb LMDB_INCDIR=~/lmdb/libraries/liblmdb LMDB_LIBDIR=~/lmdb/libraries/liblmdb
-
+# From source
+% luarocks install lightningmdb LMDB_INCDIR=~/lmdb/libraries/liblmdb LMDB_LIBDIR=~/lmdb/libraries/liblmdb
+```

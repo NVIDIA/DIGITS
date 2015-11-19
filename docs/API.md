@@ -1,8 +1,13 @@
 # REST API
 
-*Generated Oct 09, 2015*
+*Generated Nov 20, 2015*
 
-DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
+DIGITS exposes its internal functionality through a REST API.
+You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
+For example:
+```sh
+curl localhost/index.json
+```
 
 For more information about other routes used for the web interface, see [this page](FlaskRoutes.md).
 

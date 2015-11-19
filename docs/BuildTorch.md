@@ -1,30 +1,55 @@
-# Torch7 Installation and Usage
+# Building Torch
+
+With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caffe.
+
+> NOTE: Torch support is still experimental!
+
+If you don't need a new version or custom build of Torch, you can still use deb packages to install the latest release.
+Follow [these instructions](UbuntuInstall.md#repository-access) to gain access to the required repositories, and then use this command to install:
+```sh
+% sudo apt-get install torch
+```
+
+Otherwise, follow these instructions to build from source.
+
+## Prerequisites
+
+### CUDA toolkit
+
+To install the CUDA toolkit, first get access to the required repositories by following [these instructions](UbuntuInstall.md#repository-access).
+Then install the toolkit with this command:
+```sh
+% sudo apt-get install cuda-toolkit-7-5
+```
+Any CUDA toolkit >= 6.5 should work.
+
+### cuDNN
+
+You can also install cuDNN via deb packages:
+```sh
+% sudo apt-get install libcudnn4-dev
+```
+
+## Torch installer
 
 Follow these instructions to install Torch7 on Mac OS X and Ubuntu 12+:
 
 http://torch.ch/docs/getting-started.html
 
-After installing Torch, you may consider refreshing your bash dy doing `source ~/.bashrc`. This will conveniently add the Torch `th` executable to your executable search path, which will allow DIGITS to find it automatically.
-
-Note: at the time of writing, cudnn.torch defaults to CuDNNv3. If you wish to use CuDNNv4 you need to select the R4 branch:
-```
-% cd <path_to_torch>/extra/cudnn
-% git checkout origin/R4
-% luarocks make cudnn-scm-1.rockspec
-```
-You will need to make sure that `libcudnn.so.4` is in your library search path.
+After installing Torch, you may consider refreshing your bash config with `source ~/.bashrc`.
+This will conveniently add the Torch `th` executable to your executable search path, which will allow DIGITS to find it automatically.
 
 ## Luarocks dependencies
 
 To use Torch7 in DIGITS, you need to install a few extra dependencies.
 
 If you haven't done so already, install the HDF5 package:
-```
+```sh
 % sudo apt-get install libhdf5-serial-dev
 ```
 
 Install extra Lua packages:
-```
+```sh
 % luarocks install image
 % luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
 ```
@@ -36,11 +61,13 @@ Follow these instructions if you wish to use Torch7 to train networks using LMDB
 
 ## Enabling support for Torch7 in DIGITS
 
-DIGITS should automatically enable support for Torch7 if the `th` executable is in your path. If not, you may explicitely point DIGITS to the appropriate location:
+DIGITS should automatically enable support for Torch7 if the `th` executable is in your path. If not, you may explicitly point DIGITS to the appropriate location:
 
 ```
-(venv)gheinrich@android-devel-wks-7:/fast-scratch/gheinrich/ws/digits$ ./digits-devserver -c
+$ ./digits-devserver -c
+
 ...
+
 ==================================== Torch =====================================
 Where is torch installed?
 
@@ -61,7 +88,7 @@ Select one of the "torch" tabs on the model creation page:
 
 To define a Torch7 model in DIGITS you need to write a Lua function that takes a table of external network parameters as argument and returns a table of internal network parameters. For example, the following code defines a flavour of LeNet:
 
-```
+```lua
 return function(params)
     -- adjust to number of channels in input images - default to 1 channel
     -- during model visualization
@@ -117,7 +144,7 @@ Networks are fed with Torch Tensor objects in the NxCxHxW format (index in batch
 #### Adjusting model to input dimensions
 
 The following network defines a linear network that takes any 3D-tensor as input and produces three categorical outputs:
-```
+```lua
 return function(p)
     -- model should adjust to any 3D-input
     nDim = 1
@@ -136,7 +163,7 @@ end
 
 Convolution layers are supported by a variety of backends (e.g. `nn`, `cunn`, `cudnn`, ...). The following snippet shows how to select between `nn`, `cunn`, `cudnn` based on their availability in the system:
 
-```
+```lua
 if pcall(function() require('cudnn') end) then
    backend = cudnn
    convLayer = cudnn.SpatialConvolution
@@ -161,7 +188,7 @@ lenet:add(nn.LogSoftMax())
 
 In supervised regression learning, labels may not be scalars like in classification learning. To learn a regression model, a generic dataset may be created using one database for input samples and one database for labels (only 1D row label vectors are supported presently). The appropriate loss function must be specified using the `loss` internal parameters. For example the following snippet defines a simple regression model on 1x10x10 images using MSE loss:
 
-```
+```lua
 local net = nn.Sequential()
 net:add(nn.View(-1):setNumInputDims(3))  -- 1*10*10 -> 100
 net:add(nn.Linear(100,2))
@@ -177,7 +204,7 @@ end
 
 In unsupervised learning the examples given to the optimizer are unlabelled. To train an auto-encoder for example, the output of the network must be compared against its input. This is made possible in DIGITS through the use of a `labelHook`. A `labelHook` is a function which takes a batch of the inputs and labels (if specified in database, otherwise `nil`) of the network as parameters and returns the corresponding batch of targets to provide to the optimizer. This function is called between the forward and backward passes of backpropagation. For example, the following snippet defines a simple auto-encoder that takes 1x28x28 images as inputs and compresses them into a 100-neuron representation:
 
-```
+```lua
 local autoencoder = nn.Sequential()
 autoencoder:add(nn.MulConstant(0.00390625))
 autoencoder:add(nn.View(-1):setNumInputDims(3))  -- 1*28*8 -> 784
