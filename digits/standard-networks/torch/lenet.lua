@@ -3,6 +3,10 @@
 return function(params)
     assert(params.ngpus<=1, 'Model supports only CPU or single-GPU')
 
+    -- get number of classes from external parameters
+    local nclasses = params.nclasses or 1
+
+    -- get number of channels from external parameters
     local channels = 1
     -- params.inputShape may be nil during visualization
     if params.inputShape then
@@ -10,11 +14,6 @@ return function(params)
         assert(params.inputShape[2]==28 and params.inputShape[3]==28, 'Network expects 28x28 images')
     end
 
-    -- adjust to number of channels in input images - default to 1 channel
-    -- during model visualization
-    local channels = (params.inputShape and params.inputShape[1]) or 1
-
-    require 'nn'
     if pcall(function() require('cudnn') end) then
        print('Using CuDNN backend')
        backend = cudnn
@@ -44,7 +43,7 @@ return function(params)
     lenet:add(nn.View(-1):setNumInputDims(3))  -- 50*4*4 -> 800
     lenet:add(nn.Linear(800,500))  -- 800 -> 500
     lenet:add(backend.ReLU())
-    lenet:add(nn.Linear(500, 10))  -- 500 -> 10
+    lenet:add(nn.Linear(500, nclasses))  -- 500 -> nclasses
     lenet:add(nn.LogSoftMax())
 
     return {

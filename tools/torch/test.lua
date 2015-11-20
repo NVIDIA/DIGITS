@@ -139,14 +139,11 @@ function loadNetwork(dir, name, labels, weightsFile, tensorType, inputTensorShap
     logmessage.display(0,'Loading network definition from ' .. paths.concat(dir, name))
     local parameters = {
         ngpus = (tensorType =='cuda') and 1 or 0,
+        nclasses = (labels ~= nil) and #labels or nil,
         inputShape = inputTensorShape,
     }
     local network = require (name)(parameters)
     local model = network.model
-    -- fix final output dimension of network
-    if labels then
-        utils.correctFinalOutputDim(model, #labels)
-    end
 
     -- load parameters from snapshot
     local weights, gradients = model:getParameters()
