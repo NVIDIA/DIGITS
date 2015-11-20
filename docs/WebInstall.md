@@ -1,34 +1,10 @@
-# Installation Instructions
+# Web Installer
 
-Instructions for using the tarball installer from https://developer.nvidia.com/digits.
+Prior to DIGITS v3.0, a tarball installer was provided.
+**This has been removed in favor of deb packages**:
 
-**NOTE**: This installer includes binaries built for *Ubuntu 14.04*. The installer will not work on any other platform.
+[UbuntuInstall.md](docs/UbuntuInstall.md)
 
-## Prerequisites
+The old instructions are still available here:
 
-NVIDIA driver version 346 or later.  If you need a driver go to http://www.nvidia.com/Download/index.aspx
-
-## Get installer
-
-Download the installer from http://developer.nvidia.com/digits.
-
-### Unpack the archive
-
-    % tar xvf digits-2.0.tar.gz
-
-### Install requirements
-
-The `install.sh` script installs all the requirements for DIGITS to run on Ubuntu 14.04. **You only need to run this script once.**
-
-    % cd digits-2.0
-    % ./install.sh
-
-### Start DIGITS
-
-Use the `runme.sh` script to start the DIGITS server.
-
-    % ./runme.sh
-
-Navigate in your browser to `http://localhost:5000/` to view your webserver.
-
-See [Getting Started](GettingStarted.md) for how to use DIGITS.
+https://github.com/NVIDIA/DIGITS/blob/digits-2.0/docs/WebInstall.md

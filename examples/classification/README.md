@@ -10,7 +10,7 @@ For other models, this example will not produce the same results that you get wi
 
 ## Requirements
 
-See [InstallCaffe.md](../../docs/InstallCaffe.md) for instructions about installing caffe.
+See [BuildCaffe.md](../../docs/BuildCaffe.md) for instructions about installing caffe.
 Other requirements can be found in `requirements.txt`.
 You do not need as many packages to run this example as you do to run DIGITS.
 

@@ -176,7 +176,12 @@ class ApiDocGenerator(DocGenerator):
 
 %s
 
-DIGITS exposes its internal functionality through a REST API. You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
+DIGITS exposes its internal functionality through a REST API.
+You can access these endpoints by performing a GET or POST on the route, and a JSON object will be returned.
+For example:
+```sh
+curl localhost/index.json
+```
 
 For more information about other routes used for the web interface, see [this page](FlaskRoutes.md).
 """ % self.timestamp()

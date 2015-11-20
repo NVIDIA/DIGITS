@@ -9,7 +9,7 @@ import digits
 from gevent import monkey; monkey.patch_all()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run DIGITS in debug mode')
+    parser = argparse.ArgumentParser(description='Run the DIGITS development server')
     parser.add_argument('-p', '--port',
             type=int,
             default=5000,
@@ -17,11 +17,11 @@ if __name__ == '__main__':
             )
     parser.add_argument('-c', '--config',
             action='store_true',
-            help='Edit the application configuration manually'
+            help='Edit the application configuration'
             )
     parser.add_argument('-d', '--debug',
             action='store_true',
-            help='Run the application in debug mode (with the reloader)'
+            help='Run the application in debug mode (reloads when the source changes and gives more detailed error messages)'
             )
     parser.add_argument('--version',
             action='store_true',
