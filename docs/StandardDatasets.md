@@ -16,19 +16,20 @@ DIGITS will download some standard datasets for you and store them for you local
 ![HTML Form](images/standard-datasets/html-form.jpg)
 
 The script for doing this is at `tools/download_data/main.py`.
+```
+$ python tools/download_data/main.py -h
+usage: main.py [-h] [-c] dataset output_dir
 
-    $ python tools/download_data/main.py -h
-    usage: main.py [-h] [-c] dataset output_dir
+Download-Data tool - DIGITS
 
-    Download-Data tool - DIGITS
+positional arguments:
+  dataset      mnist/cifar10/cifar100
+  output_dir   The output directory for the data
 
-    positional arguments:
-      dataset      mnist/cifar10/cifar100
-      output_dir   The output directory for the data
-
-    optional arguments:
-      -h, --help   show this help message and exit
-      -c, --clean  Clean out the directory first (if necessary)
+optional arguments:
+  -h, --help   show this help message and exit
+  -c, --clean  Clean out the directory first (if necessary)
+```
 
 ## MNIST
 
@@ -44,8 +45,7 @@ Run this:
     $ python tools/download_data/main.py mnist ~/data/mnist
 
 And these folders and files will be created for you (images and temporary files ommitted):
-
-<pre>
+```
 mnist/
 ├── train/
 │   ├── 0/
@@ -66,7 +66,7 @@ mnist/
     ├── 9/
     ├── labels.txt
     └── train.txt
-</pre>
+```
 
 Then, you can use `mnist/train` for your training images and `mnist/test` for your validation or test images.
 
@@ -80,12 +80,11 @@ http://www.cs.toronto.edu/~kriz/cifar.html
 > The CIFAR-10 dataset consists of 60000 32x32 colour images in 10 classes, with 6000 images per class. There are 50000 training images and 10000 test images.
 
 Run this:
-
-    $ python tools/download_data/main.py cifar10 ~/data/cifar10
-
+```sh
+$ python tools/download_data/main.py cifar10 ~/data/cifar10
+```
 And these folders and files will be created for you (images and temporary files ommitted):
-
-<pre>
+```
 cifar10
 ├── train/
 │   ├── airplane/
@@ -106,7 +105,7 @@ cifar10
     ├── truck/
     ├── labels.txt
     └── train.txt
-</pre>
+```
 
 Then, you can use `cifar10/train` for your training images and `cifar10/test` for your validation or test images.
 
@@ -115,12 +114,11 @@ Then, you can use `cifar10/train` for your training images and `cifar10/test` fo
 > This dataset is just like the CIFAR-10, except it has 100 classes containing 600 images each. There are 500 training images and 100 testing images per class. The 100 classes in the CIFAR-100 are grouped into 20 superclasses. Each image comes with a "fine" label (the class to which it belongs) and a "coarse" label (the superclass to which it belongs).
 
 Run this:
-
-    $ python tools/download_data/main.py cifar100 ~/data/cifar100
-
+```sh
+$ python tools/download_data/main.py cifar100 ~/data/cifar100
+```
 And these folders and files will be created for you (images and temporary files ommitted):
-
-<pre>
+```
 cifar100/
 ├── coarse/
 │   ├── train/
@@ -138,7 +136,7 @@ cifar100/
     ├── labels.txt
     ├── test.txt
     └── train.txt
-</pre>
+```
 
 If you want to use the coarse dataset (10 classes), use `cifar100/coarse/train` and `cifar100/coarse/test`.
 
