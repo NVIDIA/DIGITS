@@ -6,6 +6,7 @@ Table of Contents
 * [Using the webapp](#using-the-webapp)
     * [Creating a Dataset](#creating-a-dataset)
     * [Training a Model](#training-a-model)
+* [Getting Started With Torch7 in DIGITS](#getting-started-with-torch7-in-digits)
 
 ## Installation
 
@@ -93,3 +94,8 @@ At the top of the page, DIGITS displays the top five classifications and corresp
 DIGITS also provides visualizations and statistics about the weights and activations of each layer in your network.
 
 ![Classified one image](images/classified-one-image.jpg)
+
+## Getting Started With Torch7 in DIGITS
+
+Follow [these instructions](GettingStartedTorch.md) for information on getting started with Torch7 in DIGITS.
+
