@@ -16,6 +16,7 @@ Table of Contents
     * [Command Line Inference](#command-line-inference)
 * [Tutorials](#tutorials)
     * [Training an autoencoder](#training-an-autoencoder)
+    * [Training a regression model](#training-a-regression-model)
 
 With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caffe.
 
@@ -187,4 +188,6 @@ th /fast-scratch/gheinrich/ws/digits/tools/torch/test.lua --image=/path/to/image
 
 Follow [these instructions](../examples/autoencoder/README.md) to learn how to create an autoencoder using Torch7 in DIGITS.
 
+### Training a regression model
 
+Follow [these instructions](../examples/regression/README.md) to learn how to create a regression model using Caffe or Torch7 in DIGITS.
