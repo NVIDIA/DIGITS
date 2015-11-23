@@ -237,14 +237,14 @@ class TorchTrainTask(TrainTask):
         if 'gpus' in resources:
             identifiers = []
             for identifier, value in resources['gpus']:
-                identifiers.append(int(identifier))
-            if len(identifiers) == 1:
-                # only one device must be visible to the th process
-                # to prevent Torch from loading libraries on all GPUs
-                env['CUDA_VISIBLE_DEVICES'] = str(identifiers[0])
-                args.append('--devid=1')
-            elif len(identifiers) > 1:
-                raise NotImplementedError("Multi-GPU with Torch not supported yet")
+                identifiers.append(identifier)
+            # make all selected GPUs visible to the Torch 'th' process.
+            # don't make other GPUs visible though since Torch will load
+            # CUDA libraries and allocate memory on all visible GPUs by
+            # default.
+            env['CUDA_VISIBLE_DEVICES'] = ','.join(identifiers)
+            # switch to GPU mode
+            args.append('--type=cuda')
         else:
             # switch to CPU mode
             args.append('--type=float')
@@ -521,6 +521,8 @@ class TorchTrainTask(TrainTask):
             args.append('--epoch=%d' % int(snapshot_epoch))
         if self.trained_on_cpu:
             args.append('--type=float')
+        else:
+            args.append('--type=cuda')
 
         if self.use_mean == 'pixel':
             args.append('--subtractMean=pixel')
@@ -547,11 +549,16 @@ class TorchTrainTask(TrainTask):
         predictions = []
         self.visualization_file = None
 
+        # make only the first GPU visible
+        env = os.environ.copy()
+        env['CUDA_VISIBLE_DEVICES'] = '0'
+
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=self.job_dir,
                 close_fds=True,
+                env=env,
                 )
 
         try:
@@ -822,6 +829,8 @@ class TorchTrainTask(TrainTask):
                 args.append('--epoch=%d' % int(snapshot_epoch))
             if self.trained_on_cpu:
                 args.append('--type=float')
+            else:
+                args.append('--type=cuda')
 
             if self.use_mean == 'pixel':
                 args.append('--subtractMean=pixel')
@@ -840,6 +849,10 @@ class TorchTrainTask(TrainTask):
             regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
             self.logger.info('%s classify many task started.' % self.name())
 
+            # make only the first GPU visible
+            env = os.environ.copy()
+            env['CUDA_VISIBLE_DEVICES'] = '0'
+
             unrecognized_output = []
             predictions = []
             p = subprocess.Popen(args,
@@ -847,6 +860,7 @@ class TorchTrainTask(TrainTask):
                     stderr=subprocess.STDOUT,
                     cwd=self.job_dir,
                     close_fds=True,
+                    env=env
                     )
 
             try:

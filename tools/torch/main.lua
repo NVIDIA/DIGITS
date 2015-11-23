@@ -26,7 +26,6 @@ Usage details:
 -a,--threads            (default 8)              number of threads
 -b,--batchSize (default 0) batch size
 -c,--learningRateDecay (default 1e-6) learning rate decay (in # samples)
--d,--devid (default 1) device ID (if using CUDA)
 -e,--epoch (default 1) number of epochs to train -1 for unbounded
 -f,--shuffle (default no) shuffle records before train
 -g,--mirror (default no) If this option is 'yes', then some of the images are randomly mirrored
@@ -255,6 +254,13 @@ if opt.crop and inputTensorShape then
     inputTensorShape[3] = opt.croplen
 end
 
+local nGpus = 0
+if opt.type =='cuda' then
+    require 'cunn'
+    require 'cutorch'
+    nGpus = cutorch.getDeviceCount()
+end
+
 ----------------------------------------------------------------------
 -- Model + Loss:
 -- this is where we retrieve the network definition
@@ -265,8 +271,8 @@ logmessage.display(0,'Loading network definition from ' .. paths.concat(opt.netw
 local network_func = require (opt.network)
 assert(type(network_func)=='function', "Network definition should return a Lua function - see documentation")
 local parameters = {
-        ngpus = (opt.type == 'cuda') and 1 or 0,
         nclasses = (classes ~= nil) and #classes or nil,
+        ngpus = nGpus,
         inputShape = inputTensorShape,
     }
 network = network_func(parameters)
@@ -339,7 +345,8 @@ if opt.retrain ~= '' then
     end
 end
 
-logmessage.display(0,'Network definition: \n' .. model:__tostring__())
+logmessage.display(0,'Network definition: \n' .. model:__tostring())
+
 logmessage.display(0,'Network definition ends')
 
 if opt.type == 'float' then
@@ -349,9 +356,7 @@ if opt.type == 'float' then
     loss = loss:float()
 
 elseif opt.type =='cuda' then
-    require 'cunn'
-    require 'cutorch'
-    cutorch.setDevice(opt.devid)
+    cutorch.setDevice(1)
     logmessage.display(0,'switching to CUDA')
     model:cuda()
     loss = loss:cuda()
@@ -700,9 +705,13 @@ local function Train(epoch, dataLoader)
                 targets = targets:cuda()
             else
                 inputs = inputs:float()
+                targets = targets:float()
             end
 
             _,learningrate,_,trainerr = optimizer:optimize(inputs, targets)
+
+            -- DataParallelTable's syncParameters
+            model:apply(function(m) if m.syncParameters then m:syncParameters() end end)
 
             -- adding the loss values of each mini batch and also maintaining the counter for number of batches, so that average loss value can be found at the time of logging details
             loss_sum = loss_sum + trainerr[1]

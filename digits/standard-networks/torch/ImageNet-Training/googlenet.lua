@@ -92,25 +92,26 @@ function createModel(nGPU, nChannels, nClasses)
    aux_classifier:add(convLayer(576,128,1,1,1,1)):add(nn.SpatialBatchNormalization(128,1e-3))
    aux_classifier:add(nn.View(128*4*4):setNumInputDims(3))
    aux_classifier:add(nn.Linear(128*4*4,768))
-   aux_classifier:add(nn.ReLU())
+   aux_classifier:add(backend.ReLU())
    aux_classifier:add(nn.Linear(768,nClasses))
-   aux_classifier:add(nn.LogSoftMax())
+   aux_classifier:add(backend.LogSoftMax())
 
    local splitter = nn.Concat(2)
    splitter:add(main_branch):add(aux_classifier)
-   --local model = nn.Sequential():add(features):add(splitter)
-   local model = nn.Sequential():add(features):add(main_branch)
+   --local googlenet = nn.Sequential():add(features):add(splitter)
+   local googlenet = nn.Sequential():add(features):add(main_branch)
 
-   if nGPU > 1 then
-      assert(nGPU <= cutorch.getDeviceCount(), 'number of GPUs less than nGPU specified')
-      require 'fbcunn'
-      local model_single = model
-      model = nn.DataParallel(1)
-      for i=1,nGPU do
-         cutorch.withDevice(i, function()
-                               model:add(model_single:clone())
-         end)
+   local model
+   if nGPU>1 then
+      model = nn.DataParallelTable(1)  -- Split along first (batch) dimension
+      for i = 1, nGPU do
+         cutorch.setDevice(i)
+         model:add(googlenet:clone(), i)  -- Use the ith GPU
       end
+      cutorch.setDevice(1)  -- This is the 'primary' GPU
+      model.gradInput = nil
+   else
+      model = googlenet
    end
 
    return model
@@ -118,7 +119,6 @@ end
 
 -- return function that returns network definition
 return function(params)
-    assert(params.ngpus<=1, 'Model supports only one GPU')
     -- get number of classes from external parameters
     local nclasses = params.nclasses or 1
     -- adjust to number of channels in input images
@@ -129,7 +129,7 @@ return function(params)
         assert(params.inputShape[2]==256 and params.inputShape[3]==256, 'Network expects 256x256 images')
     end
     return {
-        model = createModel(1, channels, nclasses),
+        model = createModel(params.ngpus, channels, nclasses),
         croplen = 224,
         trainBatchSize = 24,
         validationBatchSize = 24,

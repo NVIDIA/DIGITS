@@ -320,8 +320,6 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         gpu_list = config_value('gpu_list').split(',')
         for i in xrange(len(gpu_list)):
             for combination in itertools.combinations(gpu_list, i+1):
-                if self.FRAMEWORK=='torch' and len(combination)>1:
-                    raise unittest.SkipTest('Torch not tested with multi-GPU')
                 yield self.check_select_gpus, combination
 
     def check_select_gpus(self, gpu_list):

@@ -36,10 +36,6 @@ function createModel(nGPU, channels, nClasses)
    features:add(backend.ReLU(true))
    features:add(backend.SpatialMaxPooling(3,3,2,2))         --  13 ->  6
 
-   -- set grad input of first conv layer to nil as this layer
-   -- doesn't receive a grad input from a previous layer
-   features:get(1).gradInput = nil
-
    local classifier = nn.Sequential()
    classifier:add(nn.View(256*6*6))
    classifier:add(nn.Dropout(0.5))
@@ -51,14 +47,26 @@ function createModel(nGPU, channels, nClasses)
    classifier:add(nn.Linear(4096, nClasses))
    classifier:add(backend.LogSoftMax())
 
-   local model = nn.Sequential():add(features):add(classifier)
+   local model
+   if nGPU>1 then
+      local parallel_features = nn.DataParallelTable(1)  -- Split along first (batch) dimension
+      for i = 1, nGPU do
+         cutorch.setDevice(i)
+         parallel_features:add(features:clone(), i)  -- Use the ith GPU
+      end
+      cutorch.setDevice(1)  -- This is the 'primary' GPU
+      parallel_features.gradInput = nil
+      model = nn.Sequential():add(parallel_features):add(classifier)
+   else
+      features:get(1).gradInput = nil
+      model = nn.Sequential():add(features):add(classifier)
+   end
 
    return model
 end
 
 -- return function that returns network definition
 return function(params)
-    assert(params.ngpus<=1, 'Model supports only one GPU')
     -- get number of classes from external parameters
     local nclasses = params.nclasses or 1
     -- adjust to number of channels in input images

@@ -17,6 +17,7 @@ Table of Contents
 * [Torch installer](#torch-installer)
 * [Luarocks dependencies](#luarocks-dependencies)
 * [LMDB support](#lmdb-support)
+* [NCCL support](#nccl-support)
 * [Getting Started With Torch7 in DIGITS](#getting-started-with-torch7-in-digits)
 
 ## Prerequisites
@@ -66,6 +67,58 @@ Install extra Lua packages:
 
 Follow these instructions if you wish to use Torch7 to train networks using LMDB-encoded datasets in DIGITS. You may skip this section if you wish to only use HDF5-encoded datasets:
 [LMDB installation instructions](BuildTorchLMDB.md)
+
+## NCCL support
+
+[NCCL](https://github.com/NVIDIA/nccl) is a library of primitives for multi-GPU communication.
+You may consider installing the [nccl.torch](https://github.com/ngimel/nccl.torch) module if you wish to speed up
+multi-GPU training, although this module is not stictly required to enable multi-GPU training in Torch7.
+
+Download and build NCCL:
+```sh
+% git clone https://github.com/NVIDIA/nccl.git
+% cd nccl
+% make CUDA_HOME=/usr/local/cuda test
+```
+
+> NOTE: if the above command fails due to missing libraries you may explicitly point the makefile to the location of your NVidia driver. For example:
+
+```sh
+% make CUDA_HOME=/usr/local/cuda LIBRARY_PATH=/usr/lib/nvidia-352 test
+```
+
+Add the path to the NCCL library to your library path:
+```sh
+% export LD_LIBRARY_PATH=.../nccl/build/lib:$LD_LIBRARY_PATH
+```
+
+Download and build the nccl.torch module:
+```sh
+% git clone https://github.com/ngimel/nccl.torch.git
+% cd nccl.torch
+% luarocks make nccl-scm-1.rockspec
+```
+
+Verify your installation of nccl.torch:
+```sh
+gheinrich@ubuntu:~/ws/nccl.torch$ th
+  ______             __   |  Torch7
+ /_  __/__  ________/ /   |  Scientific computing for Lua.
+  / / / _ \/ __/ __/ _ \  |  Type ? for help
+ /_/  \___/_/  \__/_//_/  |  https://github.com/torch
+                          |  http://torch.ch
+th> require('nccl')
+{
+  createCommunicators : function: 0x41084588
+  reduceScatter : function: 0x41084888
+  allGather : function: 0x41084860
+  C : userdata: 0x410844a8
+  bcast : function: 0x41084830
+  communicators : {...}
+  allReduce : function: 0x410844c0
+  reduce : function: 0x41084718
+}
+```
 
 ## Getting Started With Torch7 in DIGITS
 
