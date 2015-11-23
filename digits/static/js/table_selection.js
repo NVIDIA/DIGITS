@@ -32,7 +32,7 @@ function TableSelection(table_id) {
         $(window).trigger(e);
     }
 
-    // Disablew text selection because we want to select rows not text
+    // Disable text selection because we want to select rows not text
     $(table_id + ' tbody').disableSelection();
 
     // track the current table for key events
@@ -48,15 +48,15 @@ function TableSelection(table_id) {
     // call this that for use in anonymous functions
     var that = this;
 
-    // add selected class to item
+    // add 'selected' class to item
     function select(item) {
-        if ($(item).hasClass('selected') == false) {
+        if ($(item).not('.selected').length > 0) {
             $(item).addClass('selected');
             on_selection_changed()
         }
     }
 
-    // remote selected class from item
+    // remote 'selected' class from item
     function deselect(item) {
         if ($(item).hasClass('selected')) {
             $(item).removeClass('selected');
@@ -170,7 +170,7 @@ function TableSelection(table_id) {
             if ((e.ctrlKey || e.metaKey) && e.keyCode == 73) {
                 e.preventDefault();
                 $(TableSelection.current_table + ' tr.selected').addClass('swap');
-                $(TableSelection.current_table + ' tr').not('swap').addClass('selected');
+                $(TableSelection.current_table + ' tr').not('.swap').addClass('selected');
                 $(TableSelection.current_table + ' tr.swap').removeClass('swap selected');
                 that.last_selected_row = $(TableSelection.current_table + ' tr.selected').last();
 
