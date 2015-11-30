@@ -11,6 +11,9 @@ package.path = debug.getinfo(1, "S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua
 require 'logmessage'
 local ffi = require 'ffi'
 
+-- enable shared serialization to speed up Tensor passing between threads
+threads.Threads.serialization('threads.sharedserialize')
+
 ----------------------------------------------------------------------
 
 function copy (t) -- shallow-copy a table
