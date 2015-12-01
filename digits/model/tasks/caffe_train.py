@@ -1186,8 +1186,8 @@ class CaffeTrainTask(TrainTask):
                                         }
                                     )
                             added_activations.append(top)
-        else:
-            raise NotImplementedError
+            else:
+                raise NotImplementedError
 
         return visualizations
 
