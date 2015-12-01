@@ -6,6 +6,7 @@ import time
 import math
 import subprocess
 import operator
+import sys
 
 import numpy as np
 import scipy
@@ -1361,11 +1362,26 @@ class CaffeTrainTask(TrainTask):
                 config_value('gpu_list'):
             caffe.set_mode_gpu()
 
-        # load a new model
+        # Add job_dir to PATH to pick up any python layers used by the model
+        sys.path.append(self.job_dir)
+
+        # Attempt to force a reload of the "digits_python_layers" module
+        loaded_module = sys.modules.get('digits_python_layers', None)
+        if loaded_module:
+            try:
+                reload(loaded_module)
+            except ImportError:
+                # Let Caffe throw the error if the file is missing
+                pass
+
+        # Load the model
         self._caffe_net = caffe.Net(
                 self.path(self.deploy_file),
                 file_to_load,
                 caffe.TEST)
+
+        # Remove job_dir from PATH
+        sys.path.remove(self.job_dir)
 
         self.loaded_snapshot_epoch = epoch
         self.loaded_snapshot_file = file_to_load
