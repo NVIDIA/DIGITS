@@ -952,7 +952,7 @@ layer {
     bottom: "output"
     top: "py_test"
     python_param {
-        module: "py_test"
+        module: "digits_python_layers"
         layer: "PythonLayer"
     }
 }
