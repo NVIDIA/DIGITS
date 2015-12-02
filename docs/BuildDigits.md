@@ -13,7 +13,7 @@ Unless you build Caffe and Torch without CUDA, you'll need an NVIDIA driver vers
 
 You'll also need a few basic packages:
 ```sh
-% sudo apt-get install python-dev python-pip
+% sudo apt-get install python-dev python-pip graphviz
 ```
 
 ## Download source
