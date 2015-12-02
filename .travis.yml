@@ -1,10 +1,12 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
+sudo: required
+dist: precise
+
 language: python
 python:
     2.7
 compiler: gcc   # for Caffe
-sudo: required  # for Caffe
 env:
     global:
         # Make
