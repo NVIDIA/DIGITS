@@ -2,6 +2,8 @@
 
 Deb packages are provided for easy installation on Ubuntu 14.04.
 
+> **NOTE**: these packages are not posted publicly yet ([#427](https://github.com/NVIDIA/DIGITS/issues/427#issuecomment-159003584)). For now, you can either use the "Web installer" to install version 2.0 ([instructions](https://github.com/NVIDIA/DIGITS/blob/digits-2.0/docs/WebInstall.md)) or build from source ([instructions](BuildDigits.md)). Sorry for the inconvenience!
+
 ## Prerequisites
 
 NVIDIA driver version 346 or later.  If you need a driver go to http://www.nvidia.com/Download/index.aspx
