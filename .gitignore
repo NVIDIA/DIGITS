@@ -6,6 +6,7 @@
 
 # Ignore emacs backup files
 *~
+TAGS
 
 # Ignore these files
 .coverage

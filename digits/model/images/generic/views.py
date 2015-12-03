@@ -352,21 +352,21 @@ def generic_image_model_infer_many():
 
 def get_datasets():
     return [(j.id(), j.name()) for j in sorted(
-        [j for j in scheduler.jobs if isinstance(j, GenericImageDatasetJob) and (j.status.is_running() or j.status == Status.DONE)],
+        [j for j in scheduler.jobs.values() if isinstance(j, GenericImageDatasetJob) and (j.status.is_running() or j.status == Status.DONE)],
         cmp=lambda x,y: cmp(y.id(), x.id())
         )
         ]
 
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
-        [j for j in scheduler.jobs if isinstance(j, GenericImageModelJob)],
+        [j for j in scheduler.jobs.values() if isinstance(j, GenericImageModelJob)],
         cmp=lambda x,y: cmp(y.id(), x.id())
         )
         ]
 
 def get_previous_networks_fulldetails():
     return [(j) for j in sorted(
-        [j for j in scheduler.jobs if isinstance(j, GenericImageModelJob)],
+        [j for j in scheduler.jobs.values() if isinstance(j, GenericImageModelJob)],
         cmp=lambda x,y: cmp(y.id(), x.id())
         )
         ]

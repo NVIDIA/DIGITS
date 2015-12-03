@@ -94,7 +94,7 @@ def home():
 
 def get_job_list(cls, running):
     return sorted(
-            [j for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running],
+            [j for j in scheduler.jobs.values() if isinstance(j, cls) and j.status.is_running() == running],
             key=lambda j: j.status_history[0][1],
             reverse=True,
             )
