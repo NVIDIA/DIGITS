@@ -122,11 +122,11 @@ devices = None
 def get_cudart():
     if not platform.system() == 'Windows':
         return get_library('libcudart')
-    
+
     arch = platform.architecture()[0]
     for ver in range(90,50,-5):
         cudart = get_library('cudart%s_%d' % (arch[:2], ver))
-        if not cudart is None:
+        if cudart is not None:
             return cudart
 
 def get_devices(force_reload=False):

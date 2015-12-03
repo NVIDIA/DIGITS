@@ -40,8 +40,8 @@ class ImageClassificationModelJob(ImageModelJob):
 
         # get model files
         model_files = task.get_model_files()
-        download_files = [(self.path(file), os.path.basename(file))
-                          for file in model_files.values()]
+        download_files = [(self.path(filename), os.path.basename(filename))
+                          for filename in model_files.values()]
 
         # add other files
         download_files.extend([

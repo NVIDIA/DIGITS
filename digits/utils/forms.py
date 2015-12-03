@@ -4,8 +4,6 @@ from wtforms import validators
 from werkzeug.datastructures import FileStorage
 import wtforms
 from wtforms import SubmitField
-from sets import Set
-import re
 from digits.utils.routing import get_request_arg
 
 def validate_required_iff(**kwargs):
@@ -86,15 +84,15 @@ class Tooltip(object):
                     '    ></span>') % (self.for_name, self.text))
 
     def __repr__(self):
-        return 'Tooltip(%r, %r)' % (self.field_id, self.for_name, self.text)
+        return 'Tooltip(%r, %r, %r)' % (self.field_id, self.for_name, self.text)
 
 class Explanation(object):
     """
     An HTML form explanation.
     """
-    def __init__(self, field_id, for_name, file):
+    def __init__(self, field_id, for_name, filename):
         self.field_id = field_id
-        self.file = file
+        self.file = filename
         self.for_name = for_name
 
     def __str__(self):
@@ -130,7 +128,7 @@ class Explanation(object):
          ) % (self.for_name, html, self.for_name))
 
     def __repr__(self):
-        return 'Explanation(%r, %r)' % (self.field_id, self.for_name, self.file)
+        return 'Explanation(%r, %r, %r)' % (self.field_id, self.for_name, self.file)
 
 class IntegerField(wtforms.IntegerField):
 

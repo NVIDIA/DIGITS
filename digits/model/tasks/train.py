@@ -7,9 +7,9 @@ from collections import OrderedDict, namedtuple
 import gevent
 import flask
 
-from digits import utils, device_query
+from digits import device_query
 from digits.task import Task
-from digits.utils import override
+from digits.utils import subclass, override
 
 # NOTE: Increment this everytime the picked object changes
 PICKLE_VERSION = 2
@@ -17,6 +17,7 @@ PICKLE_VERSION = 2
 # Used to store network outputs
 NetworkOutput = namedtuple('NetworkOutput', ['kind', 'data'])
 
+@subclass
 class TrainTask(Task):
     """
     Defines required methods for child classes
@@ -206,8 +207,6 @@ class TrainTask(Task):
         """
         Sends socketio message about the current progress
         """
-        from digits.webapp import socketio
-
         if self.current_epoch == epoch:
             return
 

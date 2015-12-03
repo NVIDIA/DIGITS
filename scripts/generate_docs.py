@@ -6,10 +6,6 @@ import os.path
 import time
 from collections import defaultdict
 
-# requires a custom version of Flask-Autodoc:
-#   pip install git+https://github.com/lukeyeager/flask-autodoc.git
-from flask.ext.autodoc import Autodoc
-
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config; digits.config.load_config()

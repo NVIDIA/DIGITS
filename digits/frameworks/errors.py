@@ -1,6 +1,6 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
-from digits.utils import subclass, override
+from digits.utils import subclass
 
 @subclass
 class Error(Exception):

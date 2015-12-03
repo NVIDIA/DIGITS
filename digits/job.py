@@ -8,7 +8,6 @@ import shutil
 
 import flask
 
-from digits import utils
 from digits.config import config_value
 from digits.utils import sizeof_fmt, filesystem as fs
 from status import Status, StatusCls

@@ -264,7 +264,7 @@ def create_db(input_file, output_dir,
     write_queue = Queue.Queue(2*batch_size)
     summary_queue = Queue.Queue()
 
-    for i in xrange(num_threads):
+    for _ in xrange(num_threads):
         p = threading.Thread(target=_load_thread,
                 args=(load_queue, write_queue, summary_queue,
                     image_width, image_height, image_channels,

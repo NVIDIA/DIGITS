@@ -40,8 +40,8 @@ class GenericImageModelJob(ImageModelJob):
 
         # get model files
         model_files = task.get_model_files()
-        download_files = [(self.path(file), os.path.basename(file))
-                          for file in model_files.values()]
+        download_files = [(self.path(filename), os.path.basename(filename))
+                          for filename in model_files.values()]
 
         if task.dataset.mean_file:
             download_files.append((

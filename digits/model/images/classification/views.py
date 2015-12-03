@@ -4,7 +4,6 @@ import os
 import re
 import tempfile
 import random
-import shutil
 import flask
 import werkzeug.exceptions
 import numpy as np
@@ -19,8 +18,6 @@ from digits import frameworks
 from forms import ImageClassificationModelForm
 from job import ImageClassificationModelJob
 from digits.status import Status
-import platform
-from digits.utils import errors
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils import filesystem as fs
 

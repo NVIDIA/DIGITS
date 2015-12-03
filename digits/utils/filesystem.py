@@ -1,7 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os.path, shutil
-import werkzeug.exceptions
 
 def get_tree_size(start_path):
     """

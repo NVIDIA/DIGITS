@@ -14,12 +14,9 @@ from digits.utils.routing import request_wants_json, job_from_request
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import GenericImageDatasetJob
-from digits import frameworks
-from digits.model import tasks
 from forms import GenericImageModelForm
 from job import GenericImageModelJob
 from digits.status import Status
-import platform
 from digits.utils import filesystem as fs
 
 NAMESPACE   = '/models/images/generic'

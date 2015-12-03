@@ -1,13 +1,7 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
-import re
-import sys
-import imp
-import platform
-import subprocess
 
-from digits import device_query
 import config_option
 import prompt
 

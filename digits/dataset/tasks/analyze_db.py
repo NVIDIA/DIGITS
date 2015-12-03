@@ -5,7 +5,6 @@ import os.path
 import re
 
 import digits
-from digits import utils
 from digits.utils import subclass, override
 from digits.task import Task
 
@@ -94,8 +93,6 @@ class AnalyzeDbTask(Task):
 
     @override
     def process_output(self, line):
-        from digits.webapp import socketio
-
         self.analyze_db_log.write('%s\n' % line)
         self.analyze_db_log.flush()
 
