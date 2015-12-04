@@ -1,13 +1,10 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-import os
 import io
-import re
 import json
 import math
 import tarfile
 import zipfile
-from collections import OrderedDict
 from datetime import timedelta
 
 import flask
@@ -15,7 +12,6 @@ import werkzeug.exceptions
 
 
 import digits
-from digits import utils
 from digits.webapp import app, scheduler, autodoc
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json

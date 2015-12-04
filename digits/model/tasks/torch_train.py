@@ -2,26 +2,21 @@
 
 import os
 import re
-import caffe
 import time
-import math
 import subprocess
-import sys
 import operator
 import shutil
+import tempfile
 
 import numpy as np
-
 import h5py
-
-import tempfile
 import PIL.Image
+
 import digits
 from train import TrainTask
 from digits.config import config_value
-from digits.status import Status
 from digits import utils, dataset
-from digits.utils import subclass, override, constants, errors
+from digits.utils import subclass, override, constants
 from digits.dataset import ImageClassificationDatasetJob
 
 # to read mean file in .binaryproto format
@@ -172,7 +167,7 @@ class TorchTrainTask(TrainTask):
             if self.use_mean != 'none':
                 assert self.dataset.mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
                 blob = caffe_pb2.BlobProto()
-                with open(task.path(self.dataset.mean_file),'rb') as infile:
+                with open(self.dataset.path(self.dataset.mean_file),'rb') as infile:
                     blob.ParseFromString(infile.read())
                 data = np.array(blob.data, dtype=np.uint8).reshape(blob.channels, blob.height, blob.width)
                 if blob.channels == 3:
@@ -184,7 +179,7 @@ class TorchTrainTask(TrainTask):
                     assert blob.channels == 1
                     # convert to (height, width)
                     data = data[0]
-                 # save to file
+                # save to file
                 filename = os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE)
                 image = PIL.Image.fromarray(data)
                 image.save(filename)
@@ -262,7 +257,6 @@ class TorchTrainTask(TrainTask):
 
     @override
     def process_output(self, line):
-        from digits.webapp import socketio
         regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
         line=regex.sub('', line).strip()
         self.torch_log.write('%s\n' % line)
@@ -438,7 +432,6 @@ class TorchTrainTask(TrainTask):
 
         snapshot_dir = os.path.join(self.job_dir, os.path.dirname(self.snapshot_prefix))
         snapshots = []
-        solverstates = []
 
         for filename in os.listdir(snapshot_dir):
             # find models
@@ -563,7 +556,7 @@ class TorchTrainTask(TrainTask):
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        raise digits.frameworks.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode()))
+                        raise digits.frameworks.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
 
                     if line is not None:
                         # Remove color codes and whitespace
@@ -582,7 +575,7 @@ class TorchTrainTask(TrainTask):
             if type(e) == digits.frameworks.errors.InferenceError:
                 error_message = e.__str__()
             else:
-                error_message = '%s classify one task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode(), str(e))
+                error_message = '%s classify one task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
             self.logger.error(error_message)
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
@@ -705,8 +698,6 @@ class TorchTrainTask(TrainTask):
             pass
 
     def process_test_output(self, line, predictions, test_category):
-        #from digits.webapp import socketio
-
         # parse torch output
         timestamp, level, message = self.preprocess_output_torch(line)
 
@@ -724,7 +715,7 @@ class TorchTrainTask(TrainTask):
         if match:
             label = match.group(1)
             confidence = match.group(2)
-            assert not('inf' in confidence or 'nan' in confidence), 'Network reported %s for confidence value. Please check image and network'  % l
+            assert not('inf' in confidence or 'nan' in confidence), 'Network reported %s for confidence value. Please check image and network'  % label
             confidence = float(confidence)
             predictions.append((label, confidence))
             return True
@@ -733,7 +724,7 @@ class TorchTrainTask(TrainTask):
         match = re.match(r'Predictions for image \d+: (.*)', message)
         if match:
             values = match.group(1).strip().split(" ")
-	    predictions.append(map(float, values))
+            predictions.append(map(float, values))
             return True
 
         # path to visualization file
@@ -860,7 +851,7 @@ class TorchTrainTask(TrainTask):
                     for line in utils.nonblocking_readlines(p.stdout):
                         if self.aborted.is_set():
                             p.terminate()
-                            raise digits.frameworks.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode()))
+                            raise digits.frameworks.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
 
                         if line is not None:
                             # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
@@ -879,7 +870,7 @@ class TorchTrainTask(TrainTask):
                 if type(e) == digits.frameworks.errors.InferenceError:
                     error_message = e.__str__()
                 else:
-                    error_message = '%s classify many task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode(), str(e))
+                    error_message = '%s classify many task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
                 self.logger.error(error_message)
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)

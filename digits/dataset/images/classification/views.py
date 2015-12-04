@@ -378,7 +378,7 @@ def image_classification_dataset_explore():
         task = job.val_db_task()
     elif 'test' in db.lower():
         task = job.test_db_task()
-    if task == None:
+    if task is None:
         raise ValueError('No create_db task for {0}'.format(db))
     if task.status != 'D':
         raise ValueError("This create_db task's status should be 'D' but is '{0}'".format(task.status))

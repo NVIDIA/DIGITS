@@ -138,8 +138,6 @@ class ParseFolderTask(Task):
 
     @override
     def process_output(self, line):
-        from digits.webapp import socketio
-
         timestamp, level, message = self.preprocess_output_digits(line)
         if not message:
             return False
