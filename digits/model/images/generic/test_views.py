@@ -74,7 +74,12 @@ return function(p)
     local net = nn.Sequential()
     net:add(nn.MulConstant(0.004))
     net:add(nn.View(-1):setNumInputDims(3))  -- flatten
-    net:add(nn.Linear(nDim,2)) -- c*h*w -> 2
+    -- set all weights and biases to zero as this speeds learning up
+    -- for the type of problem we're trying to solve in this test
+    local linearLayer = nn.Linear(nDim, 2)
+    linearLayer.weight:fill(0)
+    linearLayer.bias:fill(0)
+    net:add(linearLayer) -- c*h*w -> 2
     return {
         model = net,
         loss = nn.MSECriterion(),
@@ -697,7 +702,12 @@ return function(p)
     local net = nn.Sequential()
     net:add(nn.MulConstant(0.004))
     net:add(nn.View(-1):setNumInputDims(3))  -- flatten
-    net:add(nn.Linear(channels*croplen*croplen,2)) -- c*croplen*croplen -> 2
+    -- set all weights and biases to zero as this speeds learning up
+    -- for the type of problem we're trying to solve in this test
+    local linearLayer = nn.Linear(channels*croplen*croplen, 2)
+    linearLayer.weight:fill(0)
+    linearLayer.bias:fill(0)
+    net:add(linearLayer) -- c*croplen*croplen -> 2
     return {
         model = net,
         loss = nn.MSECriterion(),
@@ -738,18 +748,12 @@ class TestTorchCreation(BaseTestCreation):
     FRAMEWORK = 'torch'
 
 class TestTorchCreated(BaseTestCreated):
-    LR_POLICY = 'fixed'
-    TRAIN_EPOCHS = 10
     FRAMEWORK = 'torch'
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
-    LR_POLICY = 'fixed'
-    TRAIN_EPOCHS = 10
     FRAMEWORK = 'torch'
 
 class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
-    LR_POLICY = 'fixed'
-    TRAIN_EPOCHS = 10
     FRAMEWORK = 'torch'
 
 class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):

@@ -73,7 +73,12 @@ return function(p)
     if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
     local model = nn.Sequential()
     model:add(nn.View(-1):setNumInputDims(3)) -- c*h*w -> chw (flattened)
-    model:add(nn.Linear(nDim, 3)) -- chw -> 3
+    -- set all weights and biases to zero as this speeds learning up
+    -- for the type of problem we're trying to solve in this test
+    local linearLayer = nn.Linear(nDim, 3)
+    linearLayer.weight:fill(0)
+    linearLayer.bias:fill(0)
+    model:add(linearLayer) -- chw -> 3
     model:add(nn.LogSoftMax())
     return {
         model = model
@@ -799,7 +804,10 @@ return function(p)
     if p.inputShape then channels=p.inputShape[1] else channels=1 end
     local model = nn.Sequential()
     model:add(nn.View(-1):setNumInputDims(3)) -- flatten
-    model:add(nn.Linear(channels*croplen*croplen, 3)) -- chw -> 3
+    local linLayer = nn.Linear(channels*croplen*croplen, 3)
+    linLayer.weight:fill(0)
+    linLayer.bias:fill(0)
+    model:add(linLayer) -- chw -> 3
     model:add(nn.LogSoftMax())
     return {
         model = model,
@@ -841,11 +849,9 @@ class TestTorchViews(BaseTestViews):
 
 class TestTorchCreation(BaseTestCreation):
     FRAMEWORK = 'torch'
-    TRAIN_EPOCHS = 10
 
 class TestTorchCreated(BaseTestCreated):
     FRAMEWORK = 'torch'
-    TRAIN_EPOCHS = 10
 
 class TestTorchCreatedShuffle(TestTorchCreated):
     SHUFFLE = True
@@ -871,19 +877,15 @@ class TestCaffeLeNet(TestCaffeCreated):
 
 class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
     FRAMEWORK = 'torch'
-    TRAIN_EPOCHS = 10
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'torch'
-    TRAIN_EPOCHS = 10
 
 class TestTorchCreatedWide(BaseTestCreatedWide):
     FRAMEWORK = 'torch'
-    TRAIN_EPOCHS = 10
 
 class TestTorchCreatedTall(BaseTestCreatedTall):
     FRAMEWORK = 'torch'
-    TRAIN_EPOCHS = 10
 
 class TestTorchLeNet(TestTorchCreated):
     IMAGE_WIDTH = 28
