@@ -90,6 +90,8 @@ Usage details:
 -- Precautions should be taken while restoring these options.
 -----------------------------------------------------------------------------------------------------------------------------
 
+COMPUTE_TRAIN_ACCURACY = false
+
 ----------------------------------------------------------------------
 -- Initial parameter checks
 
@@ -497,7 +499,7 @@ local optimizer = Optimizer{
     OptFunction = _G.optim[opt.optimization],
     OptState = optimState,
     Parameters = {Weights, Gradients},
-    HookFunction = updateConfusion,
+    HookFunction = COMPUTE_TRAIN_ACCURACY and updateConfusion or nil,
     lrPolicy = lrpolicy,
     LabelFunction = network.labelHook or function (input,dblabel) return dblabel end,
 }
