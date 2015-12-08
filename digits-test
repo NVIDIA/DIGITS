@@ -17,7 +17,7 @@ function set_exe {
 }
 
 # Some hacking necessary to respect virtualenv installations
-set_exe PYTHON_EXE python
+set_exe PYTHON_EXE python2
 set_exe NOSE_EXE nosetests
 
 DIGITS_MODE_TEST=1 $PYTHON_EXE $NOSE_EXE \
