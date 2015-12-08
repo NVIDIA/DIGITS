@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
 import os
@@ -143,8 +143,20 @@ def create_model(driver, name, dataset_name, test_image):
     image_path.send_keys(test_image)
     wait()
 
+    show_visualizations_tooltip = driver.find_element_by_name('show_visualizations_explanation')
+    show_visualizations_tooltip.click()
+    wait()
+
+    show_visualizations = driver.find_element_by_name('show_visualizations')
+    show_visualizations.click()
+    wait()
+
     test_button = driver.find_element_by_name('classify-one-btn')
     test_button.click()
+
+    # Opens in a new window - switch to it
+    driver.close()
+    driver.switch_to_window(driver.window_handles[-1])
 
 
 def main(argv):
@@ -199,17 +211,23 @@ def main(argv):
 
         #display an alert message
         get_page(driver, "javascript:alert('Completed Walkthrough!');void(0);")
+        wait()
+        driver.switch_to_alert().accept()
 
-        # wait forever
+        # wait until the window is closed
         while True:
-            wait(60)
+            try:
+                get_page(driver, "javascript:console.log('Waiting...');void(0);")
+            except Exception as e:
+                print e
+                break
+            wait()
 
     except KeyboardInterrupt:
         pass
     finally:
-        print 'Cleaning up.'
         try:
-            driver.close()
+            driver.quit()
         except socket.error:
             pass
 
