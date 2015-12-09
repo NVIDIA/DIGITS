@@ -194,35 +194,6 @@ function utilsClass.resizeImage(img, height, width, channels,resize_mode)
     end
 end
 
--- This module corrects the final output dimension of the model to match with total number of classes. This follows Reverse Depth First Search approach i.e., modules of the model are checked from last to first, and internally for each module same procedure was followed to find the module with weights. If the module has weights, it indicates the input and output sizes. If the first dimension of weight is not same as total classes count, then corrects the dimension to match with classes count.
--- TODO: currently this module supports only Linear module and for all other modules it will just display a warning message.
-function correctFinalOutputDim(node, outputSize)
-    if (node.modules ~= nil) then
-        if (type(node.modules) == 'table') then
-            for i=#node.modules,1,-1 do
-                local child = node.modules[i]
-                if correctFinalOutputDim(child, outputSize) then
-                    return true
-                end
-            end
-        end
-    end
-    if node.weight then
-        if node.weight:size(1) ~= outputSize then
-            if torch.type(node) == "nn.Linear" then
-		local oldOutputSize = node.weight:size(1)
-                node:__init(node.weight:size(2),outputSize)
-                logmessage.display(0,'changed output size for ' .. torch.type(node) .. ', from ' .. oldOutputSize .. ' to ' .. outputSize)
-            else
-                logmessage.display(1,'output size for last ' .. torch.type(node) .. ' layer is ' .. node.weight:size(1) .. ', which is different from total number of classes i.e., ' .. outputSize)
-            end
-            --logmessage.display(0,model:__tostring__())
-        end
-        return true
-    end
-    return false
-end
-
 -- return whether a Luarocks module is available
 function isModuleAvailable(name)
   if package.loaded[name] then

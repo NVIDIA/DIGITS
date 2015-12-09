@@ -68,6 +68,8 @@ layer {
     TORCH_NETWORK = \
 """
 return function(p)
+    -- adjust to number of classes
+    local nclasses = p.nclasses or 1
     -- model should adjust to any 3D input
     local nDim = 1
     if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
@@ -75,10 +77,10 @@ return function(p)
     model:add(nn.View(-1):setNumInputDims(3)) -- c*h*w -> chw (flattened)
     -- set all weights and biases to zero as this speeds learning up
     -- for the type of problem we're trying to solve in this test
-    local linearLayer = nn.Linear(nDim, 3)
+    local linearLayer = nn.Linear(nDim, nclasses)
     linearLayer.weight:fill(0)
     linearLayer.bias:fill(0)
-    model:add(linearLayer) -- chw -> 3
+    model:add(linearLayer) -- chw -> nclasses
     model:add(nn.LogSoftMax())
     return {
         model = model
@@ -800,14 +802,15 @@ layer {
     TORCH_NETWORK = \
 """
 return function(p)
+    local nclasses = p.nclasses or 1
     local croplen = 8, channels
     if p.inputShape then channels=p.inputShape[1] else channels=1 end
     local model = nn.Sequential()
     model:add(nn.View(-1):setNumInputDims(3)) -- flatten
-    local linLayer = nn.Linear(channels*croplen*croplen, 3)
+    local linLayer = nn.Linear(channels*croplen*croplen, nclasses)
     linLayer.weight:fill(0)
     linLayer.bias:fill(0)
-    model:add(linLayer) -- chw -> 3
+    model:add(linLayer) -- chw -> nclasses
     model:add(nn.LogSoftMax())
     return {
         model = model,

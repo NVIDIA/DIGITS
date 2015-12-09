@@ -10,7 +10,7 @@ Table of Contents
     * [Internal Parameters](#internal-parameters)
     * [Tensors](#tensors)
 * [Examples](#examples)
-    * [Adjusting Model To Inputs Dimensions](#adjusting-model-to-input-dimensions)
+    * [Adjusting model to inputs dimensions and number of classes](#adjusting-model-to-input-dimensions-and-number-of-classes)
     * [Selecting the NN Backend](#selecting-the-nn-backend)
     * [Supervised Regression Learning](#supervised-regression-learning)
     * [Command Line Inference](#command-line-inference)
@@ -87,6 +87,7 @@ External parameters are provided by DIGITS:
 Parameter name  | Type     | Description
 --------------- | -------- | --------
 ngpus           | number   | Tells how many GPUs are available (0 means CPU)
+nclasses        | number   | Number of classes (for classification datasets). For other datasets this is undefined.
 inputShape      | Tensor   | Shape (1D Tensor) of first input Tensor. For image data this is set to {channels, height, width}. Note: this parameter is undefined during model visualization.
 
 ### Internal parameters
@@ -108,17 +109,18 @@ Networks are fed with Torch Tensor objects in the NxCxHxW format (index in batch
 
 ## Examples
 
-### Adjusting model to input dimensions
+### Adjusting model to input dimensions and number of classes
 
-The following network defines a linear network that takes any 3D-tensor as input and produces three categorical outputs:
+The following network defines a linear network that takes any 3D-tensor as input and produces one categorical output per class:
 ```lua
 return function(p)
     -- model should adjust to any 3D-input
-    nDim = 1
+    local nClasses = p.nclasses or 1
+    local nDim = 1
     if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
     local model = nn.Sequential()
     model:add(nn.View(-1):setNumInputDims(3)) -- c*h*w -> chw (flattened)
-    model:add(nn.Linear(nDim, 3)) -- chw -> 3
+    model:add(nn.Linear(nDim, nclasses)) -- chw -> nClasses
     model:add(nn.LogSoftMax())
     return {
         model = model

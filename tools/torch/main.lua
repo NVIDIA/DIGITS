@@ -266,6 +266,7 @@ local network_func = require (opt.network)
 assert(type(network_func)=='function', "Network definition should return a Lua function - see documentation")
 local parameters = {
         ngpus = (opt.type == 'cuda') and 1 or 0,
+        nclasses = (classes ~= nil) and #classes or nil,
         inputShape = inputTensorShape,
     }
 network = network_func(parameters)
@@ -336,12 +337,6 @@ if opt.retrain ~= '' then
         logmessage.display(2,'Pretrained model not found: ' .. opt.retrain)
         os.exit(-1)
     end
-end
-
-if classes then
-    -- for classification networks, and for the user's convenience, adjust
-    -- last layer to match number of classes
-    utils.correctFinalOutputDim(model, #classes)
 end
 
 logmessage.display(0,'Network definition: \n' .. model:__tostring__())

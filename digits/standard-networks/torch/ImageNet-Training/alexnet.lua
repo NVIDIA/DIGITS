@@ -17,7 +17,7 @@ else
    convLayerName = 'nn.SpatialConvolutionMM'
 end
 
-function createModel(nGPU, channels)
+function createModel(nGPU, channels, nClasses)
    assert(nGPU == 1 or nGPU == 2, '1-GPU or 2-GPU supported for AlexNet')
    
    -- this is alexnet as presented in Krizhevsky et al., 2012
@@ -48,7 +48,7 @@ function createModel(nGPU, channels)
    classifier:add(nn.Dropout(0.5))
    classifier:add(nn.Linear(4096, 4096))
    classifier:add(nn.Threshold(0, 1e-6))
-   classifier:add(nn.Linear(4096, 1000))
+   classifier:add(nn.Linear(4096, nClasses))
    classifier:add(backend.LogSoftMax())
 
    local model = nn.Sequential():add(features):add(classifier)
@@ -59,6 +59,8 @@ end
 -- return function that returns network definition
 return function(params)
     assert(params.ngpus<=1, 'Model supports only one GPU')
+    -- get number of classes from external parameters
+    local nclasses = params.nclasses or 1
     -- adjust to number of channels in input images
     local channels = 1
     -- params.inputShape may be nil during visualization
@@ -67,7 +69,7 @@ return function(params)
         assert(params.inputShape[2]==256 and params.inputShape[3]==256, 'Network expects 256x256 images')
     end
     return {
-        model = createModel(params.ngpus, channels),
+        model = createModel(params.ngpus, channels, nclasses),
         croplen = 224,
         trainBatchSize = 100,
         validationBatchSize = 100,
