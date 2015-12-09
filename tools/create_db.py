@@ -741,6 +741,7 @@ if __name__ == '__main__':
             help = 'The initial map size for LMDB (in MB)')
     parser.add_argument('--hdf5_dset_limit',
             type=int,
+            default=2**31,
             help = 'The size limit for HDF5 datasets')
 
     args = vars(parser.parse_args())
