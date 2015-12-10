@@ -1,4 +1,4 @@
-# Building DIGITS from source
+# Building DIGITS
 
 The preferred installation method for DIGITS is via deb packages ([instructions](UbuntuInstall.md)).
 If you need to use a newer version of DIGITS or a custom build of NVcaffe, then you can use the instructions below to build from source.
