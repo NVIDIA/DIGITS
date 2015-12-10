@@ -91,7 +91,9 @@ socket.on('task update', function (msg) {
         <div class="row">
             <div id="show-job-name" class="col-sm-12">
                 <h2 style="display:inline;">{{ job.name() }}</h2>
+                {% if job | has_permission('edit') %}
                 <a href=# onClick="$('#show-job-name').hide(); $('#edit-job-name').show(); return false;"><span class="glyphicon glyphicon-edit"></span></a>
+                {% endif %}
             </div>
             <div id="edit-job-name" class="col-sm-4" style="display:none;">
                 <script>
@@ -116,15 +118,17 @@ function updateJobName() {
                 <a href=# class="btn btn-info" onClick="$('#edit-job-name').hide(); $('#show-job-name').show(); return false;">Cancel</a>
             </div>
         </div>
-        <small>{{ job.job_type() }}</small>
+        {% if job.username %}
+        <small>Owner: {{job.username}}</small>
+        {% endif %}
         <div class="pull-right">
             {% if job.form_data is defined %}
             <a id="clone-job" class="btn btn-info" href="{{url_for('clone_job', clone=job.id())}}">Clone Job</a>
             {% else %}
-            <a id="clone-job" class="btn btn-info " disabled>Clone Job</a>
+            <a id="clone-job" class="btn btn-info" disabled>Clone Job</a>
             {% endif %}
-            <a id="abort-job" class="btn btn-warning{{ ' hidden' if not job.status.is_running() }}">Abort Job</a>
-            <a id="delete-job" class="btn btn-danger">Delete Job</a>
+            <a id="abort-job" class="btn btn-warning {{ 'hidden' if not job.status.is_running() }} {{'disabled' if not (job | has_permission('abort'))}}">Abort Job</a>
+            <a id="delete-job" class="btn btn-danger {{'disabled' if not (job | has_permission('delete'))}}">Delete Job</a>
         </div>
     </div>
     <script>

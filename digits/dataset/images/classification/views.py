@@ -254,6 +254,7 @@ def from_files(job, form):
 
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@utils.auth.requires_login
 def image_classification_dataset_new():
     """
     Returns a form for a new ImageClassificationDatasetJob
@@ -267,6 +268,7 @@ def image_classification_dataset_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
+@utils.auth.requires_login(redirect=False)
 def image_classification_dataset_create():
     """
     Creates a new ImageClassificationDatasetJob
@@ -287,6 +289,7 @@ def image_classification_dataset_create():
     job = None
     try:
         job = ImageClassificationDatasetJob(
+                username    = utils.auth.get_username(),
                 name        = form.dataset_name.data,
                 image_dims  = (
                     int(form.resize_height.data),

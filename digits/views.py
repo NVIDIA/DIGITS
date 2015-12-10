@@ -127,7 +127,7 @@ def login():
     response.set_cookie('username', username)
     return response
 
-@app.route('/logout')
+@app.route('/logout', methods=['GET','POST'])
 def logout():
     """
     Unset the username cookie
@@ -159,6 +159,7 @@ def show_job(job_id):
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
 @app.route('/jobs/<job_id>', methods=['PUT'])
+@utils.auth.requires_login(redirect=False)
 def edit_job(job_id):
     """
     Edit a job's name and/or notes
@@ -166,6 +167,9 @@ def edit_job(job_id):
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
+
+    if not utils.auth.has_permission(job, 'edit'):
+        raise werkzeug.exceptions.Forbidden()
 
     # Edit name
     if 'job_name' in flask.request.form:
@@ -206,6 +210,7 @@ def job_status(job_id):
 @app.route('/datasets/<job_id>', methods=['DELETE'])
 @app.route('/models/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])
+@utils.auth.requires_login(redirect=False)
 def delete_job(job_id):
     """
     Deletes a job
@@ -213,6 +218,9 @@ def delete_job(job_id):
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
+
+    if not utils.auth.has_permission(job, 'delete'):
+        raise werkzeug.exceptions.Forbidden()
 
     try:
         if scheduler.delete_job(job_id):
@@ -225,6 +233,7 @@ def delete_job(job_id):
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
 @app.route('/jobs/<job_id>/abort', methods=['POST'])
+@utils.auth.requires_login(redirect=False)
 def abort_job(job_id):
     """
     Aborts a running job
@@ -239,6 +248,7 @@ def abort_job(job_id):
         raise werkzeug.exceptions.Forbidden('Job not aborted')
 
 @app.route('/clone/<clone>', methods=['POST', 'GET'])
+@utils.auth.requires_login
 def clone_job(clone):
     """
     Clones a job with the id <clone>, populating the creation page with data saved in <clone>

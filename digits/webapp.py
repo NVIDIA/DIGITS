@@ -27,6 +27,7 @@ app.jinja_env.filters['print_time'] = utils.time_filters.print_time
 app.jinja_env.filters['print_time_diff'] = utils.time_filters.print_time_diff
 app.jinja_env.filters['print_time_since'] = utils.time_filters.print_time_since
 app.jinja_env.filters['sizeof_fmt'] = utils.sizeof_fmt
+app.jinja_env.filters['has_permission'] = utils.auth.has_permission
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 

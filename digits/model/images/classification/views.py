@@ -24,6 +24,7 @@ from digits.utils import filesystem as fs
 NAMESPACE   = '/models/images/classification'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
+@utils.auth.requires_login
 def image_classification_model_new():
     """
     Return a form for a new ImageClassificationModelJob
@@ -49,6 +50,7 @@ def image_classification_model_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
+@utils.auth.requires_login(redirect=False)
 def image_classification_model_create():
     """
     Create a new ImageClassificationModelJob
@@ -86,6 +88,7 @@ def image_classification_model_create():
     job = None
     try:
         job = ImageClassificationModelJob(
+                username    = utils.auth.get_username(),
                 name        = form.model_name.data,
                 dataset_id  = datasetJob.id(),
                 )

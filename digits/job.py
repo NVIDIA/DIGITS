@@ -42,10 +42,11 @@ class Job(StatusCls):
                     task.detect_snapshots()
             return job
 
-    def __init__(self, name):
+    def __init__(self, name, username):
         """
         Arguments:
         name -- name of this job
+        username -- creator of this job
         """
         super(Job, self).__init__()
 
@@ -53,6 +54,7 @@ class Job(StatusCls):
         self._id = '%s-%s' % (time.strftime('%Y%m%d-%H%M%S'), os.urandom(2).encode('hex'))
         self._dir = os.path.join(config_value('jobs_dir'), self._id)
         self._name = name
+        self.username = username
         self.pickver_job = PICKLE_VERSION
         self.tasks = []
         self.exception = None
@@ -76,6 +78,8 @@ class Job(StatusCls):
         """
         Used when loading a pickle file
         """
+        if 'username' not in state:
+            state['username'] = None
         self.__dict__ = state
 
     def json_dict(self, detailed=False):
