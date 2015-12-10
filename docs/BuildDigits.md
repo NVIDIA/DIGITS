@@ -57,7 +57,7 @@ With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caff
 
 As with Caffe, you can use deb packages to install the latest release:
 ```sh
-% sudo apt-get install torch
+% sudo apt-get install torch7-nv
 ```
 
 Otherwise, **follow [these instructions](BuildTorch.md) to build from source**.
