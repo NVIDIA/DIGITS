@@ -31,14 +31,25 @@
             {% block nav %}
             {% endblock %}
         </ul>
-        <div class="navbar-right">
-            <ul class="nav navbar-nav">
-                <li><a>Version {{server_version}}</a></li>
+        <ul class="nav navbar-nav navbar-right">
+            <li>
+            <p class="navbar-text">
+            {% if username %}
+            {{username}} (<a class="navbar-link" href="/logout">Logout</a>)
+            {% else %}
+            <a class="navbar-link" href="/login">Login</a>
+            {% endif %}
+            <p>
+            </li>
+            <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Info<span class="caret"></span></a>
+            <ul class="dropdown-menu navbar-inverse">
                 {% if server_name %}
-                <li><a>{{server_name}}</a></li>
+                <li><span class="navbar-text">Server: {{server_name}}</span></li>
                 {% endif %}
+                <li><span class="navbar-text">Version: {{server_version}}</span></li>
             </ul>
-        </div>
+        </ul>
     </div>
 </div>
 

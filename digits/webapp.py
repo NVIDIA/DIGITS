@@ -32,6 +32,18 @@ app.jinja_env.lstrip_blocks = True
 
 import digits.views
 
+def username_decorator(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        this_username = flask.request.cookies.get('username', None)
+        app.jinja_env.globals['username'] = this_username
+        return f(*args, **kwargs)
+    return decorated
+
+for endpoint, function in app.view_functions.iteritems():
+    app.view_functions[endpoint] = username_decorator(function)
+
 ### Setup the environment
 
 scheduler.load_past_jobs()

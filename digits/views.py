@@ -11,12 +11,11 @@ import werkzeug.exceptions
 from flask.ext.socketio import join_room, leave_room
 
 import digits
-from . import dataset, model
+from digits import dataset, model, utils
 from config import config_value
 from webapp import app, socketio, scheduler
 import dataset.views
 import model.views
-from digits.utils import errors
 from digits.utils.routing import request_wants_json
 from digits.log import logger
 
@@ -99,6 +98,48 @@ def get_job_list(cls, running):
             )
 
 
+### Authentication/login
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+    """
+    Ask for a username (no password required)
+    Sets a cookie
+    """
+    # Get the URL to redirect to after logging in
+    next_url = utils.routing.get_request_arg('next') or \
+            flask.request.referrer or flask.url_for('home')
+
+    if flask.request.method == 'GET':
+        return flask.render_template('login.html', next=next_url)
+
+    # Validate username
+    username = utils.routing.get_request_arg('username').strip()
+    try:
+        utils.auth.validate_username(username)
+    except ValueError as e:
+        # Invalid username
+        flask.flash(e.message, 'danger')
+        return flask.render_template('login.html', next=next_url)
+
+    # Valid username
+    response = flask.make_response(flask.redirect(next_url))
+    response.set_cookie('username', username)
+    return response
+
+@app.route('/logout')
+def logout():
+    """
+    Unset the username cookie
+    """
+    next_url = utils.routing.get_request_arg('next') or \
+            flask.request.referrer or flask.url_for('home')
+
+    response = flask.make_response(flask.redirect(next_url))
+    response.set_cookie('username', '', expires=0)
+    return response
+
+
 ### Jobs routes
 
 @app.route('/jobs/<job_id>', methods=['GET'])
@@ -178,7 +219,7 @@ def delete_job(job_id):
             return 'Job deleted.'
         else:
             raise werkzeug.exceptions.Forbidden('Job not deleted')
-    except errors.DeleteError as e:
+    except utils.errors.DeleteError as e:
         raise werkzeug.exceptions.Forbidden(str(e))
 
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
