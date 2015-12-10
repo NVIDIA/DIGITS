@@ -85,7 +85,6 @@ class TrainTask(Task):
 
     def __setstate__(self, state):
         if state['pickver_task_train'] < 2:
-            print 'Upgrading TrainTask to version 2'
             state['train_outputs'] = OrderedDict()
             state['val_outputs'] = OrderedDict()
 

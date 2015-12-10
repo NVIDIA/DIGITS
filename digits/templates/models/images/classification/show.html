@@ -18,10 +18,10 @@
                 <dt>{{key}}</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(value, relative=True))}}">{{value}}</a></dd>
                 {% endfor %}
-
+                {% if task.log_file %}
                 <dt>Raw {{task.get_framework_id()}} output</dt>
                 <dd><a href="{{url_for('serve_file', path=task.path(task.log_file, relative=True))}}">{{task.log_file}}</a></dd>
-
+                {% endif %}
                 {% if task.pretrained_model %}
                 <dt>Pretrained Model</dt>
                 <dd>{{task.pretrained_model}}</dd>

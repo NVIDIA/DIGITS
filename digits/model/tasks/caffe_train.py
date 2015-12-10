@@ -80,11 +80,12 @@ class CaffeTrainTask(TrainTask):
 
         # Upgrade pickle file
         if state['pickver_task_caffe_train'] <= 1:
-            print 'Upgrading CaffeTrainTask to version 2 ...'
             self.caffe_log_file = self.CAFFE_LOG
         if state['pickver_task_caffe_train'] <= 2:
-            print 'Upgrading CaffeTrainTask to version 3 ...'
-            self.log_file = self.caffe_log_file
+            if hasattr(self, 'caffe_log_file'):
+                self.log_file = self.caffe_log_file
+            else:
+                self.log_file = None
             self.framework_id = 'caffe'
         self.pickver_task_caffe_train = PICKLE_VERSION
 

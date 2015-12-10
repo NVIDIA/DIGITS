@@ -17,7 +17,7 @@ app.config['WTF_CSRF_ENABLED'] = False
 app.config['SECRET_KEY'] = config_value('secret_key')
 app.url_map.redirect_defaults = False
 socketio = SocketIO(app)
-scheduler = digits.scheduler.Scheduler(config_value('gpu_list'))
+scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
 # Set up flask API documentation, if installed
 try:

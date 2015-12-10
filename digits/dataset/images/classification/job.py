@@ -24,12 +24,10 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
         super(ImageClassificationDatasetJob, self).__setstate__(state)
 
         if self.pickver_job_dataset_image_classification <= 1:
-            print 'Upgrading ImageClassificationDatasetJob to version 2'
             task = self.train_db_task()
             if task.image_dims[2] == 3:
                 if task.encoding == "jpg":
                     if task.mean_file.endswith('.binaryproto'):
-                        print '\tConverting mean file "%s" from RGB to BGR.' % task.path(task.mean_file)
                         import numpy as np
                         import caffe_pb2
 
@@ -48,7 +46,6 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                         with open(task.path(task.mean_file), 'wb') as outfile:
                             outfile.write(new_blob.SerializeToString())
                 else:
-                    print '\tSetting "%s" status to ERROR because it was created with RGB channels' % self.name()
                     self.status = Status.ERROR
                     for task in self.tasks:
                         task.status = Status.ERROR
