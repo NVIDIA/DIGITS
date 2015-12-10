@@ -14,7 +14,7 @@ CUDA_REPO_PKG=cuda-repo-ubuntu1404_7.5-18_amd64.deb &&
     wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/$CUDA_REPO_PKG &&
     sudo dpkg -i $CUDA_REPO_PKG
 
-ML_REPO_PKG=nvidia-machine-learning-repo_4.0-1_amd64.deb &&
+ML_REPO_PKG=nvidia-machine-learning-repo_4.0-2_amd64.deb &&
     wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/$ML_REPO_PKG &&
     sudo dpkg -i $ML_REPO_PKG
 ```
