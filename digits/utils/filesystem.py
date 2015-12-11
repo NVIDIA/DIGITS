@@ -20,7 +20,7 @@ def get_python_file_dst(dirname, basename):
     (root, ext) = os.path.splitext(basename)
     if ext != '.py' and ext != '.pyc':
         ValueError('Python file, %s, needs .py or .pyc extension.' % basename)
-    filename = os.path.join(dirname, basename)
+    filename = os.path.join(dirname, 'digits_python_layers' + ext)
     if os.path.isfile(filename):
         ValueError('Python file, %s, already exists.' % filename)
     return filename

@@ -2,8 +2,6 @@
 
 Deb packages are provided for easy installation on Ubuntu 14.04.
 
-> **NOTE**: these packages are not posted publicly yet ([#427](https://github.com/NVIDIA/DIGITS/issues/427#issuecomment-159003584)). For now, you can either use the "Web installer" to install version 2.0 ([instructions](https://github.com/NVIDIA/DIGITS/blob/digits-2.0/docs/WebInstall.md)) or build from source ([instructions](BuildDigits.md)). Sorry for the inconvenience!
-
 ## Prerequisites
 
 NVIDIA driver version 346 or later.  If you need a driver go to http://www.nvidia.com/Download/index.aspx
@@ -16,7 +14,7 @@ CUDA_REPO_PKG=cuda-repo-ubuntu1404_7.5-18_amd64.deb &&
     wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/$CUDA_REPO_PKG &&
     sudo dpkg -i $CUDA_REPO_PKG
 
-ML_REPO_PKG=nvidia-machine-learning-repo_4.0-1_amd64.deb &&
+ML_REPO_PKG=nvidia-machine-learning-repo_4.0-2_amd64.deb &&
     wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/$ML_REPO_PKG &&
     sudo dpkg -i $ML_REPO_PKG
 ```

@@ -1,13 +1,5 @@
 # Building Torch
 
-Table of Contents
-=================
-* [Prerequisites](#prerequisites)
-* [Torch installer](#torch-installer)
-* [Luarocks dependencies](#luarocks-dependencies)
-* [LMDB support](#lmdb-support)
-* [Getting Started With Torch7 in DIGITS](#getting-started-with-torch7-in-digits)
-
 With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caffe.
 
 > NOTE: Torch support is still experimental!
@@ -15,10 +7,17 @@ With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caff
 If you don't need a new version or custom build of Torch, you can still use deb packages to install the latest release.
 Follow [these instructions](UbuntuInstall.md#repository-access) to gain access to the required repositories, and then use this command to install:
 ```sh
-% sudo apt-get install torch
+% sudo apt-get install torch7-nv
 ```
-
 Otherwise, follow these instructions to build from source.
+
+Table of Contents
+=================
+* [Prerequisites](#prerequisites)
+* [Torch installer](#torch-installer)
+* [Luarocks dependencies](#luarocks-dependencies)
+* [LMDB support](#lmdb-support)
+* [Getting Started With Torch7 in DIGITS](#getting-started-with-torch7-in-digits)
 
 ## Prerequisites
 
