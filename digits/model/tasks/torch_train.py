@@ -426,6 +426,9 @@ class TorchTrainTask(TrainTask):
             else:
                 self.traceback = traceback
 
+            if 'DIGITS_MODE_TEST' in os.environ:
+                print output
+
     @override
     def detect_snapshots(self):
         self.snapshots = []
