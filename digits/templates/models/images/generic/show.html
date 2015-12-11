@@ -12,6 +12,8 @@
     <div class="col-sm-6">
         <div class="well">
             <dl>
+                <dt>Job Directory</dt>
+                <dd>{{ job.dir() }}</dd>
                 <dt>Disk Size</dt>
                 <dd>{{job.disk_size_fmt()}}</dd>
                 {% for key,value in task.get_model_files().items() %}
