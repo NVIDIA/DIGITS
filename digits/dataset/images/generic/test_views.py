@@ -61,9 +61,10 @@ class BaseViewsTestWithImageset(BaseViewsTest):
     @classmethod
     def setUpClass(cls):
         super(BaseViewsTestWithImageset, cls).setUpClass()
-        cls.imageset_folder = tempfile.mkdtemp()
-        # create imageset
-        cls.test_image = create_lmdbs(cls.imageset_folder)
+        if not hasattr(BaseViewsTestWithImageset, 'imageset_folder'):
+            # Create folder and LMDBs for all test classes
+            BaseViewsTestWithImageset.imageset_folder = tempfile.mkdtemp()
+            BaseViewsTestWithImageset.test_image = create_lmdbs(BaseViewsTestWithImageset.imageset_folder)
         cls.created_datasets = []
 
     @classmethod
@@ -71,8 +72,6 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         # delete any created datasets
         for job_id in cls.created_datasets:
             cls.delete_dataset(job_id)
-        # delete imageset
-        shutil.rmtree(cls.imageset_folder)
         super(BaseViewsTestWithImageset, cls).tearDownClass()
 
     @classmethod
