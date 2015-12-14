@@ -109,8 +109,8 @@ class Scheduler:
         """
         Look in the jobs directory and load all valid jobs
         """
-        failed = 0
         loaded_jobs = []
+        failed_jobs = []
         for dir_name in sorted(os.listdir(config_value('jobs_dir'))):
             if os.path.isdir(os.path.join(config_value('jobs_dir'), dir_name)):
                 exists = False
@@ -134,13 +134,7 @@ class Scheduler:
                         job.save()
                         loaded_jobs.append(job)
                     except Exception as e:
-                        failed += 1
-                        if self.verbose:
-                            if str(e):
-                                print 'Caught %s while loading job "%s":' % (type(e).__name__, dir_name)
-                                print '\t%s' % e
-                            else:
-                                print 'Caught %s while loading job "%s"' % (type(e).__name__, dir_name)
+                        failed_jobs.append((dir_name, e))
 
         # add DatasetJobs
         for job in loaded_jobs:
@@ -155,16 +149,15 @@ class Scheduler:
                     job.load_dataset()
                     self.jobs[job.id()] = job
                 except Exception as e:
-                    failed += 1
-                    if self.verbose:
-                        if str(e):
-                            print 'Caught %s while loading job "%s":' % (type(e).__name__, job.id())
-                            print '\t%s' % e
-                        else:
-                            print 'Caught %s while loading job "%s"' % (type(e).__name__, job.id())
+                    failed_jobs.append((job.id(), e))
 
-        if failed > 0 and self.verbose:
-            print 'WARNING:', failed, 'jobs failed to load.'
+        logger.info('Loaded %d jobs.' % len(self.jobs))
+
+        if len(failed_jobs):
+            logger.warning('Failed to load %d jobs.' % len(failed_jobs))
+            if self.verbose:
+                for job_id, e in failed_jobs:
+                    logger.debug('%s - %s: %s' % (job_id, type(e).__name__, str(e)))
 
     def add_job(self, job):
         """

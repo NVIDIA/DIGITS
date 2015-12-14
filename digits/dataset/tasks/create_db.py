@@ -75,7 +75,6 @@ class CreateDbTask(Task):
         super(CreateDbTask, self).__setstate__(state)
 
         if self.pickver_task_createdb <= 1:
-            print 'Upgrading CreateDbTask to version 2'
             if self.image_dims[2] == 1:
                 self.image_channel_order = None
             elif self.encode:
@@ -83,7 +82,6 @@ class CreateDbTask(Task):
             else:
                 self.image_channel_order = 'RGB'
         if self.pickver_task_createdb <= 2:
-            print 'Upgrading CreateDbTask to version 3'
             if hasattr(self, 'encode'):
                 if self.encode:
                     self.encoding = 'jpg'
