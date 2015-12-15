@@ -88,27 +88,41 @@
         <dd>{{task.entries_count}}</dd>
         {% endif %}
     </dl>
+
+    {# Category distribution graph #}
     <div class="distribution-graph" style="display:none;"></div>
     {% if task.distribution_data() %}
-    <script>
-        drawDistributionGraph("{{task.html_id()}}",
-        {% autoescape false %}
-        {{task.distribution_data()}}
-        {% endautoescape %}
-        );
-    </script>
-    {% if task.status=='D' %}
-    {% if task.mean_file %}
-    <b>Image Mean:</b>
-    <img src="{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}" />
+        <script>
+            drawDistributionGraph("{{task.html_id()}}",
+                {% autoescape false %}
+                {{task.distribution_data()}}
+                {% endautoescape %}
+            );
+        </script>
     {% endif %}
+
+    {# Mean image #}
+    <div class="mean-image" style="display:none;">
+        <b>Image Mean:</b>
+        <img class="mean-image" />
+    </div>
+    {% if task.status=='D' and task.mean_file %}
+        <script>
+            displayMeanImage("{{task.html_id()}}",
+                "{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}");
+        </script>
+    {% endif %}
+
+    {# Exploration #}
     {% if task.backend=='lmdb' %}
-    <dl>
-        <br/>
-        <a href="{{url_for('image_classification_dataset_explore', job_id=job.id(), db=task.db_name.lower())}}" class="btn btn-primary">Explore the db</a>
-    </dl>
-    {% endif %}
-    {% endif %}
+        <div class="exploration" style="display:none;">
+            <a href="{{url_for('image_classification_dataset_explore', job_id=job.id(), db=task.db_name.lower())}}" class="btn btn-primary">Explore the db</a>
+        </div>
+        {% if task.status=='D' %}
+            <script>
+                showExplorationLink("{{task.html_id()}}");
+            </script>
+        {% endif %}
     {% endif %}
 </div>
 {% endmacro %}
@@ -145,6 +159,13 @@
             },
             legend: {show: false},
         }));
+    }
+    function displayMeanImage(task_id, url) {
+        $("#"+task_id+" img.mean-image").attr("src", url);
+        $("#"+task_id+" div.mean-image").show();
+    }
+    function showExplorationLink(task_id) {
+        $("#"+task_id+" div.exploration").show();
     }
 </script>
 
