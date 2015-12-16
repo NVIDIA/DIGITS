@@ -11,7 +11,7 @@ import numpy as np
 import digits
 from digits.config import config_value
 from digits import utils
-from digits.utils.routing import request_wants_json, job_from_request
+from digits.utils.routing import request_wants_json, job_from_request, get_workspace
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import ImageClassificationDatasetJob
 from digits import frameworks
@@ -20,7 +20,6 @@ from job import ImageClassificationModelJob
 from digits.status import Status
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils import filesystem as fs
-from digits.workspaces import get_workspace
 
 NAMESPACE   = '/models/images/classification'
 

@@ -17,10 +17,9 @@ from webapp import app, socketio, scheduler, autodoc
 import dataset.views
 import model.views
 from digits.utils import errors
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, get_workspace
 from digits.log import logger
 from flask import Flask, request, render_template
-from workspaces import get_workspace
 import shutil
 import os
 from boto.ec2.autoscale import scheduled

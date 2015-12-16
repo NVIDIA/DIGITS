@@ -2,10 +2,9 @@
 
 import flask
 import werkzeug.exceptions
-from digits.workspaces import get_workspace
 
 from digits.webapp import app, scheduler, autodoc
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, get_workspace
 import images.views
 import images as dataset_images
 

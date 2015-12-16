@@ -6,12 +6,11 @@ import flask
 
 from digits import utils
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils.routing import request_wants_json, job_from_request
+from digits.utils.routing import request_wants_json, job_from_request, get_workspace
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
 from job import ImageClassificationDatasetJob
-from digits.workspaces import get_workspace
 
 import lmdb
 import PIL.Image
