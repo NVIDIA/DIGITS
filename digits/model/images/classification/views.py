@@ -94,6 +94,7 @@ def image_classification_model_create():
         job = ImageClassificationModelJob(
                 name        = form.model_name.data,
                 dataset_id  = datasetJob.id(),
+                workspace = workspace,
                 )
         # get handle to framework object
         fw = frameworks.get_framework_by_id(form.framework.data)

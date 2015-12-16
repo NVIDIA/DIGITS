@@ -74,7 +74,7 @@ New Image Classification Model
          python_layer_file_state();
 
 $("#dataset").change(function() {
-        $.ajax("/datasets/images/classification/summary?job_id=" + $(this).val()?workspace={{ workspace }},
+        $.ajax("/datasets/images/classification/summary?job_id=" + $(this).val() + "?workspace={{ workspace }}",
             {
                 type: "GET",
                 }

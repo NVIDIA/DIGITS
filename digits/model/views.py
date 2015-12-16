@@ -90,6 +90,7 @@ def models_show(job_id):
     Returns JSON when requested:
         {id, name, directory, status, snapshots: [epoch,epoch,...]}
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
