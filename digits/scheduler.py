@@ -113,28 +113,24 @@ class Scheduler:
         failed_jobs = []
         for dir_name in sorted(os.listdir(config_value('jobs_dir'))):
             if os.path.isdir(os.path.join(config_value('jobs_dir'), dir_name)):
-                exists = False
-
                 # Make sure it hasn't already been loaded
                 if dir_name in self.jobs:
-                    exists = True
-                    break
+                    continue
 
-                if not exists:
-                    try:
-                        job = Job.load(dir_name)
-                        # The server might have crashed
-                        if job.status.is_running():
-                            job.status = Status.ABORT
-                        for task in job.tasks:
-                            if task.status.is_running():
-                                task.status = Status.ABORT
+                try:
+                    job = Job.load(dir_name)
+                    # The server might have crashed
+                    if job.status.is_running():
+                        job.status = Status.ABORT
+                    for task in job.tasks:
+                        if task.status.is_running():
+                            task.status = Status.ABORT
 
-                        # We might have changed some attributes here or in __setstate__
-                        job.save()
-                        loaded_jobs.append(job)
-                    except Exception as e:
-                        failed_jobs.append((dir_name, e))
+                    # We might have changed some attributes here or in __setstate__
+                    job.save()
+                    loaded_jobs.append(job)
+                except Exception as e:
+                    failed_jobs.append((dir_name, e))
 
         # add DatasetJobs
         for job in loaded_jobs:
