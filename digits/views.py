@@ -22,7 +22,6 @@ from digits.log import logger
 from flask import Flask, request, render_template
 import shutil
 import os
-from boto.ec2.autoscale import scheduled
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
