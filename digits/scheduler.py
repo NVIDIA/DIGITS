@@ -6,7 +6,9 @@ import shutil
 import traceback
 import signal
 from collections import OrderedDict
+import re
 
+import flask
 import gevent
 import gevent.event
 import gevent.queue
@@ -167,22 +169,19 @@ class Scheduler:
 
             # Need to fix this properly
             # if True or flask._app_ctx_stack.top is not None:
-            from digits.webapp import app
+            from digits.webapp import app, socketio
             with app.app_context():
                 # send message to job_management room that the job is added
-                import flask
                 html = flask.render_template('job_row.html', job = job)
 
                 # Convert the html into a list for the jQuery
                 # DataTable.row.add() method.  This regex removes the <tr>
                 # and <td> tags, and splits the string into one element
                 # for each cell.
-                import re
                 html = re.sub('<tr[^<]*>[\s\n\r]*<td[^<]*>[\s\n\r]*', '', html)
                 html = re.sub('[\s\n\r]*</td>[\s\n\r]*</tr>', '', html)
                 html = re.split('</td>[\s\n\r]*<td[^<]*>', html)
 
-                from digits.webapp import socketio
                 socketio.emit('job update',
                               {
                                   'update': 'added',
