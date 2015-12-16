@@ -856,6 +856,10 @@ class TestTorchCreation(BaseTestCreation):
 class TestTorchCreated(BaseTestCreated):
     FRAMEWORK = 'torch'
 
+class TestTorchCreatedUnencoded(BaseTestCreated):
+    FRAMEWORK = 'torch'
+    ENCODING = 'none'
+
 class TestTorchCreatedShuffle(TestTorchCreated):
     SHUFFLE = True
 
