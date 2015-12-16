@@ -1,6 +1,6 @@
 # Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
 
-worker_class = 'socketio.sgunicorn.GeventSocketIOWorker'
+worker_class = 'geventwebsocket.gunicorn.workers.GeventWebSocketWorker'
 bind = '0.0.0.0:34448' # DIGIT
 loglevel = 'debug'
 

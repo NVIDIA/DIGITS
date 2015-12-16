@@ -5,9 +5,10 @@ protobuf>=2.5.0
 six>=1.5.2
 requests>=2.2.1
 gevent>=1.0
+gevent-websocket>=0.9.3
 Flask>=0.10.1
 Flask-WTF>=0.11
-Flask-SocketIO==0.6.0
+Flask-SocketIO>=1.0,<2.0
 gunicorn==17.5
 setuptools>=3.3
 lmdb>=0.87
