@@ -6,7 +6,9 @@ import shutil
 import traceback
 import signal
 from collections import OrderedDict
+import re
 
+import flask
 import gevent
 import gevent.event
 import gevent.queue
@@ -113,28 +115,24 @@ class Scheduler:
         failed_jobs = []
         for dir_name in sorted(os.listdir(config_value('jobs_dir'))):
             if os.path.isdir(os.path.join(config_value('jobs_dir'), dir_name)):
-                exists = False
-
                 # Make sure it hasn't already been loaded
                 if dir_name in self.jobs:
-                    exists = True
-                    break
+                    continue
 
-                if not exists:
-                    try:
-                        job = Job.load(dir_name)
-                        # The server might have crashed
-                        if job.status.is_running():
-                            job.status = Status.ABORT
-                        for task in job.tasks:
-                            if task.status.is_running():
-                                task.status = Status.ABORT
+                try:
+                    job = Job.load(dir_name)
+                    # The server might have crashed
+                    if job.status.is_running():
+                        job.status = Status.ABORT
+                    for task in job.tasks:
+                        if task.status.is_running():
+                            task.status = Status.ABORT
 
-                        # We might have changed some attributes here or in __setstate__
-                        job.save()
-                        loaded_jobs.append(job)
-                    except Exception as e:
-                        failed_jobs.append((dir_name, e))
+                    # We might have changed some attributes here or in __setstate__
+                    job.save()
+                    loaded_jobs.append(job)
+                except Exception as e:
+                    failed_jobs.append((dir_name, e))
 
         # add DatasetJobs
         for job in loaded_jobs:
@@ -171,22 +169,19 @@ class Scheduler:
 
             # Need to fix this properly
             # if True or flask._app_ctx_stack.top is not None:
-            from digits.webapp import app
+            from digits.webapp import app, socketio
             with app.app_context():
                 # send message to job_management room that the job is added
-                import flask
                 html = flask.render_template('job_row.html', job = job)
 
                 # Convert the html into a list for the jQuery
                 # DataTable.row.add() method.  This regex removes the <tr>
                 # and <td> tags, and splits the string into one element
                 # for each cell.
-                import re
                 html = re.sub('<tr[^<]*>[\s\n\r]*<td[^<]*>[\s\n\r]*', '', html)
                 html = re.sub('[\s\n\r]*</td>[\s\n\r]*</tr>', '', html)
                 html = re.split('</td>[\s\n\r]*<td[^<]*>', html)
 
-                from digits.webapp import socketio
                 socketio.emit('job update',
                               {
                                   'update': 'added',
