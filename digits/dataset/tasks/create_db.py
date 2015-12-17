@@ -223,10 +223,22 @@ class CreateDbTask(Task):
 
     @override
     def after_run(self):
+        from digits.webapp import socketio
+
         super(CreateDbTask, self).after_run()
         self.create_db_log.close()
 
-        if self.backend == 'hdf5':
+        if self.backend == 'lmdb':
+            socketio.emit('task update',
+                    {
+                        'task': self.html_id(),
+                        'update': 'exploration-ready',
+                        },
+                    namespace='/jobs',
+                    room=self.job_id,
+                    )
+
+        elif self.backend == 'hdf5':
             # add more path information to the list of h5 files
             lines = None
             with open(self.path(self.textfile)) as infile:
@@ -236,6 +248,18 @@ class CreateDbTask(Task):
                     # XXX this works because the model job will be in an adjacent folder
                     outfile.write('%s\n' % os.path.join(
                         '..', self.job_id, self.db_name, line.strip()))
+
+        if self.mean_file:
+            socketio.emit('task update',
+                    {
+                        'task': self.html_id(),
+                        'update': 'mean-image',
+                        # XXX Can't use url_for here because we don't have a request context
+                        'data': '/files/' + self.path('mean.jpg', relative=True),
+                        },
+                    namespace='/jobs',
+                    room=self.job_id,
+                    )
 
     def get_labels(self):
         """
