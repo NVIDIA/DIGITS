@@ -121,6 +121,7 @@ class Scheduler:
         Look in the jobs directory and load all valid jobs
         """
         loaded_jobs = []
+        failed_jobs = []
         for folder in sorted(os.listdir(config_value('jobs_dir'))):
             default_path = os.path.join(config_value('jobs_dir'),"Default")
             current_folder_path = os.path.join(config_value('jobs_dir'),folder)

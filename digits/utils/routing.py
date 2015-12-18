@@ -46,7 +46,7 @@ def get_request_arg(key):
 # get the workspace name from flask args
 def get_workspace(url):
     try:
-        workspace_name = flask.request.args('workspace')
+        workspace_name = flask.request.args['workspace']
         if workspace_name == '':
             workspace_name = "Default"
     except:
