@@ -224,6 +224,42 @@ function trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+-- convert a string into a torch.CharTensor
+local function stringToTensor(s)
+    t = torch.CharTensor(string.len(s))
+    for j=1,string.len(s) do
+        t[j] = string.byte(s,j)
+    end
+    return t
+end
+
+-- return a JSON representation of data
+local function dataToJson(data)
+    local dtype = type(data)
+    -- Handle numbers
+    if dtype=='number' then
+        return tostring(data)
+    end
+    -- Handle tables
+    if dtype=='table' then
+        local rval = '['
+        for i = 1,#data do
+            rval = rval .. dataToJson(data[i])
+            if i<#data then
+                rval = rval .. ","
+            end
+        end
+        rval = rval .. ']'
+        return rval
+    end
+    -- Handle tensors
+    if torch.isTensor(data) then
+        return dataToJson(data:float():totable())
+    end
+end
+
 utilsClass.correctFinalOutputDim = correctFinalOutputDim
+utilsClass.stringToTensor = stringToTensor
+utilsClass.dataToJson = dataToJson
 return utilsClass
 
