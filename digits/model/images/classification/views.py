@@ -461,7 +461,8 @@ def image_classification_model_top_n():
         results.append((
                 labels[i],
                 utils.image.embed_image_html(
-                    utils.image.vis_square(np.array(result_images))
+                    utils.image.vis_square(np.array(result_images),
+                        colormap='white')
                     )
                 ))
 
