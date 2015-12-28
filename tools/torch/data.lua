@@ -381,11 +381,14 @@ function DBSource:lmdb_getSample(shuffle, idx)
         y = image.decompress(x,msg.channels,'byte'):float()
     else
         x = x:narrow(1,1,total):view(msg.channels,msg.height,msg.width):float() -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that view() works fine without issues
-        y = x -- make y see x's storage
         if self.ImageChannels == 3 then
             -- unencoded color images are stored in BGR order => we need to swap blue and red channels (BGR->RGB)
+            y = torch.FloatTensor(msg.channels,msg.height,msg.width)
             y[1] = x[3]
+            y[2] = x[2]
             y[3] = x[1]
+        else
+            y = x
         end
     end
 
