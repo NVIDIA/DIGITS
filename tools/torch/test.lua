@@ -197,7 +197,7 @@ local function loadImage(img_path)
     local im = image.load(img_path):type('torch.FloatTensor'):contiguous()
 
     -- Torch image.load() always loads image with each pixel value between 0-1. As during training, images were taken from LMDB directly, their pixel values ranges from 0-255. As, model was trained with images whose pixel values are between 0-255, we may have to convert test image also to have 0-255 for each pixel.
-    im=im*255
+    im:mul(255)
 
     return im
 end
