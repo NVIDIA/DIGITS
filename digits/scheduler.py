@@ -216,6 +216,7 @@ class Scheduler:
             return False
 
         job.abort()
+        logger.info('Job aborted.', job_id=job_id)
         return True
 
     def delete_job(self, job):
