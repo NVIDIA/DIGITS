@@ -268,7 +268,9 @@ def create_db(input_file, output_dir,
         p = threading.Thread(target=_load_thread,
                 args=(load_queue, write_queue, summary_queue,
                     image_width, image_height, image_channels,
-                    resize_mode, image_folder, compute_mean)
+                    resize_mode, image_folder, compute_mean),
+                kwargs={'backend': backend,
+                    'encoding': kwargs.get('encoding', None)},
                 )
         p.daemon = True
         p.start()
@@ -337,8 +339,7 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
             processed_something = True
 
         if not write_queue.empty():
-            image, label = write_queue.get()
-            datum = _array_to_datum(image, label, encoding)
+            datum = write_queue.get()
             batch.append(datum)
 
             if len(batch) == batch_size:
@@ -535,7 +536,8 @@ def _calculate_num_threads(batch_size, shuffle):
 
 def _load_thread(load_queue, write_queue, summary_queue,
         image_width, image_height, image_channels,
-        resize_mode, image_folder, compute_mean):
+        resize_mode, image_folder, compute_mean,
+        backend=None, encoding=None):
     """
     Consumes items in load_queue
     Produces items to write_queue
@@ -572,7 +574,12 @@ def _load_thread(load_queue, write_queue, summary_queue,
         if compute_mean:
             image_sum += image
 
-        write_queue.put((image, label))
+        if backend == 'lmdb':
+            datum = _array_to_datum(image, label, encoding)
+            write_queue.put(datum)
+        else:
+            write_queue.put((image, label))
+
         images_added += 1
 
     summary_queue.put((images_added, image_sum))
