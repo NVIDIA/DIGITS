@@ -14,6 +14,7 @@ Table of Contents
     * [Selecting the NN Backend](#selecting-the-nn-backend)
     * [Supervised Regression Learning](#supervised-regression-learning)
     * [Command Line Inference](#command-line-inference)
+    * [Multi-GPU training](#multi-gpu-training)
 * [Tutorials](#tutorials)
     * [Training an autoencoder](#training-an-autoencoder)
     * [Training a regression model](#training-a-regression-model)
@@ -182,6 +183,28 @@ th /fast-scratch/gheinrich/ws/digits/tools/torch/test.lua --image=/path/to/image
 2015-09-22 15:21:55 [INFO ] For image 1, predicted class 3: 8 (7) 1.6892548943146e-05
 2015-09-22 15:21:55 [INFO ] For image 1, predicted class 4: 4 (3) 2.9689886060496e-06
 2015-09-22 15:21:55 [INFO ] For image 1, predicted class 5: 5 (4) 9.7695222396362e-07
+```
+
+### Multi-GPU training
+
+Data parallelism is supported in Torch7 by cunn through the [DataParallelTable](https://github.com/torch/cunn/blob/master/doc/cunnmodules.md#nn.DataParallelTable)
+module. DIGITS provides the number of available GPUs through the `ngpus` external parameter.
+
+Assuming `net` is a container that encapsulates the definition of a network, the following snippet may be used
+to enable data parallelism into a container called `model`:
+
+```lua
+local model
+if ngpus>1 then
+   model = nn.DataParallelTable(1)  -- Split along first (batch) dimension
+   for i = 1, ngpus do
+      cutorch.setDevice(i)
+      model:add(net:clone(), i)  -- Use the ith GPU
+   end
+   cutorch.setDevice(1)  -- This is the 'primary' GPU
+else
+   model = net
+end
 ```
 
 ## Tutorials

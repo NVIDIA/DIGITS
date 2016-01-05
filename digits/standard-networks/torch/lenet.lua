@@ -1,8 +1,6 @@
 
 -- return function that returns network definition
 return function(params)
-    assert(params.ngpus<=1, 'Model supports only CPU or single-GPU')
-
     -- get number of classes from external parameters
     local nclasses = params.nclasses or 1
 
@@ -46,8 +44,21 @@ return function(params)
     lenet:add(nn.Linear(500, nclasses))  -- 500 -> nclasses
     lenet:add(nn.LogSoftMax())
 
+    local model
+    if params.ngpus > 1 then
+       model = nn.DataParallelTable(1)  -- Split along first (batch) dimension
+       for i = 1, params.ngpus do
+          cutorch.setDevice(i)
+          model:add(lenet:clone(), i)  -- Use the ith GPU
+       end
+       cutorch.setDevice(1)  -- This is the 'primary' GPU
+       model.gradInput = nil
+    else
+       model = lenet
+    end
+
     return {
-        model = lenet,
+        model = model,
         loss = nn.ClassNLLCriterion(),
         trainBatchSize = 64,
         validationBatchSize = 100,

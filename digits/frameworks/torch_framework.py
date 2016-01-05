@@ -110,7 +110,8 @@ class TorchFramework(Framework):
                     '--network=%s' % os.path.splitext(os.path.basename(temp_network_path))[0],
                     '--networkDirectory=%s' % os.path.dirname(temp_network_path),
                     '--subtractMean=none', # we are not providing a mean image
-                    '--visualizeModel=yes'
+                    '--visualizeModel=yes',
+                    '--type=float'
                     ]
 
             # execute command
