@@ -1,3 +1,4 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
         <li id="job-{{job.id()}}" class="list-group-item">
         <a class="btn btn-xs btn-danger pull-right" onClick="return deleteJob('{{job.id()}}');">Delete</a>
             <h4 class="list-group-item-heading"><a href="{{ url_for(show_func, job_id=job.id()) }}">{{ job.name() }}</a> &nbsp; <span class="badge">{{badge}}</span></h4>
