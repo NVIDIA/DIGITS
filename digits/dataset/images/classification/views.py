@@ -6,7 +6,7 @@ import flask
 
 from digits import utils
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils.routing import request_wants_json, job_from_request
+from digits.utils.routing import request_wants_json, job_from_request, get_workspace
 from digits.webapp import app, scheduler, autodoc
 from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
@@ -259,12 +259,13 @@ def image_classification_dataset_new():
     """
     Returns a form for a new ImageClassificationDatasetJob
     """
+    workspace = get_workspace(flask.request.url)
     form = ImageClassificationDatasetForm()
 
     ## Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
-    return flask.render_template('datasets/images/classification/new.html', form=form)
+    return flask.render_template('datasets/images/classification/new.html', form=form, workspace = workspace)
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
@@ -275,6 +276,7 @@ def image_classification_dataset_create():
 
     Returns JSON when requested: {job_id,name,status} or {errors:[]}
     """
+    workspace = get_workspace(flask.request.url)
     form = ImageClassificationDatasetForm()
 
     ## Is there a request to clone a job with ?clone=<job_id>
@@ -284,7 +286,7 @@ def image_classification_dataset_create():
         if request_wants_json():
             return flask.jsonify({'errors': form.errors}), 400
         else:
-            return flask.render_template('datasets/images/classification/new.html', form=form), 400
+            return flask.render_template('datasets/images/classification/new.html', form=form, workspace = workspace), 400
 
     job = None
     try:
@@ -295,7 +297,8 @@ def image_classification_dataset_create():
                     int(form.resize_width.data),
                     int(form.resize_channels.data),
                     ),
-                resize_mode = form.resize_mode.data
+                resize_mode = form.resize_mode.data,
+                workspace = workspace,
                 )
 
         if form.method.data == 'folder':
@@ -314,18 +317,18 @@ def image_classification_dataset_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('datasets_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('datasets_show', job_id=job.id())+'?workspace='+workspace)
 
     except:
         if job:
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, workspace):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    return flask.render_template('datasets/images/classification/show.html', job=job)
+    return flask.render_template('datasets/images/classification/show.html', job=job, workspace=workspace)
 
 @app.route(NAMESPACE + '/summary', methods=['GET'])
 @autodoc('datasets')
@@ -333,9 +336,10 @@ def image_classification_dataset_summary():
     """
     Return a short HTML summary of a DatasetJob
     """
+    workspace = get_workspace(flask.request.url)
     job = job_from_request()
 
-    return flask.render_template('datasets/images/classification/summary.html', dataset=job)
+    return flask.render_template('datasets/images/classification/summary.html', dataset=job, workspace = workspace)
 
 class DbReader(object):
     """

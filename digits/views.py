@@ -17,8 +17,11 @@ from webapp import app, socketio, scheduler, autodoc
 import dataset.views
 import model.views
 from digits.utils import errors
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, get_workspace
 from digits.log import logger
+from flask import Flask, request, render_template
+import shutil
+import os
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
@@ -34,10 +37,15 @@ def home():
             models: [{id, name, status},...]
         }
     """
-    running_datasets    = get_job_list(dataset.DatasetJob, True)
-    completed_datasets  = get_job_list(dataset.DatasetJob, False)
-    running_models      = get_job_list(model.ModelJob, True)
-    completed_models    = get_job_list(model.ModelJob, False)
+    jobs_dir = config_value('jobs_dir')
+    default_workspace = jobs_dir+"/"+"Default"
+    if not os.path.exists(default_workspace):
+        os.makedirs(default_workspace)
+    workspace = get_workspace(flask.request.url)
+    running_datasets    = get_job_list(dataset.DatasetJob, True, workspace)
+    completed_datasets  = get_job_list(dataset.DatasetJob, False, workspace)
+    running_models      = get_job_list(model.ModelJob, True, workspace)
+    completed_models    = get_job_list(model.ModelJob, False, workspace)
 
     if request_wants_json():
         data = {
@@ -90,11 +98,16 @@ def home():
                 completed_models    = completed_models,
                 total_gpu_count     = len(scheduler.resources['gpus']),
                 remaining_gpu_count = sum(r.remaining() for r in scheduler.resources['gpus']),
+                workspace = workspace,
                 )
 
-def get_job_list(cls, running):
+def get_job_list(cls, running, workspace):
+    scheduler_jobs = [j._id for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running]
+    workspace_dir = os.path.join(config_value('jobs_dir'),workspace)
+    workspace_jobs = next(os.walk(workspace_dir))[1]
+    workspace_scheduled_jobs = list(set(workspace_jobs) & set(scheduler_jobs))
     return sorted(
-            [j for j in scheduler.jobs.values() if isinstance(j, cls) and j.status.is_running() == running],
+            [j for j in scheduler.jobs if isinstance(j, cls) and j.status.is_running() == running and j._id in workspace_scheduled_jobs],
             key=lambda j: j.status_history[0][1],
             reverse=True,
             )
@@ -108,14 +121,15 @@ def show_job(job_id):
     """
     Redirects to the appropriate /datasets/ or /models/ page
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
-
+   
     if isinstance(job, dataset.DatasetJob):
-        return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
+        return flask.redirect(flask.url_for('datasets_show', job_id=job_id)+'?workspace='+workspace)
     if isinstance(job, model.ModelJob):
-        return flask.redirect(flask.url_for('models_show', job_id=job_id))
+        return flask.redirect(flask.url_for('models_show', job_id=job_id)+'?workspace='+workspace)
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
@@ -125,6 +139,7 @@ def edit_job(job_id):
     """
     Edit a job's name and/or notes
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
@@ -174,6 +189,7 @@ def delete_job(job_id):
     """
     Deletes a job
     """
+    workspace = get_workspace(flask.request.url)
     job = scheduler.get_job(job_id)
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
@@ -303,6 +319,61 @@ def path_autocomplete():
     }
 
     return json.dumps(result)
+
+@app.route('/workspaces', methods=['GET'])
+def show_workspaces():
+    """
+    Lists the workspaces in DIGITS
+    """
+    jobs_dir = config_value('jobs_dir')
+    workspaces = next(os.walk(jobs_dir))[1]
+    return render_template('workspaces.html', workspaces = workspaces)
+
+@app.route('/workspaces', methods=['POST'])
+def create_workspaces():
+    """
+    Creates a new Workspace in DIGITS
+    """
+    error = False
+    new_workspace=request.form['name']
+    jobs_dir = config_value('jobs_dir')
+    if new_workspace in next(os.walk(jobs_dir))[1]:
+        error  = 'Workspace with this name already exists! Please choose another name.'
+    else:
+        _dir = os.path.join(config_value('jobs_dir'), new_workspace)
+        os.mkdir(_dir)
+    workspaces = next(os.walk(jobs_dir))[1]
+    return render_template('workspaces.html', workspaces = workspaces, error = error)
+
+@app.route('/workspace/edit/<workspace>', methods=['POST'])
+def edit_workspace_name(workspace):
+    """
+    Edit the name of a Workspace
+    """
+
+    jobs_dir = config_value('jobs_dir')
+    workspaces = next(os.walk(jobs_dir))[1]
+    old_workspace_name = workspace
+    new_workspace_name = request.form['workspace_name']
+    if old_workspace_name == "Default":
+        return render_template('workspaces.html', workspaces = workspaces, error = "Cannot modify the Default workspace of DIGITS")
+    elif not os.path.exists(jobs_dir+"/"+new_workspace_name):
+        os.rename(jobs_dir+"/"+old_workspace_name, jobs_dir+"/"+new_workspace_name)
+    else:
+        return render_template('workspaces.html', workspaces = workspaces, error = "A workspace already exist with this name")
+    workspaces = next(os.walk(jobs_dir))[1]
+    return render_template('workspaces.html', workspaces = workspaces, error = None)
+
+@app.route('/workspace/delete', methods = ['DELETE'])
+def delete_workspace():
+    workspace = get_workspace(flask.request.url)
+    jobs_dir = config_value('jobs_dir')
+    workspaces = next(os.walk(jobs_dir))[1]
+    if workspace == "Default":
+        return render_template('workspaces.html', workspaces = workspaces, error = "Cannot Delete the Default workspace of DIGITS")
+    else:
+        shutil.rmtree(jobs_dir+'/'+workspace)
+        return render_template('workspaces.html', workspaces = workspaces, success = "Successfully deleted the workspace %s" % workspace)
 
 ### SocketIO functions
 

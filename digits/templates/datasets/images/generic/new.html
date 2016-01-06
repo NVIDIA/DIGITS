@@ -11,7 +11,7 @@ New Image Dataset
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{url_for('generic_image_dataset_new')}}">New Dataset</a></li>
+<li class="active"><a href="{{url_for('generic_image_dataset_new')}}?workspace={{ workspace }}">New Dataset</a></li>
 {% endblock %}
 
 {% block content %}
@@ -19,7 +19,7 @@ New Image Dataset
     <h1>New Image Dataset</h1>
 </div>
 
-<form action="{{url_for('generic_image_dataset_create')}}" enctype="multipart/form-data" method="post">
+<form action="{{url_for('generic_image_dataset_create')}}?workspace={{ workspace }}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {{ print_errors(form) }}

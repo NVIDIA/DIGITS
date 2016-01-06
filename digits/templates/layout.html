@@ -25,7 +25,7 @@
 <div class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
         <div class="navbar-header">
-            <a class="navbar-brand" href="/">DIGITS</a>
+            <a class="navbar-brand" href="/?workspace={{ workspace }}">DIGITS</a>
         </div>
         <ul class="nav navbar-nav">
             {% block nav %}
@@ -33,6 +33,7 @@
         </ul>
         <div class="navbar-right">
             <ul class="nav navbar-nav">
+                <li><a href="/workspaces">List of Workspaces</a></li>
                 <li><a>Version {{server_version}}</a></li>
                 {% if server_name %}
                 <li><a>{{server_name}}</a></li>

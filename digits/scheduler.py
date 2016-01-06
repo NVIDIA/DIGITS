@@ -93,7 +93,7 @@ class Scheduler:
         """
         self.jobs = OrderedDict()
         self.verbose = verbose
-
+        self.workspace_jobs = {}
         # Keeps track of resource usage
         self.resources = {
                 # TODO: break this into CPU cores, memory usage, IO usage, etc.
@@ -106,6 +106,15 @@ class Scheduler:
 
         self.running = False
         self.shutdown = gevent.event.Event()
+        
+    def return_workspace_jobs(self , workspace):
+        '''
+        Return the data and model  jobs in a workspace.
+        '''
+        if self.workspace_jobs.has_key(workspace):
+            return self.workspace_jobs[workspace]
+        else:
+            raise RuntimeError("Workpsace %s does not exist"%(workspace))
 
     def load_past_jobs(self):
         """
@@ -113,32 +122,60 @@ class Scheduler:
         """
         loaded_jobs = []
         failed_jobs = []
-        for dir_name in sorted(os.listdir(config_value('jobs_dir'))):
-            if os.path.isdir(os.path.join(config_value('jobs_dir'), dir_name)):
-                # Make sure it hasn't already been loaded
-                if dir_name in self.jobs:
-                    continue
-
-                try:
-                    job = Job.load(dir_name)
-                    # The server might have crashed
-                    if job.status.is_running():
-                        job.status = Status.ABORT
-                    for task in job.tasks:
-                        if task.status.is_running():
-                            task.status = Status.ABORT
-
-                    # We might have changed some attributes here or in __setstate__
-                    job.save()
-                    loaded_jobs.append(job)
-                except Exception as e:
-                    failed_jobs.append((dir_name, e))
-
+        for folder in sorted(os.listdir(config_value('jobs_dir'))):
+            default_path = os.path.join(config_value('jobs_dir'),"Default")
+            current_folder_path = os.path.join(config_value('jobs_dir'),folder)
+            if os.path.exists(os.path.join(current_folder_path,"status.pickle")):
+                print "Moving job %s to the Default Workspace"%(folder)
+                shutil.move(current_folder_path,default_path)
+        
+        for workspace in sorted(os.listdir(config_value('jobs_dir'))):
+            workspace_path = os.path.join(config_value('jobs_dir') , workspace)            
+            if not self.workspace_jobs.has_key(workspace):
+                self.workspace_jobs[workspace] = []
+            
+            for dir_name in sorted(os.listdir(workspace_path)):
+                if os.path.isdir(os.path.join(workspace_path, dir_name)):
+                    exists = False
+                    job_id = dir_name
+                    path_job = os.path.join(workspace,dir_name)
+                    # Make sure it hasn't already been loaded
+                    for job in self.jobs:
+                        if job.id() == job_id:
+                            exists = True
+                            break
+                    
+                    if not exists:
+                        try:
+                            try:
+                                # TODO : Suggest a better way of storing Jobs. So that we can know while loading itself what sort of a model are we looking at.
+                                job = Job.load(path_job)
+                            except Exception as e:
+                                print e
+                            
+                            self.workspace_jobs[workspace].append(job)
+                            # The server might have crashed
+                            if job.status.is_running():
+                                job.status = Status.ABORT
+                            for task in job.tasks:
+                                if task.status.is_running():
+                                    task.status = Status.ABORT
+                                        
+                            # We might have changed some attributes here or in __setstate__
+                            job.save()
+                            loaded_jobs.append(job)
+                        except Exception as e:
+                            failed += 1
+                            if self.verbose:
+                                if str(e):
+                                    print 'Caught %s while loading job "%s":' % (type(e).__name__, dir_name)
+                                    print '\t%s' % e
+                                else:
+                                    print 'Caught %s while loading job "%s"' % (type(e).__name__, dir_name)
         # add DatasetJobs
         for job in loaded_jobs:
             if isinstance(job, DatasetJob):
-                self.jobs[job.id()] = job
-
+                self.jobs.append(job)
         # add ModelJobs
         for job in loaded_jobs:
             if isinstance(job, ModelJob):
