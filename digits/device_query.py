@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
+import argparse
 import ctypes
 import platform
 
@@ -240,29 +241,45 @@ def get_nvml_info(device_id):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='DIGITS Device Query')
+    parser.add_argument('-v', '--verbose', action='store_true')
+    args = parser.parse_args()
+
     if not len(get_devices()):
         print 'No devices found.'
+
     for i, device in enumerate(get_devices()):
-        print 'Device #%d: %s' % (i, device.name)
+        print 'Device #%d:' % i
+        print '>>> CUDA attributes:'
         for name, t in device._fields_:
-            # Don't print int arrays
-            if t in [ctypes.c_char, ctypes.c_int, ctypes.c_size_t]:
-                print '%30s %s' % (name, getattr(device, name))
+            if not args.verbose and name not in [
+                    'name', 'totalGlobalMem', 'clockRate', 'major', 'minor',]:
+                continue
+
+            if 'c_int_Array' in t.__name__:
+                val = ','.join(str(v) for v in getattr(device, name))
+            else:
+                val = getattr(device, name)
+
+            print '  %-28s %s' % (name, val)
+
         info = get_nvml_info(i)
         if info is not None:
-            nvml_fmt = '%23s (NVML) %s'
+            print '>>> NVML attributes:'
+            nvml_fmt = '  %-28s %s'
             if 'memory' in info:
                 print nvml_fmt % ('Total memory',
                         '%s MB' % (info['memory']['total'] / 2**20,))
                 print nvml_fmt % ('Used memory',
                         '%s MB' % (info['memory']['used'] / 2**20,))
-                print nvml_fmt % ('Free memory',
+                if args.verbose:
+                    print nvml_fmt % ('Free memory',
                         '%s MB' % (info['memory']['free'] / 2**20,))
             if 'utilization' in info:
-                print nvml_fmt % ('GPU utilization',
-                        '%s%%' % info['utilization']['gpu'])
                 print nvml_fmt % ('Memory utilization',
                         '%s%%' % info['utilization']['memory'])
+                print nvml_fmt % ('GPU utilization',
+                        '%s%%' % info['utilization']['gpu'])
             if 'temperature' in info:
                 print nvml_fmt % ('Temperature',
                         '%s C' % info['temperature'])
