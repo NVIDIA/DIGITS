@@ -12,7 +12,7 @@ import digits
 from digits.config import config_value
 from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler, autodoc
+from digits.webapp import app, scheduler
 from digits.dataset import ImageClassificationDatasetJob
 from digits import frameworks
 from forms import ImageClassificationModelForm
@@ -24,7 +24,7 @@ from digits.utils import filesystem as fs
 NAMESPACE   = '/models/images/classification'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
-@autodoc('models')
+@utils.auth.requires_login
 def image_classification_model_new():
     """
     Return a form for a new ImageClassificationModelJob
@@ -50,7 +50,7 @@ def image_classification_model_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
-@autodoc(['models', 'api'])
+@utils.auth.requires_login(redirect=False)
 def image_classification_model_create():
     """
     Create a new ImageClassificationModelJob
@@ -88,6 +88,7 @@ def image_classification_model_create():
     job = None
     try:
         job = ImageClassificationModelJob(
+                username    = utils.auth.get_username(),
                 name        = form.model_name.data,
                 dataset_id  = datasetJob.id(),
                 )
@@ -235,7 +236,6 @@ def show(job):
     return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()])
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
-@autodoc('models')
 def image_classification_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
@@ -246,7 +246,6 @@ def image_classification_model_large_graph():
 
 @app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
-@autodoc(['models', 'api'])
 def image_classification_model_classify_one():
     """
     Classify one image and return the top 5 classifications
@@ -304,7 +303,6 @@ def image_classification_model_classify_one():
 
 @app.route(NAMESPACE + '/classify_many.json', methods=['POST'])
 @app.route(NAMESPACE + '/classify_many', methods=['POST', 'GET'])
-@autodoc(['models', 'api'])
 def image_classification_model_classify_many():
     """
     Classify many images and return the top 5 classifications for each
@@ -389,7 +387,6 @@ def image_classification_model_classify_many():
                 )
 
 @app.route(NAMESPACE + '/top_n', methods=['POST'])
-@autodoc('models')
 def image_classification_model_top_n():
     """
     Classify many images and show the top N images per category by confidence

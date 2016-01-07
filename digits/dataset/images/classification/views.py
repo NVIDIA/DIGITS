@@ -7,7 +7,7 @@ import flask
 from digits import utils
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler, autodoc
+from digits.webapp import app, scheduler
 from digits.dataset import tasks
 from forms import ImageClassificationDatasetForm
 from job import ImageClassificationDatasetJob
@@ -254,7 +254,7 @@ def from_files(job, form):
 
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
-@autodoc('datasets')
+@utils.auth.requires_login
 def image_classification_dataset_new():
     """
     Returns a form for a new ImageClassificationDatasetJob
@@ -268,7 +268,7 @@ def image_classification_dataset_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
-@autodoc(['datasets', 'api'])
+@utils.auth.requires_login(redirect=False)
 def image_classification_dataset_create():
     """
     Creates a new ImageClassificationDatasetJob
@@ -289,6 +289,7 @@ def image_classification_dataset_create():
     job = None
     try:
         job = ImageClassificationDatasetJob(
+                username    = utils.auth.get_username(),
                 name        = form.dataset_name.data,
                 image_dims  = (
                     int(form.resize_height.data),
@@ -328,7 +329,6 @@ def show(job):
     return flask.render_template('datasets/images/classification/show.html', job=job)
 
 @app.route(NAMESPACE + '/summary', methods=['GET'])
-@autodoc('datasets')
 def image_classification_dataset_summary():
     """
     Return a short HTML summary of a DatasetJob
@@ -364,7 +364,6 @@ class DbReader(object):
                 yield item
 
 @app.route(NAMESPACE + '/explore', methods=['GET'])
-@autodoc('datasets')
 def image_classification_dataset_explore():
     """
     Returns a gallery consisting of the images of one of the dbs

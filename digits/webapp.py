@@ -19,18 +19,6 @@ app.url_map.redirect_defaults = False
 socketio = SocketIO(app)
 scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
-# Set up flask API documentation, if installed
-try:
-    from flask.ext.autodoc import Autodoc
-    _doc = Autodoc(app)
-    autodoc = _doc.doc # decorator
-except ImportError:
-    def autodoc(*args, **kwargs):
-        def _doc(f):
-            # noop decorator
-            return f
-        return _doc
-
 ### Register filters and views
 
 app.jinja_env.globals['server_name'] = config_value('server_name')
@@ -39,10 +27,23 @@ app.jinja_env.filters['print_time'] = utils.time_filters.print_time
 app.jinja_env.filters['print_time_diff'] = utils.time_filters.print_time_diff
 app.jinja_env.filters['print_time_since'] = utils.time_filters.print_time_since
 app.jinja_env.filters['sizeof_fmt'] = utils.sizeof_fmt
+app.jinja_env.filters['has_permission'] = utils.auth.has_permission
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 import digits.views
+
+def username_decorator(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        this_username = flask.request.cookies.get('username', None)
+        app.jinja_env.globals['username'] = this_username
+        return f(*args, **kwargs)
+    return decorated
+
+for endpoint, function in app.view_functions.iteritems():
+    app.view_functions[endpoint] = username_decorator(function)
 
 ### Setup the environment
 

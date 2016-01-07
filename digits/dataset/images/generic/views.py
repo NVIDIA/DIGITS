@@ -2,9 +2,10 @@
 
 import flask
 
+from digits import utils
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler, autodoc
+from digits.webapp import app, scheduler
 from digits.dataset import tasks
 from forms import GenericImageDatasetForm
 from job import GenericImageDatasetJob
@@ -12,7 +13,7 @@ from job import GenericImageDatasetJob
 NAMESPACE = '/datasets/images/generic'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
-@autodoc('datasets')
+@utils.auth.requires_login
 def generic_image_dataset_new():
     """
     Returns a form for a new GenericImageDatasetJob
@@ -26,7 +27,7 @@ def generic_image_dataset_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
-@autodoc(['datasets', 'api'])
+@utils.auth.requires_login(redirect=False)
 def generic_image_dataset_create():
     """
     Creates a new GenericImageDatasetJob
@@ -47,8 +48,9 @@ def generic_image_dataset_create():
     job = None
     try:
         job = GenericImageDatasetJob(
-                name = form.dataset_name.data,
-                mean_file = form.prebuilt_mean_file.data.strip(),
+                username    = utils.auth.get_username(),
+                name        = form.dataset_name.data,
+                mean_file   = form.prebuilt_mean_file.data.strip(),
                 )
 
         if form.method.data == 'prebuilt':
@@ -118,7 +120,6 @@ def show(job):
     return flask.render_template('datasets/images/generic/show.html', job=job)
 
 @app.route(NAMESPACE + '/summary', methods=['GET'])
-@autodoc('datasets')
 def generic_image_dataset_summary():
     """
     Return a short HTML summary of a DatasetJob

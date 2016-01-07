@@ -48,7 +48,7 @@ class TestSchedulerFlow():
         assert cls.s.stop(), 'failed to stop'
 
     def test_add_remove_job(self):
-        job = JobForTesting('tmp')
+        job = JobForTesting(name='testsuite-job', username='digits-testsuite')
         assert self.s.add_job(job), 'failed to add job'
         assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
         assert self.s.delete_job(job), 'failed to delete job'

@@ -28,6 +28,10 @@ class BaseViewsTest(object):
         cls.created_datasets = []
         cls.created_models = []
 
+        rv = cls.app.post('/login', data={
+            'username':'digits-testsuite'})
+        assert rv.status_code == 302, 'Login failed with %s' % rv.status_code
+
     @classmethod
     def tearDownClass(cls):
         # Remove all created jobs
@@ -35,6 +39,9 @@ class BaseViewsTest(object):
             cls.delete_model(job_id)
         for job_id in cls.created_datasets:
             cls.delete_dataset(job_id)
+
+        rv = cls.app.post('/logout')
+        assert rv.status_code == 302, 'Logout failed with %s' % rv.status_code
 
     @classmethod
     def job_id_from_response(cls, rv):
