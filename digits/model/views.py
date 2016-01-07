@@ -12,7 +12,7 @@ import werkzeug.exceptions
 
 
 import digits
-from digits.webapp import app, scheduler, autodoc
+from digits.webapp import app, scheduler
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
 from . import ModelJob
@@ -25,7 +25,6 @@ from digits import frameworks
 NAMESPACE = '/models/'
 
 @app.route(NAMESPACE, methods=['GET'])
-@autodoc(['models'])
 def models_index():
     column_attrs = list(get_column_attrs())
     raw_jobs = [j for j in scheduler.jobs.values() if isinstance(j, ModelJob)]
@@ -82,7 +81,6 @@ def models_index():
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])
-@autodoc(['models', 'api'])
 def models_show(job_id):
     """
     Show a ModelJob
@@ -106,7 +104,6 @@ def models_show(job_id):
                     'Invalid job type')
 
 @app.route(NAMESPACE + 'customize', methods=['POST'])
-@autodoc('models')
 def models_customize():
     """
     Returns a customized file for the ModelJob based on completed form fields
@@ -147,7 +144,6 @@ def models_customize():
             })
 
 @app.route(NAMESPACE + 'visualize-network', methods=['POST'])
-@autodoc('models')
 def models_visualize_network():
     """
     Returns a visualization of the custom network as a string of PNG data
@@ -162,7 +158,6 @@ def models_visualize_network():
     return ret
 
 @app.route(NAMESPACE + 'visualize-lr', methods=['POST'])
-@autodoc('models')
 def models_visualize_lr():
     """
     Returns a JSON object of data used to create the learning rate graph
@@ -217,7 +212,6 @@ def models_visualize_lr():
         defaults={'extension': 'tar.gz'})
 @app.route(NAMESPACE + '<job_id>/download.<extension>',
         methods=['GET', 'POST'])
-@autodoc('models')
 def models_download(job_id, extension):
     """
     Return a tarball of all files required to run the model

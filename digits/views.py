@@ -13,7 +13,7 @@ from flask.ext.socketio import join_room, leave_room
 import digits
 from . import dataset, model
 from config import config_value
-from webapp import app, socketio, scheduler, autodoc
+from webapp import app, socketio, scheduler
 import dataset.views
 import model.views
 from digits.utils import errors
@@ -22,7 +22,6 @@ from digits.log import logger
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])
-@autodoc(['home', 'api'])
 def home():
     """
     DIGITS home page
@@ -103,7 +102,6 @@ def get_job_list(cls, running):
 ### Jobs routes
 
 @app.route('/jobs/<job_id>', methods=['GET'])
-@autodoc('jobs')
 def show_job(job_id):
     """
     Redirects to the appropriate /datasets/ or /models/ page
@@ -120,7 +118,6 @@ def show_job(job_id):
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
 @app.route('/jobs/<job_id>', methods=['PUT'])
-@autodoc('jobs')
 def edit_job(job_id):
     """
     Edit a job's name and/or notes
@@ -150,7 +147,6 @@ def edit_job(job_id):
 @app.route('/datasets/<job_id>/status', methods=['GET'])
 @app.route('/models/<job_id>/status', methods=['GET'])
 @app.route('/jobs/<job_id>/status', methods=['GET'])
-@autodoc('jobs')
 def job_status(job_id):
     """
     Returns a JSON objecting representing the status of a job
@@ -169,7 +165,6 @@ def job_status(job_id):
 @app.route('/datasets/<job_id>', methods=['DELETE'])
 @app.route('/models/<job_id>', methods=['DELETE'])
 @app.route('/jobs/<job_id>', methods=['DELETE'])
-@autodoc('jobs')
 def delete_job(job_id):
     """
     Deletes a job
@@ -189,7 +184,6 @@ def delete_job(job_id):
 @app.route('/datasets/<job_id>/abort', methods=['POST'])
 @app.route('/models/<job_id>/abort', methods=['POST'])
 @app.route('/jobs/<job_id>/abort', methods=['POST'])
-@autodoc('jobs')
 def abort_job(job_id):
     """
     Aborts a running job
@@ -204,7 +198,6 @@ def abort_job(job_id):
         raise werkzeug.exceptions.Forbidden('Job not aborted')
 
 @app.route('/clone/<clone>', methods=['POST', 'GET'])
-@autodoc('jobs')
 def clone_job(clone):
     """
     Clones a job with the id <clone>, populating the creation page with data saved in <clone>
@@ -272,7 +265,6 @@ for code in HTTP_STATUS_CODES:
 ### File serving
 
 @app.route('/files/<path:path>', methods=['GET'])
-@autodoc('util')
 def serve_file(path):
     """
     Return a file in the jobs directory
@@ -286,7 +278,6 @@ def serve_file(path):
 ### Path Completion
 
 @app.route('/autocomplete/path', methods=['GET'])
-@autodoc('util')
 def path_autocomplete():
     """
     Return a list of paths matching the specified preamble

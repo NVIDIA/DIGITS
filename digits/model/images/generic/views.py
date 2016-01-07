@@ -12,7 +12,7 @@ from digits.config import config_value
 from digits import utils
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.webapp import app, scheduler, autodoc
+from digits.webapp import app, scheduler
 from digits.dataset import GenericImageDatasetJob
 from forms import GenericImageModelForm
 from job import GenericImageModelJob
@@ -22,7 +22,6 @@ from digits.utils import filesystem as fs
 NAMESPACE   = '/models/images/generic'
 
 @app.route(NAMESPACE + '/new', methods=['GET'])
-@autodoc('models')
 def generic_image_model_new():
     """
     Return a form for a new GenericImageModelJob
@@ -47,7 +46,6 @@ def generic_image_model_new():
 
 @app.route(NAMESPACE + '.json', methods=['POST'])
 @app.route(NAMESPACE, methods=['POST'])
-@autodoc(['models', 'api'])
 def generic_image_model_create():
     """
     Create a new GenericImageModelJob
@@ -218,7 +216,6 @@ def show(job):
     return flask.render_template('models/images/generic/show.html', job=job)
 
 @app.route(NAMESPACE + '/large_graph', methods=['GET'])
-@autodoc('models')
 def generic_image_model_large_graph():
     """
     Show the loss/accuracy graph, but bigger
@@ -229,7 +226,6 @@ def generic_image_model_large_graph():
 
 @app.route(NAMESPACE + '/infer_one.json', methods=['POST'])
 @app.route(NAMESPACE + '/infer_one', methods=['POST', 'GET'])
-@autodoc(['models', 'api'])
 def generic_image_model_infer_one():
     """
     Infer one image
@@ -280,7 +276,6 @@ def generic_image_model_infer_one():
 
 @app.route(NAMESPACE + '/infer_many.json', methods=['POST'])
 @app.route(NAMESPACE + '/infer_many', methods=['POST', 'GET'])
-@autodoc(['models', 'api'])
 def generic_image_model_infer_many():
     """
     Infer many images

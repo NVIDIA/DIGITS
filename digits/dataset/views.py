@@ -3,7 +3,7 @@
 import flask
 import werkzeug.exceptions
 
-from digits.webapp import app, scheduler, autodoc
+from digits.webapp import app, scheduler
 from digits.utils.routing import request_wants_json
 import images.views
 import images as dataset_images
@@ -12,7 +12,6 @@ NAMESPACE = '/datasets/'
 
 @app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
 @app.route(NAMESPACE + '<job_id>', methods=['GET'])
-@autodoc(['datasets', 'api'])
 def datasets_show(job_id):
     """
     Show a DatasetJob

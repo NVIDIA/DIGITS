@@ -8,14 +8,13 @@ import PIL.Image
 
 import digits
 from digits import utils
-from digits.webapp import app, autodoc
+from digits.webapp import app
 import classification.views
 import generic.views
 
 NAMESPACE = '/datasets/images'
 
 @app.route(NAMESPACE + '/resize-example', methods=['POST'])
-@autodoc('datasets')
 def image_dataset_resize_example():
     """
     Resizes the example image, and returns it as a string of png data
