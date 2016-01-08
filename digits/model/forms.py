@@ -256,7 +256,7 @@ class ModelForm(Form):
         if form.method.data == 'custom':
             snapshot = field.data.strip()
             if snapshot:
-                if not os.path.exists(snapshot):
+                if not all(map(lambda x: os.path.exists(x), snapshot.split(';'))):
                     raise validators.ValidationError('File does not exist')
 
     # Select one of several GPUs

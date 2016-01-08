@@ -798,7 +798,7 @@ class CaffeTrainTask(TrainTask):
                 else:
                     args.append('--gpu=%s' % ','.join(identifiers))
         if self.pretrained_model:
-            args.append('--weights=%s' % self.path(self.pretrained_model))
+            args.append('--weights=%s' % ','.join(map(lambda x: self.path(x), self.pretrained_model.split(';'))))
 
         return args
 
