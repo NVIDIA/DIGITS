@@ -1,5 +1,4 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
-from __future__ import absolute_import
 
 import os
 
@@ -8,12 +7,12 @@ from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
 
-from digits import frameworks
-from digits import utils
 from digits.config import config_value
 from digits.device_query import get_device, get_nvml_info
+from digits import utils
 from digits.utils import sizeof_fmt
 from digits.utils.forms import validate_required_iff
+from digits import frameworks
 
 class ModelForm(Form):
 
@@ -249,15 +248,15 @@ class ModelForm(Form):
             )
 
     custom_network_snapshot = utils.forms.TextField('Pretrained model(s)',
-                tooltip = "Colon delimited paths to pretrained model files. Only edit this field if you understand how fine-tuning works in caffe."
+                tooltip = "Colon delimited paths to pretrained model files. Only edit this field if you understand how fine-tuning works in caffe or torch."
             )
 
 
     def validate_custom_network_snapshot(form, field):
         if form.method.data == 'custom':
-            snapshot = ':'.join(map(lambda x: x.strip(), field.data.split(':')))
+            snapshot = field.data.strip()
             if snapshot:
-                if not all(map(lambda x: os.path.exists(x), snapshot.split(':'))):
+                if not os.path.exists(snapshot):
                     raise validators.ValidationError('File does not exist')
 
     # Select one of several GPUs

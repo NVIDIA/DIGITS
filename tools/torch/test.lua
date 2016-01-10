@@ -145,6 +145,12 @@ function loadNetwork(dir, name, labels, weightsFile, tensorType, inputTensorShap
     local network = require (name)(parameters)
     local model = network.model
 
+    -- allow user to fine tune model
+    if network.fineTuneHook then
+        logmessage.display(0,'Calling user-defined fine tuning hook...')
+        model = network.fineTuneHook(model)
+    end
+
     -- load parameters from snapshot
     local weights, gradients = model:getParameters()
 

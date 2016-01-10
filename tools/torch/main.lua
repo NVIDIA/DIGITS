@@ -351,31 +351,46 @@ logmessage.display(0,'Network definition: \n' .. model:__tostring())
 
 logmessage.display(0,'Network definition ends')
 
-if opt.type == 'float' then
-    logmessage.display(0,'switching to floats')
-    torch.setdefaulttensortype('torch.FloatTensor')
-    model:float()
-    loss = loss:float()
-
-elseif opt.type =='cuda' then
-    cutorch.setDevice(1)
-    logmessage.display(0,'switching to CUDA')
-    model:cuda()
-    loss = loss:cuda()
-    --torch.setdefaulttensortype('torch.CudaTensor')
+local function switchType(newType, model, loss)
+    if newType == 'float' then
+        logmessage.display(0,'switching to floats')
+        torch.setdefaulttensortype('torch.FloatTensor')
+        model:float()
+        loss = loss:float()
+    elseif newType =='cuda' then
+        cutorch.setDevice(1)
+        logmessage.display(0,'switching to CUDA')
+        model:cuda()
+        loss = loss:cuda()
+    end
+    return loss
 end
 
-local Weights,Gradients = model:getParameters()
 -- If weights option is set, preload weights from existing models appropriately
 if opt.weights ~= '' then
     if paths.filep(opt.weights) then
         logmessage.display(0,'Loading weights from pretrained model - ' .. opt.weights)
-        Weights:copy(torch.load(opt.weights))
+        local w, grad = model:getParameters()
+        w:copy(torch.load(opt.weights))
     else
         logmessage.display(2,'Weight file for pretrained model not found: ' .. opt.weights)
         os.exit(-1)
     end
 end
+
+-- allow user to fine tune model
+if network.fineTuneHook then
+    logmessage.display(0,'Calling user-defined fine tuning hook...')
+    model = network.fineTuneHook(model)
+    logmessage.display(0,'Network definition: \n' .. model:__tostring())
+    logmessage.display(0,'Network definition ends')
+end
+
+-- switch to float or cuda
+loss = switchType(opt.type, model, loss)
+
+-- get model parameters
+local Weights,Gradients = model:getParameters()
 
 -- create a directory, if not exists, to save all the snapshots
 -- os.execute('mkdir -p ' .. paths.concat(opt.save)) -- commented this line, as os.execute command is not portable

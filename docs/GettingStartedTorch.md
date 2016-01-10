@@ -103,10 +103,16 @@ croplen               | number       | No        | If specified, inputs images w
 labelHook             | function     | No        | A function(input,dblabel) that returns the intended label(target) for the current batch given the provided input and label in database. By default the database label is used.
 trainBatchSize        | number       | No        | If specified, sets train batch size. May be overridden by user in DIGITS UI.
 validationBatchSize   | number       | No        | If specified, sets validation batch size. May be overridden by user in DIGITS UI.
+fineTuneHook          | function     | No        | A function(net) that returns the model to be used for fine-tuning. The untuned model is passed as a function parameter.
 
 ### Tensors
 
 Networks are fed with Torch Tensor objects in the NxCxHxW format (index in batch x channels x height x width). If a GPU is available, Tensors are provided as Cuda tensors and the model and criterion are moved to GPUs through a call to their cuda() method. In the absence of GPUs, Tensors are provided as Float tensors.
+
+### Fine-tuning
+
+For network fine-tuning the `model` returned as part of the table of internal parameters must be *exactly* the same as the original (pretrained) model to fine-tune.
+The user-defined `fineTuneHook(net)` function is where the original model (passed through the `net` parameter) may be adjusted to solve a different problem.
 
 ## Examples
 
@@ -216,3 +222,12 @@ Follow [these instructions](../examples/autoencoder/README.md) to learn how to c
 ### Training a regression model
 
 Follow [these instructions](../examples/regression/README.md) to learn how to create a regression model using Caffe or Torch7 in DIGITS.
+
+### Siamese network
+
+Follow [these instructions](../examples/siamese/README.md) to learn how to create a Siamese network model using Caffe or Torch7 in DIGITS.
+
+### Fine-tuning
+
+Follow [these instructions](../examples/fine-tuning/README.md) to learn how to fine-tune a model using Caffe or Torch7 in DIGITS.
+
