@@ -4,13 +4,12 @@ import os.path
 import shutil
 import tempfile
 
+import caffe.io
+import caffe_pb2
 import lmdb
 import numpy as np
 
 from . import analyze_db as _
-
-import caffe.io
-import caffe_pb2
 
 
 class BaseTestWithDB(object):

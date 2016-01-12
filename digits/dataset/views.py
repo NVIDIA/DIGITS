@@ -4,10 +4,10 @@ from __future__ import absolute_import
 import flask
 import werkzeug.exceptions
 
-from digits.webapp import app, scheduler
-from digits.utils.routing import request_wants_json
-from .images import views
 from . import images as dataset_images
+from .images import views
+from digits.utils.routing import request_wants_json
+from digits.webapp import app, scheduler
 
 NAMESPACE = '/datasets/'
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env python2
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 
-import sys
-import os.path
-import time
 import argparse
+from collections import Counter
 import logging
 import operator
-from collections import Counter
+import os.path
+import sys
+import time
 
 import lmdb
 

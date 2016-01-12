@@ -3,9 +3,9 @@ from __future__ import absolute_import
 
 import os
 
-import digits
 from . import config_option
 from . import prompt
+import digits
 
 class LogFileOption(config_option.Option):
     @staticmethod

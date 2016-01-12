@@ -1,9 +1,8 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from digits.job import Job
 from . import tasks
-
+from digits.job import Job
 from digits.utils import override
 
 # NOTE: Increment this everytime the pickled object changes

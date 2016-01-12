@@ -4,15 +4,15 @@ from __future__ import absolute_import
 import os
 import re
 
-import digits
-from .errors import BadNetworkError
-from .framework import Framework
-from digits.model.tasks import CaffeTrainTask
-from digits.utils import subclass, override
-
-from google.protobuf import text_format
 import caffe.draw
 import caffe_pb2
+from google.protobuf import text_format
+
+from .errors import BadNetworkError
+from .framework import Framework
+import digits
+from digits.model.tasks import CaffeTrainTask
+from digits.utils import subclass, override
 
 @subclass
 class CaffeFramework(Framework):

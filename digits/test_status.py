@@ -5,8 +5,8 @@ import os
 import pickle
 import tempfile
 
-from .status import Status
 from .job import Job
+from .status import Status
 
 class TestStatus():
 

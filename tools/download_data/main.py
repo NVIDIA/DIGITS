@@ -1,13 +1,13 @@
 #!/usr/bin/env python2
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 
+import argparse
 import sys
 import time
-import argparse
 
-from mnist import MnistDownloader
 from cifar10 import Cifar10Downloader
 from cifar100 import Cifar100Downloader
+from mnist import MnistDownloader
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Download-Data tool - DIGITS')

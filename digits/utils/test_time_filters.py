@@ -1,10 +1,12 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from digits import utils
-import time, re
+import re
+import time
 
 from nose.tools import assert_raises
+
+from digits import utils
 
 class TestTimeFilters():
     def test_print_time(self):

@@ -2,19 +2,20 @@
 from __future__ import absolute_import
 
 import os
-import digits
 import re
 import subprocess
 import time
 import tempfile
+
 import flask
 
+from .errors import Error, NetworkVisualizationError, BadNetworkError
 from .framework import Framework
+import digits
 from digits import utils
 from digits.config import config_value
 from digits.model.tasks import TorchTrainTask
 from digits.utils import subclass, override
-from .errors import Error, NetworkVisualizationError, BadNetworkError
 
 @subclass
 class TorchFramework(Framework):

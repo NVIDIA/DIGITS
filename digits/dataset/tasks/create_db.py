@@ -1,15 +1,15 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import sys
+import operator
 import os.path
 import re
-import operator
+import sys
 
 import digits
 from digits import utils
-from digits.utils import subclass, override
 from digits.task import Task
+from digits.utils import subclass, override
 
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 3

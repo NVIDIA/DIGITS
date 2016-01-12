@@ -1,22 +1,21 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import os.path
-import re
-import time
 import logging
-import subprocess
+import os.path
+import platform
+import re
 import signal
+import subprocess
+import time
 
 import flask
 import gevent.event
 
 from . import utils
-import digits.log
 from .config import config_value
 from .status import Status, StatusCls
-
-import platform
+import digits.log
 
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 1

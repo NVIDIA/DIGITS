@@ -4,8 +4,8 @@ from __future__ import absolute_import
 import flask
 from flask.ext.socketio import SocketIO
 
-from digits import utils
 from .config import config_value
+from digits import utils
 import digits.scheduler
 
 ### Create Flask, Scheduler and SocketIO objects

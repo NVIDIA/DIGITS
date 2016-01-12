@@ -1,10 +1,11 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from wtforms import validators
 from werkzeug.datastructures import FileStorage
 import wtforms
 from wtforms import SubmitField
+from wtforms import validators
+
 from digits.utils.routing import get_request_arg
 
 def validate_required_iff(**kwargs):

@@ -1,9 +1,9 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from digits.utils import subclass, override
 from ..job import ImageDatasetJob
 from digits.dataset import tasks
+from digits.utils import subclass, override
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1

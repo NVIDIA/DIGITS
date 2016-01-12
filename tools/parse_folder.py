@@ -1,16 +1,15 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
-import sys
-import os
-import re
 import argparse
-import time
 import logging
+import os
 import random
-import urllib
-
 import requests
+import re
+import sys
+import time
+import urllib
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

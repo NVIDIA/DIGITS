@@ -1,27 +1,25 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import operator
 import os
 import re
-import time
-import subprocess
-import operator
 import shutil
+import subprocess
 import tempfile
+import time
 
-import numpy as np
+import caffe_pb2
 import h5py
+import numpy as np
 import PIL.Image
 
-import digits
 from .train import TrainTask
-from digits.config import config_value
+import digits
 from digits import utils, dataset
-from digits.utils import subclass, override, constants
+from digits.config import config_value
 from digits.dataset import ImageClassificationDatasetJob
-
-# to read mean file in .binaryproto format
-import caffe_pb2
+from digits.utils import subclass, override, constants
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1

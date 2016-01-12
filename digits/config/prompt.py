@@ -4,9 +4,9 @@ Classes and functions relating to prompting a user for configuration options
 """
 from __future__ import absolute_import
 
-import sys
 import os.path
 import readline
+import sys
 
 from . import config_option
 

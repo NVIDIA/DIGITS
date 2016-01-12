@@ -1,8 +1,8 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import time
 import json
+import time
 import urllib
 
 from gevent import monkey; monkey.patch_all()

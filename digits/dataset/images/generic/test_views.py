@@ -1,24 +1,23 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import itertools
 import json
 import os
 import shutil
 import tempfile
 import time
 import unittest
-import itertools
 import urllib
 
-from gevent import monkey
-monkey.patch_all()
 from bs4 import BeautifulSoup
+from cStringIO import StringIO
+from gevent import monkey; monkey.patch_all()
 import PIL.Image
 from urlparse import urlparse
-from cStringIO import StringIO
 
-import digits.test_views
 from .test_lmdb_creator import create_lmdbs
+import digits.test_views
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45

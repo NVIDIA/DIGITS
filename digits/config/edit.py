@@ -2,13 +2,13 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import os
 import argparse
+import os
 
-import config_option
-import config_file
-import prompt
-import current_config
+from . import config_file
+from . import config_option
+from . import current_config
+from . import prompt
 
 def print_config(verbose=False):
     """

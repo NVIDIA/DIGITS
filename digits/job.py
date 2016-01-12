@@ -2,16 +2,16 @@
 from __future__ import absolute_import
 
 import os
-import time
 import os.path
 import pickle
 import shutil
+import time
 
 import flask
 
+from .status import Status, StatusCls
 from digits.config import config_value
 from digits.utils import sizeof_fmt, filesystem as fs
-from .status import Status, StatusCls
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1

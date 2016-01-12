@@ -4,9 +4,9 @@ from __future__ import absolute_import
 import os
 import tempfile
 
-import digits
 from . import config_option
 from . import prompt
+import digits
 
 class JobsDirOption(config_option.Option):
     @staticmethod

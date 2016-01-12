@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 import os.path
 
-from digits.utils import subclass, override
 from ..job import ImageModelJob
+from digits.utils import subclass, override
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1

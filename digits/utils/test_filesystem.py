@@ -1,12 +1,14 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import tempfile
-from nose.tools import assert_raises
 import os
-import shutil
-from . import filesystem as fs
 import random
+import shutil
+import tempfile
+
+from nose.tools import assert_raises
+
+from . import filesystem as fs
 
 class TestTreeSize():
 

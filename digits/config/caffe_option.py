@@ -1,17 +1,17 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import os
-import re
-import sys
 import imp
+import os
 import platform
+import re
 import subprocess
+import sys
 
-from digits import device_query
-from digits.utils import parse_version
 from . import config_option
 from . import prompt
+from digits import device_query
+from digits.utils import parse_version
 
 class CaffeOption(config_option.FrameworkOption):
     @staticmethod

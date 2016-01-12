@@ -3,10 +3,10 @@ from __future__ import absolute_import
 
 import os
 
-from . import config_option
 from . import config_file
-from . import prompt
+from . import config_option
 from . import current_config
+from . import prompt
 
 def load_option(option, mode, newConfig,
         instanceConfig  =None,
