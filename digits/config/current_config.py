@@ -1,13 +1,14 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-from jobs_dir import JobsDirOption
-from gpu_list import GpuListOption
-from log_file import LogFileOption
-from log_level import LogLevelOption
-from server_name import ServerNameOption
-from secret_key import SecretKeyOption
-from caffe_option import CaffeOption
-from torch_option import TorchOption
+from .jobs_dir import JobsDirOption
+from .gpu_list import GpuListOption
+from .log_file import LogFileOption
+from .log_level import LogLevelOption
+from .server_name import ServerNameOption
+from .secret_key import SecretKeyOption
+from .caffe_option import CaffeOption
+from .torch_option import TorchOption
 
 option_list = None
 

@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os.path
 import re
@@ -12,8 +13,8 @@ import gevent.event
 
 from . import utils
 import digits.log
-from config import config_value
-from status import Status, StatusCls
+from .config import config_value
+from .status import Status, StatusCls
 
 import platform
 

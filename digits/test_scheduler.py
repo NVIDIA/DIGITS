@@ -1,12 +1,13 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 from gevent import monkey; monkey.patch_all()
 from nose.tools import assert_raises
 import mock
 
 from . import scheduler as _
-from config import config_value
-from job import Job
+from .config import config_value
+from .job import Job
 from digits.utils import subclass, override
 
 class TestScheduler():

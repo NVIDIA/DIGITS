@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import time
@@ -13,14 +14,14 @@ import gevent
 import gevent.event
 import gevent.queue
 
-from config import config_value
+from .config import config_value
 from . import utils
-from status import Status
-from job import Job
-from dataset import DatasetJob
-from model import ModelJob
+from .status import Status
+from .job import Job
+from .dataset import DatasetJob
+from .model import ModelJob
 from digits.utils import errors
-from log import logger
+from .log import logger
 
 class Resource(object):
     """

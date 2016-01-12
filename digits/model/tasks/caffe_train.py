@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import re
@@ -14,7 +15,7 @@ from google.protobuf import text_format
 import caffe
 import caffe_pb2
 
-from train import TrainTask
+from .train import TrainTask
 from digits.config import config_value
 from digits.status import Status
 from digits import utils, dataset

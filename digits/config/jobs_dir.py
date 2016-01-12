@@ -1,11 +1,12 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import tempfile
 
 import digits
-import config_option
-import prompt
+from . import config_option
+from . import prompt
 
 class JobsDirOption(config_option.Option):
     @staticmethod

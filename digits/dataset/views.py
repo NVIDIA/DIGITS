@@ -1,12 +1,13 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import flask
 import werkzeug.exceptions
 
 from digits.webapp import app, scheduler
 from digits.utils.routing import request_wants_json
-import images.views
-import images as dataset_images
+from .images import views
+from . import images as dataset_images
 
 NAMESPACE = '/datasets/'
 

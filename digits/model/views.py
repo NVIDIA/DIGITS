@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import io
 import json
@@ -16,9 +17,9 @@ from digits.webapp import app, scheduler
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
 from . import ModelJob
-import forms
-import images.views
-import images as model_images
+from . import forms
+from .images import views as _
+from . import images as model_images
 
 from digits import frameworks
 

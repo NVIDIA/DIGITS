@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os.path
 from cStringIO import StringIO
@@ -9,8 +10,8 @@ import PIL.Image
 import digits
 from digits import utils
 from digits.webapp import app
-import classification.views
-import generic.views
+from .classification import views as _
+from .generic import views as _
 
 NAMESPACE = '/datasets/images'
 

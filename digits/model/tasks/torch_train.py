@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import re
@@ -13,7 +14,7 @@ import h5py
 import PIL.Image
 
 import digits
-from train import TrainTask
+from .train import TrainTask
 from digits.config import config_value
 from digits import utils, dataset
 from digits.utils import subclass, override, constants

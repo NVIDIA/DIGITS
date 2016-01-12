@@ -1,4 +1,5 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import re
@@ -14,8 +15,8 @@ from digits.utils.routing import request_wants_json, job_from_request
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.webapp import app, scheduler
 from digits.dataset import GenericImageDatasetJob
-from forms import GenericImageModelForm
-from job import GenericImageModelJob
+from .forms import GenericImageModelForm
+from .job import GenericImageModelJob
 from digits.status import Status
 from digits.utils import filesystem as fs
 

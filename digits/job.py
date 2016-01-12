@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import time
@@ -10,7 +11,7 @@ import flask
 
 from digits.config import config_value
 from digits.utils import sizeof_fmt, filesystem as fs
-from status import Status, StatusCls
+from .status import Status, StatusCls
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1

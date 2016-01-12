@@ -4,6 +4,7 @@
 Functions for creating temporary datasets
 Used in test_views
 """
+from __future__ import absolute_import
 
 import os
 import time

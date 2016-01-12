@@ -1,10 +1,11 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import flask
 from flask.ext.socketio import SocketIO
 
 from digits import utils
-from config import config_value
+from .config import config_value
 import digits.scheduler
 
 ### Create Flask, Scheduler and SocketIO objects

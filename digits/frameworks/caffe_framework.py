@@ -1,11 +1,12 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import re
 
 import digits
-from errors import BadNetworkError
-from framework import Framework
+from .errors import BadNetworkError
+from .framework import Framework
 from digits.model.tasks import CaffeTrainTask
 from digits.utils import subclass, override
 
