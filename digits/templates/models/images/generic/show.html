@@ -18,11 +18,11 @@
                 <dd>{{job.disk_size_fmt()}}</dd>
                 {% for key,value in task.get_model_files().items() %}
                 <dt>{{key}}</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(value, relative=True))}}">{{value}}</a></dd>
+                <dd><a href="{{url_for('digits.views.serve_file', path=task.path(value, relative=True))}}">{{value}}</a></dd>
                 {% endfor %}
                 {% if task.log_file %}
                 <dt>Raw {{task.get_framework_id()}} output</dt>
-                <dd><a href="{{url_for('serve_file', path=task.path(task.log_file, relative=True))}}">{{task.log_file}}</a></dd>
+                <dd><a href="{{url_for('digits.views.serve_file', path=task.path(task.log_file, relative=True))}}">{{task.log_file}}</a></dd>
                 {% endif %}
                 {% if task.pretrained_model %}
                 <dt>Pretrained Model</dt>
@@ -50,7 +50,7 @@
                 style="height:500px;width:100%;background:white;display:none;"></div>
             <div class="pull-right combined-graph" style="display:none;">
                 <a class="btn btn-primary btn-sm" target="_blank"
-                    href="{{url_for('generic_image_model_large_graph', job_id=job.id())}}">
+                    href="{{url_for('digits.model.images.generic.views.large_graph', job_id=job.id())}}">
                     View Large
                 </a>
             </div>
@@ -123,7 +123,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     </div>
                     <div class="col-sm-4">
                         <button
-                            formaction="{{url_for('models_download', job_id=job.id())}}"
+                            formaction="{{url_for('digits.model.views.download', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             class="btn btn-info">
@@ -159,7 +159,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 ></span>
                         </div>
                         <button name="infer-one-btn"
-                            formaction="{{url_for('generic_image_model_infer_one', job_id=job.id())}}"
+                            formaction="{{url_for('digits.model.images.generic.views.infer_one', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             formtarget="_blank"
@@ -175,7 +175,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
                         </div>
                         <button name="infer-many-btn"
-                            formaction="{{url_for('generic_image_model_infer_many', job_id=job.id())}}"
+                            formaction="{{url_for('digits.model.images.generic.views.infer_many', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             formtarget="_blank"

@@ -23,11 +23,11 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler
 
-NAMESPACE   = '/models/images/classification'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE + '/new', methods=['GET'])
+@blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
-def image_classification_model_new():
+def new():
     """
     Return a form for a new ImageClassificationModelJob
     """
@@ -50,10 +50,10 @@ def image_classification_model_new():
             multi_gpu = config_value('caffe_root')['multi_gpu'],
             )
 
-@app.route(NAMESPACE + '.json', methods=['POST'])
-@app.route(NAMESPACE, methods=['POST'])
+@blueprint.route('.json', methods=['POST'])
+@blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
-def image_classification_model_create():
+def create():
     """
     Create a new ImageClassificationModelJob
 
@@ -224,7 +224,7 @@ def image_classification_model_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('models_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('digits.model.views.show', job_id=job.id()))
 
     except:
         if job:
@@ -237,8 +237,8 @@ def show(job):
     """
     return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()])
 
-@app.route(NAMESPACE + '/large_graph', methods=['GET'])
-def image_classification_model_large_graph():
+@blueprint.route('/large_graph', methods=['GET'])
+def large_graph():
     """
     Show the loss/accuracy graph, but bigger
     """
@@ -246,9 +246,9 @@ def image_classification_model_large_graph():
 
     return flask.render_template('models/images/classification/large_graph.html', job=job)
 
-@app.route(NAMESPACE + '/classify_one.json', methods=['POST'])
-@app.route(NAMESPACE + '/classify_one', methods=['POST', 'GET'])
-def image_classification_model_classify_one():
+@blueprint.route('/classify_one.json', methods=['POST'])
+@blueprint.route('/classify_one', methods=['POST', 'GET'])
+def classify_one():
     """
     Classify one image and return the top 5 classifications
 
@@ -303,9 +303,9 @@ def image_classification_model_classify_one():
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
                 )
 
-@app.route(NAMESPACE + '/classify_many.json', methods=['POST'])
-@app.route(NAMESPACE + '/classify_many', methods=['POST', 'GET'])
-def image_classification_model_classify_many():
+@blueprint.route('/classify_many.json', methods=['POST'])
+@blueprint.route('/classify_many', methods=['POST', 'GET'])
+def classify_many():
     """
     Classify many images and return the top 5 classifications for each
 
@@ -388,8 +388,8 @@ def image_classification_model_classify_many():
                 ground_truths   = ground_truths
                 )
 
-@app.route(NAMESPACE + '/top_n', methods=['POST'])
-def image_classification_model_top_n():
+@blueprint.route('/top_n', methods=['POST'])
+def top_n():
     """
     Classify many images and show the top N images per category by confidence
     """

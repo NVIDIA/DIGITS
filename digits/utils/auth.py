@@ -43,7 +43,7 @@ def requires_login(f=None, redirect=True):
             if request_wants_json() or not redirect:
                 raise werkzeug.exceptions.Unauthorized()
             else:
-                return flask.redirect(flask.url_for('login', next=flask.request.path))
+                return flask.redirect(flask.url_for('digits.views.login', next=flask.request.path))
         try:
             # Validate username
             validate_username(username)

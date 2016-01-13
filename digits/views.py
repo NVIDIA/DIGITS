@@ -12,16 +12,16 @@ from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
 
 from .config import config_value
-from .dataset import views as _
-from .model import views as _
 from .webapp import app, socketio, scheduler
 import digits
 from digits import dataset, model, utils
 from digits.log import logger
 from digits.utils.routing import request_wants_json
 
-@app.route('/index.json', methods=['GET'])
-@app.route('/', methods=['GET'])
+blueprint = flask.Blueprint(__name__, __name__)
+
+@blueprint.route('/index.json', methods=['GET'])
+@blueprint.route('/', methods=['GET'])
 def home():
     """
     DIGITS home page
@@ -56,12 +56,12 @@ def home():
                     {
                         'title': 'Classification',
                         'id': 'image-classification',
-                        'url': flask.url_for('image_classification_dataset_new'),
+                        'url': flask.url_for('digits.dataset.images.classification.views.new'),
                         },
                     {
                         'title': 'Other',
                         'id': 'image-generic',
-                        'url': flask.url_for('generic_image_dataset_new'),
+                        'url': flask.url_for('digits.dataset.images.generic.views.new'),
                         },
                     ])
                 ]
@@ -70,12 +70,12 @@ def home():
                     {
                         'title': 'Classification',
                         'id': 'image-classification',
-                        'url': flask.url_for('image_classification_model_new'),
+                        'url': flask.url_for('digits.model.images.classification.views.new'),
                         },
                     {
                         'title': 'Other',
                         'id': 'image-generic',
-                        'url': flask.url_for('generic_image_model_new'),
+                        'url': flask.url_for('digits.model.images.generic.views.new'),
                         },
                     ])
                 ]
@@ -101,7 +101,7 @@ def get_job_list(cls, running):
 
 ### Authentication/login
 
-@app.route('/login', methods=['GET','POST'])
+@blueprint.route('/login', methods=['GET','POST'])
 def login():
     """
     Ask for a username (no password required)
@@ -109,7 +109,7 @@ def login():
     """
     # Get the URL to redirect to after logging in
     next_url = utils.routing.get_request_arg('next') or \
-            flask.request.referrer or flask.url_for('home')
+            flask.request.referrer or flask.url_for('.home')
 
     if flask.request.method == 'GET':
         return flask.render_template('login.html', next=next_url)
@@ -128,13 +128,13 @@ def login():
     response.set_cookie('username', username)
     return response
 
-@app.route('/logout', methods=['GET','POST'])
+@blueprint.route('/logout', methods=['GET','POST'])
 def logout():
     """
     Unset the username cookie
     """
     next_url = utils.routing.get_request_arg('next') or \
-            flask.request.referrer or flask.url_for('home')
+            flask.request.referrer or flask.url_for('.home')
 
     response = flask.make_response(flask.redirect(next_url))
     response.set_cookie('username', '', expires=0)
@@ -143,7 +143,7 @@ def logout():
 
 ### Jobs routes
 
-@app.route('/jobs/<job_id>', methods=['GET'])
+@blueprint.route('/jobs/<job_id>', methods=['GET'])
 def show_job(job_id):
     """
     Redirects to the appropriate /datasets/ or /models/ page
@@ -153,13 +153,13 @@ def show_job(job_id):
         raise werkzeug.exceptions.NotFound('Job not found')
 
     if isinstance(job, dataset.DatasetJob):
-        return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
+        return flask.redirect(flask.url_for('digits.dataset.views.show', job_id=job_id))
     if isinstance(job, model.ModelJob):
-        return flask.redirect(flask.url_for('models_show', job_id=job_id))
+        return flask.redirect(flask.url_for('digits.model.views.show', job_id=job_id))
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
-@app.route('/jobs/<job_id>', methods=['PUT'])
+@blueprint.route('/jobs/<job_id>', methods=['PUT'])
 @utils.auth.requires_login(redirect=False)
 def edit_job(job_id):
     """
@@ -190,9 +190,9 @@ def edit_job(job_id):
 
     return '%s updated.' % job.job_type()
 
-@app.route('/datasets/<job_id>/status', methods=['GET'])
-@app.route('/models/<job_id>/status', methods=['GET'])
-@app.route('/jobs/<job_id>/status', methods=['GET'])
+@blueprint.route('/datasets/<job_id>/status', methods=['GET'])
+@blueprint.route('/models/<job_id>/status', methods=['GET'])
+@blueprint.route('/jobs/<job_id>/status', methods=['GET'])
 def job_status(job_id):
     """
     Returns a JSON objecting representing the status of a job
@@ -208,9 +208,9 @@ def job_status(job_id):
         result['type'] = job.job_type()
     return json.dumps(result)
 
-@app.route('/datasets/<job_id>', methods=['DELETE'])
-@app.route('/models/<job_id>', methods=['DELETE'])
-@app.route('/jobs/<job_id>', methods=['DELETE'])
+@blueprint.route('/datasets/<job_id>', methods=['DELETE'])
+@blueprint.route('/models/<job_id>', methods=['DELETE'])
+@blueprint.route('/jobs/<job_id>', methods=['DELETE'])
 @utils.auth.requires_login(redirect=False)
 def delete_job(job_id):
     """
@@ -231,9 +231,9 @@ def delete_job(job_id):
     except utils.errors.DeleteError as e:
         raise werkzeug.exceptions.Forbidden(str(e))
 
-@app.route('/datasets/<job_id>/abort', methods=['POST'])
-@app.route('/models/<job_id>/abort', methods=['POST'])
-@app.route('/jobs/<job_id>/abort', methods=['POST'])
+@blueprint.route('/datasets/<job_id>/abort', methods=['POST'])
+@blueprint.route('/models/<job_id>/abort', methods=['POST'])
+@blueprint.route('/jobs/<job_id>/abort', methods=['POST'])
 @utils.auth.requires_login(redirect=False)
 def abort_job(job_id):
     """
@@ -248,7 +248,7 @@ def abort_job(job_id):
     else:
         raise werkzeug.exceptions.Forbidden('Job not aborted')
 
-@app.route('/clone/<clone>', methods=['POST', 'GET'])
+@blueprint.route('/clone/<clone>', methods=['POST', 'GET'])
 @utils.auth.requires_login
 def clone_job(clone):
     """
@@ -262,13 +262,13 @@ def clone_job(clone):
         raise werkzeug.exceptions.NotFound('Job not found')
 
     if isinstance(job, dataset.ImageClassificationDatasetJob):
-        return flask.redirect(flask.url_for('image_classification_dataset_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.dataset.images.classification.views.new') + '?clone=' + clone)
     if isinstance(job, dataset.GenericImageDatasetJob):
-        return flask.redirect(flask.url_for('generic_image_dataset_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.dataset.images.generic.views.new') + '?clone=' + clone)
     if isinstance(job, model.ImageClassificationModelJob):
-        return flask.redirect(flask.url_for('image_classification_model_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.model.images.classification.views.new') + '?clone=' + clone)
     if isinstance(job, model.GenericImageModelJob):
-        return flask.redirect(flask.url_for('generic_image_model_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.model.images.generic.views.new') + '?clone=' + clone)
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
@@ -316,7 +316,7 @@ for code in HTTP_STATUS_CODES:
 
 ### File serving
 
-@app.route('/files/<path:path>', methods=['GET'])
+@blueprint.route('/files/<path:path>', methods=['GET'])
 def serve_file(path):
     """
     Return a file in the jobs directory
@@ -329,7 +329,7 @@ def serve_file(path):
 
 ### Path Completion
 
-@app.route('/autocomplete/path', methods=['GET'])
+@blueprint.route('/autocomplete/path', methods=['GET'])
 def path_autocomplete():
     """
     Return a list of paths matching the specified preamble

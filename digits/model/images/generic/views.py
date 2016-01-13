@@ -20,11 +20,11 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler
 
-NAMESPACE   = '/models/images/generic'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE + '/new', methods=['GET'])
+@blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
-def generic_image_model_new():
+def new():
     """
     Return a form for a new GenericImageModelJob
     """
@@ -46,10 +46,10 @@ def generic_image_model_new():
             multi_gpu = config_value('caffe_root')['multi_gpu'],
             )
 
-@app.route(NAMESPACE + '.json', methods=['POST'])
-@app.route(NAMESPACE, methods=['POST'])
+@blueprint.route('.json', methods=['POST'])
+@blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
-def generic_image_model_create():
+def create():
     """
     Create a new GenericImageModelJob
 
@@ -206,7 +206,7 @@ def generic_image_model_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('models_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('digits.model.views.show', job_id=job.id()))
 
     except:
         if job:
@@ -219,8 +219,8 @@ def show(job):
     """
     return flask.render_template('models/images/generic/show.html', job=job)
 
-@app.route(NAMESPACE + '/large_graph', methods=['GET'])
-def generic_image_model_large_graph():
+@blueprint.route('/large_graph', methods=['GET'])
+def large_graph():
     """
     Show the loss/accuracy graph, but bigger
     """
@@ -228,9 +228,9 @@ def generic_image_model_large_graph():
 
     return flask.render_template('models/images/generic/large_graph.html', job=job)
 
-@app.route(NAMESPACE + '/infer_one.json', methods=['POST'])
-@app.route(NAMESPACE + '/infer_one', methods=['POST', 'GET'])
-def generic_image_model_infer_one():
+@blueprint.route('/infer_one.json', methods=['POST'])
+@blueprint.route('/infer_one', methods=['POST', 'GET'])
+def infer_one():
     """
     Infer one image
     """
@@ -278,9 +278,9 @@ def generic_image_model_infer_one():
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
                 )
 
-@app.route(NAMESPACE + '/infer_many.json', methods=['POST'])
-@app.route(NAMESPACE + '/infer_many', methods=['POST', 'GET'])
-def generic_image_model_infer_many():
+@blueprint.route('/infer_many.json', methods=['POST'])
+@blueprint.route('/infer_many', methods=['POST', 'GET'])
+def infer_many():
     """
     Infer many images
     """

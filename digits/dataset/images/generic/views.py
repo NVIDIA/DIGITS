@@ -11,11 +11,11 @@ from digits.webapp import app, scheduler
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 
-NAMESPACE = '/datasets/images/generic'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE + '/new', methods=['GET'])
+@blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
-def generic_image_dataset_new():
+def new():
     """
     Returns a form for a new GenericImageDatasetJob
     """
@@ -26,10 +26,10 @@ def generic_image_dataset_new():
 
     return flask.render_template('datasets/images/generic/new.html', form=form)
 
-@app.route(NAMESPACE + '.json', methods=['POST'])
-@app.route(NAMESPACE, methods=['POST'])
+@blueprint.route('.json', methods=['POST'])
+@blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
-def generic_image_dataset_create():
+def create():
     """
     Creates a new GenericImageDatasetJob
 
@@ -107,7 +107,7 @@ def generic_image_dataset_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('datasets_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('digits.dataset.views.show', job_id=job.id()))
 
     except:
         if job:
@@ -120,8 +120,8 @@ def show(job):
     """
     return flask.render_template('datasets/images/generic/show.html', job=job)
 
-@app.route(NAMESPACE + '/summary', methods=['GET'])
-def generic_image_dataset_summary():
+@blueprint.route('/summary', methods=['GET'])
+def summary():
     """
     Return a short HTML summary of a DatasetJob
     """

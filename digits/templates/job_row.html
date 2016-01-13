@@ -3,9 +3,9 @@
 {% if job.job_type() != 'Job For Testing' %}
 {# Base the choice between models_show and datasets_show on the last work in the job_type. This is fragile. #}
 {%     set list = job.job_type().split(' ') %}
-{%     set show_func = 'models_show' if list[-1] == 'Model' else 'datasets_show' %}
+{%     set show_func = 'digits.model.views.show' if list[-1] == 'Model' else 'digits.dataset.views.show' %}
 {%     set show_url = url_for(show_func, job_id=job.id()) %}
-{%     set abort_url = url_for("abort_job", job_id=job.id()) %}
+{%     set abort_url = url_for('digits.views.abort_job', job_id=job.id()) %}
 {% else %}
 {%     set show_url = '' %}
 {%     set abort_url = '' %}

@@ -7,16 +7,14 @@ import os.path
 import flask
 import PIL.Image
 
-from .classification import views as _
-from .generic import views as _
 import digits
 from digits import utils
 from digits.webapp import app
 
-NAMESPACE = '/datasets/images'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE + '/resize-example', methods=['POST'])
-def image_dataset_resize_example():
+@blueprint.route('/resize-example', methods=['POST'])
+def resize_example():
     """
     Resizes the example image, and returns it as a string of png data
     """
