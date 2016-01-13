@@ -12,7 +12,6 @@ import unittest
 import urllib
 
 from bs4 import BeautifulSoup
-import caffe_pb2
 from cStringIO import StringIO
 import flask
 import mock
@@ -23,6 +22,9 @@ from digits.config import config_value
 import digits.dataset.images.generic.test_views
 import digits.test_views
 import digits.webapp
+
+# Must import after importing digit.config
+import caffe_pb2
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
