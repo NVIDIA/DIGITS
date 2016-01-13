@@ -1,23 +1,24 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import json
-import traceback
 import glob
+import json
 import platform
+import traceback
 
 import flask
+from flask.ext.socketio import join_room, leave_room
 from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
-from flask.ext.socketio import join_room, leave_room
 
+from .config import config_value
+from .dataset import views as _
+from .model import views as _
+from .webapp import app, socketio, scheduler
 import digits
 from digits import dataset, model, utils
-from config import config_value
-from webapp import app, socketio, scheduler
-import dataset.views
-import model.views
-from digits.utils.routing import request_wants_json
 from digits.log import logger
+from digits.utils.routing import request_wants_json
 
 @app.route('/index.json', methods=['GET'])
 @app.route('/', methods=['GET'])

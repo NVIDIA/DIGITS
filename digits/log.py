@@ -1,8 +1,9 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import sys
 import logging
 import logging.handlers
+import sys
 
 from digits.config import config_value
 

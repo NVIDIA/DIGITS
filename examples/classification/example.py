@@ -11,10 +11,10 @@ import argparse
 import os
 import time
 
-import PIL.Image
-import numpy as np
-import scipy.misc
 from google.protobuf import text_format
+import numpy as np
+import PIL.Image
+import scipy.misc
 
 os.environ['GLOG_minloglevel'] = '2' # Suppress most caffe output
 import caffe

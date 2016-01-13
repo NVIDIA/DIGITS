@@ -1,23 +1,24 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
+import math
+import operator
 import os
 import re
-import time
-import math
 import subprocess
-import operator
 import sys
+import time
 
-import numpy as np
-import scipy
-from google.protobuf import text_format
 import caffe
 import caffe_pb2
+from google.protobuf import text_format
+import numpy as np
+import scipy
 
-from train import TrainTask
+from .train import TrainTask
+from digits import utils, dataset
 from digits.config import config_value
 from digits.status import Status
-from digits import utils, dataset
 from digits.utils import subclass, override, constants
 
 # NOTE: Increment this everytime the pickled object changes

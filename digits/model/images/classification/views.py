@@ -1,25 +1,27 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
+import random
 import re
 import tempfile
-import random
-import flask
-import werkzeug.exceptions
-import numpy as np
 
+import flask
+import numpy as np
+import werkzeug.exceptions
+
+from .forms import ImageClassificationModelForm
+from .job import ImageClassificationModelJob
 import digits
-from digits.config import config_value
+from digits import frameworks
 from digits import utils
+from digits.config import config_value
+from digits.dataset import ImageClassificationDatasetJob
+from digits.status import Status
+from digits.utils import filesystem as fs
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import app, scheduler
-from digits.dataset import ImageClassificationDatasetJob
-from digits import frameworks
-from forms import ImageClassificationModelForm
-from job import ImageClassificationModelJob
-from digits.status import Status
-from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils import filesystem as fs
 
 NAMESPACE   = '/models/images/classification'
 

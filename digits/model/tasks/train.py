@@ -1,11 +1,12 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import time
-import os.path
 from collections import OrderedDict, namedtuple
+import os.path
+import time
 
-import gevent
 import flask
+import gevent
 
 from digits import device_query
 from digits.task import Task

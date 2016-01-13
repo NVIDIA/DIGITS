@@ -1,4 +1,5 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import re
@@ -7,17 +8,17 @@ import tempfile
 import flask
 import werkzeug.exceptions
 
+from .forms import GenericImageModelForm
+from .job import GenericImageModelJob
 from digits import frameworks
-from digits.config import config_value
 from digits import utils
-from digits.utils.routing import request_wants_json, job_from_request
-from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.webapp import app, scheduler
+from digits.config import config_value
 from digits.dataset import GenericImageDatasetJob
-from forms import GenericImageModelForm
-from job import GenericImageModelJob
 from digits.status import Status
 from digits.utils import filesystem as fs
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job
+from digits.utils.routing import request_wants_json, job_from_request
+from digits.webapp import app, scheduler
 
 NAMESPACE   = '/models/images/generic'
 

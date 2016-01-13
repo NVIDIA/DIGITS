@@ -1,26 +1,25 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
+from datetime import timedelta
 import io
 import json
 import math
 import tarfile
 import zipfile
-from datetime import timedelta
 
 import flask
 import werkzeug.exceptions
 
-
+from . import forms
+from . import images as model_images
+from . import ModelJob
+from .images import views as _
 import digits
-from digits.webapp import app, scheduler
+from digits import frameworks
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
-from . import ModelJob
-import forms
-import images.views
-import images as model_images
-
-from digits import frameworks
+from digits.webapp import app, scheduler
 
 NAMESPACE = '/models/'
 

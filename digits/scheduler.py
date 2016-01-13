@@ -1,26 +1,27 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import os
-import time
-import shutil
-import traceback
-import signal
 from collections import OrderedDict
+import os
 import re
+import shutil
+import signal
+import time
+import traceback
 
 import flask
 import gevent
 import gevent.event
 import gevent.queue
 
-from config import config_value
 from . import utils
-from status import Status
-from job import Job
-from dataset import DatasetJob
-from model import ModelJob
+from .config import config_value
+from .dataset import DatasetJob
+from .job import Job
+from .log import logger
+from .model import ModelJob
+from .status import Status
 from digits.utils import errors
-from log import logger
 
 class Resource(object):
     """

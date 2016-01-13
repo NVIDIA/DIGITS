@@ -7,10 +7,10 @@ Classify an image using a model archive file
 
 import argparse
 import os
-import time
-import zipfile
 import tarfile
 import tempfile
+import time
+import zipfile
 
 from example import classify
 

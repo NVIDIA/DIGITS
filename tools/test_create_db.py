@@ -1,19 +1,18 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
-import os.path
-import tempfile
-import shutil
-from cStringIO import StringIO
-import unittest
-import platform
-import Queue
 from collections import Counter
+from cStringIO import StringIO
+import os.path
+import platform
 import shutil
+import tempfile
+import unittest
+import Queue
 
-import nose.tools
 import mock
-import PIL.Image
+import nose.tools
 import numpy as np
+import PIL.Image
 
 from . import create_db as _
 

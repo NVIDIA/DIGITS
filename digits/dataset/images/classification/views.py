@@ -1,21 +1,22 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 
+import caffe_pb2
 import flask
-
-from digits import utils
-from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler
-from digits.dataset import tasks
-from forms import ImageClassificationDatasetForm
-from job import ImageClassificationDatasetJob
-
 import lmdb
 import PIL.Image
 from StringIO import StringIO
-import caffe_pb2
+
+from .forms import ImageClassificationDatasetForm
+from .job import ImageClassificationDatasetJob
+from digits import utils
+from digits.dataset import tasks
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job
+from digits.utils.routing import request_wants_json, job_from_request
+from digits.webapp import app, scheduler
+
 
 NAMESPACE = '/datasets/images/classification'
 

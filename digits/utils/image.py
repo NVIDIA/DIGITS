@@ -1,13 +1,14 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import os.path
-
-import requests
 import cStringIO
-import PIL.Image
-import numpy as np
-import scipy.misc
 import math
+import os.path
+import requests
+
+import numpy as np
+import PIL.Image
+import scipy.misc
 
 from . import is_url, HTTP_TIMEOUT, errors
 

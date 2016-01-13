@@ -1,30 +1,29 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import re
-import os
+import itertools
 import json
+import os
+import re
 import shutil
 import tempfile
 import time
 import unittest
-import itertools
 import urllib
-import tempfile
 
-import mock
-import flask
-from gevent import monkey
-monkey.patch_all()
 from bs4 import BeautifulSoup
+import caffe_pb2
+from cStringIO import StringIO
+import flask
+from gevent import monkey; monkey.patch_all()
+import mock
 import PIL.Image
 from urlparse import urlparse
-from cStringIO import StringIO
-import caffe_pb2
 
-import digits.webapp
-import digits.test_views
-import digits.dataset.images.classification.test_views
 from digits.config import config_value
+import digits.dataset.images.classification.test_views
+import digits.test_views
+import digits.webapp
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45

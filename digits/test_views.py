@@ -1,13 +1,14 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import time
 import json
+import time
 import urllib
 
 from gevent import monkey; monkey.patch_all()
 from urlparse import urlparse
 
-import webapp
+from . import webapp
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)

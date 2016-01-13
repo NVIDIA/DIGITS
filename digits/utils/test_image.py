@@ -1,16 +1,18 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import tempfile
-import StringIO
-
-from nose.tools import assert_raises
-import mock
-import PIL.Image
-import numpy as np
 import os
 import platform
+import StringIO
+import tempfile
 
-from . import image as _, errors
+import mock
+from nose.tools import assert_raises
+import numpy as np
+import PIL.Image
+
+from . import errors
+from . import image as _
 
 class TestLoadImage():
 

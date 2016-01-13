@@ -1,13 +1,13 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
-import os
-import tempfile
-import shutil
 import itertools
+import os
 import platform
+import shutil
+import tempfile
 
-from nose.tools import raises, assert_raises
 import mock
+from nose.tools import raises, assert_raises
 import numpy as np
 import PIL.Image
 

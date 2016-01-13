@@ -1,9 +1,10 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import math
 
-import config_option
-import prompt
+from . import config_option
+from . import prompt
 import digits.device_query
 
 class GpuListOption(config_option.Option):

@@ -1,14 +1,15 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import flask
 
+from .forms import GenericImageDatasetForm
+from .job import GenericImageDatasetJob
 from digits import utils
+from digits.dataset import tasks
+from digits.webapp import app, scheduler
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler
-from digits.dataset import tasks
-from forms import GenericImageDatasetForm
-from job import GenericImageDatasetJob
 
 NAMESPACE = '/datasets/images/generic'
 

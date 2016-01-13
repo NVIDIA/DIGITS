@@ -4,17 +4,18 @@
 Functions for creating temporary LMDBs
 Used in test_views
 """
+from __future__ import absolute_import
 
-import os
-import sys
-import time
 import argparse
 from collections import defaultdict
 from cStringIO import StringIO
+import os
+import sys
+import time
 
+import lmdb
 import numpy as np
 import PIL.Image
-import lmdb
 
 if __name__ == '__main__':
     dirname = os.path.dirname(os.path.realpath(__file__))

@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 
@@ -7,12 +8,12 @@ from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
 
+from digits import frameworks
+from digits import utils
 from digits.config import config_value
 from digits.device_query import get_device, get_nvml_info
-from digits import utils
 from digits.utils import sizeof_fmt
 from digits.utils.forms import validate_required_iff
-from digits import frameworks
 
 class ModelForm(Form):
 

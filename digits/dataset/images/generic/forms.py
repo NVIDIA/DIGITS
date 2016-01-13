@@ -1,4 +1,5 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os.path
 
@@ -6,8 +7,8 @@ import wtforms
 from wtforms import validators
 
 from ..forms import ImageDatasetForm
-from digits.utils.forms import validate_required_iff
 from digits import utils
+from digits.utils.forms import validate_required_iff
 
 class GenericImageDatasetForm(ImageDatasetForm):
     """
