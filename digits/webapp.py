@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import flask
 from flask.ext.socketio import SocketIO
+from gevent import monkey; monkey.patch_all()
 
 from .config import config_value
 from digits import utils

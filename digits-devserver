@@ -2,7 +2,6 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
 import argparse
-from gevent import monkey; monkey.patch_all()
 import sys
 
 import digits

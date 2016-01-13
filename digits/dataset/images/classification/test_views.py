@@ -12,7 +12,6 @@ import urllib
 
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
-from gevent import monkey; monkey.patch_all()
 import PIL.Image
 from urlparse import urlparse
 

@@ -5,7 +5,6 @@ import json
 import time
 import urllib
 
-from gevent import monkey; monkey.patch_all()
 from urlparse import urlparse
 
 from . import webapp
