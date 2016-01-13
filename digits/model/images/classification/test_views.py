@@ -15,7 +15,6 @@ from bs4 import BeautifulSoup
 import caffe_pb2
 from cStringIO import StringIO
 import flask
-from gevent import monkey; monkey.patch_all()
 import mock
 import PIL.Image
 from urlparse import urlparse
