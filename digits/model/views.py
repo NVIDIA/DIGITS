@@ -14,17 +14,16 @@ import werkzeug.exceptions
 from . import forms
 from . import images as model_images
 from . import ModelJob
-from .images import views as _
 import digits
 from digits import frameworks
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
 from digits.webapp import app, scheduler
 
-NAMESPACE = '/models/'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE, methods=['GET'])
-def models_index():
+@blueprint.route('', methods=['GET'])
+def index():
     column_attrs = list(get_column_attrs())
     raw_jobs = [j for j in scheduler.jobs.values() if isinstance(j, ModelJob)]
 
@@ -78,9 +77,9 @@ def models_index():
         jobs=jobs,
         attrs_and_labels=attrs_and_labels)
 
-@app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
-@app.route(NAMESPACE + '<job_id>', methods=['GET'])
-def models_show(job_id):
+@blueprint.route('/<job_id>.json', methods=['GET'])
+@blueprint.route('/<job_id>', methods=['GET'])
+def show(job_id):
     """
     Show a ModelJob
 
@@ -102,8 +101,8 @@ def models_show(job_id):
             raise werkzeug.exceptions.BadRequest(
                     'Invalid job type')
 
-@app.route(NAMESPACE + 'customize', methods=['POST'])
-def models_customize():
+@blueprint.route('/customize', methods=['POST'])
+def customize():
     """
     Returns a customized file for the ModelJob based on completed form fields
     """
@@ -142,8 +141,8 @@ def models_customize():
             'snapshot': snapshot
             })
 
-@app.route(NAMESPACE + 'visualize-network', methods=['POST'])
-def models_visualize_network():
+@blueprint.route('/visualize-network', methods=['POST'])
+def visualize_network():
     """
     Returns a visualization of the custom network as a string of PNG data
     """
@@ -156,8 +155,8 @@ def models_visualize_network():
 
     return ret
 
-@app.route(NAMESPACE + 'visualize-lr', methods=['POST'])
-def models_visualize_lr():
+@blueprint.route('/visualize-lr', methods=['POST'])
+def visualize_lr():
     """
     Returns a JSON object of data used to create the learning rate graph
     """
@@ -206,12 +205,12 @@ def models_visualize_lr():
 
     return json.dumps({'data': {'columns': [data]}})
 
-@app.route(NAMESPACE + '<job_id>/download',
+@blueprint.route('/<job_id>/download',
         methods=['GET', 'POST'],
         defaults={'extension': 'tar.gz'})
-@app.route(NAMESPACE + '<job_id>/download.<extension>',
+@blueprint.route('/<job_id>/download.<extension>',
         methods=['GET', 'POST'])
-def models_download(job_id, extension):
+def download(job_id, extension):
     """
     Return a tarball of all files required to run the model
     """

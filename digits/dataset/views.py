@@ -5,15 +5,14 @@ import flask
 import werkzeug.exceptions
 
 from . import images as dataset_images
-from .images import views
 from digits.utils.routing import request_wants_json
 from digits.webapp import app, scheduler
 
-NAMESPACE = '/datasets/'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
-@app.route(NAMESPACE + '<job_id>', methods=['GET'])
-def datasets_show(job_id):
+@blueprint.route('/<job_id>.json', methods=['GET'])
+@blueprint.route('/<job_id>', methods=['GET'])
+def show(job_id):
     """
     Show a DatasetJob
 

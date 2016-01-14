@@ -34,6 +34,23 @@ app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 import digits.views
+app.register_blueprint(digits.views.blueprint)
+import digits.dataset.views
+app.register_blueprint(digits.dataset.views.blueprint, url_prefix='/datasets')
+import digits.dataset.images.views
+app.register_blueprint(digits.dataset.images.views.blueprint, url_prefix='/datasets/images')
+import digits.dataset.images.classification.views
+app.register_blueprint(digits.dataset.images.classification.views.blueprint, url_prefix='/datasets/images/classification')
+import digits.dataset.images.generic.views
+app.register_blueprint(digits.dataset.images.generic.views.blueprint, url_prefix='/datasets/images/generic')
+import digits.model.views
+app.register_blueprint(digits.model.views.blueprint, url_prefix='/models')
+import digits.model.images.views
+app.register_blueprint(digits.model.images.views.blueprint, url_prefix='/models/images')
+import digits.model.images.classification.views
+app.register_blueprint(digits.model.images.classification.views.blueprint, url_prefix='/models/images/classification')
+import digits.model.images.generic.views
+app.register_blueprint(digits.model.images.generic.views.blueprint, url_prefix='/models/images/generic')
 
 def username_decorator(f):
     from functools import wraps

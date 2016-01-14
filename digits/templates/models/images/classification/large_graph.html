@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{ url_for('show_job', job_id=job.id()) }}">{{job.job_type()}}</a></li>
+<li class="active"><a href="{{ url_for('digits.views.show_job', job_id=job.id()) }}">{{job.job_type()}}</a></li>
 {% endblock %}
 
 {% block content %}

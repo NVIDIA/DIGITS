@@ -11,7 +11,7 @@ New Image Classification Dataset
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{url_for('image_classification_dataset_new')}}">New Dataset</a></li>
+<li class="active"><a href="{{url_for('digits.dataset.images.classification.views.new')}}">New Dataset</a></li>
 {% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@ New Image Classification Dataset
     <h1>New Image Classification Dataset</h1>
 </div>
 
-<form action="{{url_for('image_classification_dataset_create')}}" enctype="multipart/form-data" method="post">
+<form action="{{url_for('digits.dataset.images.classification.views.create')}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {{ print_errors(form) }}
@@ -68,7 +68,7 @@ New Image Classification Dataset
 function showResizeExample()
 {
     $.post(
-            "{{url_for('image_dataset_resize_example')}}",
+            "{{url_for('digits.dataset.images.views.resize_example')}}",
             {
                 "channels": $("#resize_channels").val(),
                 "width":    $("#resize_width").val(),
