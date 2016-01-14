@@ -11,14 +11,14 @@ from nose.tools import raises, assert_raises
 import numpy as np
 import PIL.Image
 
-from . import parse_folder as _
+from . import parse_folder
 
 class TestUnescape():
     def test_hello(self):
-        assert _.unescape('hello') == 'hello'
+        assert parse_folder.unescape('hello') == 'hello'
 
     def test_space(self):
-        assert _.unescape('%20') == ' '
+        assert parse_folder.unescape('%20') == ' '
 
 class TestValidateFolder():
     @classmethod
@@ -34,16 +34,16 @@ class TestValidateFolder():
             pass
 
     def test_dir(self):
-        assert _.validate_folder(self.tmpdir) == True
+        assert parse_folder.validate_folder(self.tmpdir) == True
 
     def test_file(self):
-        assert _.validate_folder(self.tmpfile) == False
+        assert parse_folder.validate_folder(self.tmpfile) == False
 
     def test_nonexistent_dir(self):
-        assert _.validate_folder(os.path.abspath('not-a-directory')) == False
+        assert parse_folder.validate_folder(os.path.abspath('not-a-directory')) == False
 
     def test_nonexistent_url(self):
-        assert _.validate_folder('http://localhost/not-a-url') == False
+        assert parse_folder.validate_folder('http://localhost/not-a-url') == False
 
 class TestValidateOutputFile():
     @classmethod
@@ -59,26 +59,26 @@ class TestValidateOutputFile():
             pass
 
     def test_missing_file(self):
-        assert _.validate_output_file(None) == True, 'all new files should be valid'
+        assert parse_folder.validate_output_file(None) == True, 'all new files should be valid'
 
     def test_file(self):
-        assert _.validate_output_file(os.path.join(self.tmpdir, 'output.txt')) == True
+        assert parse_folder.validate_output_file(os.path.join(self.tmpdir, 'output.txt')) == True
 
     @mock.patch('os.access')
     def test_local_file(self, mock_access):
         mock_access.return_value = True
-        assert _.validate_output_file('not-a-file.txt') == True, 'relative paths should be accepted'
+        assert parse_folder.validate_output_file('not-a-file.txt') == True, 'relative paths should be accepted'
 
     @mock.patch('os.access')
     def test_not_writeable(self, mock_access):
         mock_access.return_value = False
-        assert _.validate_output_file(self.tmpfile) == False, 'should not succeed without write permission'
+        assert parse_folder.validate_output_file(self.tmpfile) == False, 'should not succeed without write permission'
 
     def test_existing_file(self):
-        assert _.validate_output_file(self.tmpfile) == False
+        assert parse_folder.validate_output_file(self.tmpfile) == False
 
     def test_nonexistent_dir(self):
-        assert _.validate_output_file(
+        assert parse_folder.validate_output_file(
                 os.path.join(
                     os.path.abspath('not-a-dir'),
                     'output.txt'
@@ -96,38 +96,38 @@ class TestValidateInputFile():
         os.remove(cls.tmpfile)
 
     def test_missing_file(self):
-        assert _.validate_input_file('not-a-file.txt') == False, 'should not pass on missigle file'
+        assert parse_folder.validate_input_file('not-a-file.txt') == False, 'should not pass on missigle file'
 
     @mock.patch('os.access')
     def test_not_readable(self, mock_access):
         mock_access.return_value = False
-        assert _.validate_input_file(self.tmpfile) == False, 'should not succeed without read permission'
+        assert parse_folder.validate_input_file(self.tmpfile) == False, 'should not succeed without read permission'
 
 class TestValidateRange():
     def test_no_range(self):
-        assert _.validate_range(0) == True
+        assert parse_folder.validate_range(0) == True
 
     def test_min_less(self):
-        assert _.validate_range(-1, min_value=0) == False
+        assert parse_folder.validate_range(-1, min_value=0) == False
     def test_min_equal(self):
-        assert _.validate_range(0, min_value=0) == True
+        assert parse_folder.validate_range(0, min_value=0) == True
     def test_min_more(self):
-        assert _.validate_range(1, min_value=0) == True
+        assert parse_folder.validate_range(1, min_value=0) == True
 
     def test_max_less(self):
-        assert _.validate_range(9, max_value=10) == True
+        assert parse_folder.validate_range(9, max_value=10) == True
     def test_max_equal(self):
-        assert _.validate_range(10, max_value=10) == True
+        assert parse_folder.validate_range(10, max_value=10) == True
     def test_max_more(self):
-        assert _.validate_range(11, max_value=10) == False
+        assert parse_folder.validate_range(11, max_value=10) == False
 
     def test_allow_none_true(self):
-        assert _.validate_range(None, allow_none=True) == True
+        assert parse_folder.validate_range(None, allow_none=True) == True
     def test_allow_none_false(self):
-        assert _.validate_range(None, allow_none=False) == False
+        assert parse_folder.validate_range(None, allow_none=False) == False
 
     def test_string(self):
-        assert _.validate_range('foo') == False
+        assert parse_folder.validate_range('foo') == False
 
 
 @mock.patch('tools.parse_folder.validate_output_file')
@@ -135,7 +135,7 @@ class TestValidateRange():
 class TestCalculatePercentages():
     @raises(AssertionError)
     def test_making_0(self, mock_input, mock_output):
-        _.calculate_percentages(None, None, None, None, None, None, None)
+        parse_folder.calculate_percentages(None, None, None, None, None, None, None)
 
     def test_making_1(self, mock_input, mock_output):
         mock_input.return_value = True
@@ -151,7 +151,7 @@ class TestCalculatePercentages():
             args = {k: None for k in ['labels_file', 'train_file', 'percent_train', 'val_file', 'percent_val', 'test_file', 'percent_test']}
             args.update({supplied: ''})
 
-            output = _.calculate_percentages(**args)
+            output = parse_folder.calculate_percentages(**args)
             assert output == expected, 'expected output of {}, got {}'.format(output, expected) 
 
     def test_making_2(self, mock_input, mock_output):
@@ -168,7 +168,7 @@ class TestCalculatePercentages():
 
             # Tricky line. itertools returns combinations in sorted order, always.
             # The order of the returned non-zero values should always be correct.
-            output = [x for x in _.calculate_percentages(**args) if x != 0]
+            output = [x for x in parse_folder.calculate_percentages(**args) if x != 0]
             assert output == list(expected), 'expected output of {}, got {}'.format(output, expected) 
 
 
@@ -177,7 +177,7 @@ class TestCalculatePercentages():
         mock_output.return_value = True
 
         expected = (25, 30, 45)
-        assert _.calculate_percentages(
+        assert parse_folder.calculate_percentages(
             labels_file='not-a-file.txt',
             train_file='not-a-file.txt', percent_train=25,
             val_file='not-a-file.txt', percent_val=30,
@@ -190,7 +190,7 @@ class TestCalculatePercentages():
         mock_output.return_value = True
 
         expected = 45
-        assert _.calculate_percentages(
+        assert parse_folder.calculate_percentages(
             labels_file='not-a-file.txt',
             train_file='not-a-file.txt', percent_train=25,
             val_file='not-a-file.txt', percent_val=30,
@@ -204,7 +204,7 @@ class TestCalculatePercentages():
         mock_output.return_value = True
 
         # should raise AssertionError because percentages not between 0-100 are invalid
-        _.calculate_percentages(
+        parse_folder.calculate_percentages(
             labels_file='not-a-file.txt',
             train_file='not-a-file.txt', percent_train=-1,
             val_file=None, percent_val=None,
@@ -219,7 +219,7 @@ class TestParseWebListing():
             yield self.check_url_raises, url
 
     def check_url_raises(self, url):
-        assert_raises(Exception, _.parse_web_listing, url)
+        assert_raises(Exception, parse_folder.parse_web_listing, url)
 
     def test_mock_url(self):
         for content, dirs, files in [
@@ -264,7 +264,7 @@ class TestParseWebListing():
                 yield self.check_listing, (dirs, files)
 
     def check_listing(self, rc):
-        assert _.parse_web_listing('any_url') == rc
+        assert parse_folder.parse_web_listing('any_url') == rc
 
 class TestSplitIndices():
     def test_indices(self):
@@ -276,7 +276,7 @@ class TestSplitIndices():
     def check_split(self, size, pct_b, pct_c):
         ideala = size * float(100 - pct_b - pct_c)/100.0
         idealb = size * float(100 - pct_c)/100.0
-        idxa, idxb = _.three_way_split_indices(size, pct_b, pct_c)
+        idxa, idxb = parse_folder.three_way_split_indices(size, pct_b, pct_c)
 
         assert abs(ideala-idxa) <= 2, 'split should be close to {}, is {}'.format(ideala, idxa)
         assert abs(idealb-idxb) <= 2, 'split should be close to {}, is {}'.format(idealb, idxb)
@@ -295,7 +295,7 @@ class TestParseFolder():
         labels_file = os.path.join(tmpdir, 'labels.txt')
         train_file = os.path.join(tmpdir, 'train.txt')
 
-        _.parse_folder(tmpdir, labels_file, train_file=train_file,
+        parse_folder.parse_folder(tmpdir, labels_file, train_file=train_file,
                 percent_train=100, percent_val=0, percent_test=0)
 
         with open(labels_file) as infile:
