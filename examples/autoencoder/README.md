@@ -13,7 +13,7 @@ An image autoencoder may be used to learn a compressed representation of an imag
 - an encoder, which learns a representation of the image, using fewer neurons than the input image
 - a decoder, which learns to reconstruct the original input from the compressed representation.
 
-The output layer of the encoder is the input layer of the decoder. This layer can be understood as a bottleneck that constrains the autoencoder to learn a compressed representation of the intput.
+The output layer of the encoder is the input layer of the decoder. This layer can be understood as a bottleneck that constrains the autoencoder to learn a compressed representation of the input.
 During training, the objective is to minimize the difference between the original input and the reconstructed input.
 
 ## Dataset Creation
@@ -74,7 +74,7 @@ end
 This is the definition of a simple linear autoencoder which learns to compress an input of 784 nodes into a layer of just 50 nodes. Note how the model is symmetrically defined,
 with the encoder and decoder at opposite sides of the smallest layer of 50 nodes.
 
-Since this is unsupervising training, a hook is required to tell DIGITS what to compare the network output against: here we are just setting the target label to be equal to
+Since this is unsupervised training, a hook is required to tell DIGITS what to compare the network output against: here we are just setting the target label to be equal to
 the input image through this function:
 
 ```lua

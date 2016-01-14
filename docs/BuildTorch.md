@@ -72,7 +72,7 @@ Follow these instructions if you wish to use Torch7 to train networks using LMDB
 
 [NCCL](https://github.com/NVIDIA/nccl) is a library of primitives for multi-GPU communication.
 You may consider installing the [nccl.torch](https://github.com/ngimel/nccl.torch) module if you wish to speed up
-multi-GPU training, although this module is not stictly required to enable multi-GPU training in Torch7.
+multi-GPU training, although this module is not strictly required to enable multi-GPU training in Torch7.
 
 Download and build NCCL:
 ```sh

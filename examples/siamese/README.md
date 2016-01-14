@@ -72,7 +72,7 @@ Click on the `Visualize` button to see a graphical depiction of the network arch
 
 ![Network Topology](network-topology.png)
 
-This model uses two instances of LeNet to map each of the MNIST images from a pair of images into a representation of two neurons. On this model, a contrastive loss layer is used with a margin of `1` therefore the training objective is to map images of different classes to points that are at least `1` unit appart (L2 distance wise) and images of the same class
+This model uses two instances of LeNet to map each of the MNIST images from a pair of images into a representation of two neurons. On this model, a contrastive loss layer is used with a margin of `1` therefore the training objective is to map images of different classes to points that are at least `1` unit apart (L2 distance wise) and images of the same class
 to points that are as close as possible to each other.
 
 ## Verification
