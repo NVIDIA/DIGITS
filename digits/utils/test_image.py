@@ -12,7 +12,7 @@ import numpy as np
 import PIL.Image
 
 from . import errors
-from . import image as _
+from . import image as image_utils
 
 class TestLoadImage():
 
@@ -27,7 +27,7 @@ class TestLoadImage():
     def check_none(self, path):
         assert_raises(
                 errors.LoadImageError,
-                _.load_image,
+                image_utils.load_image,
                 path,
                 )
 
@@ -60,7 +60,7 @@ class TestLoadImage():
         # temp files cause permission errors so just generate the name
         tmp = tempfile.mkstemp(suffix='.' + suffix)
         orig.save(tmp[1])
-        new = _.load_image(tmp[1])
+        new = image_utils.load_image(tmp[1])
         try:
             # sometimes on windows the file is not closed yet
             # which can cause an exception
@@ -90,7 +90,7 @@ class TestLoadImage():
         mock_Image.open = mock.Mock()
         mock_Image.open.return_value.mode = 'RGB'
 
-        assert _.load_image('http://some-url') is not None
+        assert image_utils.load_image('http://some-url') is not None
         mock_cStringIO.StringIO.assert_called_with('some content')
         mock_Image.open.assert_called_with('an object')
 
@@ -111,13 +111,13 @@ class TestLoadImage():
         fname = tempfile.mkstemp(suffix='.bin')
         f = os.fdopen(fname[0],'wb')
         fname = fname[1]
-        
+
         f.write(corrupted)
         f.close()
 
         assert_raises(
                 errors.LoadImageError,
-                _.load_image,
+                image_utils.load_image,
                 fname,
                 )
 
@@ -162,7 +162,7 @@ class TestResizeImage():
             i = self.pil_gray
         else:
             i = self.pil_color
-        r = _.resize_image(i, h, w, c, m)
+        r = image_utils.resize_image(i, h, w, c, m)
         assert r.shape == s, 'Resized PIL.Image (orig=%s) should have been %s, but was %s %s' % (i.size, s, r.shape, self.args_to_str(args))
         assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
 
@@ -173,7 +173,7 @@ class TestResizeImage():
             i = self.np_gray
         else:
             i = self.np_color
-        r = _.resize_image(i, h, w, c, m)
+        r = image_utils.resize_image(i, h, w, c, m)
         assert r.shape == s, 'Resized np.ndarray (orig=%s) should have been %s, but was %s %s' % (i.shape, s, r.shape, self.args_to_str(args))
         assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
 
