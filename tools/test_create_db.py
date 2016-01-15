@@ -1,13 +1,18 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
 from collections import Counter
-from cStringIO import StringIO
 import os.path
 import platform
 import shutil
 import tempfile
 import unittest
 import Queue
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import mock
 import nose.tools

@@ -8,10 +8,15 @@ from __future__ import absolute_import
 
 import argparse
 from collections import defaultdict
-from cStringIO import StringIO
 import os
 import sys
 import time
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import lmdb
 import numpy as np

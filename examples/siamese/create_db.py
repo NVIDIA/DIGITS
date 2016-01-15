@@ -7,12 +7,17 @@ Used in test_views
 
 import argparse
 from collections import defaultdict
-from cStringIO import StringIO
 import os
 import random
 import re
 import sys
 import time
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import lmdb
 import numpy as np

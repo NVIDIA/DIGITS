@@ -10,8 +10,13 @@ import time
 import unittest
 import urllib
 
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 from bs4 import BeautifulSoup
-from cStringIO import StringIO
 import PIL.Image
 from urlparse import urlparse
 
