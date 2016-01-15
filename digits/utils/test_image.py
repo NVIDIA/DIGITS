@@ -18,6 +18,7 @@ import PIL.Image
 
 from . import errors
 from . import image as image_utils
+import digits
 
 class TestLoadImage():
 
@@ -77,27 +78,23 @@ class TestLoadImage():
         assert new is not None, 'load_image should never return None'
         assert new.mode == new_mode, 'Image mode should be "%s", not "%s\nargs - %s' % (new_mode, new.mode, args)
 
-    @mock.patch('digits.utils.image.PIL.Image')
-    @mock.patch('digits.utils.image.cStringIO')
     @mock.patch('digits.utils.image.requests')
-    def test_good_url(self, mock_requests, mock_cStringIO, mock_Image):
+    def test_good_url(self, mock_requests):
         # requests
         response = mock.Mock()
         response.status_code = mock_requests.codes.ok
-        response.content = 'some content'
+        img_file = os.path.join(
+            os.path.dirname(digits.__file__),
+            'static',
+            'images',
+            'mona_lisa.jpg',
+        )
+        with open(img_file, 'rb') as infile:
+            response.content = infile.read()
         mock_requests.get.return_value = response
 
-        # cStringIO
-        mock_cStringIO.StringIO = mock.Mock()
-        mock_cStringIO.StringIO.return_value = 'an object'
-
-        # Image
-        mock_Image.open = mock.Mock()
-        mock_Image.open.return_value.mode = 'RGB'
-
-        assert image_utils.load_image('http://some-url') is not None
-        mock_cStringIO.StringIO.assert_called_with('some content')
-        mock_Image.open.assert_called_with('an object')
+        img = image_utils.load_image('http://some-url')
+        assert img is not None
 
     def test_corrupted_file(self):
         image = PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8))
