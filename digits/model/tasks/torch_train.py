@@ -627,26 +627,27 @@ class TorchTrainTask(TrainTask):
                     continue
                 idx = int(layer_id)
                 # activations
-                data = np.array(layer['activations'][...])
-                # skip batch dimension
-                if len(data.shape)>1 and data.shape[0]==1:
-                    data = data[0]
-                vis = utils.image.get_layer_vis_square(data)
-                mean, std, hist = self.get_layer_statistics(data)
-                visualizations.append(
-                                         {
-                                             'id':         idx,
-                                             'name':       layer_desc,
-                                             'vis_type':   'Activations',
-                                             'image_html': utils.image.embed_image_html(vis),
-                                             'data_stats': {
-                                                              'shape':      data.shape,
-                                                              'mean':       mean,
-                                                              'stddev':     std,
-                                                              'histogram':  hist,
+                if 'activations' in layer:                    
+                    data = np.array(layer['activations'][...])
+                    # skip batch dimension
+                    if len(data.shape)>1 and data.shape[0]==1:
+                        data = data[0]
+                    vis = utils.image.get_layer_vis_square(data)
+                    mean, std, hist = self.get_layer_statistics(data)
+                    visualizations.append(
+                                             {
+                                                 'id':         idx,
+                                                 'name':       layer_desc,
+                                                 'vis_type':   'Activations',
+                                                 'image_html': utils.image.embed_image_html(vis),
+                                                 'data_stats': {
+                                                                  'shape':      data.shape,
+                                                                  'mean':       mean,
+                                                                  'stddev':     std,
+                                                                  'histogram':  hist,
+                                                 }
                                              }
-                                         }
-                                     )
+                                         )
                 # weights
                 if 'weights' in layer:
                     data = np.array(layer['weights'][...])
@@ -732,8 +733,10 @@ class TorchTrainTask(TrainTask):
         # format of output while testing multiple images
         match = re.match(r'Predictions for image \d+: (.*)', message)
         if match:
-            values = match.group(1).strip().split(" ")
-            predictions.append(map(float, values))
+            values = match.group(1).strip()
+            # 'values' should contain a JSON representation of
+            # the prediction
+            predictions.append(eval(values))
             return True
 
         # path to visualization file

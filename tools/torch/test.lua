@@ -254,36 +254,41 @@ local function predictBatch(inputs, model)
     elseif opt.type =='cuda' then
         predictions = model:forward(inputs:cuda())
     end
-    -- sort the outputs of SoftMax layer in decreasing order
+    
     for i=1,counter do
+        local prediction
         index = index + 1
-        if predictions:nDimension() == 1 then
-            -- some networks drop the batch dimension when fed with only one training example
-            assert(counter == 1, "Expect only one sample when prediction has dimensionality of 1 - counter=" .. counter)
-            val = predictions
+
+        if type(predictions) == 'table' then
+            prediction = {}
+            for j=1,#predictions do
+                prediction[j] = predictions[j][i]
+            end
         else
-            val = predictions[i]
+            assert(torch.isTensor(predictions))
+            if predictions:nDimension() == 1 then
+                -- some networks drop the batch dimension when fed with only one training example
+                assert(counter == 1, "Expect only one sample when prediction has dimensionality of 1 - counter=" .. counter)
+                prediction = predictions
+            else
+                prediction = predictions[i]
+            end
         end
+
+        if class_labels then
+            -- assume logSoftMax and convert to probabilities
+            prediction:exp()
+        end
+
         if opt.allPredictions == 'no' then
             --display topN predictions of each image
-            val,classes = val:float():sort(true)
+            prediction,classes = prediction:float():sort(true)
             for j=1,topN do
                 -- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
-                logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. math.exp(val[j]))
+                logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. prediction[j])
             end
         else
-            allPredictions = ''
-            -- flatten predictions for 'pretty' printing
-            val = val:view(-1)
-            for j=1,val:size(1) do
-                if class_labels then
-                    -- classification
-                    allPredictions = allPredictions .. ' ' .. math.exp(val[j])
-                else
-                    -- generic regression
-                    allPredictions = allPredictions .. ' ' .. val[j]
-                end
-            end
+            allPredictions = utils.dataToJson(prediction)
             logmessage.display(0,'Predictions for image ' .. index ..': '..allPredictions)
         end
     end
@@ -359,6 +364,7 @@ else
         local filename = paths.concat(opt.save, 'vis.h5')
         logmessage.display(0,'Saving visualization to ' .. filename)
         local vis_db = hdf5.open(filename, 'w')
+        local layer_id = 1
         for i,layer in ipairs(model:listModules()) do
             local activations = layer.output
             local weights = layer.weight
@@ -366,17 +372,25 @@ else
             name = tostring(layer)
             -- convert 'name' string to Tensor as torch.hdf5 only
             -- accepts Tensor objects
-            tname = torch.CharTensor(string.len(name))
-            for j=1,string.len(name) do
-                tname[j] = string.byte(name,j)
-            end
-            vis_db:write('/layers/'..i..'/name', tname )
-            vis_db:write('/layers/'..i..'/activations', activations:float())
+            tname = utils.stringToTensor(name)
             if weights ~= nil then
-                vis_db:write('/layers/'..i..'/weights', weights:float())
+                vis_db:write('/layers/'..layer_id..'/weights', weights:float())
             end
             if bias ~= nil then
-                vis_db:write('/layers/'..i..'/bias', bias:float())
+                vis_db:write('/layers/'..layer_id..'/bias', bias:float())
+            end
+            if type(activations) == 'table' then
+                for k=1,#activations do
+                    name_activation = name..'.'..k
+                    tname_activation = utils.stringToTensor(name_activation)
+                    vis_db:write('/layers/'..layer_id..'/name', tname_activation )
+                    vis_db:write('/layers/'..layer_id..'/activations', activations[k]:float())
+                    layer_id = layer_id + 1
+                end
+            else
+                vis_db:write('/layers/'..layer_id..'/name', tname )
+                vis_db:write('/layers/'..layer_id..'/activations', activations:float())
+                layer_id = layer_id + 1
             end
         end
         vis_db:close()
