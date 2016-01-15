@@ -9,7 +9,14 @@ import os.path
 import sys
 import time
 
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 import lmdb
+import PIL.Image
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -108,7 +115,31 @@ def analyze_db(database,
         datum = caffe_pb2.Datum()
         datum.ParseFromString(value)
 
-        shape = '%sx%sx%s' % (datum.width, datum.height, datum.channels)
+        if (not datum.HasField('height') or datum.height == 0 or
+                not datum.HasField('width') or datum.width == 0):
+            if datum.encoded:
+                if force_same_shape or not len(unique_shapes.keys()):
+                    # Decode datum to learn the shape
+                    s = StringIO()
+                    s.write(datum.data)
+                    s.seek(0)
+                    img = PIL.Image.open(s)
+                    width, height = img.size
+                    channels = len(img.split())
+                else:
+                    # We've already decoded one image, don't bother reading the rest
+                    width = '?'
+                    height = '?'
+                    channels = '?'
+            else:
+                errstr = 'Shape is not set and datum is not encoded'
+                logger.error(errstr)
+                raise ValueError(errstr)
+        else:
+            width, height, channels = datum.width, datum.height, datum.channels
+
+        shape = '%sx%sx%s' % (width, height, channels)
+
         unique_shapes[shape] += 1
 
         if force_same_shape and len(unique_shapes.keys()) > 1:
