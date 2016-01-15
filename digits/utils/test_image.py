@@ -3,8 +3,13 @@ from __future__ import absolute_import
 
 import os
 import platform
-import StringIO
 import tempfile
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import mock
 from nose.tools import assert_raises
@@ -98,7 +103,7 @@ class TestLoadImage():
         image = PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8))
 
         # Save image to a JPEG buffer.
-        buffer_io = StringIO.StringIO()
+        buffer_io = StringIO()
         image.save(buffer_io, format='jpeg')
         encoded = buffer_io.getvalue()
         buffer_io.close()

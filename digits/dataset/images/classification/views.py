@@ -3,11 +3,16 @@ from __future__ import absolute_import
 
 import os
 
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 import caffe_pb2
 import flask
 import lmdb
 import PIL.Image
-from StringIO import StringIO
 
 from .forms import ImageClassificationDatasetForm
 from .job import ImageClassificationDatasetJob

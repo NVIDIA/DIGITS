@@ -2,8 +2,13 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
-from StringIO import StringIO
 import sys
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import mock
 from nose.tools import raises

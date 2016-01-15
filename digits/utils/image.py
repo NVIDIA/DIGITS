@@ -1,10 +1,15 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import cStringIO
 import math
 import os.path
 import requests
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import numpy as np
 import PIL.Image
@@ -46,7 +51,7 @@ def load_image(path):
                     allow_redirects=False,
                     timeout=HTTP_TIMEOUT)
             r.raise_for_status()
-            stream = cStringIO.StringIO(r.content)
+            stream = StringIO(r.content)
             image = PIL.Image.open(stream)
         except requests.exceptions.RequestException as e:
             raise errors.LoadImageError, e.message
@@ -279,7 +284,7 @@ def embed_image_html(image):
     else:
         fmt = fmt.lower()
 
-    string_buf = cStringIO.StringIO()
+    string_buf = StringIO()
     image.save(string_buf, format=fmt)
     data = string_buf.getvalue().encode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)

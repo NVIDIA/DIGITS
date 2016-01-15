@@ -3,7 +3,6 @@
 
 import argparse
 from collections import Counter
-from cStringIO import StringIO
 import logging
 import math
 import os
@@ -14,6 +13,12 @@ import shutil
 import sys
 import threading
 import time
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import h5py
 import lmdb
