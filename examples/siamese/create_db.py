@@ -39,9 +39,10 @@ IMAGE_SIZE  = 10
 TRAIN_IMAGE_COUNT = 1000
 VAL_IMAGE_COUNT = 1000
 TEST_IMAGE_COUNT = 10
+DB_BATCH_SIZE = 100
 
 
-def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_count=None):
+def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_count=None, db_batch_size=None):
     """
     Creates LMDBs for generic inference
     Returns the filename for a test image
@@ -64,6 +65,9 @@ def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_c
     else:
         train_image_count = image_count
     val_image_count = VAL_IMAGE_COUNT
+
+    if db_batch_size is None:
+        db_batch_size = DB_BATCH_SIZE
 
     # read file list
     images = []
@@ -105,6 +109,10 @@ def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_c
         testImagesSameClass = []
         testImagesDifferentClass = []
 
+        # arrays for image and label batch writing
+        image_batch = []
+        label_batch = []
+
         for i in xrange(image_count):
             # pick up random indices from image list
             index1 = random.randint(0, len(images)-1)
@@ -137,14 +145,19 @@ def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_c
             # encode into Datum object
             image = image_pair.astype('uint8')
             datum = caffe.io.array_to_datum(image, -1)
-            # save to image DB
-            _write_to_lmdb(image_db, str(i), datum.SerializeToString())
+            image_batch.append([str(i), datum])            
 
             # create label Datum
             label_datum = caffe_pb2.Datum()
             label_datum.channels, label_datum.height, label_datum.width = 1, 1, 1
             label_datum.float_data.extend(np.array([label]).flat)
-            _write_to_lmdb(label_db, str(i), label_datum.SerializeToString())
+            label_batch.append([str(i), label_datum])
+
+            if (i % db_batch_size == (db_batch_size - 1)) or (i == image_count - 1):
+                _write_batch_to_lmdb(image_db, image_batch)
+                _write_batch_to_lmdb(label_db, label_batch)
+                image_batch = []
+                label_batch = []
 
             if i % (image_count/20) == 0:
                 print "%d/%d" % (i, image_count)
@@ -171,25 +184,29 @@ def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_c
 
     return
 
-def _write_to_lmdb(db, key, value):
+def _write_batch_to_lmdb(db, batch):
     """
-    Write (key,value) to db
+    Write a batch of (key,value) to db
     """
-    success = False
-    while not success:
-        txn = db.begin(write=True)
+    try:
+        with db.begin(write=True) as lmdb_txn:
+            for key, datum in batch:
+                lmdb_txn.put(key, datum.SerializeToString())
+    except lmdb.MapFullError:
+        # double the map_size
+        curr_limit = db.info()['map_size']
+        new_limit = curr_limit*2
+        print('Doubling LMDB map size to %sMB ...' % (new_limit>>20,))
         try:
-            txn.put(key, value)
-            txn.commit()
-            success = True
-        except lmdb.MapFullError:
-            txn.abort()
-
-            # double the map_size
-            curr_limit = db.info()['map_size']
-            new_limit = curr_limit*2
-            print '>>> Doubling LMDB map size to %sMB ...' % (new_limit>>20,)
             db.set_mapsize(new_limit) # double it
+        except AttributeError as e:
+            version = tuple(int(x) for x in lmdb.__version__.split('.'))
+            if version < (0,87):
+                raise Error('py-lmdb is out of date (%s vs 0.87)' % lmdb.__version__)
+            else:
+                raise e
+        # try again
+        _write_batch_to_lmdb(db, batch)
 
 def _save_image(image, filename):
     # converting from BGR to RGB
