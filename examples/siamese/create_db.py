@@ -169,11 +169,6 @@ def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_c
         # save mean
         mean_image = (image_sum / image_count).astype('uint8')
         _save_mean(mean_image, os.path.join(folder, '%s_mean.binaryproto' % phase))
-
-        # converting from BGR to RGB
-        mean_image = mean_image[[2,1,0],...] # channel swap
-        # convert to (height, width, channels)
-        mean_image = mean_image.transpose((1,2,0))
         _save_mean(mean_image, os.path.join(folder, '%s_mean.png' % phase))
 
         # create test images
