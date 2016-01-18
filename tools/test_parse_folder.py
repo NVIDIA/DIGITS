@@ -96,7 +96,7 @@ class TestValidateInputFile():
         os.remove(cls.tmpfile)
 
     def test_missing_file(self):
-        assert parse_folder.validate_input_file('not-a-file.txt') == False, 'should not pass on missigle file'
+        assert parse_folder.validate_input_file('not-a-file.txt') == False, 'should not pass on missing file'
 
     @mock.patch('os.access')
     def test_not_readable(self, mock_access):

@@ -344,8 +344,8 @@ function DBSource:lmdb_getSample(shuffle, idx)
     assert(v~=nil, "lmdb read nil value at idx="..idx.." key="..key)
 
     local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
-    -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outiside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
-    local x = torch.ByteTensor(total*2):contiguous() -- some times length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
+    -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
+    local x = torch.ByteTensor(total*2):contiguous() -- sometimes length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
     local x_size = total * 2 -- This variable is just to avoid the calls to tensor's size() i.e., x:size(1)
     local temp_ptr = torch.data(x) -- raw C pointer using torchffi
 
