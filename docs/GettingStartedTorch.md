@@ -52,6 +52,8 @@ Select one of the "torch" tabs on the model creation page:
 
 ![Home page](images/torch-selection.png)
 
+> NOTE: by default, Torch7 initializes the weights of linear and convolutional layers according to the method introduced in `LeCun, Yann A., et al. "Efficient backprop." Neural networks: Tricks of the trade. Springer Berlin Heidelberg, 2012. 9-48.`. Although this weight initialization scheme performs reasonably well under many diverse circumstances, this is rarely optimal and you might notice that Caffe is sometimes able to learn more quickly when using e.g. Xavier initialization. See [these examples](../examples/weight-init/README.md) for more information.
+
 ## Defining a Torch7 model in DIGITS
 
 To define a Torch7 model in DIGITS you need to write a Lua function that takes a table of external network parameters as argument and returns a table of internal network parameters. For example, the following code defines a flavour of LeNet:
