@@ -248,16 +248,16 @@ class ModelForm(Form):
                 ],
             )
 
-    custom_network_snapshot = utils.forms.TextField('Pretrained model',
-                tooltip = "Path to pretrained model file. Only edit this field if you understand how fine-tuning works in caffe"
+    custom_network_snapshot = utils.forms.TextField('Pretrained model(s)',
+                tooltip = "Colon delimited paths to pretrained model files. Only edit this field if you understand how fine-tuning works in caffe."
             )
 
 
     def validate_custom_network_snapshot(form, field):
         if form.method.data == 'custom':
-            snapshot = field.data.strip()
+            snapshot = ':'.join(map(lambda x: x.strip(), field.data.split(':')))
             if snapshot:
-                if not os.path.exists(snapshot):
+                if not all(map(lambda x: os.path.exists(x), snapshot.split(':'))):
                     raise validators.ValidationError('File does not exist')
 
     # Select one of several GPUs
