@@ -32,7 +32,7 @@ Note: Training will be done in batches, so some times saving weights (and optimS
 
 Implemented Caffe kind of learning policies in Torch. Please refer to "LRPolicy.lua" for more details regarding Learning Policies.
 Here, learningRate, policy, gamma and stepvalues are the parameters of learning policy. 
-Note: if you want to use normal torch way of learning rate recalculation by SGD.lua, then use "torch_sgd" with policy parameter and also provide additional paramers like "learningRate", "learningRateDecay" as shown below, 
+Note: if you want to use normal torch way of learning rate recalculation by SGD.lua, then use "torch_sgd" with policy parameter and also provide additional parameters like "learningRate", "learningRateDecay" as shown below,
 --policy=torch_sgd
 --learningRate=<some_value>
 --learningRateDecay=<some_value>

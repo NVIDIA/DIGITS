@@ -281,7 +281,7 @@ def parse_folder(folder, labels_file,
         ):
     """
     Parses a folder of images into three textfiles
-    Returns True on sucess
+    Returns True on success
 
     Arguments:
     folder -- a folder containing folders of images (can be a filesystem path or a url)
