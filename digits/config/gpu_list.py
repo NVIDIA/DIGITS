@@ -40,7 +40,7 @@ class GpuListOption(config_option.Option):
             return []
 
     @classmethod
-    def visibility(self):
+    def visibility(cls):
         if len(digits.device_query.get_devices()) == 0:
             # Nothing to see here
             return config_option.Visibility.NEVER
