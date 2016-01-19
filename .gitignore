@@ -13,4 +13,5 @@ TAGS
 
 # Ignore these directories
 /venv/
+/migrations/
 /digits/jobs/
