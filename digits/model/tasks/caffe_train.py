@@ -9,8 +9,6 @@ import subprocess
 import sys
 import time
 
-import caffe
-import caffe_pb2
 from google.protobuf import text_format
 import numpy as np
 import scipy
@@ -20,6 +18,10 @@ from digits import utils, dataset
 from digits.config import config_value
 from digits.status import Status
 from digits.utils import subclass, override, constants
+
+# Must import after importing digit.config
+import caffe
+import caffe_pb2
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 3
