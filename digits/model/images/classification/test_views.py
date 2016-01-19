@@ -611,6 +611,27 @@ class BaseTestCreated(BaseViewsTestWithModel):
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
 
+    def test_classify_many_from_folder(self):
+        textfile_images = ''
+        label_id = 0
+        for label, images in self.imageset_paths.iteritems():
+            for image in images:
+                image_path = image
+                textfile_images += '%s %d\n' % (image_path, label_id)
+            label_id += 1
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        rv = self.app.post(
+                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload, 'image_folder': self.imageset_folder}
+                )
+
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
     def test_classify_many_invalid_ground_truth(self):
         textfile_images = ''
         label_id = 0

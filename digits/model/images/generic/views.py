@@ -290,6 +290,13 @@ def infer_many():
     if not image_list:
         raise werkzeug.exceptions.BadRequest('image_list is a required field')
 
+    if 'image_folder' in flask.request.form and flask.request.form['image_folder'].strip():
+        image_folder = flask.request.form['image_folder']
+        if not os.path.exists(image_folder):
+            raise werkzeug.exceptions.BadRequest('image_folder "%s" does not exit' % image_folder)
+    else:
+        image_folder = None
+
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
@@ -316,6 +323,9 @@ def infer_many():
             path = line
 
         try:
+            if not utils.is_url(path) and image_folder and not os.path.isabs(path):
+                path = os.path.join(image_folder, path)
+            print path
             image = utils.image.load_image(path)
             image = utils.image.resize_image(image, height, width,
                     channels = channels,

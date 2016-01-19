@@ -571,6 +571,22 @@ class BaseTestCreated(BaseViewsTestWithModel):
         headers = s.select('table.table th')
         assert headers is not None, 'unrecognized page format'
 
+    def test_infer_many_from_folder(self):
+        textfile_images = '%s\n' % os.path.basename(self.test_image)
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        rv = self.app.post(
+                '/models/images/generic/infer_many?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload, 'image_folder': os.path.dirname(self.test_image)}
+                )
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        headers = s.select('table.table th')
+        assert headers is not None, 'unrecognized page format'
+
     def test_infer_many_json(self):
         textfile_images = '%s\n' % self.test_image
 
