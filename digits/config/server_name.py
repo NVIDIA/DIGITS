@@ -16,7 +16,7 @@ class ServerNameOption(config_option.Option):
         return 'Server Name'
 
     @classmethod
-    def visibility(self):
+    def visibility(cls):
         return config_option.Visibility.HIDDEN
 
     def optional(self):

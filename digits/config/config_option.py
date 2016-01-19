@@ -38,7 +38,7 @@ class Option(object):
         return None
 
     @classmethod
-    def visibility(self):
+    def visibility(cls):
         return Visibility.DEFAULT
 
     def optional(self):
@@ -99,7 +99,7 @@ class Option(object):
         return self.valid() and bool(self._config_file_value)
 
     @classmethod
-    def validate(self, value):
+    def validate(cls, value):
         """
         Returns a fixed-up valid version of value
         Raises BadValue if invalid

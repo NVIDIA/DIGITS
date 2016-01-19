@@ -12,7 +12,7 @@ class SecretKeyOption(config_option.Option):
         return 'secret_key'
 
     @classmethod
-    def visibility(self):
+    def visibility(cls):
         return config_option.Visibility.NEVER
 
     def suggestions(self):
