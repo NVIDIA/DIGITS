@@ -9,7 +9,6 @@ import subprocess
 import tempfile
 import time
 
-import caffe_pb2
 import h5py
 import numpy as np
 import PIL.Image
@@ -20,6 +19,9 @@ from digits import utils, dataset
 from digits.config import config_value
 from digits.dataset import ImageClassificationDatasetJob
 from digits.utils import subclass, override, constants
+
+# Must import after importing digit.config
+import caffe_pb2
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
@@ -627,7 +629,7 @@ class TorchTrainTask(TrainTask):
                     continue
                 idx = int(layer_id)
                 # activations
-                if 'activations' in layer:                    
+                if 'activations' in layer:
                     data = np.array(layer['activations'][...])
                     # skip batch dimension
                     if len(data.shape)>1 and data.shape[0]==1:
