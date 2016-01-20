@@ -16,6 +16,7 @@ class LogFileOption(config_option.Option):
     def prompt_title(cls):
         return 'Log File'
 
+    @classmethod
     def prompt_message(cls):
         return 'Where do you want the log files to be stored?'
 
