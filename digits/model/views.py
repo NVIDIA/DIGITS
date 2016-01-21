@@ -165,7 +165,7 @@ def visualize_lr():
     if policy == 'fixed':
         pass
     elif policy == 'step':
-        step = int(flask.request.form['lr_step_size'])
+        step = float(flask.request.form['lr_step_size'])
         gamma = float(flask.request.form['lr_step_gamma'])
     elif policy == 'multistep':
         steps = [float(s) for s in flask.request.form['lr_multistep_values'].split(',')]
