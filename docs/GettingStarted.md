@@ -6,7 +6,7 @@ Table of Contents
 * [Using the webapp](#using-the-webapp)
     * [Creating a Dataset](#creating-a-dataset)
     * [Training a Model](#training-a-model)
-* [Getting Started With Torch7 in DIGITS](#getting-started-with-torch7-in-digits)
+* [More guides](#more-guides)
 
 ## Installation
 
@@ -95,7 +95,15 @@ DIGITS also provides visualizations and statistics about the weights and activat
 
 ![Classified one image](images/classified-one-image.jpg)
 
-## Getting Started With Torch7 in DIGITS
+## More Guides
 
-Follow [these instructions](GettingStartedTorch.md) for information on getting started with Torch7 in DIGITS.
+Once you have finished this guide, take a look at some of the other documentation at [docs/](.) and [examples/](../examples/):
 
+* [Getting Started with Torch7](GettingStartedTorch.md)
+* [Fine-tune a pretrained model](../examples/fine-tuning/README.md)
+* [Train an autoencoder network](../examples/autoencoder/README.md)
+* [Train a regression network](../examples/regression/README.md)
+* [Train a Siamese network](../examples/siamese/README.md)
+* [Learn more about weight initialization](../examples/weight-init/README.md)
+* [Use Python layers in your Caffe networks](../examples/python-layer/README.md)
+* [Download a model and use it to classify an image outside of DIGITS](../examples/classification/README.md)
