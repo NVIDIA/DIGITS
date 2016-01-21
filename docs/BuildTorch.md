@@ -33,7 +33,7 @@ Any CUDA toolkit >= 6.5 should work.
 
 ### cuDNN
 
-You can also install cuDNN via deb packages:
+You can also install cuDNN 4 with a deb package:
 ```sh
 % sudo apt-get install libcudnn4-dev
 ```
