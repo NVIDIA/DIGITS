@@ -76,11 +76,18 @@ class TorchFramework(Framework):
         return network_desc
 
     @override
-    def get_network_from_previous(self, previous_network):
+    def get_network_from_previous(self, previous_network, use_same_dataset):
         """
         return new instance of network from previous network
         """
-        # return the same string
+        # note: use_same_dataset is ignored here because for Torch, DIGITS
+        # does not change the number of outputs of the last linear layer
+        # to match the number of classes in the case of a classification
+        # network. In order to write a flexible network description that
+        # accounts for the number of classes, the `nClasses` external
+        # parameter must be used, see documentation.
+
+        # return the same network description
         return previous_network
 
     @override

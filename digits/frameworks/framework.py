@@ -48,7 +48,7 @@ class Framework(object):
         """
         raise NotImplementedError('Please implement me')
 
-    def get_network_from_previous(self, previous_network):
+    def get_network_from_previous(self, previous_network, use_same_dataset):
         """
         return new instance of network from previous network
         """

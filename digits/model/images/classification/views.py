@@ -116,7 +116,8 @@ def create():
                 raise werkzeug.exceptions.BadRequest(
                         'Job not found: %s' % form.previous_networks.data)
 
-            network = fw.get_network_from_previous(old_job.train_task().network)
+            use_same_dataset = (old_job.dataset_id == job.dataset_id)
+            network = fw.get_network_from_previous(old_job.train_task().network, use_same_dataset)
 
             for choice in form.previous_networks.choices:
                 if choice[0] == form.previous_networks.data:
