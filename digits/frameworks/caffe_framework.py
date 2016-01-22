@@ -86,17 +86,20 @@ class CaffeFramework(Framework):
         return network
 
     @override
-    def get_network_from_previous(self, previous_network):
+    def get_network_from_previous(self, previous_network, use_same_dataset):
         """
         return new instance of network from previous network
         """
         network = caffe_pb2.NetParameter()
         network.CopyFrom(previous_network)
-        # Rename the final layer
-        # XXX making some assumptions about network architecture here
-        ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
-        if len(ip_layers) > 0:
-            ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
+
+        if not use_same_dataset:
+            # Rename the final layer
+            # XXX making some assumptions about network architecture here
+            ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
+            if len(ip_layers) > 0:
+                ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
+
         return network
 
     @override
