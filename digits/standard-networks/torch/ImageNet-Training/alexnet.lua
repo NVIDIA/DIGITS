@@ -18,8 +18,6 @@ else
 end
 
 function createModel(nGPU, channels, nClasses)
-   assert(nGPU == 1 or nGPU == 2, '1-GPU or 2-GPU supported for AlexNet')
-   
    -- this is alexnet as presented in Krizhevsky et al., 2012
    local features = nn.Sequential()
    features:add(convLayer(channels,96,11,11,4,4,2,2))       -- 224 ->  55
