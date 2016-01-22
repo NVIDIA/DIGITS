@@ -6,11 +6,11 @@ Table of Contents
 * [Using the webapp](#using-the-webapp)
     * [Creating a Dataset](#creating-a-dataset)
     * [Training a Model](#training-a-model)
-* [Getting Started With Torch7 in DIGITS](#getting-started-with-torch7-in-digits)
+* [More guides](#more-guides)
 
 ## Installation
 
-Follow [these instructions](UbuntuInstall.md) to install via deb packages.
+Follow [these instructions](UbuntuInstall.md) to install deb packages for the latest major release on Ubuntu 14.04.
 
 Follow [these instructions](BuildDigits.md) to build from source.
 
@@ -44,9 +44,16 @@ Done after 16.722807169 seconds.
 ```
 See [Standard Datasets](StandardDatasets.md) for more details.
 
+### Logging in
+
+In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification`.
+This will lead you to the login page:
+
+![Login](images/login.jpg)
+
 ### Creating a Dataset
 
-In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Dataset" page.
+After logging in, you will be brought to the "New Image Classification Dataset" page.
 
 * Type in the path to the MNIST training images
   * You can also add the the folder of MNIST test images as a "Separate validation images folder", if you like. Don't use the "test images" fields - test images are not used for anything in DIGITS yet.
@@ -95,7 +102,15 @@ DIGITS also provides visualizations and statistics about the weights and activat
 
 ![Classified one image](images/classified-one-image.jpg)
 
-## Getting Started With Torch7 in DIGITS
+## More Guides
 
-Follow [these instructions](GettingStartedTorch.md) for information on getting started with Torch7 in DIGITS.
+Once you have finished this guide, take a look at some of the other documentation at [docs/](.) and [examples/](../examples/):
 
+* [Getting Started with Torch7](GettingStartedTorch.md)
+* [Fine-tune a pretrained model](../examples/fine-tuning/README.md)
+* [Train an autoencoder network](../examples/autoencoder/README.md)
+* [Train a regression network](../examples/regression/README.md)
+* [Train a Siamese network](../examples/siamese/README.md)
+* [Learn more about weight initialization](../examples/weight-init/README.md)
+* [Use Python layers in your Caffe networks](../examples/python-layer/README.md)
+* [Download a model and use it to classify an image outside of DIGITS](../examples/classification/README.md)

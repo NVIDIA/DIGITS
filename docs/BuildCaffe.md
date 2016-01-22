@@ -49,10 +49,12 @@ Any CUDA toolkit >= 6.5 should work.
 
 ### cuDNN
 
-You can also install cuDNN via deb packages:
+You can also install cuDNN 4 with a deb package:
 ```sh
 % sudo apt-get install libcudnn4-dev
 ```
+Older versions of cuDNN can be found on the [cuDNN website](https://developer.nvidia.com/cudnn).
+The NVcaffe [release notes](https://github.com/NVIDIA/caffe/releases) contain information about which version of cuDNN is required for different versions of NVcaffe.
 
 ### Python dependencies
 

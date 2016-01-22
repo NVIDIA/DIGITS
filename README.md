@@ -8,7 +8,8 @@ DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is is a webapp fo
 
 # Installation
 
-If you are using Ubuntu 14.04, you can install pre-built packages for the latest released version via apt-get. Visit [docs/UbuntuInstall.md](docs/UbuntuInstall.md) for instructions.
+If you are using Ubuntu 14.04, you can install pre-built packages for the latest major release.
+Visit [docs/UbuntuInstall.md](docs/UbuntuInstall.md) for instructions.
 
 To build DIGITS and its requirements from source, visit [docs/BuildDigits.md](docs/BuildDigits.md) for instructions.
 
