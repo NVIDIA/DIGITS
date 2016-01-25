@@ -9,10 +9,7 @@ from . import current_config
 from . import prompt
 
 def load_option(option, mode, newConfig,
-        instanceConfig  =None,
-        userConfig      = None,
-        systemConfig    = None,
-        ):
+                instanceConfig=None):
     """
     Called from load_config() [below]
 
@@ -21,8 +18,6 @@ def load_option(option, mode, newConfig,
     mode -- see docstring for load_config()
     newConfig -- an instance of ConfigFile
     instanceConfig -- the current InstanceConfigFile
-    userConfig -- the current UserConfigFile
-    systemConfig -- the current SystemConfigFile
     """
     if 'DIGITS_MODE_TEST' in os.environ and option.has_test_value():
         option.set(option.test_value())
@@ -33,14 +28,6 @@ def load_option(option, mode, newConfig,
     if instance_value is not None:
         suggestions.append(prompt.Suggestion(instance_value, '',
             desc = 'Previous', default = True))
-    user_value = userConfig.get(option.config_file_key())
-    if user_value is not None:
-        suggestions.append(prompt.Suggestion(user_value, 'U',
-            desc = 'User', default = True))
-    system_value = systemConfig.get(option.config_file_key())
-    if system_value is not None:
-        suggestions.append(prompt.Suggestion(system_value, 'S',
-            desc = 'System', default = True))
     suggestions += option.suggestions()
     if option.optional():
         suggestions.append(prompt.Suggestion('', 'N',
@@ -107,8 +94,6 @@ def load_config(mode='force'):
     current_config.reset()
 
     instanceConfig = config_file.InstanceConfigFile()
-    userConfig = config_file.UserConfigFile()
-    systemConfig = config_file.SystemConfigFile()
     newConfig = config_file.InstanceConfigFile()
 
     non_framework_options = [o for o in current_config.option_list
@@ -118,8 +103,7 @@ def load_config(mode='force'):
 
     # Load non-framework config options
     for option in non_framework_options:
-        load_option(option, mode, newConfig,
-                instanceConfig, userConfig, systemConfig)
+        load_option(option, mode, newConfig, instanceConfig)
 
     has_one_framework = False
     verbose_for_frameworks = False
@@ -130,8 +114,7 @@ def load_config(mode='force'):
         else:
             framework_mode = mode
         for option in framework_options:
-            load_option(option, framework_mode, newConfig,
-                    instanceConfig, userConfig, systemConfig)
+            load_option(option, framework_mode, newConfig, instanceConfig)
             if option.has_value():
                 has_one_framework = True
 

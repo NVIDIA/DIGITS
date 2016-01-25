@@ -18,10 +18,7 @@ def print_config(verbose=False):
     if verbose:
         min_visibility = config_option.Visibility.HIDDEN
 
-    levels = [
-            ('INSTANCE', config_file.InstanceConfigFile()),
-            ('USER', config_file.UserConfigFile()),
-            ('SYSTEM', config_file.SystemConfigFile())]
+    levels = [('INSTANCE', config_file.InstanceConfigFile())]
     # filter out the files which don't exist
     levels = [l for l in levels if l[1].can_read()]
 
@@ -80,16 +77,6 @@ def edit_config_file(verbose=False):
         suggestions.append(prompt.Suggestion(
             instanceConfig.filename(), 'I',
             desc = 'Instance', default=True))
-    userConfig = config_file.UserConfigFile()
-    if userConfig.can_write():
-        suggestions.append(prompt.Suggestion(
-            userConfig.filename(), 'U',
-            desc = 'User', default=True))
-    systemConfig = config_file.SystemConfigFile()
-    if systemConfig.can_write():
-        suggestions.append(prompt.Suggestion(
-            systemConfig.filename(), 'S',
-            desc = 'System', default=True))
 
     def filenameValidator(filename):
         """
@@ -125,12 +112,6 @@ def edit_config_file(verbose=False):
     if filename == instanceConfig.filename():
         is_standard_location = True
         instanceConfig = None
-    if filename == userConfig.filename():
-        is_standard_location = True
-        userConfig = None
-    if filename == systemConfig.filename():
-        is_standard_location = True
-        systemConfig = None
 
     configFile = config_file.ConfigFile(filename)
 
@@ -152,16 +133,6 @@ def edit_config_file(verbose=False):
             if instance_value is not None:
                 suggestions.append(prompt.Suggestion(instance_value, 'I',
                     desc = 'Instance', default = is_standard_location))
-        if userConfig is not None:
-            user_value = userConfig.get(option.config_file_key())
-            if user_value is not None:
-                suggestions.append(prompt.Suggestion(user_value, 'U',
-                    desc = 'User', default = is_standard_location))
-        if systemConfig is not None:
-            system_value = systemConfig.get(option.config_file_key())
-            if system_value is not None:
-                suggestions.append(prompt.Suggestion(system_value, 'S',
-                    desc = 'System', default = is_standard_location))
         suggestions += option.suggestions()
         if option.optional():
             suggestions.append(prompt.Suggestion('', 'N',
