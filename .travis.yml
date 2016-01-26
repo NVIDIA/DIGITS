@@ -19,7 +19,6 @@ before_install:
     - export PATH=/home/travis/miniconda/bin:$PATH
 install:
     # Caffe
-    - pushd .
     - ./scripts/travis/install-caffe.sh $(pwd)/deps/caffe
 
     # Torch
