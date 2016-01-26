@@ -481,7 +481,7 @@ class CaffeTrainTask(TrainTask):
             solver.stepsize = int(math.ceil(float(self.lr_policy['stepsize']) * scale))
             solver.gamma = self.lr_policy['gamma']
         elif solver.lr_policy == 'multistep':
-            for value in self.lr_policy['stepvalue']:
+            for value in self.lr_policy['stepvalue'].split(','):
                 # stepvalue = stepvalue * scale
                 solver.stepvalue.append(int(math.ceil(float(value) * scale)))
             solver.gamma = self.lr_policy['gamma']
@@ -684,7 +684,7 @@ class CaffeTrainTask(TrainTask):
             solver.stepsize = int(math.ceil(float(self.lr_policy['stepsize']) * scale))
             solver.gamma = self.lr_policy['gamma']
         elif solver.lr_policy == 'multistep':
-            for value in self.lr_policy['stepvalue']:
+            for value in self.lr_policy['stepvalue'].split(','):
                 # stepvalue = stepvalue * scale
                 solver.stepvalue.append(int(math.ceil(float(value) * scale)))
             solver.gamma = self.lr_policy['gamma']
