@@ -12,6 +12,8 @@ fi
 INSTALL_DIR=$1
 mkdir -p $INSTALL_DIR
 
+NUM_THREADS=${NUM_THREADS-4}
+
 CAFFE_BRANCH="caffe-0.13"
 CAFFE_URL="https://github.com/NVIDIA/caffe.git"
 
@@ -22,8 +24,8 @@ cd $INSTALL_DIR
 # Install dependencies
 sudo -E ./scripts/travis/travis_install.sh
 # change permissions for installed python packages
-sudo chown travis:travis -R /home/travis/miniconda
-sudo chown travis:travis -R /home/travis/.cache
+sudo chown $USER -R ~/miniconda
+sudo chown $USER -R ~/.cache
 
 # Build source
 cp Makefile.config.example Makefile.config
