@@ -55,7 +55,7 @@ If you haven't done so already, install the HDF5 package:
 % sudo apt-get install libhdf5-serial-dev
 ```
 
-Install extra Lua packages:
+Install extra luarocks packages:
 ```sh
 % luarocks install image
 % luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
@@ -92,11 +92,9 @@ Add the path to the NCCL library to your library path:
 % export LD_LIBRARY_PATH=.../nccl/build/lib:$LD_LIBRARY_PATH
 ```
 
-Download and build the nccl.torch module:
+Install the `nccl.torch` luarocks package:
 ```sh
-% git clone https://github.com/ngimel/nccl.torch.git
-% cd nccl.torch
-% luarocks make nccl-scm-1.rockspec
+% luarocks install "https://raw.githubusercontent.com/ngimel/nccl.torch/master/nccl-scm-1.rockspec"
 ```
 
 Verify your installation of nccl.torch:
