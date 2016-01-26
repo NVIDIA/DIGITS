@@ -96,7 +96,7 @@ Under the `Custom Network` tab, select `Torch`. There you can paste the followin
 ```lua
 return function(p)
     local nDim=1
-    p.inputShape:apply(function(x) nDim=nDim*x end)
+    if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
     local net = nn.Sequential()
     net:add(nn.MulConstant(0.004))
     net:add(nn.View(-1):setNumInputDims(3))
