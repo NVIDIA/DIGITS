@@ -89,6 +89,10 @@ Then simply give your model a name and click `Create`.
 You should see your model training session start.
 If you're paying attention, you'll notice that this model reaches a lower accuracy than the default LeNet network. Why is that?
 
+> NOTE: The current version of Caffe doesn't allow multi-GPU for networks with Python layers.
+If you want to use a Python layer, you need to use a single GPU for training.
+See https://github.com/BVLC/caffe/issues/2936.
+
 ### Testing the Model
 
 Now for the fun part.
