@@ -37,8 +37,8 @@ During installation, lightningmdb requires the LMDB header and libraries, so lua
 Install lightningmdb (you may need to edit the paths at the end for your specific LMDB installation):
 ```sh
 # Ubuntu 14.04
-% luarocks install lightningmdb LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
+% luarocks install https://raw.githubusercontent.com/shmul/lightningmdb/master/lightningmdb-scm-1.rockspec LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
 
 # From source
-% luarocks install lightningmdb LMDB_INCDIR=~/lmdb/libraries/liblmdb LMDB_LIBDIR=~/lmdb/libraries/liblmdb
+% luarocks install https://raw.githubusercontent.com/shmul/lightningmdb/master/lightningmdb-scm-1.rockspec LMDB_INCDIR=~/lmdb/libraries/liblmdb LMDB_LIBDIR=~/lmdb/libraries/liblmdb
 ```
