@@ -148,7 +148,7 @@ class Scheduler:
                     job.load_dataset()
                     self.jobs[job.id()] = job
                 except Exception as e:
-                    failed_jobs.append((job.id(), e))
+                    failed_jobs.append((dir_name, e))
 
         logger.info('Loaded %d jobs.' % len(self.jobs))
 
