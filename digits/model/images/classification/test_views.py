@@ -137,6 +137,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
     TRAIN_EPOCHS = 1
     SHUFFLE = False
     LR_POLICY = None
+    LR_MULTISTEP_VALUES = None
     LEARNING_RATE = None
 
     @classmethod
@@ -180,6 +181,8 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             data['lr_policy'] = cls.LR_POLICY
         if cls.LEARNING_RATE is not None:
             data['learning_rate'] = cls.LEARNING_RATE
+        if cls.LR_MULTISTEP_VALUES is not None:
+            data['lr_multistep_values'] = cls.LR_MULTISTEP_VALUES
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -872,6 +875,11 @@ class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
 class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'caffe'
 
+class TestCaffeCreatedMultiStepLR(BaseTestCreated):
+    FRAMEWORK = 'caffe'
+    LR_POLICY = 'multistep'
+    LR_MULTISTEP_VALUES = '50,75,90'
+
 class TestTorchViews(BaseTestViews):
     FRAMEWORK = 'torch'
 
@@ -896,6 +904,11 @@ class TestTorchCreatedHdf5Shuffle(TestTorchCreatedHdf5):
 
 class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'torch'
+
+class TestTorchCreatedMultiStepLR(BaseTestCreated):
+    FRAMEWORK = 'torch'
+    LR_POLICY = 'multistep'
+    LR_MULTISTEP_VALUES = '50,75,90'
 
 class TestCaffeLeNet(TestCaffeCreated):
     IMAGE_WIDTH = 28
