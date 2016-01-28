@@ -64,7 +64,6 @@ class TorchTrainTask(TrainTask):
         self.val_file = constants.VAL_DB
         self.snapshot_prefix = TORCH_SNAPSHOT_PREFIX
         self.log_file = self.TORCH_LOG
-        self.trained_on_cpu = None
 
     def __getstate__(self):
         state = super(TorchTrainTask, self).__getstate__()
@@ -255,7 +254,6 @@ class TorchTrainTask(TrainTask):
         else:
             # switch to CPU mode
             args.append('--type=float')
-            self.trained_on_cpu = True
 
         if self.pretrained_model:
             args.append('--weights=%s' % self.path(self.pretrained_model))
@@ -468,15 +466,16 @@ class TorchTrainTask(TrainTask):
         return None
 
     @override
-    def infer_one(self, data, snapshot_epoch=None, layers=None):
+    def infer_one(self, data, snapshot_epoch=None, layers=None, gpu=None):
         if isinstance(self.dataset, ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.classify_one(data,
+            return self.infer_one_image(data,
                     snapshot_epoch=snapshot_epoch,
                     layers=layers,
+                    gpu=gpu,
                     )
         raise NotImplementedError('torch infer one')
 
-    def classify_one(self, image, snapshot_epoch=None, layers=None):
+    def infer_one_image(self, image, snapshot_epoch=None, layers=None, gpu=None):
         """
         Classify an image
         Returns (predictions, visualizations)
@@ -499,7 +498,7 @@ class TorchTrainTask(TrainTask):
         except KeyError:
             error_message = 'Unable to save file to "%s"' % temp_image_path
             self.logger.error(error_message)
-            raise digits.frameworks.errors.InferenceError(error_message)
+            raise digits.inference.errors.InferenceError(error_message)
 
         if config_value('torch_root') == '<PATHS>':
             torch_bin = 'th'
@@ -518,7 +517,7 @@ class TorchTrainTask(TrainTask):
         if isinstance(self.dataset, ImageClassificationDatasetJob):
             args.append('--labels=%s' % self.dataset.path(self.dataset.labels_file))
             args.append('--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE))
-            args.append('--allPredictions=no')
+            args.append('--allPredictions=yes')
         elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
             if self.use_mean != 'none':
                 args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
@@ -526,10 +525,6 @@ class TorchTrainTask(TrainTask):
 
         if snapshot_epoch:
             args.append('--epoch=%d' % int(snapshot_epoch))
-        if self.trained_on_cpu:
-            args.append('--type=float')
-        else:
-            args.append('--type=cuda')
 
         if self.use_mean == 'pixel':
             args.append('--subtractMean=pixel')
@@ -556,9 +551,14 @@ class TorchTrainTask(TrainTask):
         predictions = []
         self.visualization_file = None
 
-        # make only the first GPU visible
         env = os.environ.copy()
-        env['CUDA_VISIBLE_DEVICES'] = '0'
+
+        if gpu is not None:
+            args.append('--type=cuda')
+            # make only the selected GPU visible
+            env['CUDA_VISIBLE_DEVICES'] = "%d" % gpu
+        else:
+            args.append('--type=float')
 
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
@@ -573,7 +573,7 @@ class TorchTrainTask(TrainTask):
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        raise digits.frameworks.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                        raise digits.inference.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
 
                     if line is not None:
                         # Remove color codes and whitespace
@@ -589,7 +589,7 @@ class TorchTrainTask(TrainTask):
             if p.poll() is None:
                 p.terminate()
             error_message = ''
-            if type(e) == digits.frameworks.errors.InferenceError:
+            if type(e) == digits.inference.errors.InferenceError:
                 error_message = e.__str__()
             else:
                 error_message = '%s classify one task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
@@ -597,7 +597,7 @@ class TorchTrainTask(TrainTask):
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
                 error_message = error_message + unrecognized_output
-            raise digits.frameworks.errors.InferenceError(error_message)
+            raise digits.inference.errors.InferenceError(error_message)
 
         finally:
             self.after_test_run(temp_image_path)
@@ -608,13 +608,11 @@ class TorchTrainTask(TrainTask):
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
                 error_message = error_message + unrecognized_output
-            raise digits.frameworks.errors.InferenceError(error_message)
+            raise digits.inference.errors.InferenceError(error_message)
         else:
             self.logger.info('%s classify one task completed.' % self.get_framework_id())
 
-        if isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            # task.infer_one() expects dictionary in return value
-            predictions = {'output': np.array(predictions)}
+        predictions = {'output': np.array(predictions)}
 
         visualizations = []
 
@@ -647,7 +645,7 @@ class TorchTrainTask(TrainTask):
                                                  'id':         idx,
                                                  'name':       layer_desc,
                                                  'vis_type':   'Activations',
-                                                 'image_html': utils.image.embed_image_html(vis),
+                                                 'vis': vis,
                                                  'data_stats': {
                                                                   'shape':      data.shape,
                                                                   'mean':       mean,
@@ -675,7 +673,7 @@ class TorchTrainTask(TrainTask):
                                                'id':          idx,
                                                'name':        layer_desc,
                                                'vis_type':    'Weights',
-                                               'image_html':  utils.image.embed_image_html(vis),
+                                               'vis':  vis,
                                                'param_count': parameter_count,
                                                'data_stats': {
                                                                  'shape':      data.shape,
@@ -762,17 +760,17 @@ class TorchTrainTask(TrainTask):
             return True
 
         if level in ['error', 'critical']:
-            raise digits.frameworks.errors.InferenceError('%s classify %s task failed with error message - %s' % (self.get_framework_id(), test_category, message))
+            raise digits.inference.errors.InferenceError('%s classify %s task failed with error message - %s' % (self.get_framework_id(), test_category, message))
 
         return True           # control never reach this line. It can be removed.
 
     @override
-    def infer_many(self, data, snapshot_epoch=None):
+    def infer_many(self, data, snapshot_epoch=None, gpu=None):
         if isinstance(self.dataset, dataset.ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.classify_many(data, snapshot_epoch=snapshot_epoch)
+            return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
         raise NotImplementedError('torch infer many')
 
-    def classify_many(self, images, snapshot_epoch=None):
+    def infer_many_images(self, images, snapshot_epoch=None, gpu=None):
         """
         Returns (labels, results):
         labels -- an array of strings
@@ -804,7 +802,7 @@ class TorchTrainTask(TrainTask):
                 except KeyError:
                     error_message = 'Unable to save file to "%s"' % temp_image_path
                     self.logger.error(error_message)
-                    raise digits.frameworks.errors.InferenceError(error_message)
+                    raise digits.inference.errors.InferenceError(error_message)
                 os.write(temp_imglist_handle, "%s\n" % temp_image_path)
                 os.close(temp_image_handle)
             os.close(temp_imglist_handle)
@@ -837,18 +835,12 @@ class TorchTrainTask(TrainTask):
 
             if snapshot_epoch:
                 args.append('--epoch=%d' % int(snapshot_epoch))
-            if self.trained_on_cpu:
-                args.append('--type=float')
-            else:
-                args.append('--type=cuda')
-
             if self.use_mean == 'pixel':
                 args.append('--subtractMean=pixel')
             elif self.use_mean == 'image':
                 args.append('--subtractMean=image')
             else:
                 args.append('--subtractMean=none')
-
             if self.crop_size:
                 args.append('--crop=yes')
                 args.append('--croplen=%d' % self.crop_size)
@@ -859,9 +851,13 @@ class TorchTrainTask(TrainTask):
             regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
             self.logger.info('%s classify many task started.' % self.name())
 
-            # make only the first GPU visible
             env = os.environ.copy()
-            env['CUDA_VISIBLE_DEVICES'] = '0'
+            if gpu is not None:
+                args.append('--type=cuda')
+                # make only the selected GPU visible
+                env['CUDA_VISIBLE_DEVICES'] = "%d" % gpu
+            else:
+                args.append('--type=float')
 
             unrecognized_output = []
             predictions = []
@@ -878,7 +874,7 @@ class TorchTrainTask(TrainTask):
                     for line in utils.nonblocking_readlines(p.stdout):
                         if self.aborted.is_set():
                             p.terminate()
-                            raise digits.frameworks.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                            raise digits.inference.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
 
                         if line is not None:
                             # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
@@ -894,7 +890,7 @@ class TorchTrainTask(TrainTask):
                 if p.poll() is None:
                     p.terminate()
                 error_message = ''
-                if type(e) == digits.frameworks.errors.InferenceError:
+                if type(e) == digits.inference.errors.InferenceError:
                     error_message = e.__str__()
                 else:
                     error_message = '%s classify many task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
@@ -902,7 +898,7 @@ class TorchTrainTask(TrainTask):
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
                     error_message = error_message + unrecognized_output
-                raise digits.frameworks.errors.InferenceError(error_message)
+                raise digits.inference.errors.InferenceError(error_message)
 
             if p.returncode != 0:
                 error_message = '%s classify many task failed with error code %d' % (self.get_framework_id(), p.returncode)
@@ -910,17 +906,14 @@ class TorchTrainTask(TrainTask):
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
                     error_message = error_message + unrecognized_output
-                raise digits.frameworks.errors.InferenceError(error_message)
+                raise digits.inference.errors.InferenceError(error_message)
             else:
                 self.logger.info('%s classify many task completed.' % self.get_framework_id())
         finally:
             shutil.rmtree(temp_dir_path)
 
-        if isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            # task.infer_one() expects dictionary in return value
-            return {'output': np.array(predictions)}
-        else:
-            return (labels,np.array(predictions))
+        # task.infer_one() expects dictionary in return value
+        return {'output': np.array(predictions)}
 
     def has_model(self):
         """

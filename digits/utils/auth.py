@@ -63,6 +63,9 @@ def has_permission(job, action, username=None):
     Keyword arguments:
     username -- the user in question (defaults to current user)
     """
+    if job.is_read_only():
+        return False
+
     if username is None:
         username = get_username()
 

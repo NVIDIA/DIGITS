@@ -1,22 +1,31 @@
 {# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
-{% extends "layout.html" %}
+{% extends "job.html" %}
 
 {% block nav %}
-<li><a href="{{url_for('digits.model.views.show', job_id=job.id())}}">{{job.name()}}</a></li>
+<li><a href="{{url_for('digits.model.views.show', job_id=model_job.id())}}">{{model_job.name()}}</a></li>
 <li class="active"><a>Classify Many</a></li>
 {% endblock %}
 
-{% block content %}
+{% block job_content %}
 
 <div class="page-header">
     <h1>
-        {{job.name()}}
+        {{model_job.name()}}
         <small>
-            {{job.job_type()}}
+            {{model_job.job_type()}}
         </small>
     </h1>
 </div>
 
+{% if not classifications %}
+<div class="alert alert-danger">
+        <p>Classification failed, see job log</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block job_content_details %}
 
 <table class="table">
     <tr>
@@ -24,6 +33,7 @@
         {% if show_ground_truth %}<th>Ground truth</th>{% endif %}
         <th colspan=10>Top predictions</th>
     </tr>
+    {% if classifications %}
     {% for path in paths %}
     {% set result = classifications[loop.index0] %}
     {% set ground_truth = ground_truths[loop.index0] %}
@@ -40,6 +50,7 @@
         {% endfor %}
     </tr>
     {% endfor %}
+    {% endif %}
 </table>
 
 {% endblock %}
