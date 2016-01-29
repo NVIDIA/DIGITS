@@ -106,7 +106,7 @@ def load_image(path, height, width, mode='RGB'):
     image = scipy.misc.imresize(image, (height, width), 'bilinear')
     return image
 
-def forward_pass(images, net, transformer, batch_size=1):
+def forward_pass(images, net, transformer, batch_size=None):
     """
     Returns scores for each image as an np.ndarray (nImages x nClasses)
 
@@ -119,6 +119,9 @@ def forward_pass(images, net, transformer, batch_size=1):
     batch_size -- how many images can be processed at once
         (a high value may result in out-of-memory errors)
     """
+    if batch_size is None:
+        batch_size = 1
+
     caffe_images = []
     for image in images:
         if image.ndim == 2:
@@ -168,7 +171,7 @@ def read_labels(labels_file):
     return labels
 
 def classify(caffemodel, deploy_file, image_files,
-        mean_file=None, labels_file=None, use_gpu=True):
+        mean_file=None, labels_file=None, batch_size=None, use_gpu=True):
     """
     Classify some images against a Caffe model and print the results
 
@@ -197,7 +200,7 @@ def classify(caffemodel, deploy_file, image_files,
 
     # Classify the image
     classify_start_time = time.time()
-    scores = forward_pass(images, net, transformer)
+    scores = forward_pass(images, net, transformer, batch_size=batch_size)
     print 'Classification took %s seconds.' % (time.time() - classify_start_time,)
 
     ### Process the results
@@ -231,7 +234,9 @@ if __name__ == '__main__':
 
     parser.add_argument('caffemodel',   help='Path to a .caffemodel')
     parser.add_argument('deploy_file',  help='Path to the deploy file')
-    parser.add_argument('image',        help='Path to an image')
+    parser.add_argument('image_file',
+                        nargs='+',
+                        help='Path[s] to an image')
 
     ### Optional arguments
 
@@ -239,15 +244,15 @@ if __name__ == '__main__':
             help='Path to a mean file (*.npy)')
     parser.add_argument('-l', '--labels',
             help='Path to a labels file')
+    parser.add_argument('--batch-size',
+                        type=int)
     parser.add_argument('--nogpu',
             action='store_true',
             help="Don't use the GPU")
 
     args = vars(parser.parse_args())
 
-    image_files = [args['image']]
-
-    classify(args['caffemodel'], args['deploy_file'], image_files,
+    classify(args['caffemodel'], args['deploy_file'], args['image_file'],
             args['mean'], args['labels'], not args['nogpu'])
 
     print 'Script took %s seconds.' % (time.time() - script_start_time,)
