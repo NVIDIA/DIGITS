@@ -40,12 +40,16 @@ If you are, simply install these aptitude packages:
 
 ### CUDA toolkit
 
-To install the CUDA toolkit, first get access to the required repositories by following [these instructions](UbuntuInstall.md#repository-access).
-Then install the toolkit with this command:
+To install the CUDA toolkit with deb packages, first get access to the required repositories by following [these instructions](UbuntuInstall.md#repository-access).
+Then, install your toolkit (any version >= 6.5 is fine):
 ```sh
+# If you already have a driver installed
 % sudo apt-get install cuda-toolkit-7-5
+
+# If you need a driver
+% sudo apt-get install cuda-7-5
 ```
-Any CUDA toolkit >= 6.5 should work.
+For more information, see [InstallCuda.md](InstallCuda.md).
 
 ### cuDNN
 
