@@ -28,7 +28,7 @@ end
 local function all_keys(cursor_,key_,op_)
     return coroutine.wrap(
         function()
-            local k = key_,v
+            local k = key_
             repeat
                 k,v = cursor_:get(k,op_ or MDB.NEXT)
                 if k then
