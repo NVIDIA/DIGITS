@@ -108,6 +108,7 @@
 
         // Create tables
         var table = $('#job_table').DataTable(dataTableConfig);
+        var t1 = new TableSelection('#job_table');
 
         table.columns().every(function() {
             // Set column filters

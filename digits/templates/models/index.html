@@ -9,7 +9,12 @@
 <script src="{{ url_for('static', filename='js/buttons.bootstrap.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/buttons.colVis.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dataTables.fixedHeader.min.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/jquery-ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/table_selection.js') }}"></script>
 <script src="{{ url_for('static', filename='js/table.js') }}"></script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dataTables.jqueryui.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dataTables.bootstrap.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.bootstrap.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/fixedHeader.bootstrap.min.css') }}">
@@ -18,8 +23,69 @@
 {% block content %}
 
 <div class="page-header">
-    <h1>Models</h1>
+    <div class="row">
+        <div class="pull-right">
+            <a id="delete-selected-jobs" class="btn btn-danger">Delete Selected Jobs</a>
+        </div>
+        <h1>Models</h1>
+    </div>
 </div>
+
+<script>
+ function deleteJobs() {
+     var table = $('#job_table').dataTable();
+
+     // get the list of selected and filtered items in the table
+     var list = table._('tr.selected', {"filter":"applied"});
+
+     if (list.length == 0) {
+         return;
+     }
+     bootbox.confirm(
+         'Are you sure you want to delete ' + list.length + ' jobs?<br><br>All related files will be permanently removed.',
+         function(result) {
+             if (result) {
+                 for (var i = 0; i < list.length; i++) {
+                     var job_id = list[i][1];
+                     var url = '/jobs/' + job_id
+
+                     if (i == list.length-1) {
+                         $.ajax(url, {type: "DELETE"})
+                          .done(function(data) {
+                              // refresh the page only after the last delete has completed
+                              window.location.reload(1);
+                          })
+                          .fail(function(data) {
+                              errorAlert(data);
+                          });
+                     } else {
+                         $.ajax(url, {type: "DELETE"})
+                          .fail(function(data) {
+                              errorAlert(data);
+                          });
+                     }
+                 }
+             }
+         });
+ }
+ $(document).ready(function() {
+     $('#delete-selected-jobs').on('click', deleteJobs);
+     $('#delete-selected-jobs').addClass('disabled');
+     $(document).keydown(function(e) {
+         // ctrl-delete, ctrl-backspace, meta-delete, meta-backspace to delete jobs
+         if ((e.ctrlKey || e.metaKey) && (e.keyCode == 8 || e.keyCode == 46)) {
+             deleteJobs();
+             e.preventDefault(); // prevent the default action (scroll / move caret)
+         }
+     });
+ });
+ 
+ // Listen for an event from the TableSelection class to disable the
+ // Delete Selected Jobs button.
+ $(window).on('selection_changed', function(e) {
+     $('#delete-selected-jobs').toggleClass('disabled', e.count == 0);
+ });
+</script>
 
 {% if jobs|length > 0 %}
 <div class="row">
@@ -54,11 +120,11 @@
             {% set job_info = job[0] %}
             {% set job_attrs = job[1] %}
 
-            <tr class="{{ job_info.status.css }}">
+            <tr>
                 <td><a href="{{ job_info.id }}">{{ job_info.name|e }}</a></td>
                 <td>{{ job_info.id }}</td>
                 <td>{{ job_info.framework_id }}</td>
-                <td>{{ job_info.status.name }}</td>
+                <td class="text-{{job_info.status.css}}">{{ job_info.status.name }}</td>
                 <td>{{ job_info.time }}</td>
                 {% for attrib in attrs_and_labels %}
                 {% if job_attrs[attrib[0]] is defined %}
