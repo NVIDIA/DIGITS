@@ -4,7 +4,7 @@ With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caff
 
 > NOTE: Torch support is still experimental!
 
-If you don't need a new version or custom build of Torch, you can still use deb packages to install the latest release.
+If you don't need a new version or custom build of Torch, you can still use Deb packages to install the latest release.
 Follow [these instructions](UbuntuInstall.md#repository-access) to gain access to the required repositories, and then use this command to install:
 ```sh
 % sudo apt-get install torch7-nv
@@ -24,16 +24,20 @@ Table of Contents
 
 ### CUDA toolkit
 
-To install the CUDA toolkit, first get access to the required repositories by following [these instructions](UbuntuInstall.md#repository-access).
-Then install the toolkit with this command:
+To install the CUDA toolkit with Deb packages, first get access to the required repositories by following [these instructions](UbuntuInstall.md#repository-access).
+Then, install your toolkit (any version >= 6.5 is fine):
 ```sh
+# If you already have a driver installed
 % sudo apt-get install cuda-toolkit-7-5
+
+# If you need a driver
+% sudo apt-get install cuda-7-5
 ```
-Any CUDA toolkit >= 6.5 should work.
+For more information, see [InstallCuda.md](InstallCuda.md).
 
 ### cuDNN
 
-You can also install cuDNN 4 with a deb package:
+You can also install cuDNN 4 with a Deb package:
 ```sh
 % sudo apt-get install libcudnn4-dev
 ```
