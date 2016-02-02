@@ -10,21 +10,21 @@ Table of Contents
 
 ## Installation
 
-Follow [these instructions](UbuntuInstall.md) to install deb packages for the latest major release on Ubuntu 14.04.
+Follow [these instructions](UbuntuInstall.md) to install Deb packages for the latest major release on Ubuntu 14.04.
 
 Follow [these instructions](BuildDigits.md) to build from source.
 
 ## Using the Webapp
 
 Once you have installed and started DIGITS, open up a web browser and navigate to the home screen.
-The server should be at either `http://localhost/` (if installed from deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
+The server should be at either `http://localhost/` (if installed from Deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
 
 ![Home page](images/home-page-1.jpg)
 
 For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network.
 Both are generously made available by Yann LeCun on [his website](http://yann.lecun.com/).
 
-Use the following command to download the MNIST dataset (for deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
+Use the following command to download the MNIST dataset (for Deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
 ```
 $ tools/download_data/main.py mnist ~/mnist
 Downloading url=http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz ...

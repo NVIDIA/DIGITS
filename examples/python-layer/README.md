@@ -4,7 +4,7 @@ Caffe gives users the ability to [define custom layer types in Python](https://g
 This can be a very useful feature, but it is poorly documented and tricky to implement correctly.
 This walkthrough will show you how to get started with Python layers in DIGITS.
 
-> NOTE: This feature is included automatically if you are building Caffe with CMake or installing the deb package. If you are building with Make, you will need to uncomment "WITH_PYTHON_LAYER := 1" in your `Makefile.config` to enable it.
+> NOTE: This feature is included automatically if you are building Caffe with CMake or installing the Deb package. If you are building with Make, you will need to uncomment "WITH_PYTHON_LAYER := 1" in your `Makefile.config` to enable it.
 
 ## Adding Occlusions to MNIST
 

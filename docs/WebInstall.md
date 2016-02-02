@@ -1,7 +1,7 @@
 # Web Installer
 
 Prior to DIGITS v3.0, a tarball installer was provided.
-**This has been removed in favor of deb packages**:
+**This has been removed in favor of Deb packages**:
 
 [UbuntuInstall.md](UbuntuInstall.md)
 
