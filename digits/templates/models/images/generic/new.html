@@ -169,6 +169,14 @@ $("#dataset").change(function() {
                 </label>
                 </p>
                 <script>
+{% for choice in form.solver_type.choices %}
+{% for fw in frameworks %}
+{% if fw.supports_solver_type(choice[0]) %}
+$("select[name=solver_type] > option[value={{choice[0]}}").addClass("{{fw.get_id()}}");
+{% endif %}
+{% endfor %}
+{% endfor %}
+
 function showHideAdvancedLROptions() {
     if ($("#show-advanced-lr-options").prop("checked")) {
         $("#advanced-lr-options").show();
@@ -395,7 +403,14 @@ function setFramework(fwid)
         $("#shuffle-data").show();
     else
         $("#shuffle-data").hide();
+
+    $("select[name=solver_type] > option." + fwid).prop('disabled', false);
+    $("select[name=solver_type] > option").not("." + fwid).prop('disabled', true);
+    if (! $("select[name=solver_type] > option:selected").hasClass(fwid)) {
+        $("select[name=solver_type] > option:selected").prop("selected", false);
+    }
 }
+setFramework("{{form.framework.data}}");
             </script>
 
             <ul class="nav nav-tabs" id="network-tabs">

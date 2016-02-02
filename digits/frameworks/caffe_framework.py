@@ -11,8 +11,9 @@ from google.protobuf import text_format
 from .errors import BadNetworkError
 from .framework import Framework
 import digits
+from digits.config import config_value
 from digits.model.tasks import CaffeTrainTask
-from digits.utils import subclass, override
+from digits.utils import subclass, override, parse_version
 
 @subclass
 class CaffeFramework(Framework):
@@ -32,6 +33,12 @@ class CaffeFramework(Framework):
 
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = False
+
+    if config_value('caffe_root')['version'] > parse_version('0.14.0-alpha'):
+        SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
+                                  'RMSPROP', 'ADADELTA', 'ADAM']
+    else:
+        SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD']
 
     @override
     def __init__(self):

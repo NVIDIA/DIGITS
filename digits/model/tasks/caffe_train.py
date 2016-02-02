@@ -502,8 +502,15 @@ class CaffeTrainTask(TrainTask):
         else:
             raise Exception('Unknown lr_policy: "%s"' % solver.lr_policy)
 
+        # These solver types don't support momentum
+        unsupported = [solver.ADAGRAD]
+        try:
+            unsupported.append(solver.RMSPROP)
+        except AttributeError:
+            pass
+
         # go with the suggested defaults
-        if solver.solver_type != solver.ADAGRAD:
+        if solver.solver_type not in unsupported:
             solver.momentum = 0.9
         solver.weight_decay = 0.0005
 
@@ -705,8 +712,15 @@ class CaffeTrainTask(TrainTask):
         else:
             raise Exception('Unknown lr_policy: "%s"' % solver.lr_policy)
 
+        # These solver types don't support momentum
+        unsupported = [solver.ADAGRAD]
+        try:
+            unsupported.append(solver.RMSPROP)
+        except AttributeError:
+            pass
+
         # go with the suggested defaults
-        if solver.solver_type != solver.ADAGRAD:
+        if solver.solver_type not in unsupported:
             solver.momentum = 0.9
         solver.weight_decay = 0.0005
 

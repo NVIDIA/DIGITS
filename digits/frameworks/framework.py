@@ -24,6 +24,15 @@ class Framework(object):
         """
         return self.CAN_SHUFFLE_DATA
 
+    def supports_solver_type(self, solver_type):
+        """
+        return whether framework supports this solver_type
+        """
+        if not hasattr(self, 'SUPPORTED_SOLVER_TYPES'):
+            raise NotImplementedError
+        assert isinstance(self.SUPPORTED_SOLVER_TYPES, list)
+        return solver_type in self.SUPPORTED_SOLVER_TYPES
+
     def validate_network(self, data):
         """
         validate a network (must be implemented in child class)

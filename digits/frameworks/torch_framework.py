@@ -33,6 +33,8 @@ class TorchFramework(Framework):
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = True
 
+    SUPPORTED_SOLVER_TYPES = ['SGD']
+
     def __init__(self):
         super(TorchFramework, self).__init__()
         # id must be unique
