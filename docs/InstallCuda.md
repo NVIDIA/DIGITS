@@ -94,12 +94,12 @@ For more information, see [the "Meta Packages" section](http://docs.nvidia.com/c
 Finally, you need to set up your environment correctly so that the runtime linker can find your shared libraries.
 There are a few ways to do this:
 
-1. Add an entry to `/etc/ld.so.conf.d/` and then run `ldconfig` to load the new configuration.
+1. Add an entry to `/etc/ld.so.conf.d/`.
   * This requires `sudo` privileges.
 
     ```
-    # Add to /etc/ld.so.conf.d/cuda.conf
-    /usr/local/cuda/lib64
+    echo "/usr/local/cuda/lib64" | sudo tee /etc/ld.so.conf.d/cuda64.conf
+    sudo ldconfig
     ```
 
 2. Edit `LD_LIBRARY_PATH`.
