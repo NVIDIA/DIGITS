@@ -33,7 +33,8 @@ class JobsDirOption(config_option.Option):
 
     @staticmethod
     def has_test_value():
-        return True
+        # XXX: don't merge this!
+        return False
 
     @staticmethod
     def test_value():
