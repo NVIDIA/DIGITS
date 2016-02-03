@@ -223,14 +223,20 @@ class TorchTrainTask(TrainTask):
         if self.random_seed is not None:
             args.append('--seed=%s' % self.random_seed)
 
-        if self.solver_type == 'NESTEROV':
-            args.append('--optimization=nag')
-
-        if self.solver_type == 'ADAGRAD':
-            args.append('--optimization=adagrad')
-
         if self.solver_type == 'SGD':
             args.append('--optimization=sgd')
+        elif self.solver_type == 'NESTEROV':
+            args.append('--optimization=nag')
+        elif self.solver_type == 'ADAGRAD':
+            args.append('--optimization=adagrad')
+        elif self.solver_type == 'RMSPROP':
+            args.append('--optimization=rmsprop')
+        elif self.solver_type == 'ADADELTA':
+            args.append('--optimization=adadelta')
+        elif self.solver_type == 'ADAM':
+            args.append('--optimization=adam')
+        else:
+            raise ValueError('Unknown solver_type %s' % self.solver_type)
 
         if self.val_interval > 0:
             args.append('--interval=%s' % self.val_interval)

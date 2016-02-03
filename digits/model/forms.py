@@ -130,15 +130,26 @@ class ModelForm(Form):
 
     ### Solver types
 
-    solver_type = utils.forms.SelectField('Solver type',
+    solver_type = utils.forms.SelectField(
+        'Solver type',
         choices = [
-                ('SGD', 'Stochastic gradient descent (SGD)'),
-                ('ADAGRAD', 'Adaptive gradient (AdaGrad)'),
-                ('NESTEROV', "Nesterov's accelerated gradient (NAG)"),
-                ],
-            default = 'SGD',
-            tooltip = "What type of solver will be used??"
-            )
+            ('SGD', 'Stochastic gradient descent (SGD)'),
+            ('NESTEROV', "Nesterov's accelerated gradient (NAG)"),
+            ('ADAGRAD', 'Adaptive gradient (AdaGrad)'),
+            ('RMSPROP', 'RMSprop'),
+            ('ADADELTA', 'AdaDelta'),
+            ('ADAM', 'Adam'),
+        ],
+        default = 'SGD',
+        tooltip = "What type of solver will be used?",
+    )
+
+    def validate_solver_type(form, field):
+        fw = frameworks.get_framework_by_id(form.framework)
+        if fw is not None:
+            if not fw.supports_solver_type(field.data):
+                raise validators.ValidationError(
+                    'Solver type not supported by this framework')
 
     ### Learning rate
 
