@@ -49,13 +49,14 @@
             </tr>
         </tfoot>
         <tbody>
+            {% set show_func = 'digits.model.views.show' %}
             {% for job in jobs %}
 
             {% set job_info = job[0] %}
             {% set job_attrs = job[1] %}
 
             <tr class="{{ job_info.status.css }}">
-                <td><a href="{{ job_info.id }}">{{ job_info.name|e }}</a></td>
+                <td><a href="{{ url_for(show_func, job_id=job_info.id) }}">{{ job_info.name|e }}</a></td>
                 <td>{{ job_info.id }}</td>
                 <td>{{ job_info.framework_id }}</td>
                 <td>{{ job_info.status.name }}</td>
