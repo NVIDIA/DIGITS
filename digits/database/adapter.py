@@ -9,20 +9,6 @@ from flask.ext import sqlalchemy as sa
 # SQLAlchemy adapter
 db = sa.SQLAlchemy()
 
-# Database configuration (for Flask)
-db_config = {
-    # SQLite
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:///'+os.path.abspath(os.path.join(os.path.dirname(__file__), 'sqlite.db')),
-    # MySQL
-    #   apt-get install python-mysqldb
-#    'SQLALCHEMY_DATABASE_URI': 'mysql:///digits_development',
-    # PostgreSQL
-    #   apt-get install python-psycopg2
-#    'SQLALCHEMY_DATABASE_URI': 'postgresql:///digits_development',
-
-    'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-}
-
 
 def my_repr(o, keys=None):
     """

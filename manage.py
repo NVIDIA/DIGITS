@@ -9,12 +9,13 @@ config.load_config('quiet')
 
 from digits import database
 from digits.database import load_from_pickle_files
-from digits.database.adapter import db, db_config
+from digits.database.adapter import db
 from digits.runserver_command import ServerCommand
 from digits.webapp import app, socketio, scheduler
 
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = config.config_value('database_url')
 db.init_app(app)
-app.config.update(db_config)
 
 manager = flask_script.Manager(app)
 flask_migrate.Migrate(app, db)
