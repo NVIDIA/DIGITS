@@ -116,28 +116,16 @@ def process_job(pkl_job):
 
     if isinstance(pkl_job, ImageClassificationDatasetJob):
         job.type = 'create-dataset'
-        job.attributes.append(
-            database.JobAttribute(
-                key='dataset_type',
-                value='classification'))
+        job.set_attribute('dataset_type', 'classification')
     elif isinstance(pkl_job, GenericImageDatasetJob):
         job.type = 'create-dataset'
-        job.attributes.append(
-            database.JobAttribute(
-                key='dataset_type',
-                value='generic'))
+        job.set_attribute('dataset_type', 'generic')
     elif isinstance(pkl_job, ImageClassificationModelJob):
         job.type = 'train-model'
-        job.attributes.append(
-            database.JobAttribute(
-                key='network_type',
-                value='classification'))
+        job.set_attribute('network_type', 'classification')
     elif isinstance(pkl_job, GenericImageModelJob):
         job.type = 'train-model'
-        job.attributes.append(
-            database.JobAttribute(
-                key='network_type',
-                value='generic'))
+        job.set_attribute('network_type', 'generic')
     else:
         raise AssertionError('Unknown job type %s' % type(pkl_job).__name__)
 
@@ -175,12 +163,11 @@ def process_job(pkl_job):
         for task in job.tasks:
             if task.type == 'analyze-db':
                 for dataset in task.datasets:
-                    phase = dataset.attributes.filter_by(key='intended_phase').first().value
-                    blob_name = dataset.attributes.filter_by(key='intended_blob_name').first().value
+                    phase = dataset.get_attribute('intended_phase')
+                    blob_name = dataset.get_attribute('intended_blob_name')
                     if phase == 'train' and blob_name == 'data':
-                        dataset.files.append(database.DatasetFile(
-                            path=_relative_path(pkl_job, pkl_job.mean_file),
-                            label='mean:binaryproto'))
+                        dataset.set_file('mean:binaryproto',
+                                         _relative_path(pkl_job, pkl_job.mean_file))
 
     elif isinstance(pkl_job, ImageClassificationModelJob):
         # Training.datasets
@@ -207,18 +194,14 @@ def process_job(pkl_job):
                 job.tasks[0].trainings[0].datasets.append(task.datasets[0])
 
     if pkl_job.exception is not None:
-        job.attributes.append(database.JobAttribute(
-            key='exception', value=pkl_job.exception))
+        job.set_attribute('exception', pkl_job.exception)
 
     if hasattr(pkl_job, 'form_data'):
         filename = 'form_data.json'
         with open(pkl_job.path(filename), 'w') as outfile:
             json.dump(pkl_job.form_data, outfile, sort_keys=True,
                          indent=4, separators=(',',': '))
-        job.files.append(database.JobFile(
-            path=_relative_path(pkl_job, filename),
-            label='form_data',
-        ))
+        job.set_file('form_data', _relative_path(pkl_job, filename))
 
 
 def process_task(job, pkl_task):
@@ -226,6 +209,7 @@ def process_task(job, pkl_task):
     from digits.model import tasks as model_tasks
 
     task = database.Task(progress=pkl_task.progress)
+    task.job = job
 
     # TaskStatusUpdate
     for status, timestamp in pkl_task.status_history:
@@ -236,17 +220,13 @@ def process_task(job, pkl_task):
             ))
 
     if pkl_task.exception is not None:
-        task.attributes.append(database.TaskAttribute(
-            key='error_message', value=pkl_task.exception))
+        task.set_attribute('error_message', pkl_task.exception)
 
     if pkl_task.traceback is not None:
         filename = 'error_info.txt'
         with open(pkl_task.path(filename), 'w') as outfile:
             outfile.write(pkl_task.traceback + '\n')
-        task.files.append(database.TaskFile(
-            path=_relative_path(pkl_task, filename),
-            label='error_info',
-        ))
+        task.set_file('error_info', _relative_path(pkl_task, filename))
 
     if isinstance(pkl_task, dataset_tasks.AnalyzeDbTask):
         process_analyze_db_task(pkl_task, task)
@@ -259,27 +239,22 @@ def process_task(job, pkl_task):
     else:
         raise AssertionError('Unknown task type %s' % type(pkl_task).__name__)
 
-    task.job = job
     return task
 
 
 def process_analyze_db_task(pkl_task, task):
     task.type = 'analyze-db'
     if hasattr(pkl_task, 'force_same_shape'):
-        task.attributes.append(database.TaskAttribute(
-            key='input:force_same_shape', value=str(bool(pkl_task.force_same_shape))))
+        task.set_attribute('input:force_same_shape', str(bool(pkl_task.force_same_shape)))
     if hasattr(pkl_task, 'analyze_db_log_file') and pkl_task.analyze_db_log_file:
-        task.files.append(database.TaskFile(
-            path=_relative_path(pkl_task, pkl_task.analyze_db_log_file),
-            label='log'))
+        task.set_file('log', _relative_path(pkl_task, pkl_task.analyze_db_log_file))
 
     dataset = database.Dataset()
-    dataset.files.append(database.DatasetFile(
-        path=_relative_path(pkl_task, pkl_task.database),
-        label='database'))
+    dataset.task = task
+
+    dataset.set_file('database', _relative_path(pkl_task, pkl_task.database))
     if hasattr(pkl_task, 'backend') and pkl_task.backend:
-        dataset.attributes.append(database.DatasetAttribute(
-            key='backend', value=pkl_task.backend))
+        dataset.set_attribute('backend', pkl_task.backend)
 
     intended_phase = pkl_task.purpose.split()[0]
     if intended_phase == 'Training':
@@ -288,8 +263,7 @@ def process_analyze_db_task(pkl_task, task):
         intended_phase = 'val'
     else:
         assert False, 'intended_phase = ' % intended_phase
-    dataset.attributes.append(database.DatasetAttribute(
-        key='intended_phase', value=intended_phase))
+    dataset.set_attribute('intended_phase', intended_phase)
     intended_blob_name = pkl_task.purpose.split()[1]
     if intended_blob_name == 'Images':
         intended_blob_name = 'data'
@@ -297,30 +271,26 @@ def process_analyze_db_task(pkl_task, task):
         intended_blob_name = 'label'
     else:
         assert False, 'intended_blob_name = ' % intended_blob_name
-    dataset.attributes.append(database.DatasetAttribute(
-        key='intended_blob_name', value=intended_blob_name))
-    dataset.attributes.append(database.DatasetAttribute(
-        key='count', value=pkl_task.image_count))
+    dataset.set_attribute('intended_blob_name', intended_blob_name)
+    dataset.set_attribute('count', pkl_task.image_count)
     dims = '%d,%d,%d' % (
         pkl_task.image_channels,
         pkl_task.image_height,
         pkl_task.image_width,
     )
-    dataset.attributes.append(database.DatasetAttribute(
-        key='dimensions:%s' % intended_blob_name, value=dims))
+    dataset.set_attribute('dimensions:%s' % intended_blob_name, dims)
 
-    dataset.task = task
     return task
 
 
 def process_create_db_task(pkl_task, task):
     task.type = 'create-db'
     if hasattr(pkl_task, 'create_db_log_file') and pkl_task.create_db_log_file:
-        task.files.append(database.TaskFile(
-            path=_relative_path(pkl_task, pkl_task.create_db_log_file),
-            label='log'))
+        task.set_file('log', _relative_path(pkl_task, pkl_task.create_db_log_file))
 
     dataset = database.Dataset()
+    dataset.task = task
+
     intended_phase = None
     if 'train' in pkl_task.db_name.lower():
         intended_phase = 'train'
@@ -329,39 +299,27 @@ def process_create_db_task(pkl_task, task):
     elif 'test' in pkl_task.db_name.lower():
         intended_phase = 'test'
     if intended_phase is not None:
-        dataset.attributes.append(database.DatasetAttribute(
-            key='intended_phase', value=intended_phase))
-    dataset.attributes.append(database.DatasetAttribute(
-        key='compression', value=pkl_task.compression))
-    dataset.attributes.append(database.DatasetAttribute(
-        key='encoding', value=pkl_task.encoding))
-    dataset.attributes.append(database.DatasetAttribute(
-        key='resize_mode', value=pkl_task.resize_mode))
+        dataset.set_attribute('intended_phase', intended_phase)
+    dataset.set_attribute('compression', pkl_task.compression)
+    dataset.set_attribute('encoding', pkl_task.encoding)
+    dataset.set_attribute('resize_mode', pkl_task.resize_mode)
     if hasattr(pkl_task, 'shuffle'):
-        dataset.attributes.append(database.DatasetAttribute(
-            key='shuffle', value=str(pkl_task.shuffle)))
+        dataset.set_attribute('shuffle', str(pkl_task.shuffle))
     if hasattr(pkl_task, 'image_channel_order') and pkl_task.image_channel_order:
-        dataset.attributes.append(database.DatasetAttribute(
-            key='image_channel_order', value=pkl_task.image_channel_order))
-    dataset.attributes.append(database.DatasetAttribute(
-        key='intended_blob_name', value='data,label'))
-    dataset.attributes.append(database.DatasetAttribute(
-        key='count', value=pkl_task.entries_count))
+        dataset.set_attribute('image_channel_order', pkl_task.image_channel_order)
+    dataset.set_attribute('intended_blob_name', 'data,label')
+    dataset.set_attribute('count', pkl_task.entries_count)
     dims = '%d,%d,%d' % (
         pkl_task.image_dims[2], # channels
         pkl_task.image_dims[0], # width
         pkl_task.image_dims[1], # height
     )
-    dataset.attributes.append(database.DatasetAttribute(
-        key='dimensions:data', value=dims))
-    dataset.attributes.append(database.DatasetAttribute(
-        key='dimension:label', value=1))
+    dataset.set_attribute('dimensions:data', dims)
+    dataset.set_attribute('dimension:label', 1)
     if hasattr(pkl_task, 'backend') and pkl_task.backend:
-        dataset.attributes.append(database.DatasetAttribute(
-            key='backend', value=pkl_task.backend))
+        dataset.set_attribute('backend', pkl_task.backend)
     if hasattr(pkl_task, 'image_folder') and pkl_task.image_folder:
-            dataset.attributes.append(database.DatasetAttribute(
-                key='input:filelist:rootfolder', value=pkl_task.image_folder))
+            dataset.set_attribute('input:filelist:rootfolder', pkl_task.image_folder)
 
     if hasattr(pkl_task, 'distribution') and pkl_task.distribution:
         # write to file rather than saving hundreds of attributes
@@ -370,25 +328,15 @@ def process_create_db_task(pkl_task, task):
             d = pkl_task.distribution
             for k in sorted(d.keys()):
                 outfile.write('%d\n' % d[k])
-        dataset.files.append(database.DatasetFile(
-            path=_relative_path(pkl_task, filename),
-            label='distribution'))
+        dataset.set_file('distribution', _relative_path(pkl_task, filename))
 
     # files
-    dataset.files.append(database.DatasetFile(
-        path=_relative_path(pkl_task, pkl_task.db_name),
-        label='database'))
-    dataset.files.append(database.DatasetFile(
-        path=_relative_path(pkl_task, pkl_task.input_file),
-        label='input:filelist'))
-    dataset.files.append(database.DatasetFile(
-        path=_relative_path(pkl_task, pkl_task.labels_file),
-        label='labels'))
+    dataset.set_file('database', _relative_path(pkl_task, pkl_task.db_name))
+    dataset.set_file('input:filelist', _relative_path(pkl_task, pkl_task.input_file))
+    dataset.set_file('labels', _relative_path(pkl_task, pkl_task.labels_file))
     if hasattr(pkl_task, 'textfile') and pkl_task.textfile:
         assert pkl_task.backend == 'hdf5'
-        dataset.files.append(database.DatasetFile(
-            path=_relative_path(pkl_task, pkl_task.textfile),
-            label='hdf5_filelist'))
+        dataset.set_file('hdf5_filelist', _relative_path(pkl_task, pkl_task.textfile))
 
     # TODO: start saving means for other phases
     if intended_phase == 'train':
@@ -396,59 +344,41 @@ def process_create_db_task(pkl_task, task):
         assert os.path.exists(jpg_path), 'mean.jpg not found'
         binaryproto_path = pkl_task.path('mean.binaryproto')
         assert os.path.exists(binaryproto_path), 'mean.binaryproto not found'
-        dataset.files.append(database.DatasetFile(
-            path=_relative_path(pkl_task, 'mean.jpg'),
-            label='mean:jpg'))
-        dataset.files.append(database.DatasetFile(
-            path=_relative_path(pkl_task, pkl_task.mean_file),
-            label='mean:binaryproto'))
+        dataset.set_file('mean:jpg', _relative_path(pkl_task, 'mean.jpg'))
+        dataset.set_file('mean:binaryproto', _relative_path(pkl_task, pkl_task.mean_file))
 
-    dataset.task = task
     return task
 
 
 def process_parse_folder_task(pkl_task, task):
     task.type = 'parse-folder'
-    task.attributes.append(database.TaskAttribute(
-        key='input:folder', value=pkl_task.folder))
+    task.set_attribute('input:folder', pkl_task.folder)
     # input
     if hasattr(pkl_task, 'max_per_category') and pkl_task.max_per_category is not None:
-        task.attributes.append(database.TaskAttribute(
-            key='input:per_category:max', value=pkl_task.max_per_category))
+        task.set_attribute('input:per_category:max', pkl_task.max_per_category)
     if hasattr(pkl_task, 'min_per_category') and pkl_task.min_per_category is not None and pkl_task.min_per_category != 2:
-        task.attributes.append(database.TaskAttribute(
-            key='input:per_category:min', value=pkl_task.min_per_category))
+        task.set_attribute('input:per_category:min', pkl_task.min_per_category)
     if hasattr(pkl_task, 'percent_val') and pkl_task.percent_val:
-        task.attributes.append(database.TaskAttribute(
-            key='input:percentage:val', value=pkl_task.percent_val))
+        task.set_attribute('input:percentage:val', pkl_task.percent_val)
     if hasattr(pkl_task, 'percent_test') and pkl_task.percent_test:
-        task.attributes.append(database.TaskAttribute(
-            key='input:percentage:test', value=pkl_task.percent_test))
+        task.set_attribute('input:percentage:test', pkl_task.percent_test)
     # output
     if hasattr(pkl_task, 'label_count') and pkl_task.label_count:
-        task.attributes.append(database.TaskAttribute(
-            key='output:count:label', value=pkl_task.label_count))
+        task.set_attribute('output:count:label', pkl_task.label_count)
     if hasattr(pkl_task, 'train_count') and pkl_task.train_count:
-        task.attributes.append(database.TaskAttribute(
-            key='output:count:train', value=pkl_task.train_count))
+        task.set_attribute('output:count:train', pkl_task.train_count)
     if hasattr(pkl_task, 'val_count') and pkl_task.val_count:
-        task.attributes.append(database.TaskAttribute(
-            key='output:count:val', value=pkl_task.val_count))
+        task.set_attribute('output:count:val', pkl_task.val_count)
     if hasattr(pkl_task, 'test_count') and pkl_task.test_count:
-        task.attributes.append(database.TaskAttribute(
-            key='output:count:test', value=pkl_task.test_count))
+        task.set_attribute('output:count:test', pkl_task.test_count)
 
-    task.files.append(database.TaskFile(
-        path=pkl_task.labels_file, label='labels'))
+    task.set_file('labels', pkl_task.labels_file)
     if hasattr(pkl_task, 'train_file'):
-        task.files.append(database.TaskFile(
-            path=pkl_task.train_file, label='train'))
+        task.set_file('train', pkl_task.train_file)
     if hasattr(pkl_task, 'val_file'):
-        task.files.append(database.TaskFile(
-            path=pkl_task.val_file, label='val'))
+        task.set_file('val', pkl_task.val_file)
     if hasattr(pkl_task, 'test_file'):
-        task.files.append(database.TaskFile(
-            path=pkl_task.test_file, label='test'))
+        task.set_file('test', pkl_task.test_file)
 
     return task
 
@@ -457,27 +387,22 @@ def process_train_task(pkl_task, task):
     from digits.model import tasks as model_tasks
 
     training = database.Training()
+    training.task = task
 
     if isinstance(pkl_task, model_tasks.CaffeTrainTask):
         process_caffe_train_task(pkl_task, task, training)
     elif isinstance(pkl_task, model_tasks.TorchTrainTask):
         process_torch_train_task(pkl_task, task, training)
 
-    training.attributes.append(database.TrainingAttribute(
-        key='learning_rate', value=pkl_task.learning_rate))
+    training.set_attribute('learning_rate', pkl_task.learning_rate)
 
     for key, val in pkl_task.lr_policy.iteritems():
-        training.attributes.append(database.TrainingAttribute(
-            key='lr_policy:%s' % key,
-            value=val,
-        ))
+        training.set_attribute('lr_policy:%s' % key, val)
 
     if hasattr(pkl_task, 'batch_size') and pkl_task.batch_size is not None:
-        training.attributes.append(database.TrainingAttribute(
-            key='input:batch_size', value=pkl_task.batch_size))
+        training.set_attribute('input:batch_size', pkl_task.batch_size)
     if hasattr(pkl_task, 'crop_size') and pkl_task.crop_size is not None:
-        training.attributes.append(database.TrainingAttribute(
-            key='input:crop_size', value=pkl_task.crop_size))
+        training.set_attribute('input:crop_size', pkl_task.crop_size)
 
     gpu_count = None
     if hasattr(pkl_task, 'trained_on_cpu') and pkl_task.trained_on_cpu is True:
@@ -487,16 +412,14 @@ def process_train_task(pkl_task, task):
     elif hasattr(pkl_task, 'selected_gpus') and pkl_task.selected_gpus:
         gpu_count = len(pkl_task.selected_gpus)
     if gpu_count is not None:
-        training.attributes.append(database.TrainingAttribute(
-            key='gpu_count', value=gpu_count))
+        training.set_attribute('gpu_count', gpu_count)
 
     # training outputs
     if pkl_task.train_outputs:
         train_outputs = pkl_task.train_outputs.keys()
         train_outputs.remove('epoch')
         for name in train_outputs:
-            training.attributes.append(database.TrainingAttribute(
-                key='output_type:%s' % name, value=pkl_task.train_outputs[name].kind))
+            training.set_attribute('output_type:%s' % name, pkl_task.train_outputs[name].kind)
             for i, epoch in enumerate(pkl_task.train_outputs['epoch'].data):
                 try:
                     values = pkl_task.train_outputs[name].data[i]
@@ -515,8 +438,7 @@ def process_train_task(pkl_task, task):
         val_outputs = pkl_task.val_outputs.keys()
         val_outputs.remove('epoch')
         for name in val_outputs:
-            training.attributes.append(database.TrainingAttribute(
-                key='output_type:%s' % name, value=pkl_task.val_outputs[name].kind))
+            training.set_attribute('output_type:%s' % name, pkl_task.val_outputs[name].kind)
             for i, epoch in enumerate(pkl_task.val_outputs['epoch'].data):
                 try:
                     values = pkl_task.val_outputs[name].data[i]
@@ -536,31 +458,21 @@ def process_train_task(pkl_task, task):
     if pkl_task.pretrained_model:
         for filename in pkl_task.pretrained_model.split(':'):
             filename = filename.strip()
-            training.files.append(database.TrainingFile(
-                path=_relative_path(pkl_task, filename),
-                label='pretrained_model',))
+            training.set_file('pretrained_model', _relative_path(pkl_task, filename))
 
     if hasattr(pkl_task, 'random_seed') and pkl_task.random_seed is not None:
-        training.attributes.append(database.TrainingAttribute(
-            key='random_seed', value=pkl_task.random_seed))
+        training.set_attribute('random_seed', pkl_task.random_seed)
     if hasattr(pkl_task, 'solver_type'):
-        training.attributes.append(database.TrainingAttribute(
-            key='solver_type', value=pkl_task.solver_type))
+        training.set_attribute('solver_type', pkl_task.solver_type)
     if hasattr(pkl_task, 'use_mean'):
-        training.attributes.append(database.TrainingAttribute(
-            key='mean_method', value=pkl_task.use_mean))
+        training.set_attribute('mean_method', pkl_task.use_mean)
 
-    training.attributes.append(database.TrainingAttribute(
-        key='train_epochs', value=pkl_task.train_epochs))
-    training.attributes.append(database.TrainingAttribute(
-        key='val_interval', value=pkl_task.val_interval))
-    training.attributes.append(database.TrainingAttribute(
-        key='snapshot_interval', value=pkl_task.snapshot_interval))
+    training.set_attribute('train_epochs', pkl_task.train_epochs)
+    training.set_attribute('val_interval', pkl_task.val_interval)
+    training.set_attribute('snapshot_interval', pkl_task.snapshot_interval)
     if pkl_task.snapshot_prefix != 'snapshot':
-        training.attributes.append(database.TrainingAttribute(
-            key='snapshot_prefix', value=pkl_task.snapshot_prefix))
+        training.set_attribute('snapshot_prefix', pkl_task.snapshot_prefix)
 
-    training.task = task
     return task
 
 
@@ -569,18 +481,13 @@ def process_caffe_train_task(pkl_task, task, training):
     Handle stuff specific to caffe
     """
     task.type= 'train-caffe'
-    training.attributes.append(database.TrainingAttribute(
-        key='framework', value='caffe'))
-    training.files.append(database.TrainingFile(
-        path=_relative_path(pkl_task, pkl_task.train_val_file),
-        label='network_architecture:training'))
-    training.files.append(database.TrainingFile(
-        path=_relative_path(pkl_task, pkl_task.deploy_file),
-        label='network_architecture:inference'))
+    training.set_attribute('framework', 'caffe')
+    training.set_file('network_architecture:training',
+                      _relative_path(pkl_task, pkl_task.train_val_file))
+    training.set_file('network_architecture:inference',
+                      _relative_path(pkl_task, pkl_task.deploy_file))
     inference_architecture_file = pkl_task.deploy_file
-    training.files.append(database.TrainingFile(
-        path=_relative_path(pkl_task, pkl_task.solver_file),
-        label='solver'))
+    training.set_file('solver', _relative_path(pkl_task, pkl_task.solver_file))
 
     has_caffe_log_file = hasattr(pkl_task, 'caffe_log_file') and pkl_task.caffe_log_file
     has_log_file = hasattr(pkl_task, 'log_file') and pkl_task.log_file
@@ -588,35 +495,24 @@ def process_caffe_train_task(pkl_task, task, training):
         assert (pkl_task.path(pkl_task.caffe_log_file)
                 == pkl_task.path(pkl_task.log_file)), 'mismatched log files'
     if has_log_file:
-        task.files.append(database.TaskFile(
-            path=_relative_path(pkl_task, pkl_task.log_file),
-            label='log'))
+        task.set_file('log', _relative_path(pkl_task, pkl_task.log_file))
     elif has_caffe_log_file:
-        task.files.append(database.TaskFile(
-            path=_relative_path(pkl_task, pkl_task.caffe_log_file),
-            label='log'))
+        task.set_file('log', _relative_path(pkl_task, pkl_task.caffe_log_file))
 
     # original network
     filename = 'original.prototxt'
     with open(pkl_task.path(filename), 'w') as outfile:
         text_format.PrintMessage(pkl_task.network, outfile)
-    training.files.append(database.TrainingFile(
-        path=_relative_path(pkl_task, filename),
-        label='network_architecture:input',
-    ))
+    training.set_file('network_architecture:input', _relative_path(pkl_task, filename))
 
     # snapshots
     for snapshot_path, snapshot_epoch in pkl_task.snapshots:
         model = database.Model()
-        model.attributes.append(database.ModelAttribute(
-            key='epoch', value=snapshot_epoch))
-        model.files.append(database.ModelFile(
-            path=_relative_path(pkl_task, snapshot_path),
-            label='weights'))
-        model.files.append(database.ModelFile(
-            path=_relative_path(pkl_task, inference_architecture_file),
-            label='network_architecture'))
-        training.models.append(model)
+        model.training = training
+
+        model.set_attribute('epoch', snapshot_epoch)
+        model.set_file('weights', _relative_path(pkl_task, snapshot_path))
+        model.set_file('network_architecture', _relative_path(pkl_task, inference_architecture_file))
 
     return task
 
@@ -626,15 +522,11 @@ def process_torch_train_task(pkl_task, task, training):
     Handle stuff specific to torch
     """
     task.type= 'train-torch'
-    training.attributes.append(database.TrainingAttribute(
-        key='framework', value='torch'))
-    training.files.append(database.TrainingFile(
-        path=_relative_path(pkl_task, pkl_task.model_file),
-        label='network_architecture'))
+    training.set_attribute('framework', 'torch')
+    training.set_file('network_architecture', _relative_path(pkl_task, pkl_task.model_file))
     inference_architecture_file = pkl_task.model_file
     if hasattr(pkl_task, 'shuffle') and pkl_task.shuffle is not None:
-        training.attributes.append(database.TrainingAttribute(
-            key='shuffle_data', value=str(pkl_task.shuffle)))
+        training.set_attribute('shuffle_data', str(pkl_task.shuffle))
 
     has_torch_log_file = hasattr(pkl_task, 'torch_log_file') and pkl_task.torch_log_file
     has_log_file = hasattr(pkl_task, 'log_file') and pkl_task.log_file
@@ -642,25 +534,17 @@ def process_torch_train_task(pkl_task, task, training):
         assert (pkl_task.path(pkl_task.torch_log_file)
                 == pkl_task.path(pkl_task.log_file)), 'mismatched log files'
     if has_log_file:
-        task.files.append(database.TaskFile(
-            path=_relative_path(pkl_task, pkl_task.log_file),
-            label='log'))
+        task.set_file('log', _relative_path(pkl_task, pkl_task.log_file))
     elif has_torch_log_file:
-        task.files.append(database.TaskFile(
-            path=_relative_path(pkl_task, pkl_task.torch_log_file),
-            label='log'))
+        task.set_file('log', _relative_path(pkl_task, pkl_task.torch_log_file))
 
     # snapshots
     for snapshot_path, snapshot_epoch in pkl_task.snapshots:
         model = database.Model()
-        model.attributes.append(database.ModelAttribute(
-            key='epoch', value=snapshot_epoch))
-        model.files.append(database.ModelFile(
-            path=_relative_path(pkl_task, snapshot_path),
-            label='weights'))
-        model.files.append(database.ModelFile(
-            path=_relative_path(pkl_task, inference_architecture_file),
-            label='network_architecture'))
-        training.models.append(model)
+        model.training = training
+
+        model.set_attribute('epoch', snapshot_epoch)
+        model.set_file('weights', _relative_path(pkl_task, snapshot_path))
+        model.set_file('network_architecture', _relative_path(pkl_task, inference_architecture_file))
 
     return task

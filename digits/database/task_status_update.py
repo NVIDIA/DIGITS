@@ -3,10 +3,14 @@ from __future__ import absolute_import
 
 import datetime
 
-from .adapter import db, my_repr
+from .adapter import db
 from .task import Task
+from .utils import WithRepr
 
-class TaskStatusUpdate(db.Model):
+
+class TaskStatusUpdate(db.Model, WithRepr):
+    REPR_FIELDS = ['status', 'timestamp']
+
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer,
                         db.ForeignKey('%s.id' % Task.__tablename__),
@@ -17,6 +21,3 @@ class TaskStatusUpdate(db.Model):
     timestamp = db.Column(db.DateTime,
                           default=datetime.datetime.utcnow,
                           )
-
-    def __repr__(self):
-        return my_repr(self, ['status', 'timestamp'])

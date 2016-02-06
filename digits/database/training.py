@@ -1,17 +1,17 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from .adapter import db, my_repr
+from .adapter import db
 from .task import Task
 from .dataset import Dataset
+from .utils import WithRepr, WithAttributes, WithFiles
 
-class Training(db.Model):
+
+class Training(db.Model, WithRepr, WithAttributes, WithFiles):
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer, db.ForeignKey('%s.id' % Task.__tablename__))
     task = db.relationship(Task.__name__, backref='trainings')
 
-    def __repr__(self):
-        return my_repr(self)
 
 # Many-to-Many relationship
 training_to_dataset = db.Table(

@@ -3,10 +3,14 @@ from __future__ import absolute_import
 
 import datetime
 
-from .adapter import db, my_repr
+from .adapter import db
 from .job import Job
+from .utils import WithRepr
 
-class JobStatusUpdate(db.Model):
+
+class JobStatusUpdate(db.Model, WithRepr):
+    REPR_FIELDS = ['status', 'timestamp']
+
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer,
                        db.ForeignKey('%s.id' % Job.__tablename__),
@@ -20,6 +24,3 @@ class JobStatusUpdate(db.Model):
     timestamp = db.Column(db.DateTime,
                           default=datetime.datetime.utcnow,
                           )
-
-    def __repr__(self):
-        return my_repr(self, ['status', 'timestamp'])

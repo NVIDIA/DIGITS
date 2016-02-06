@@ -1,10 +1,14 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from .adapter import db, my_repr
+from .adapter import db
 from .job import Job
+from .utils import WithRepr, WithAttributes, WithFiles
 
-class Task(db.Model):
+
+class Task(db.Model, WithRepr, WithAttributes, WithFiles):
+    REPR_FIELDS = ['type']
+
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer,
                        db.ForeignKey('%s.id' % Job.__tablename__),
@@ -13,9 +17,6 @@ class Task(db.Model):
     job = db.relationship(Job.__name__, backref='tasks')
     type = db.Column(db.String(50))
     progress = db.Column(db.Float, nullable=False, default=0, server_default='0')
-
-    def __repr__(self):
-        return my_repr(self, ['type'])
 
 
 # Self-referencing Many-to-Many relationship
