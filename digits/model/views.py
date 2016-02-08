@@ -124,8 +124,7 @@ def customize():
         raise werkzeug.exceptions.NotFound('Job not found')
 
     snapshot = None
-    epoch = int(flask.request.form.get('snapshot_epoch', 0))
-    print 'epoch:',epoch
+    epoch = float(flask.request.form.get('snapshot_epoch', 0))
     if epoch == 0:
         pass
     elif epoch == -1:
