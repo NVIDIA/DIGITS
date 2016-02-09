@@ -3,10 +3,10 @@ from __future__ import absolute_import
 
 from .adapter import db
 from .user import User
-from .utils import WithRepr, WithAttributes, WithFiles
+from .utils import WithRepr, WithAttributes, WithFiles, WithStatus
 
 
-class Job(db.Model, WithRepr, WithAttributes, WithFiles):
+class Job(db.Model, WithRepr, WithAttributes, WithFiles, WithStatus):
     REPR_FIELDS = ['name', 'type', 'directory']
 
     id = db.Column(db.Integer, primary_key=True)

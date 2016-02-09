@@ -3,10 +3,10 @@ from __future__ import absolute_import
 
 from .adapter import db
 from .job import Job
-from .utils import WithRepr, WithAttributes, WithFiles
+from .utils import WithRepr, WithAttributes, WithFiles, WithStatus
 
 
-class Task(db.Model, WithRepr, WithAttributes, WithFiles):
+class Task(db.Model, WithRepr, WithAttributes, WithFiles, WithStatus):
     REPR_FIELDS = ['type']
 
     id = db.Column(db.Integer, primary_key=True)
