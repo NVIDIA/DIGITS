@@ -18,7 +18,7 @@ class ServerCommand(Command):
     """
     help = description = 'Runs the Flask-SocketIO development server'
 
-    def __init__(self, host='127.0.0.1', port=5000, use_debugger=True,
+    def __init__(self, host='0.0.0.0', port=5000, use_debugger=True,
                  use_reloader=False, threaded=False, processes=1,
                  passthrough_errors=False, **options):
 
