@@ -27,7 +27,7 @@ class WithRepr(object):
                 s += 'NULL'
             else:
                 s += "'" + str(attr) + "'"
-                fields.append(s)
+            fields.append(s)
         return '<%s(%s)>' % (type(self).__name__, ', '.join(fields))
 
 
