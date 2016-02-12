@@ -33,6 +33,15 @@ CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
 
 @subclass
+class Error(Exception):
+    pass
+
+@subclass
+class CaffeTrainSanityCheckError(Error):
+    """A sanity check failed"""
+    pass
+
+@subclass
 class CaffeTrainTask(TrainTask):
     """
     Trains a caffe model
@@ -400,6 +409,9 @@ class CaffeTrainTask(TrainTask):
         train_val_network.layer.extend(loss_layers)
         train_val_network.layer.extend(accuracy_layers)
 
+        # network sanity checks
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
+
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
 
@@ -429,6 +441,9 @@ class CaffeTrainTask(TrainTask):
                     name = 'prob')
             prob_layer.bottom.append(network_outputs[-1])
             prob_layer.top.append('prob')
+
+        # network sanity checks
+        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
 
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
@@ -529,7 +544,6 @@ class CaffeTrainTask(TrainTask):
 
         return True
 
-
     def save_files_generic(self):
         """
         Save solver, train_val and deploy files to disk
@@ -616,6 +630,9 @@ class CaffeTrainTask(TrainTask):
         # hidden layers
         train_val_network.MergeFrom(train_val_layers)
 
+        # network sanity checks
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
+
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
 
@@ -639,6 +656,9 @@ class CaffeTrainTask(TrainTask):
 
         # hidden layers
         deploy_network.MergeFrom(deploy_layers)
+
+        # network sanity checks
+        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
 
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
@@ -1490,3 +1510,40 @@ class CaffeTrainTask(TrainTask):
         return text description of model
         """
         return text_format.MessageToString(self.network)
+
+    @staticmethod
+    def net_sanity_check(net, phase):
+        """
+        Perform various sanity checks on the network, including:
+        - check that all layer bottoms are included at the specified stage
+        """
+        assert phase == caffe_pb2.TRAIN or phase == caffe_pb2.TEST, "Unknown phase: %s" % repr(phase)
+        # work out which layers and tops are included at the specified phase
+        layers = []
+        tops = []
+        for layer in net.layer:
+            if len(layer.include)>0:
+                mask = 0 # include none by default
+                for rule in layer.include:
+                    mask = mask | (1<<rule.phase)
+            elif len(layer.exclude)>0:
+                # include and exclude rules are mutually exclusive as per Caffe spec
+                mask = (1<<caffe_pb2.TRAIN) | (1<<caffe_pb2.TEST) # include all by default
+                for rule in layer.exclude:
+                    mask = mask & ~(1<<rule.phase)
+            else:
+                mask = (1<<caffe_pb2.TRAIN) | (1<<caffe_pb2.TEST)
+            if mask & (1<<phase):
+                # layer will be included at this stage
+                layers.append(layer)
+                tops.extend(layer.top)
+        # add inputs
+        tops.extend(net.input)
+        # now make sure all bottoms are present at this stage
+        for layer in layers:
+            for bottom in layer.bottom:
+                if bottom not in tops:
+                    raise CaffeTrainSanityCheckError("Layer '%s' references bottom '%s' at the %s stage however " \
+                                                     "this blob is not included at that stage. Please consider " \
+                                                     "using an include directive to limit the scope of this layer." % (
+                                                       layer.name, bottom, "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"))
