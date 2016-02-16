@@ -141,12 +141,14 @@ def forward_pass(images, net, transformer, batch_size=None):
         for index, image in enumerate(chunk):
             image_data = transformer.preprocess('data', image)
             net.blobs['data'].data[index] = image_data
+        start = time.time()
         output = net.forward()[net.outputs[-1]]
+        end = time.time()
         if scores is None:
             scores = np.copy(output)
         else:
             scores = np.vstack((scores, output))
-        print 'Processed %s/%s images ...' % (len(scores), len(caffe_images))
+        print 'Processed %s/%s images in %f seconds ...' % (len(scores), len(caffe_images), (end - start))
 
     return scores
 
@@ -199,9 +201,7 @@ def classify(caffemodel, deploy_file, image_files,
     labels = read_labels(labels_file)
 
     # Classify the image
-    classify_start_time = time.time()
     scores = forward_pass(images, net, transformer, batch_size=batch_size)
-    print 'Classification took %s seconds.' % (time.time() - classify_start_time,)
 
     ### Process the results
 
@@ -255,5 +255,5 @@ if __name__ == '__main__':
     classify(args['caffemodel'], args['deploy_file'], args['image_file'],
             args['mean'], args['labels'], not args['nogpu'])
 
-    print 'Script took %s seconds.' % (time.time() - script_start_time,)
+    print 'Script took %f seconds.' % (time.time() - script_start_time,)
 

@@ -101,5 +101,5 @@ if __name__ == '__main__':
                           use_gpu=(not args['nogpu']),
                           )
 
-    print 'Script took %s seconds.' % (time.time() - script_start_time,)
+    print 'Script took %f seconds.' % (time.time() - script_start_time,)
 
