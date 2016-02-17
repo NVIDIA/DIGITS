@@ -1288,8 +1288,6 @@ class CaffeTrainTask(TrainTask):
             else:
                 caffe_images.append(image)
 
-        caffe_images = np.array(caffe_images)
-
         data_shape = tuple(self.get_transformer().inputs['data'])[1:]
 
         if self.batch_size:
