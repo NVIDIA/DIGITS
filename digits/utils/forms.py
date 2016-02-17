@@ -5,6 +5,7 @@ from werkzeug.datastructures import FileStorage
 import wtforms
 from wtforms import SubmitField
 from wtforms import validators
+from wtforms.compat import string_types
 
 from digits.utils.routing import get_request_arg
 
@@ -225,6 +226,160 @@ class BooleanField(wtforms.BooleanField):
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
 
+class MultiIntegerField(wtforms.Field):
+    """
+    A text field, except all input is coerced to one of more integers.
+    Erroneous input is ignored and will not be accepted as a value.
+    """
+    widget = wtforms.widgets.TextInput()
+
+    def is_int(self, v):
+        try:
+            v = int(v)
+            return True
+        except:
+            return False
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+        super(MultiIntegerField, self).__init__(label, validators, **kwargs)
+        self.tooltip = Tooltip(self.id, self.short_name, tooltip + ' (accepts comma separated list)')
+        self.explanation = Explanation(self.id, self.short_name, explanation_file)
+        self.small_text = 'multiples allowed'
+
+    def __setattr__(self, name, value):
+        if name == 'data':
+            if not isinstance(value, (list, tuple)):
+                value = [value]
+            value = [int(x) for x in value if self.is_int(x)]
+            if len(value) == 0:
+                value = [None]
+        self.__dict__[name] = value
+
+    def _value(self):
+        if self.raw_data:
+            return self.raw_data[0]
+        return ','.join([str(x) for x in self.data if self.is_int(x)])
+
+    def process_formdata(self, valuelist):
+        if valuelist:
+            try:
+                self.data = [int(float(datum)) for datum in valuelist[0].split(',')]
+            except ValueError:
+                self.data = [None]
+                raise ValueError(self.gettext('Not a valid integer value'))
+
+class MultiFloatField(wtforms.Field):
+    """
+    A text field, except all input is coerced to one of more floats.
+    Erroneous input is ignored and will not be accepted as a value.
+    """
+    widget = wtforms.widgets.TextInput()
+
+    def is_float(self, v):
+        try:
+            v = float(v)
+            return True
+        except:
+            return False
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+        super(MultiFloatField, self).__init__(label, validators, **kwargs)
+        self.tooltip = Tooltip(self.id, self.short_name, tooltip + ' (accepts comma separated list)')
+        self.explanation = Explanation(self.id, self.short_name, explanation_file)
+        self.small_text = 'multiples allowed'
+
+    def __setattr__(self, name, value):
+        if name == 'data':
+            if not isinstance(value, (list, tuple)):
+                value = [value]
+            value = [float(x) for x in value if self.is_float(x)]
+            if len(value) == 0:
+                value = [None]
+        self.__dict__[name] = value
+
+    def _value(self):
+        if self.raw_data:
+            return self.raw_data[0]
+        return ','.join([str(x) for x in self.data if self.is_float(x)])
+
+    def process_formdata(self, valuelist):
+        if valuelist:
+            try:
+                self.data = [float(datum) for datum in valuelist[0].split(',')]
+            except ValueError:
+                self.data = [None]
+                raise ValueError(self.gettext('Not a valid float value'))
+
+    def data_array(self):
+        if isinstance(self.data, (list, tuple)):
+            return self.data
+        else:
+            return [self.data]
+
+class MultiNumberRange(object):
+    """
+    Validates that a number is of a minimum and/or maximum value, inclusive.
+    This will work with any comparable number type, such as floats and
+    decimals, not just integers.
+
+    :param min:
+        The minimum required value of the number. If not provided, minimum
+        value will not be checked.
+    :param max:
+        The maximum value of the number. If not provided, maximum value
+        will not be checked.
+    :param message:
+        Error message to raise in case of a validation error. Can be
+        interpolated using `%(min)s` and `%(max)s` if desired. Useful defaults
+        are provided depending on the existence of min and max.
+    """
+    def __init__(self, min=None, max=None, message=None):
+        self.min = min
+        self.max = max
+        self.message = message
+
+    def __call__(self, form, field):
+        fdata = field.data if isinstance(field.data, (list, tuple)) else [field.data]
+        for data in fdata:
+            if data is None or (self.min is not None and data < self.min) or \
+                    (self.max is not None and data > self.max):
+                message = self.message
+                if message is None:
+                    # we use %(min)s interpolation to support floats, None, and
+                    # Decimals without throwing a formatting exception.
+                    if self.max is None:
+                        message = field.gettext('Number %(data)s must be at least %(min)s.')
+                    elif self.min is None:
+                        message = field.gettext('Number %(data)s must be at most %(max)s.')
+                    else:
+                        message = field.gettext('Number %(data)s must be between %(min)s and %(max)s.')
+
+                raise validators.ValidationError(message % dict(data=data, min=self.min, max=self.max))
+
+class MultiOptional(object):
+    """
+    Allows empty input and stops the validation chain from continuing.
+
+    If input is empty, also removes prior errors (such as processing errors)
+    from the field.
+
+    :param strip_whitespace:
+        If True (the default) also stop the validation chain on input which
+        consists of only whitespace.
+    """
+    field_flags = ('optional', )
+
+    def __init__(self, strip_whitespace=True):
+        if strip_whitespace:
+            self.string_check = lambda s: s.strip()
+        else:
+            self.string_check = lambda s: s
+
+    def __call__(self, form, field):
+        if not field.raw_data or isinstance(field.raw_data[0], string_types) and not self.string_check(field.raw_data[0]):
+            field.errors[:] = []
+            raise validators.StopValidation()
+
 ## Used to save data to populate forms when cloning
 def add_warning(form, warning):
     if not hasattr(form, 'warnings'):
@@ -245,7 +400,8 @@ def iterate_over_form(job, form, function, prefix = ['form'], indent = ''):
     whitelist_fields = [
         'BooleanField', 'FloatField', 'HiddenField', 'IntegerField',
         'RadioField', 'SelectField', 'SelectMultipleField',
-        'StringField', 'TextAreaField', 'TextField']
+        'StringField', 'TextAreaField', 'TextField',
+        'MultiIntegerField', 'MultiFloatField']
 
     blacklist_fields = ['FileField', 'SubmitField']
 
@@ -278,7 +434,6 @@ def set_data(job, form, key, value):
 
     if isinstance(value, basestring):
         value = '\'' + value + '\''
-    # print '\'' + key + '\': ' + str(value) +','
     return False
 
 ## function to pass to iterate_over_form to get data from job

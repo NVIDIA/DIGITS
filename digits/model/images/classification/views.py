@@ -118,150 +118,177 @@ def create():
         raise werkzeug.exceptions.BadRequest(
                 'Unknown dataset job_id "%s"' % form.dataset.data)
 
-    job = None
-    try:
-        job = ImageClassificationModelJob(
-                username    = utils.auth.get_username(),
-                name        = form.model_name.data,
-                dataset_id  = datasetJob.id(),
-                )
-        # get handle to framework object
-        fw = frameworks.get_framework_by_id(form.framework.data)
+    # sweeps will be a list of the the permutations of swept fields
+    # Get swept learning_rate
+    sweeps = [{'learning_rate': v} for v in form.learning_rate.data]
+    add_learning_rate = len(form.learning_rate.data) > 1
 
-        pretrained_model = None
-        if form.method.data == 'standard':
-            found = False
+    # Add swept batch_size
+    sweeps = [dict(s.items() + [('batch_size', bs)]) for bs in form.batch_size.data for s in sweeps[:]]
+    add_batch_size = len(form.batch_size.data) > 1
+    n_jobs = len(sweeps)
 
-            # can we find it in standard networks?
-            network_desc = fw.get_standard_network_desc(form.standard_networks.data)
-            if network_desc:
-                found = True
-                network = fw.get_network_from_desc(network_desc)
+    for sweep in sweeps:
+        # Populate the form with swept data to be used in saving and
+        # launching jobs.
+        form.learning_rate.data = sweep['learning_rate']
+        form.batch_size.data = sweep['batch_size']
 
-            if not found:
-                raise werkzeug.exceptions.BadRequest(
-                        'Unknown standard model "%s"' % form.standard_networks.data)
-        elif form.method.data == 'previous':
-            old_job = scheduler.get_job(form.previous_networks.data)
-            if not old_job:
-                raise werkzeug.exceptions.BadRequest(
-                        'Job not found: %s' % form.previous_networks.data)
+        # Augment Job Name
+        extra = ''
+        if add_learning_rate:
+            extra += ' learning_rate:%s' % str(form.learning_rate.data[0])
+        if add_batch_size:
+            extra += ' batch_size:%d' % form.batch_size.data[0]
 
-            use_same_dataset = (old_job.dataset_id == job.dataset_id)
-            network = fw.get_network_from_previous(old_job.train_task().network, use_same_dataset)
-
-            for choice in form.previous_networks.choices:
-                if choice[0] == form.previous_networks.data:
-                    epoch = float(flask.request.form['%s-snapshot' % form.previous_networks.data])
-                    if epoch == 0:
-                        pass
-                    elif epoch == -1:
-                        pretrained_model = old_job.train_task().pretrained_model
-                    else:
-                        for filename, e in old_job.train_task().snapshots:
-                            if e == epoch:
-                                pretrained_model = filename
-                                break
-
-                        if pretrained_model is None:
-                            raise werkzeug.exceptions.BadRequest(
-                                    "For the job %s, selected pretrained_model for epoch %d is invalid!"
-                                    % (form.previous_networks.data, epoch))
-                        if not (os.path.exists(pretrained_model)):
-                            raise werkzeug.exceptions.BadRequest(
-                                    "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
-                    break
-
-        elif form.method.data == 'custom':
-            network = fw.get_network_from_desc(form.custom_network.data)
-            pretrained_model = form.custom_network_snapshot.data.strip()
-        else:
-            raise werkzeug.exceptions.BadRequest(
-                    'Unrecognized method: "%s"' % form.method.data)
-
-        policy = {'policy': form.lr_policy.data}
-        if form.lr_policy.data == 'fixed':
-            pass
-        elif form.lr_policy.data == 'step':
-            policy['stepsize'] = form.lr_step_size.data
-            policy['gamma'] = form.lr_step_gamma.data
-        elif form.lr_policy.data == 'multistep':
-            policy['stepvalue'] = form.lr_multistep_values.data
-            policy['gamma'] = form.lr_multistep_gamma.data
-        elif form.lr_policy.data == 'exp':
-            policy['gamma'] = form.lr_exp_gamma.data
-        elif form.lr_policy.data == 'inv':
-            policy['gamma'] = form.lr_inv_gamma.data
-            policy['power'] = form.lr_inv_power.data
-        elif form.lr_policy.data == 'poly':
-            policy['power'] = form.lr_poly_power.data
-        elif form.lr_policy.data == 'sigmoid':
-            policy['stepsize'] = form.lr_sigmoid_step.data
-            policy['gamma'] = form.lr_sigmoid_gamma.data
-        else:
-            raise werkzeug.exceptions.BadRequest(
-                    'Invalid learning rate policy')
-
-        if config_value('caffe_root')['multi_gpu']:
-            if form.select_gpus.data:
-                selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
-                gpu_count = None
-            elif form.select_gpu_count.data:
-                gpu_count = form.select_gpu_count.data
-                selected_gpus = None
-            else:
-                gpu_count = 1
-                selected_gpus = None
-        else:
-            if form.select_gpu.data == 'next':
-                gpu_count = 1
-                selected_gpus = None
-            else:
-                selected_gpus = [str(form.select_gpu.data)]
-                gpu_count = None
-
-        # Python Layer File may be on the server or copied from the client.
-        fs.copy_python_layer_file(
-            bool(form.python_layer_from_client.data),
-            job.dir(),
-            (flask.request.files[form.python_layer_client_file.name]
-             if form.python_layer_client_file.name in flask.request.files
-             else ''), form.python_layer_server_file.data)
-
-        job.tasks.append(fw.create_train_task(
-                    job_dir         = job.dir(),
-                    dataset         = datasetJob,
-                    train_epochs    = form.train_epochs.data,
-                    snapshot_interval   = form.snapshot_interval.data,
-                    learning_rate   = form.learning_rate.data,
-                    lr_policy       = policy,
-                    gpu_count       = gpu_count,
-                    selected_gpus   = selected_gpus,
-                    batch_size      = form.batch_size.data,
-                    val_interval    = form.val_interval.data,
-                    pretrained_model= pretrained_model,
-                    crop_size       = form.crop_size.data,
-                    use_mean        = form.use_mean.data,
-                    network         = network,
-                    random_seed     = form.random_seed.data,
-                    solver_type     = form.solver_type.data,
-                    shuffle         = form.shuffle.data,
+        job = None
+        try:
+            job = ImageClassificationModelJob(
+                    username    = utils.auth.get_username(),
+                    name        = form.model_name.data + extra,
+                    dataset_id  = datasetJob.id(),
                     )
-                )
+            # get handle to framework object
+            fw = frameworks.get_framework_by_id(form.framework.data)
 
-        ## Save form data with the job so we can easily clone it later.
-        save_form_to_job(job, form)
+            pretrained_model = None
+            if form.method.data == 'standard':
+                found = False
 
-        scheduler.add_job(job)
-        if request_wants_json():
-            return flask.jsonify(job.json_dict())
-        else:
-            return flask.redirect(flask.url_for('digits.model.views.show', job_id=job.id()))
+                # can we find it in standard networks?
+                network_desc = fw.get_standard_network_desc(form.standard_networks.data)
+                if network_desc:
+                    found = True
+                    network = fw.get_network_from_desc(network_desc)
 
-    except:
-        if job:
-            scheduler.delete_job(job)
-        raise
+                if not found:
+                    raise werkzeug.exceptions.BadRequest(
+                            'Unknown standard model "%s"' % form.standard_networks.data)
+            elif form.method.data == 'previous':
+                old_job = scheduler.get_job(form.previous_networks.data)
+                if not old_job:
+                    raise werkzeug.exceptions.BadRequest(
+                            'Job not found: %s' % form.previous_networks.data)
+
+                use_same_dataset = (old_job.dataset_id == job.dataset_id)
+                network = fw.get_network_from_previous(old_job.train_task().network, use_same_dataset)
+
+                for choice in form.previous_networks.choices:
+                    if choice[0] == form.previous_networks.data:
+                        epoch = float(flask.request.form['%s-snapshot' % form.previous_networks.data])
+                        if epoch == 0:
+                            pass
+                        elif epoch == -1:
+                            pretrained_model = old_job.train_task().pretrained_model
+                        else:
+                            for filename, e in old_job.train_task().snapshots:
+                                if e == epoch:
+                                    pretrained_model = filename
+                                    break
+
+                            if pretrained_model is None:
+                                raise werkzeug.exceptions.BadRequest(
+                                        "For the job %s, selected pretrained_model for epoch %d is invalid!"
+                                        % (form.previous_networks.data, epoch))
+                            if not (os.path.exists(pretrained_model)):
+                                raise werkzeug.exceptions.BadRequest(
+                                        "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
+                        break
+
+            elif form.method.data == 'custom':
+                network = fw.get_network_from_desc(form.custom_network.data)
+                pretrained_model = form.custom_network_snapshot.data.strip()
+            else:
+                raise werkzeug.exceptions.BadRequest(
+                        'Unrecognized method: "%s"' % form.method.data)
+
+            policy = {'policy': form.lr_policy.data}
+            if form.lr_policy.data == 'fixed':
+                pass
+            elif form.lr_policy.data == 'step':
+                policy['stepsize'] = form.lr_step_size.data
+                policy['gamma'] = form.lr_step_gamma.data
+            elif form.lr_policy.data == 'multistep':
+                policy['stepvalue'] = form.lr_multistep_values.data
+                policy['gamma'] = form.lr_multistep_gamma.data
+            elif form.lr_policy.data == 'exp':
+                policy['gamma'] = form.lr_exp_gamma.data
+            elif form.lr_policy.data == 'inv':
+                policy['gamma'] = form.lr_inv_gamma.data
+                policy['power'] = form.lr_inv_power.data
+            elif form.lr_policy.data == 'poly':
+                policy['power'] = form.lr_poly_power.data
+            elif form.lr_policy.data == 'sigmoid':
+                policy['stepsize'] = form.lr_sigmoid_step.data
+                policy['gamma'] = form.lr_sigmoid_gamma.data
+            else:
+                raise werkzeug.exceptions.BadRequest(
+                        'Invalid learning rate policy')
+
+            if config_value('caffe_root')['multi_gpu']:
+                if form.select_gpus.data:
+                    selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
+                    gpu_count = None
+                elif form.select_gpu_count.data:
+                    gpu_count = form.select_gpu_count.data
+                    selected_gpus = None
+                else:
+                    gpu_count = 1
+                    selected_gpus = None
+            else:
+                if form.select_gpu.data == 'next':
+                    gpu_count = 1
+                    selected_gpus = None
+                else:
+                    selected_gpus = [str(form.select_gpu.data)]
+                    gpu_count = None
+
+            # Python Layer File may be on the server or copied from the client.
+            fs.copy_python_layer_file(
+                bool(form.python_layer_from_client.data),
+                job.dir(),
+                (flask.request.files[form.python_layer_client_file.name]
+                 if form.python_layer_client_file.name in flask.request.files
+                 else ''), form.python_layer_server_file.data)
+
+            job.tasks.append(fw.create_train_task(
+                        job_dir         = job.dir(),
+                        dataset         = datasetJob,
+                        train_epochs    = form.train_epochs.data,
+                        snapshot_interval   = form.snapshot_interval.data,
+                        learning_rate   = form.learning_rate.data[0],
+                        lr_policy       = policy,
+                        gpu_count       = gpu_count,
+                        selected_gpus   = selected_gpus,
+                        batch_size      = form.batch_size.data[0],
+                        val_interval    = form.val_interval.data,
+                        pretrained_model= pretrained_model,
+                        crop_size       = form.crop_size.data,
+                        use_mean        = form.use_mean.data,
+                        network         = network,
+                        random_seed     = form.random_seed.data,
+                        solver_type     = form.solver_type.data,
+                        shuffle         = form.shuffle.data,
+                        )
+                    )
+
+            ## Save form data with the job so we can easily clone it later.
+            save_form_to_job(job, form)
+
+            scheduler.add_job(job)
+            if n_jobs == 1:
+                if request_wants_json():
+                    return flask.jsonify(job.json_dict())
+                else:
+                    return flask.redirect(flask.url_for('digits.model.views.show', job_id=job.id()))
+
+        except:
+            if job:
+                scheduler.delete_job(job)
+            raise
+
+    # If there are multiple jobs launched, go to the home page.
+    return flask.redirect('/')
 
 def show(job):
     """
