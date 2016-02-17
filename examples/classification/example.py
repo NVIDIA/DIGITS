@@ -129,8 +129,6 @@ def forward_pass(images, net, transformer, batch_size=None):
         else:
             caffe_images.append(image)
 
-    caffe_images = np.array(caffe_images)
-
     dims = transformer.inputs['data'][1:]
 
     scores = None
