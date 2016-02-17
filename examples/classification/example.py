@@ -253,7 +253,7 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     classify(args['caffemodel'], args['deploy_file'], args['image_file'],
-            args['mean'], args['labels'], not args['nogpu'])
+            args['mean'], args['labels'], args['batch_size'], not args['nogpu'])
 
     print 'Script took %f seconds.' % (time.time() - script_start_time,)
 
