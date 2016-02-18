@@ -123,8 +123,8 @@ class Job(StatusCls):
             path = filename
         else:
             path = os.path.join(self._dir, filename)
-        if relative:
-            path = os.path.relpath(path, config_value('jobs_dir'))
+            if relative:
+                path = os.path.relpath(path, config_value('jobs_dir'))
         return str(path).replace("\\","/")
 
     def path_is_local(self, path):

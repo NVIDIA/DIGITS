@@ -133,8 +133,8 @@ class Task(StatusCls):
             path = filename
         else:
             path = os.path.join(self.job_dir, filename)
-        if relative:
-            path = os.path.relpath(path, config_value('jobs_dir'))
+            if relative:
+                path = os.path.relpath(path, config_value('jobs_dir'))
         return str(path).replace("\\","/")
 
     def ready_to_queue(self):

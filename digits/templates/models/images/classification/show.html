@@ -1,6 +1,7 @@
 {# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% extends "job.html" %}
+{% from "helper.html" import serve_file %}
 
 {% block job_content %}
 
@@ -18,11 +19,11 @@
                 <dd>{{job.disk_size_fmt()}}</dd>
                 {% for key,value in task.get_model_files().items() %}
                 <dt>{{key}}</dt>
-                <dd><a href="{{url_for('digits.views.serve_file', path=task.path(value, relative=True))}}">{{value}}</a></dd>
+                <dd>{{serve_file(task, value)}}</dd>
                 {% endfor %}
                 {% if task.log_file %}
                 <dt>Raw {{task.get_framework_id()}} output</dt>
-                <dd><a href="{{url_for('digits.views.serve_file', path=task.path(task.log_file, relative=True))}}">{{task.log_file}}</a></dd>
+                <dd>{{serve_file(task, task.log_file)}}</dd>
                 {% endif %}
                 {% if task.pretrained_model %}
                 <dt>Pretrained Model</dt>
