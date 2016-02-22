@@ -1,6 +1,7 @@
 {# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% extends "job.html" %}
+{% from "helper.html" import serve_file %}
 
 {% macro print_analyze_db_task(task) %}
 <div class="panel-heading">
@@ -30,7 +31,7 @@
         </dd>
         {% if task.analyze_db_log_file %}
         <dt>DB analysis log file</dt>
-        <dd><a href="{{url_for('digits.views.serve_file', path=task.path(task.analyze_db_log_file, relative=True))}}">{{task.analyze_db_log_file}}</a></dd>
+        <dd>{{serve_file(task, task.analyze_db_log_file)}}</dd>
         {% endif %}
     </dl>
 </div>
