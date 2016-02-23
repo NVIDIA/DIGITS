@@ -34,7 +34,7 @@ Several PyPI packages need to be installed.
 
 To speed up installation, you could install most of these via apt-get packages first.
 ```sh
-% sudo apt-get install python-pil python-numpy python-scipy python-protobuf python-gevent python-Flask python-flaskext.wtf gunicorn python-h5py
+% sudo apt-get install python-pil python-numpy python-scipy python-protobuf python-gevent python-flask python-flaskext.wtf gunicorn python-h5py
 ```
 
 ## Caffe
