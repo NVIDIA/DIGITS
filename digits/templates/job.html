@@ -242,7 +242,9 @@ $('#delete-job').on('click', function(event) {
             <div class="panel-body">
                 <div id="show-job-notes" class="col-sm-12">
                     <p style="display:inline;">{{ job.notes() }}</p>
+                    {% if job | has_permission('edit') %}
                     <a href=# onClick="$('#show-job-notes').hide(); $('#edit-job-notes').show(); return false;"><span class="glyphicon glyphicon-edit"></span></a>
+                    {% endif %}
                 </div>
 
                 <div id="edit-job-notes" class="col-sm-12" style="display:none;">
