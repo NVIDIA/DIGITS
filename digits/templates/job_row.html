@@ -51,10 +51,12 @@
     </td>
     <td>
         <div class="pull-right">
-            <a id="abort" class="btn btn-xs btn-warning" {{ ' style=display:none;' if not job.status.is_running() }} onClick="return abortJob('{{job.id()}}', '{{ abort_url }}');">Abort
-            </a>
-            <a id="delete" class="btn btn-xs btn-danger" {{ ' style=display:none;' if job.status.is_running() }} onClick="return deleteJob('{{job.id()}}');">Delete
-            </a>
+            {% if job | has_permission('abort') %}
+            <a id="abort" class="btn btn-xs btn-warning" {{ ' style=display:none;' if not job.status.is_running() }} onClick="return abortJob('{{job.id()}}', '{{ abort_url }}');">Abort</a>
+            {% endif %}
+            {% if job | has_permission('delete') %}
+            <a id="delete" class="btn btn-xs btn-danger" {{ ' style=display:none;' if job.status.is_running() }} onClick="return deleteJob('{{job.id()}}');">Delete</a>
+            {% endif %}
         </div>
     </td>
 </tr>
