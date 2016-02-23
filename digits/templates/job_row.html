@@ -22,10 +22,7 @@
             {{job.id()}}
         </span>
     </td>
-    <td>{{job.status_history[0][1]|print_time}}
-        <small id ="ago" start="{{job.status_history[0][1]}}">
-        </small>
-    </td>
+    <td>{{job.status_history[0][1]|print_time}}</td>
     <td>
         <span id="status" class="text-{{job.status.css}}">{{job.status.name}}
         </span>

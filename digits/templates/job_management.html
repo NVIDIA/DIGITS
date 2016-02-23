@@ -8,8 +8,6 @@
 <script src="{{ url_for('static', filename='js/buttons.colVis.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dataTables.fixedHeader.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery.sparkline.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/jquery.timer.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/jquery.time_filters.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dataTables.bootstrap.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.bootstrap.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/fixedHeader.bootstrap.min.css') }}">
@@ -35,18 +33,6 @@
      }
  }
 
- // update ago every 5 seconds
- var update_ago_timer = $.timer(update_ago, 1000);
- function update_ago() {
-     return;
-     $("small#ago" ).each(function(){
-         var start = $(this).attr('start')
-         var now = $.now() / 1000;
-         var time = print_time_diff(now - start);
-         $(this).html( "(" + time + " ago)" );
-     });
- }
-
  $(document).ready(function() {
      // Make the jobs DataTable
      // make 'table' a global variable
@@ -64,7 +50,6 @@
             ]
         });
      update_visability();
-     update_ago_timer.play();
  });
 
  function abortJob(job_id, url) {
