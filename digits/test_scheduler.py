@@ -7,6 +7,7 @@ from nose.tools import assert_raises
 from . import scheduler
 from .config import config_value
 from .job import Job
+from .webapp import app
 from digits.utils import subclass, override
 
 class TestScheduler():
@@ -48,9 +49,10 @@ class TestSchedulerFlow():
         assert cls.s.stop(), 'failed to stop'
 
     def test_add_remove_job(self):
-        job = JobForTesting(name='testsuite-job', username='digits-testsuite')
-        assert self.s.add_job(job), 'failed to add job'
-        assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
-        assert self.s.delete_job(job), 'failed to delete job'
-        assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
+        with app.test_request_context():
+            job = JobForTesting(name='testsuite-job', username='digits-testsuite')
+            assert self.s.add_job(job), 'failed to add job'
+            assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
+            assert self.s.delete_job(job), 'failed to delete job'
+            assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
 
