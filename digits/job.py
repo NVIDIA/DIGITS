@@ -5,6 +5,7 @@ import os
 import os.path
 import pickle
 import shutil
+import threading
 import time
 
 import flask
@@ -60,6 +61,7 @@ class Job(StatusCls):
         self.tasks = []
         self.exception = None
         self._notes = None
+        self.event = threading.Event()
 
         os.mkdir(self._dir)
 
@@ -72,6 +74,8 @@ class Job(StatusCls):
         # Isn't linked to state
         if '_dir' in d:
             del d['_dir']
+        if 'event' in d:
+            del d['event']
 
         return d
 
@@ -181,6 +185,10 @@ class Job(StatusCls):
                 room='job_management',
                 )
 
+        if not self.status.is_running():
+            # release threads that are waiting for job to complete
+            self.event.set()
+
     def abort(self):
         """
         Abort a job and stop all running tasks
@@ -246,3 +254,15 @@ class Job(StatusCls):
                       namespace='/jobs',
                       room='job_management'
                   )
+
+    def wait_completion(self):
+        """
+        Wait for the job to complete
+        """
+        self.event.wait()
+
+    def is_read_only(self):
+        """
+        Returns False if this job can be edited
+        """
+        return False

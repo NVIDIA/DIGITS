@@ -523,8 +523,10 @@ class TrainTask(Task):
             return None
 
     # return id of framework used for training
-    @override
     def get_framework_id(self):
+        """
+        Returns a string
+        """
         return self.framework_id
 
     def get_model_files(self):

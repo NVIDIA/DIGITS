@@ -76,12 +76,6 @@ class Task(StatusCls):
         """
         raise NotImplementedError
 
-    def get_framework_id(self):
-        """
-        Returns a string
-        """
-        raise NotImplementedError('Please implement me')
-
     def html_id(self):
         """
         Returns a string

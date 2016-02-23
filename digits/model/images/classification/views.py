@@ -17,6 +17,7 @@ from digits import frameworks
 from digits import utils
 from digits.config import config_value
 from digits.dataset import ImageClassificationDatasetJob
+from digits.inference import ImageInferenceJob
 from digits.status import Status
 from digits.utils import filesystem as fs
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
@@ -255,28 +256,17 @@ def classify_one():
 
     Returns JSON when requested: {predictions: {category: confidence,...}}
     """
-    job = job_from_request()
+    model_job = job_from_request()
 
-    image = None
     if 'image_url' in flask.request.form and flask.request.form['image_url']:
-        image = utils.image.load_image(flask.request.form['image_url'])
+        image_path = flask.request.form['image_url']
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
-        outfile = tempfile.mkstemp(suffix='.bin')
+        outfile = tempfile.mkstemp(suffix='.png')
         flask.request.files['image_file'].save(outfile[1])
-        image = utils.image.load_image(outfile[1])
+        image_path = outfile[1]
         os.close(outfile[0])
-        os.remove(outfile[1])
     else:
         raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
-
-    # resize image
-    db_task = job.train_task().dataset.train_db_task()
-    height = db_task.image_dims[0]
-    width = db_task.image_dims[1]
-    image = utils.image.resize_image(image, height, width,
-            channels = db_task.image_dims[2],
-            resize_mode = db_task.resize_mode,
-            )
 
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
@@ -286,19 +276,57 @@ def classify_one():
     if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
         layers = 'all'
 
-    predictions, visualizations = None, None
-    predictions, visualizations = job.train_task().infer_one(image, snapshot_epoch=epoch, layers=layers)
+    # create inference job
+    inference_job = ImageInferenceJob(
+                username    = utils.auth.get_username(),
+                name        = "Classify One Image",
+                model       = model_job,
+                images      = [image_path],
+                epoch       = epoch,
+                layers      = layers
+                )
 
-    # take top 5
-    if predictions:
-        predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
+    # schedule tasks
+    scheduler.add_job(inference_job)
+
+    # wait for job to complete
+    inference_job.wait_completion()
+
+    # retrieve inference data
+    inputs, outputs, visualizations = inference_job.get_data()
+
+    # delete job
+    scheduler.delete_job(inference_job)
+
+    # remove file (fails silently if a URL was provided)
+    try:
+        os.remove(image_path)
+    except:
+        pass
+
+    image = None
+    predictions = []
+    if inputs is not None and len(inputs) == 1:
+        image = utils.image.embed_image_html(inputs[0])
+        # convert to class probabilities for viewing
+        last_output_name, last_output_data = outputs.items()[-1]
+
+        if len(last_output_data) == 1:
+            scores = last_output_data[0].flatten()
+            indices = (-scores).argsort()
+            labels = model_job.train_task().get_labels()
+            predictions = []
+            for i in indices:
+                predictions.append( (labels[i], scores[i]) )
+            predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
     if request_wants_json():
         return flask.jsonify({'predictions': predictions})
     else:
         return flask.render_template('models/images/classification/classify_one.html',
-                job             = job,
-                image_src       = utils.image.embed_image_html(image),
+                model_job       = model_job,
+                job             = inference_job,
+                image_src       = image,
                 predictions     = predictions,
                 visualizations  = visualizations,
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
@@ -312,7 +340,7 @@ def classify_many():
 
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
-    job = job_from_request()
+    model_job = job_from_request()
 
     image_list = flask.request.files.get('image_list')
     if not image_list:
@@ -330,9 +358,7 @@ def classify_many():
         epoch = float(flask.request.form['snapshot_epoch'])
 
     paths = []
-    images = []
     ground_truths = []
-    dataset = job.train_task().dataset
 
     for line in image_list.readlines():
         line = line.strip()
@@ -349,49 +375,64 @@ def classify_many():
             path = line
             ground_truth = None
 
-        try:
-            if not utils.is_url(path) and image_folder and not os.path.isabs(path):
-                path = os.path.join(image_folder, path)
-            image = utils.image.load_image(path)
-            image = utils.image.resize_image(image,
-                    dataset.image_dims[0], dataset.image_dims[1],
-                    channels    = dataset.image_dims[2],
-                    resize_mode = dataset.resize_mode,
-                    )
-            paths.append(path)
-            images.append(image)
-            ground_truths.append(ground_truth)
-        except utils.errors.LoadImageError as e:
-            print e
+        if not utils.is_url(path) and image_folder and not os.path.isabs(path):
+            path = os.path.join(image_folder, path)
+        paths.append(path)
+        ground_truths.append(ground_truth)
 
-    if not len(images):
-        raise werkzeug.exceptions.BadRequest(
-                'Unable to load any images from the file')
+    # create inference job
+    inference_job = ImageInferenceJob(
+                username    = utils.auth.get_username(),
+                name        = "Classify Many Images",
+                model       = model_job,
+                images      = paths,
+                epoch       = epoch,
+                layers      = 'none'
+                )
 
-    labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
-    if scores is None:
-        raise RuntimeError('An error occured while processing the images')
+    # schedule tasks
+    scheduler.add_job(inference_job)
 
-    # take top 5
-    indices = (-scores).argsort()[:, :5]
+    # wait for job to complete
+    inference_job.wait_completion()
 
-    classifications = []
-    for image_index, index_list in enumerate(indices):
-        result = []
-        for i in index_list:
-            # `i` is a category in labels and also an index into scores
-            result.append((labels[i], round(100.0*scores[image_index, i],2)))
-        classifications.append(result)
+    # retrieve inference data
+    inputs, outputs, _ = inference_job.get_data()
 
-    # replace ground truth indices with labels
-    ground_truths = [labels[x] if x is not None and (0 <= x < len(labels)) else None for x in ground_truths]
+    # delete job
+    scheduler.delete_job(inference_job)
+
+    classifications = None
+    if len(outputs) > 0:
+        # convert to class probabilities for viewing
+        last_output_name, last_output_data = outputs.items()[-1]
+        if len(last_output_data) < 1:
+            raise werkzeug.exceptions.BadRequest(
+                    'Unable to classify any image from the file')
+
+        scores = last_output_data
+        # take top 5
+        indices = (-scores).argsort()[:, :5]
+
+        labels = model_job.train_task().get_labels()
+        classifications = []
+        for image_index, index_list in enumerate(indices):
+            result = []
+            for i in index_list:
+                # `i` is a category in labels and also an index into scores
+                result.append((labels[i], round(100.0*scores[image_index, i],2)))
+            classifications.append(result)
+
+        # replace ground truth indices with labels
+        ground_truths = [labels[x] if x is not None and (0 <= x < len(labels)) else None for x in ground_truths]
 
     if request_wants_json():
         joined = dict(zip(paths, classifications))
         return flask.jsonify({'classifications': joined})
     else:
         return flask.render_template('models/images/classification/classify_many.html',
-                job             = job,
+                model_job       = model_job,
+                job             = inference_job,
                 paths           = paths,
                 classifications = classifications,
                 show_ground_truth= not(ground_truths == [None]*len(ground_truths)),
@@ -403,7 +444,7 @@ def top_n():
     """
     Classify many images and show the top N images per category by confidence
     """
-    job = job_from_request()
+    model_job = job_from_request()
 
     image_list = flask.request.files['image_list']
     if not image_list:
@@ -437,47 +478,56 @@ def top_n():
         paths.append(path)
     random.shuffle(paths)
 
-    images = []
-    dataset = job.train_task().dataset
-    for path in paths:
-        try:
-            image = utils.image.load_image(path)
-            image = utils.image.resize_image(image,
-                    dataset.image_dims[0], dataset.image_dims[1],
-                    channels    = dataset.image_dims[2],
-                    resize_mode = dataset.resize_mode,
-                    )
-            images.append(image)
-            if num_images and len(images) >= num_images:
-                break
-        except utils.errors.LoadImageError as e:
-            print e
+    # create inference job
+    inference_job = ImageInferenceJob(
+                username    = utils.auth.get_username(),
+                name        = "TopN Image Classification",
+                model       = model_job,
+                images      = paths,
+                epoch       = epoch,
+                layers      = 'none'
+                )
 
-    if not len(images):
-        raise werkzeug.exceptions.BadRequest(
-                'Unable to load any images from the file')
+    # schedule tasks
+    scheduler.add_job(inference_job)
 
-    labels, scores = job.train_task().infer_many(images, snapshot_epoch=epoch)
-    if scores is None:
-        raise RuntimeError('An error occured while processing the images')
+    # wait for job to complete
+    inference_job.wait_completion()
 
-    indices = (-scores).argsort(axis=0)[:top_n]
-    results = []
-    for i in xrange(indices.shape[1]):
-        result_images = []
-        for j in xrange(top_n):
-            result_images.append(images[indices[j][i]])
-        results.append((
-                labels[i],
-                utils.image.embed_image_html(
-                    utils.image.vis_square(np.array(result_images),
-                        colormap='white')
-                    )
-                ))
+    # retrieve inference data
+    inputs, outputs, _ = inference_job.get_data()
+
+    # delete job
+    scheduler.delete_job(inference_job)
+
+    results = None
+    if len(outputs) > 0:
+        # convert to class probabilities for viewing
+        last_output_name, last_output_data = outputs.items()[-1]
+        scores = last_output_data
+
+        if scores is None:
+            raise RuntimeError('An error occured while processing the images')
+
+        labels = model_job.train_task().get_labels()
+        indices = (-scores).argsort(axis=0)[:top_n]
+        results = []
+        for i in xrange(indices.shape[1]):
+            result_images = []
+            for j in xrange(top_n):
+                result_images.append(inputs[indices[j][i]])
+            results.append((
+                    labels[i],
+                    utils.image.embed_image_html(
+                        utils.image.vis_square(np.array(result_images),
+                            colormap='white')
+                        )
+                    ))
 
     return flask.render_template('models/images/classification/top_n.html',
-            job=job,
-            results=results,
+            model_job       = model_job,
+            job             = inference_job,
+            results         = results,
             )
 
 def get_datasets():

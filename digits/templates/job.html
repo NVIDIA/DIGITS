@@ -265,7 +265,7 @@ $('#delete-job').on('click', function(event) {
                         return false;
                     }
                     </script>
-                    <textarea name="job-notes" class="form-control" placeholder="Enter notes" rows="5">{% if job.notes() %}{{ job.notes() }}{% endif %}</textarea> 
+                    <textarea name="job-notes" class="form-control" placeholder="Enter notes" rows="5">{% if job.notes() %}{{ job.notes() }}{% endif %}</textarea>
                     <a href=# class="btn btn-primary" onClick="return updateJobNotes();">Update</a>
                     <a href=# class="btn btn-info" onClick="$('#edit-job-notes').hide(); $('#show-job-notes').show(); return false;">Cancel</a>
                 </div>
@@ -274,6 +274,10 @@ $('#delete-job').on('click', function(event) {
         </div>
     </div>
 
+</div>
+<div class="row">
+    {% block job_content_details %}
+    {% endblock %}
 </div>
 
 {% endblock %}

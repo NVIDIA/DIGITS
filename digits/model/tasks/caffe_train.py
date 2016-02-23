@@ -54,6 +54,14 @@ class CaffeTrainTask(TrainTask):
         #TODO
         pass
 
+    @staticmethod
+    def set_mode(gpu):
+        if gpu is not None:
+            caffe.set_device(gpu)
+            caffe.set_mode_gpu()
+        else:
+            caffe.set_mode_cpu()
+
     def __init__(self, **kwargs):
         """
         Arguments:
@@ -1049,61 +1057,16 @@ class CaffeTrainTask(TrainTask):
         return False
 
     @override
-    def infer_one(self, data, snapshot_epoch=None, layers=None):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return self.classify_one(data,
+    def infer_one(self, data, snapshot_epoch=None, layers=None, gpu=None):
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
+            return self.infer_one_image(data,
                     snapshot_epoch=snapshot_epoch,
                     layers=layers,
-                    )
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_one_generic(data,
-                    snapshot_epoch=snapshot_epoch,
-                    layers=layers,
+                    gpu=gpu,
                     )
         raise NotImplementedError()
 
-    def classify_one(self, image, snapshot_epoch=None, layers=None):
-        """
-        Classify an image
-        Returns (predictions, visualizations)
-            predictions -- an array of [ (label, confidence), ...] for each label, sorted by confidence
-            visualizations -- a list of dicts for the specified layers
-        Returns (None, None) if something goes wrong
-
-        Arguments:
-        image -- a np.array
-
-        Keyword arguments:
-        snapshot_epoch -- which snapshot to use
-        layers -- which layer activation[s] and weight[s] to visualize
-        """
-        labels = self.get_labels()
-        net = self.get_net(snapshot_epoch)
-
-        # process image
-        if image.ndim == 2:
-            image = image[:,:,np.newaxis]
-        preprocessed = self.get_transformer().preprocess(
-                'data', image)
-
-        # reshape net input (if necessary)
-        test_shape = (1,) + preprocessed.shape
-        if net.blobs['data'].data.shape != test_shape:
-            net.blobs['data'].reshape(*test_shape)
-
-        # run inference
-        net.blobs['data'].data[...] = preprocessed
-        output = net.forward()
-        scores = output[net.outputs[-1]].flatten()
-        indices = (-scores).argsort()
-        predictions = []
-        for i in indices:
-            predictions.append( (labels[i], scores[i]) )
-
-        visualizations = self.get_layer_visualizations(net, layers)
-        return (predictions, visualizations)
-
-    def infer_one_generic(self, image, snapshot_epoch=None, layers=None):
+    def infer_one_image(self, image, snapshot_epoch=None, layers=None, gpu=None):
         """
         Run inference on one image for a generic model
         Returns (output, visualizations)
@@ -1118,7 +1081,7 @@ class CaffeTrainTask(TrainTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        net = self.get_net(snapshot_epoch)
+        net = self.get_net(snapshot_epoch, gpu=gpu)
 
         # process image
         if image.ndim == 2:
@@ -1148,7 +1111,6 @@ class CaffeTrainTask(TrainTask):
             if layers == 'all':
                 added_activations = []
                 for layer in self.network.layer:
-                    print 'Computing visualizations for "%s" ...' % layer.name
                     for bottom in layer.bottom:
                         if bottom in net.blobs and bottom not in added_activations:
                             data = net.blobs[bottom].data[0]
@@ -1159,7 +1121,7 @@ class CaffeTrainTask(TrainTask):
                                     {
                                         'name': str(bottom),
                                         'vis_type': 'Activation',
-                                        'image_html': utils.image.embed_image_html(vis),
+                                        'vis': vis,
                                         'data_stats': {
                                             'shape': data.shape,
                                             'mean': mean,
@@ -1189,9 +1151,9 @@ class CaffeTrainTask(TrainTask):
                                     'vis_type': 'Weights',
                                     'layer_type': layer.type,
                                     'param_count': parameter_count,
-                                    'image_html': utils.image.embed_image_html(vis),
+                                    'vis': vis,
                                     'data_stats': {
-                                        'shape':data.shape,
+                                        'shape': data.shape,
                                         'mean': mean,
                                         'stddev': std,
                                         'histogram': hist,
@@ -1213,7 +1175,7 @@ class CaffeTrainTask(TrainTask):
                                     {
                                         'name': str(top),
                                         'vis_type': 'Activation',
-                                        'image_html': utils.image.embed_image_html(vis),
+                                        'vis': vis,
                                         'data_stats': {
                                             'shape': data.shape,
                                             'mean': mean,
@@ -1254,68 +1216,12 @@ class CaffeTrainTask(TrainTask):
         return False
 
     @override
-    def infer_many(self, data, snapshot_epoch=None):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return self.classify_many(data, snapshot_epoch=snapshot_epoch)
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_many_generic(data, snapshot_epoch=snapshot_epoch)
+    def infer_many(self, data, snapshot_epoch=None, gpu=None):
+        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
+            return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
         raise NotImplementedError()
 
-    def classify_many(self, images, snapshot_epoch=None):
-        """
-        Returns (labels, results):
-        labels -- an array of strings
-        results -- a 2D np array:
-            [
-                [image0_label0_confidence, image0_label1_confidence, ...],
-                [image1_label0_confidence, image1_label1_confidence, ...],
-                ...
-            ]
-
-        Arguments:
-        images -- a list of np.arrays
-
-        Keyword arguments:
-        snapshot_epoch -- which snapshot to use
-        """
-        labels = self.get_labels()
-        net = self.get_net(snapshot_epoch)
-
-        caffe_images = []
-        for image in images:
-            if image.ndim == 2:
-                caffe_images.append(image[:,:,np.newaxis])
-            else:
-                caffe_images.append(image)
-
-        caffe_images = np.array(caffe_images)
-
-        data_shape = tuple(self.get_transformer().inputs['data'])[1:]
-
-        if self.batch_size:
-            data_shape = (self.batch_size,) + data_shape
-        # TODO: grab batch_size from the TEST phase in train_val network
-        else:
-            data_shape = (constants.DEFAULT_BATCH_SIZE,) + data_shape
-
-        scores = None
-        for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
-            new_shape = (len(chunk),) + data_shape[1:]
-            if net.blobs['data'].data.shape != new_shape:
-                net.blobs['data'].reshape(*new_shape)
-            for index, image in enumerate(chunk):
-                net.blobs['data'].data[index] = self.get_transformer().preprocess(
-                        'data', image)
-            output = net.forward()[net.outputs[-1]]
-            if scores is None:
-                scores = np.copy(output)
-            else:
-                scores = np.vstack((scores, output))
-            print 'Processed %s/%s images' % (len(scores), len(caffe_images))
-
-        return (labels, scores)
-
-    def infer_many_generic(self, images, snapshot_epoch=None):
+    def infer_many_images(self, images, snapshot_epoch=None, gpu=None):
         """
         Returns a list of np.ndarrays, one for each image
 
@@ -1325,7 +1231,7 @@ class CaffeTrainTask(TrainTask):
         Keyword arguments:
         snapshot_epoch -- which snapshot to use
         """
-        net = self.get_net(snapshot_epoch)
+        net = self.get_net(snapshot_epoch, gpu=gpu)
 
         caffe_images = []
         for image in images:
@@ -1333,8 +1239,6 @@ class CaffeTrainTask(TrainTask):
                 caffe_images.append(image[:,:,np.newaxis])
             else:
                 caffe_images.append(image)
-
-        caffe_images = np.array(caffe_images)
 
         data_shape = tuple(self.get_transformer().inputs['data'])[1:]
 
@@ -1368,7 +1272,7 @@ class CaffeTrainTask(TrainTask):
         """
         return len(self.snapshots) > 0
 
-    def get_net(self, epoch=None):
+    def get_net(self, epoch=None, gpu=-1):
         """
         Returns an instance of caffe.Net
 
@@ -1396,9 +1300,7 @@ class CaffeTrainTask(TrainTask):
                 and hasattr(self, '_caffe_net') and self._caffe_net is not None:
             return self._caffe_net
 
-        if config_value('caffe_root')['cuda_enabled'] and\
-                config_value('gpu_list'):
-            caffe.set_mode_gpu()
+        CaffeTrainTask.set_mode(gpu)
 
         # Add job_dir to PATH to pick up any python layers used by the model
         sys.path.append(self.job_dir)
