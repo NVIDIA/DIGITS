@@ -489,8 +489,6 @@ def top_n():
         if num_test_images is not None and len(paths) >= num_test_images:
             break
 
-    random.shuffle(paths)
-
     # create inference job
     inference_job = ImageInferenceJob(
                 username    = utils.auth.get_username(),
@@ -525,9 +523,11 @@ def top_n():
         labels = model_job.train_task().get_labels()
         indices = (-scores).argsort(axis=0)[:top_n]
         results = []
+        # Can't have more images per category than the number of images
+        images_per_category = min(top_n, len(inputs))
         for i in xrange(indices.shape[1]):
             result_images = []
-            for j in xrange(top_n):
+            for j in xrange(images_per_category):
                 result_images.append(inputs[indices[j][i]])
             results.append((
                     labels[i],
