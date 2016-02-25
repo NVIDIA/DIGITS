@@ -187,6 +187,11 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <input type="text" id="image_folder" name="image_folder" class="form-control autocomplete_path">
                             <small>Relative paths in the text file will be prepended with this value before reading</small>
                         </div>
+                        <div class="form-group">
+                            <label for="num_test_images" class="control-label">Number of images use from the file</label>
+                            <input type="text" id="num_test_images" name="num_test_images" class="form-control" placeholder="All">
+                            <small>Leave blank to use all</small>
+                        </div>
                         <button name="classify-many-btn"
                             formaction="{{url_for('digits.model.images.classification.views.classify_many', job_id=job.id())}}"
                             formmethod="post"
@@ -200,11 +205,6 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             data-container="body"
                             title="Classify a list of images and show the top 5 category predictions for each."
                             ></span>
-                        <div class="form-group">
-                            <label for="num_test_images" class="control-label">Number of images use from the file</label>
-                            <input type="text" id="num_test_images" name="num_test_images" class="form-control" value="100" placeholder="All">
-                            <small>Leave blank to use all</small>
-                        </div>
                         <div class="form-group">
                             <label for="top_n" class="control-label">Number of images to show per category</label>
                             <input type="text" id="top_n" name="top_n" class="form-control" placeholder="9">

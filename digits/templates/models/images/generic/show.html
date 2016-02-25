@@ -180,6 +180,11 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <input type="text" id="image_folder" name="image_folder" class="form-control autocomplete_path">
                             <small>Relative paths in the text file will be prepended with this value before reading</small>
                         </div>
+                        <div class="form-group">
+                            <label for="num_test_images" class="control-label">Number of images use from the file</label>
+                            <input type="text" id="num_test_images" name="num_test_images" class="form-control" placeholder="All">
+                            <small>Leave blank to use all</small>
+                        </div>
                         <button name="infer-many-btn"
                             formaction="{{url_for('digits.model.images.generic.views.infer_many', job_id=job.id())}}"
                             formmethod="post"

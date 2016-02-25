@@ -353,6 +353,11 @@ def classify_many():
     else:
         image_folder = None
 
+    if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
+        num_test_images = int(flask.request.form['num_test_images'])
+    else:
+        num_test_images = None
+
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
@@ -379,6 +384,9 @@ def classify_many():
             path = os.path.join(image_folder, path)
         paths.append(path)
         ground_truths.append(ground_truth)
+
+        if num_test_images is not None and len(paths) >= num_test_images:
+            break
 
     # create inference job
     inference_job = ImageInferenceJob(
@@ -457,10 +465,11 @@ def top_n():
         top_n = int(flask.request.form['top_n'])
     else:
         top_n = 9
+
     if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
-        num_images = int(flask.request.form['num_test_images'])
+        num_test_images = int(flask.request.form['num_test_images'])
     else:
-        num_images = None
+        num_test_images = None
 
     paths = []
     for line in image_list.readlines():
@@ -476,6 +485,10 @@ def top_n():
         else:
             path = line
         paths.append(path)
+
+        if num_test_images is not None and len(paths) >= num_test_images:
+            break
+
     random.shuffle(paths)
 
     # create inference job

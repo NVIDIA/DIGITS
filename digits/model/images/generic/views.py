@@ -320,6 +320,11 @@ def infer_many():
     else:
         image_folder = None
 
+    if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
+        num_test_images = int(flask.request.form['num_test_images'])
+    else:
+        num_test_images = None
+
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
@@ -342,6 +347,9 @@ def infer_many():
         if not utils.is_url(path) and image_folder and not os.path.isabs(path):
             path = os.path.join(image_folder, path)
         paths.append(path)
+
+        if num_test_images is not None and len(paths) >= num_test_images:
+            break
 
     # create inference job
     inference_job = ImageInferenceJob(
