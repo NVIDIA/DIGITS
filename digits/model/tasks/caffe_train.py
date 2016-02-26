@@ -33,6 +33,9 @@ CAFFE_TRAIN_VAL_FILE = 'train_val.prototxt'
 CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
 
+TRAIN_VAL_LAYER_EXCLUSION_PREFIX = "deploy_"
+DEPLOY_LAYER_EXCLUSION_PREFIX = "train_"
+
 @subclass
 class Error(Exception):
     pass
@@ -243,7 +246,7 @@ class CaffeTrainTask(TrainTask):
         bottoms = {}
         train_data_layer = None
         val_data_layer = None
-        hidden_layers = caffe_pb2.NetParameter()
+        hidden_layers = []
         loss_layers = []
         accuracy_layers = []
         for layer in self.network.layer:
@@ -267,7 +270,7 @@ class CaffeTrainTask(TrainTask):
                 if addThis:
                     accuracy_layers.append(layer)
             else:
-                hidden_layers.layer.add().CopyFrom(layer)
+                hidden_layers.append(layer)
                 if len(layer.bottom) == 1 and len(layer.top) == 1 and layer.bottom[0] == layer.top[0]:
                     pass
                 else:
@@ -288,7 +291,7 @@ class CaffeTrainTask(TrainTask):
         assert len(network_outputs), 'network must have an output'
 
         # Update num_output for any output InnerProduct layers automatically
-        for layer in hidden_layers.layer:
+        for layer in hidden_layers:
             if layer.type == 'InnerProduct':
                 for top in layer.top:
                     if top in network_outputs:
@@ -412,7 +415,12 @@ class CaffeTrainTask(TrainTask):
                     val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
         # hidden layers
-        train_val_network.MergeFrom(hidden_layers)
+        for layer in hidden_layers:
+            # don't add layers with names starting with the exclusion prefix
+            if not layer.name.startswith(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):
+                train_val_network.layer.add().CopyFrom(layer)
+                if layer.name.startswith(DEPLOY_LAYER_EXCLUSION_PREFIX):
+                    train_val_network.layer[-1].name = layer.name[len(DEPLOY_LAYER_EXCLUSION_PREFIX):]
 
         # output layers
         train_val_network.layer.extend(loss_layers)
@@ -441,7 +449,12 @@ class CaffeTrainTask(TrainTask):
             shape.dim.append(self.dataset.image_dims[1])
 
         # hidden layers
-        deploy_network.MergeFrom(hidden_layers)
+        for layer in hidden_layers:
+            # don't add layers with names starting with the exclusion prefix
+            if not layer.name.startswith(DEPLOY_LAYER_EXCLUSION_PREFIX):
+                deploy_network.layer.add().CopyFrom(layer)
+                if layer.name.startswith(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):
+                    deploy_network.layer[-1].name = layer.name[len(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):]
 
         # output layers
         if loss_layers[-1].type == 'SoftmaxWithLoss':
@@ -585,12 +598,12 @@ class CaffeTrainTask(TrainTask):
 
         for layer in self.network.layer:
             assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
-            if layer.name.startswith('train_'):
+            if layer.name.startswith(DEPLOY_LAYER_EXCLUSION_PREFIX):
                 train_val_layers.layer.add().CopyFrom(layer)
-                train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[6:]
-            elif layer.name.startswith('deploy_'):
+                train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[len(DEPLOY_LAYER_EXCLUSION_PREFIX):]
+            elif layer.name.startswith(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):
                 deploy_layers.layer.add().CopyFrom(layer)
-                deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[7:]
+                deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[len(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):]
             elif layer.type == 'Data':
                 for rule in layer.include:
                     if rule.phase == caffe_pb2.TRAIN:
