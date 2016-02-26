@@ -306,8 +306,8 @@ def classify_one():
 
     image = None
     predictions = []
-    if inputs is not None and len(inputs) == 1:
-        image = utils.image.embed_image_html(inputs[0])
+    if inputs is not None and len(inputs['data']) == 1:
+        image = utils.image.embed_image_html(inputs['data'][0])
         # convert to class probabilities for viewing
         last_output_name, last_output_data = outputs.items()[-1]
 
@@ -410,8 +410,17 @@ def classify_many():
     # delete job
     scheduler.delete_job(inference_job)
 
+    if outputs is not None and len(outputs) < 1:
+        # an error occurred
+        outputs = None
+
+    if inputs is not None:
+        # retrieve path and ground truth of images that were successfully processed
+        paths = [paths[idx] for idx in inputs['ids']]
+        ground_truths = [ground_truths[idx] for idx in inputs['ids']]
+
     classifications = None
-    if len(outputs) > 0:
+    if outputs is not None:
         # convert to class probabilities for viewing
         last_output_name, last_output_data = outputs.items()[-1]
         if len(last_output_data) < 1:
@@ -512,7 +521,7 @@ def top_n():
     scheduler.delete_job(inference_job)
 
     results = None
-    if len(outputs) > 0:
+    if outputs is not None and len(outputs) > 0:
         # convert to class probabilities for viewing
         last_output_name, last_output_data = outputs.items()[-1]
         scores = last_output_data
@@ -521,14 +530,15 @@ def top_n():
             raise RuntimeError('An error occured while processing the images')
 
         labels = model_job.train_task().get_labels()
+        images = inputs['data']
         indices = (-scores).argsort(axis=0)[:top_n]
         results = []
         # Can't have more images per category than the number of images
-        images_per_category = min(top_n, len(inputs))
+        images_per_category = min(top_n, len(images))
         for i in xrange(indices.shape[1]):
             result_images = []
             for j in xrange(images_per_category):
-                result_images.append(inputs[indices[j][i]])
+                result_images.append(images[indices[j][i]])
             results.append((
                     labels[i],
                     utils.image.embed_image_html(
