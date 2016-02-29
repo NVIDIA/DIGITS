@@ -1,6 +1,7 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import copy
 import math
 import operator
 import os
@@ -1258,7 +1259,7 @@ class CaffeTrainTask(TrainTask):
                         'data', image)
             o = net.forward()
             if outputs is None:
-                outputs = o
+                outputs = copy.deepcopy(o)
             else:
                 for name,blob in o.iteritems():
                     outputs[name] = np.vstack((outputs[name], blob))
