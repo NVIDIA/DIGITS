@@ -30,6 +30,7 @@
 {% if network_outputs %}
 <table class="table">
     <tr>
+        <td></td>
         <th>Image</th>
         {% for key in network_outputs.keys() %}
         <th>{{key}}</th>
@@ -37,6 +38,7 @@
     </tr>
     {% for path in paths %}
     <tr>
+        <td>{{loop.index}}</td>
         <td>{{path}}</td>
         {% set index=loop.index0 %}
         {% for key, val in network_outputs.iteritems() %}
