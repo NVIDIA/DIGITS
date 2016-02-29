@@ -79,12 +79,16 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
     else:
         raise InferenceError("Unknown dataset type")
 
-    # load and resize images
-    images = []
+    n_input_samples = 0  # number of samples we were able to load
+    input_ids = []       # indices of samples within file list
+    input_data = []      # sample data
+
+    # load paths from file
     paths = None
     with open(input_list) as infile:
         paths = infile.readlines()
-    for path in paths:
+    # load and resize images
+    for idx, path in enumerate(paths):
         path = path.strip()
         try:
             image = utils.image.load_image(path.strip())
@@ -93,7 +97,9 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
                         channels    = channels,
                         resize_mode = resize_mode,
                         )
-            images.append(image)
+            input_ids.append(idx)
+            input_data.append(image)
+            n_input_samples = n_input_samples + 1
         except utils.errors.LoadImageError as e:
             print e
 
@@ -101,21 +107,22 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
     visualizations = None
     predictions = []
 
-    if len(images) == 0:
+    if n_input_samples == 0:
         raise InferenceError("Unable to load any image from file '%s'" % repr(input_list))
-    elif len(images) == 1:
+    elif n_input_samples == 1:
         # single image inference
-        outputs, visualizations = model.train_task().infer_one(images[0], snapshot_epoch=epoch, layers=layers, gpu=gpu)
+        outputs, visualizations = model.train_task().infer_one(input_data[0], snapshot_epoch=epoch, layers=layers, gpu=gpu)
     else:
         assert layers == 'none'
-        outputs = model.train_task().infer_many(images, snapshot_epoch=epoch, gpu=gpu)
+        outputs = model.train_task().infer_many(input_data, snapshot_epoch=epoch, gpu=gpu)
 
     # write to hdf5 file
     db_path = os.path.join(output_dir, 'inference.hdf5')
     db = h5py.File(db_path, 'w')
 
-    # write input images to database
-    db.create_dataset("inputs", data = images)
+    # write input paths and images to database
+    db.create_dataset("input_ids", data = input_ids)
+    db.create_dataset("input_data", data = input_data)
 
     # write outputs to database
     db_outputs = db.create_group("outputs")

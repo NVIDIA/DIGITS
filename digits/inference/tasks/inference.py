@@ -105,7 +105,6 @@ class InferenceTask(Task):
         super(InferenceTask, self).after_run()
 
         # retrieve inference data
-        inputs = None
         visualizations = []
         outputs = {}
         if self.inference_data_filename is not None:
@@ -115,8 +114,9 @@ class InferenceTask(Task):
             # - layer activations and weights, if requested, in a group "/layers/"
             db = h5py.File(self.inference_data_filename, 'r')
 
-            # collect inputs
-            inputs = db['inputs'][...]
+            # collect paths and data
+            input_ids = db['input_ids'][...]
+            input_data = db['input_data'][...]
 
             # collect outputs
             for output_key, output_data in db['outputs'].items():
@@ -152,12 +152,11 @@ class InferenceTask(Task):
                 # sort by layer ID (as HDF5 ASCII sorts)
                 visualizations = sorted(visualizations,key=lambda x:x['id'])
             db.close()
+            # save inference data for further use
+            self.inference_inputs = {'ids': input_ids, 'data': input_data}
+            self.inference_outputs = outputs
+            self.inference_layers = visualizations
         self.inference_log.close()
-
-        # save inference to data for further use
-        self.inference_inputs = inputs
-        self.inference_outputs = outputs
-        self.inference_layers = visualizations
 
     @override
     def offer_resources(self, resources):

@@ -286,8 +286,8 @@ def infer_one():
         pass
 
     image = None
-    if inputs is not None and len(inputs) == 1:
-        image = utils.image.embed_image_html(inputs[0])
+    if inputs is not None and len(inputs['data']) == 1:
+        image = utils.image.embed_image_html(inputs['data'][0])
 
     if request_wants_json():
         return flask.jsonify({'outputs': dict((name, blob.tolist()) for name,blob in outputs.iteritems())})
@@ -373,9 +373,12 @@ def infer_many():
     # delete job folder and remove from scheduler list
     scheduler.delete_job(inference_job)
 
-    if len(outputs) < 1:
+    if outputs is not None and len(outputs) < 1:
         # an error occurred
         outputs = None
+
+    if inputs is not None:
+        paths = [paths[idx] for idx in inputs['ids']]
 
     if request_wants_json():
         result = {}
