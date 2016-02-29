@@ -119,9 +119,13 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
 
     # write outputs to database
     db_outputs = db.create_group("outputs")
-    for output_name,output_data in outputs.items():
+    for output_id, output_name in enumerate(outputs.keys()):
+        output_data = outputs[output_name]
         output_key = base64.urlsafe_b64encode(str(output_name))
-        db_outputs.create_dataset(output_key, data=output_data)
+        dset = db_outputs.create_dataset(output_key, data=output_data)
+        # add ID attribute so outputs can be sorted in
+        # the order they appear in here
+        dset.attrs['id'] = output_id
 
     # write visualization data
     if visualizations is not None and len(visualizations)>0:
