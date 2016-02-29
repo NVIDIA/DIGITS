@@ -419,7 +419,15 @@ def classify_many():
         paths = [paths[idx] for idx in inputs['ids']]
         ground_truths = [ground_truths[idx] for idx in inputs['ids']]
 
+    # defaults
     classifications = None
+    show_ground_truth = None
+    top1_accuracy = None
+    top5_accuracy = None
+    confusion_matrix = None
+    per_class_accuracy = None
+    labels = None
+
     if outputs is not None:
         # convert to class probabilities for viewing
         last_output_name, last_output_data = outputs.items()[-1]
@@ -432,28 +440,66 @@ def classify_many():
         indices = (-scores).argsort()[:, :5]
 
         labels = model_job.train_task().get_labels()
+        n_labels = len(labels)
+
+        # remove invalid ground truth
+        ground_truths = [x if x is not None and (0 <= x < n_labels) else None for x in ground_truths]
+
+        # how many pieces of ground truth to we have?
+        n_ground_truth = len([1 for x in ground_truths if x is not None])
+        show_ground_truth = n_ground_truth > 0
+
+        # compute classifications and statistics
         classifications = []
+        n_top1_accurate = 0
+        n_top5_accurate = 0
+        confusion_matrix = np.zeros((n_labels,n_labels), dtype=np.dtype(int))
         for image_index, index_list in enumerate(indices):
             result = []
+            if ground_truths[image_index] is not None:
+                if ground_truths[image_index] == index_list[0]:
+                    n_top1_accurate += 1
+                if ground_truths[image_index] in index_list:
+                    n_top5_accurate += 1
+                if (0 <= ground_truths[image_index] < n_labels) and (0 <= index_list[0] < n_labels):
+                   confusion_matrix[ground_truths[image_index], index_list[0]] += 1
             for i in index_list:
                 # `i` is a category in labels and also an index into scores
                 result.append((labels[i], round(100.0*scores[image_index, i],2)))
             classifications.append(result)
 
+        # accuracy
+        if show_ground_truth:
+            top1_accuracy = round(100.0 * n_top1_accurate / n_ground_truth, 2)
+            top5_accuracy = round(100.0 * n_top5_accurate / n_ground_truth, 2)
+            per_class_accuracy = []
+            for x in xrange(n_labels):
+                n_examples = sum(confusion_matrix[x])
+                per_class_accuracy.append(round(100.0 * confusion_matrix[x,x] / n_examples, 2) if n_examples > 0 else None)
+        else:
+            top1_accuracy = None
+            top5_accuracy = None
+            per_class_accuracy = None
+
         # replace ground truth indices with labels
-        ground_truths = [labels[x] if x is not None and (0 <= x < len(labels)) else None for x in ground_truths]
+        ground_truths = [labels[x] if x is not None and (0 <= x < n_labels ) else None for x in ground_truths]
 
     if request_wants_json():
         joined = dict(zip(paths, classifications))
         return flask.jsonify({'classifications': joined})
     else:
         return flask.render_template('models/images/classification/classify_many.html',
-                model_job       = model_job,
-                job             = inference_job,
-                paths           = paths,
-                classifications = classifications,
-                show_ground_truth= not(ground_truths == [None]*len(ground_truths)),
-                ground_truths   = ground_truths
+                model_job          = model_job,
+                job                = inference_job,
+                paths              = paths,
+                classifications    = classifications,
+                show_ground_truth  = show_ground_truth,
+                ground_truths      = ground_truths,
+                top1_accuracy      = top1_accuracy,
+                top5_accuracy      = top5_accuracy,
+                confusion_matrix   = confusion_matrix,
+                per_class_accuracy = per_class_accuracy,
+                labels             = labels,
                 )
 
 @blueprint.route('/top_n', methods=['POST'])
