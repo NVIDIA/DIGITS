@@ -91,6 +91,7 @@ class InferenceTask(Task):
         match = re.match(r'Processed (\d+)\/(\d+)', message)
         if match:
             self.progress = float(match.group(1))/int(match.group(2))
+            print "Progress: %f%%" % self.progress
             return True
 
         # path to inference data
