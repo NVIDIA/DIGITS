@@ -11,7 +11,7 @@ from digits import utils
 class TestTimeFilters():
     def test_print_time(self):
 
-        ## Pass in a reference time to print_time, to avoid steppingto the
+        ## Pass in a reference time to print_time, to avoid stepping into the
         ## next year in the other tests close to December.  Also avoid the
         ## leap year and daylight savings time.
         t = (2009, 5, 17, 16, 0, 0, 0, 0, 0)

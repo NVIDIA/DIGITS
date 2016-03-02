@@ -1437,7 +1437,7 @@ var io = ('undefined' === typeof module ? {} : module.exports);
   Transport.prototype.onClose = function () {
     var self = this;
 
-    /* FIXME: reopen delay causing a infinit loop
+    /* FIXME: reopen delay causing a infinite loop
     this.reopenTimeout = setTimeout(function () {
       self.open();
     }, this.socket.options['reopen delay']);*/

@@ -751,7 +751,7 @@ class TorchTrainTask(TrainTask):
             self.visualization_file = match.group(1).strip()
             return True
 
-        # displaying info and warn messages as we aren't maintaining seperate log file for model testing
+        # displaying info and warn messages as we aren't maintaining separate log file for model testing
         if level == 'info':
             self.logger.debug('%s classify %s task : %s' % (self.get_framework_id(), test_category, message))
             return True
@@ -877,7 +877,7 @@ class TorchTrainTask(TrainTask):
                             raise digits.inference.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
 
                         if line is not None:
-                            # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
+                            # Remove whitespace and color codes. color codes are appended to beginning and end of line by torch binary i.e., 'th'. Check the below link for more information
                             # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
                             line=regex.sub('', line).strip()
                         if line:

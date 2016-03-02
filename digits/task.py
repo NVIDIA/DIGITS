@@ -324,7 +324,7 @@ class Task(StatusCls):
 
     def emit_progress_update(self):
         """
-        Call socketio.emit for task progess update, and trigger job progress update.
+        Call socketio.emit for task progress update, and trigger job progress update.
         """
         from digits.webapp import socketio
         socketio.emit('task update',

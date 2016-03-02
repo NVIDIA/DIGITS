@@ -56,7 +56,7 @@ This will lead you to the login page:
 After logging in, you will be brought to the "New Image Classification Dataset" page.
 
 * Type in the path to the MNIST training images
-  * You can also add the the folder of MNIST test images as a "Separate validation images folder", if you like. Don't use the "test images" fields - test images are not used for anything in DIGITS yet.
+  * You can also add the folder of MNIST test images as a "Separate validation images folder", if you like. Don't use the "test images" fields - test images are not used for anything in DIGITS yet.
 * Change the `Image Type` to `Grayscale`
 * Change the `Image size` to 28 x 28
 * Give the dataset a name

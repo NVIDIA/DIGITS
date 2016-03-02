@@ -33,7 +33,7 @@ class JobIdLoggerAdapter(logging.LoggerAdapter):
         1. On class initialization
             adapter = JobIdLoggerAdapter(logger, {'job_id': job_id})
             adapter.debug(msg)
-        2. On method invokation
+        2. On method invocation
             adapter = JobIdLoggerAdapter(logger, {})
             adapter.debug(msg, job_id=id)
     """
