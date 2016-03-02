@@ -481,8 +481,7 @@ def classify_many():
     if inference_job.status.is_running():
         # the inference job is still running
         if request_wants_json():
-            joined = dict(zip(paths, classifications))
-            return flask.jsonify({'job_id': inference_job.id(), 'progress': inference_job.progress})
+            return flask.jsonify({'job_id': inference_job.id(), 'progress': inference_job.inference_task().progress})
         else:
             return flask.render_template('models/images/classification/classify_many.html',
                 model_job          = model_job,
