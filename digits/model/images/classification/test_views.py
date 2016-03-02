@@ -702,6 +702,30 @@ class BaseTestCreated(BaseViewsTestWithModel):
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'
 
+    def test_top_n_from_folder(self):
+        textfile_images = ''
+        label_id = 0
+        for label, images in self.imageset_paths.iteritems():
+            for image in images:
+                image_path = image
+                textfile_images += '%s %d\n' % (image_path, label_id)
+            label_id += 1
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        rv = self.app.post(
+                '/models/images/classification/top_n?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload, 'image_folder': self.imageset_folder}
+                )
+
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        keys = self.imageset_paths.keys()
+        for key in keys:
+            assert key in rv.data, '"%s" not found in the response'
+
 class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
     """
     Test the interactions between datasets and models

@@ -26,6 +26,36 @@ from digits.webapp import app, scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
 
+"""
+Read image list
+"""
+def read_image_list(image_list, image_folder, num_test_images):
+    paths = []
+    ground_truths = []
+
+    for line in image_list.readlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        # might contain a numerical label at the end
+        match = re.match(r'(.*\S)\s+(\d+)$', line)
+        if match:
+            path = match.group(1)
+            ground_truth = int(match.group(2))
+        else:
+            path = line
+            ground_truth = None
+
+        if not utils.is_url(path) and image_folder and not os.path.isabs(path):
+            path = os.path.join(image_folder, path)
+        paths.append(path)
+        ground_truths.append(ground_truth)
+
+        if num_test_images is not None and len(paths) >= num_test_images:
+            break
+    return paths, ground_truths
+
 @blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
 def new():
@@ -362,31 +392,7 @@ def classify_many():
     if 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
 
-    paths = []
-    ground_truths = []
-
-    for line in image_list.readlines():
-        line = line.strip()
-        if not line:
-            continue
-
-        path = None
-        # might contain a numerical label at the end
-        match = re.match(r'(.*\S)\s+(\d+)$', line)
-        if match:
-            path = match.group(1)
-            ground_truth = int(match.group(2))
-        else:
-            path = line
-            ground_truth = None
-
-        if not utils.is_url(path) and image_folder and not os.path.isabs(path):
-            path = os.path.join(image_folder, path)
-        paths.append(path)
-        ground_truths.append(ground_truth)
-
-        if num_test_images is not None and len(paths) >= num_test_images:
-            break
+    paths, ground_truths = read_image_list(image_list, image_folder, num_test_images)
 
     # create inference job
     inference_job = ImageInferenceJob(
@@ -475,28 +481,19 @@ def top_n():
     else:
         top_n = 9
 
+    if 'image_folder' in flask.request.form and flask.request.form['image_folder'].strip():
+        image_folder = flask.request.form['image_folder']
+        if not os.path.exists(image_folder):
+            raise werkzeug.exceptions.BadRequest('image_folder "%s" does not exit' % image_folder)
+    else:
+        image_folder = None
+
     if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
         num_test_images = int(flask.request.form['num_test_images'])
     else:
         num_test_images = None
 
-    paths = []
-    for line in image_list.readlines():
-        line = line.strip()
-        if not line:
-            continue
-
-        path = None
-        # might contain a numerical label at the end
-        match = re.match(r'(.*\S)\s+\d+$', line)
-        if match:
-            path = match.group(1)
-        else:
-            path = line
-        paths.append(path)
-
-        if num_test_images is not None and len(paths) >= num_test_images:
-            break
+    paths, _ = read_image_list(image_list, image_folder, num_test_images)
 
     # create inference job
     inference_job = ImageInferenceJob(
