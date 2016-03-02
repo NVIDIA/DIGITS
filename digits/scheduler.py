@@ -388,7 +388,7 @@ class Scheduler:
                                 # job is done
                                 pass
                             elif task.status == Status.ERROR:
-                                # propogate error status up to job
+                                # propagate error status up to job
                                 job.status = Status.ERROR
                                 alldone = False
                                 break
@@ -487,7 +487,7 @@ class Scheduler:
 
     def emit_gpus_available(self):
         """
-        Call socketio.emit gpu availablity
+        Call socketio.emit gpu availability
         """
         from digits.webapp import scheduler, socketio
         socketio.emit('server update',

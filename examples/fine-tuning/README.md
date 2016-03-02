@@ -42,7 +42,7 @@ more or less well. With Torch7 default weight initialization, the network is una
 
 ![Loss Function From scratch](loss-function-from-scratch.png)
 
-With Xavier initialization, the Caffe standard LeNet model performs much better however there is a substancial amount of overfit (the validation loss is much higher than the training loss):
+With Xavier initialization, the Caffe standard LeNet model performs much better however there is a substantial amount of overfit (the validation loss is much higher than the training loss):
 
 ![Loss Function From Scratch - Caffe](lenet-from-scratch-caffe.png)
 

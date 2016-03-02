@@ -98,7 +98,7 @@ See https://github.com/BVLC/caffe/issues/2936.
 Now for the fun part.
 Find an image in the MNIST test set and upload it to `Test a single image` (at the bottom of the page).
 Don't forget to click on `Show  visualizations and statistics`!
-The original image is displayed on the top left, next to the the predicted class.
+The original image is displayed on the top left, next to the predicted class.
 In the `Visualization` column, you'll see the result of subtracting the mean image as the `data` activation.
 Just below it, you'll see the result of down-scaling the image from `[0 - 255]` to `[-1 - 1]`.
 You'll also see that a random fourth of the image has been removed - that's thanks to our Python layer!
