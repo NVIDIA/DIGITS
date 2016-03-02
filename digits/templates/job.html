@@ -32,6 +32,11 @@ socket.on('job update', function (msg) {
         }
     });
 
+socket.on('job reload_page', function (msg) {
+        $("#job-info-box").html("Please wait while page is being reloaded...")
+        window.location.search = "job_id="+msg['job_id']
+    });
+
 socket.on('task update', function (msg) {
         var status_selector = "#"+msg['task']+"-status";
         if (msg['update'] == 'status') {

@@ -27,7 +27,7 @@ from digits.webapp import app, scheduler
 blueprint = flask.Blueprint(__name__, __name__)
 
 """
-Read image list
+Read an image list and return lists of paths and ground truth
 """
 def read_image_list(image_list, image_folder, num_test_images):
     paths = []
@@ -55,6 +55,63 @@ def read_image_list(image_list, image_folder, num_test_images):
         if num_test_images is not None and len(paths) >= num_test_images:
             break
     return paths, ground_truths
+
+"""
+Compute classification statistics
+"""
+def get_classification_stats(scores, ground_truths, labels):
+    n_labels = len(labels)
+    # take top 5
+    indices = (-scores).argsort()[:, :5]
+
+    # remove invalid ground truth
+    ground_truths = [x if x is not None and (0 <= x < n_labels) else None for x in ground_truths]
+
+    # how many pieces of ground truth to we have?
+    n_ground_truth = len([1 for x in ground_truths if x is not None])
+    show_ground_truth = n_ground_truth > 0
+
+    # compute classifications and statistics
+    classifications = []
+    n_top1_accurate = 0
+    n_top5_accurate = 0
+    confusion_matrix = np.zeros((n_labels,n_labels), dtype=np.dtype(int))
+    for image_index, index_list in enumerate(indices):
+        result = []
+        if ground_truths[image_index] is not None:
+            if ground_truths[image_index] == index_list[0]:
+                n_top1_accurate += 1
+            if ground_truths[image_index] in index_list:
+                n_top5_accurate += 1
+            if (0 <= ground_truths[image_index] < n_labels) and (0 <= index_list[0] < n_labels):
+               confusion_matrix[ground_truths[image_index], index_list[0]] += 1
+        for i in index_list:
+            # `i` is a category in labels and also an index into scores
+            result.append((labels[i], round(100.0*scores[image_index, i],2)))
+        classifications.append(result)
+
+    # accuracy
+    if show_ground_truth:
+        top1_accuracy = round(100.0 * n_top1_accurate / n_ground_truth, 2)
+        top5_accuracy = round(100.0 * n_top5_accurate / n_ground_truth, 2)
+        per_class_accuracy = []
+        for x in xrange(n_labels):
+            n_examples = sum(confusion_matrix[x])
+            per_class_accuracy.append(round(100.0 * confusion_matrix[x,x] / n_examples, 2) if n_examples > 0 else None)
+    else:
+        top1_accuracy = None
+        top5_accuracy = None
+        per_class_accuracy = None
+
+    # replace ground truth indices with labels
+    ground_truths = [labels[x] if x is not None and (0 <= x < n_labels ) else None for x in ground_truths]
+
+    return (classifications,
+            ground_truths,
+            top1_accuracy,
+            top5_accuracy,
+            confusion_matrix,
+            per_class_accuracy)
 
 @blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
@@ -370,8 +427,14 @@ def classify_many():
 
     Returns JSON when requested: {classifications: {filename: [[category,confidence],...],...}}
     """
-    model_job = job_from_request()
 
+    # NOTE: the provided job ID is either:
+    # - an image classification model job, when the user kicks off a new classification job
+    # - an inference job, when the page is being reloaded to display inference results
+    job = job_from_request()
+    if isinstance(job, ImageClassificationModelJob):
+        # kicking off a new inference job
+        model_job = job
     image_list = flask.request.files.get('image_list')
     if not image_list:
         raise werkzeug.exceptions.BadRequest('image_list is a required field')
@@ -392,7 +455,7 @@ def classify_many():
     if 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
 
-    paths, ground_truths = read_image_list(image_list, image_folder, num_test_images)
+        paths, ground_truths = read_image_list(image_list, image_folder, num_test_images)
 
     # create inference job
     inference_job = ImageInferenceJob(
@@ -401,94 +464,71 @@ def classify_many():
                 model       = model_job,
                 images      = paths,
                 epoch       = epoch,
-                layers      = 'none'
+                    layers        = 'none',
+                    ground_truths = ground_truths,
                 )
 
     # schedule tasks
     scheduler.add_job(inference_job)
 
-    # wait for job to complete
-    inference_job.wait_completion()
+    else:
+        assert isinstance(job, ImageInferenceJob)
+        inference_job = job
+
+    if inference_job.status.is_running():
+        # the inference job is still running
+        if request_wants_json():
+            joined = dict(zip(paths, classifications))
+            return flask.jsonify({'job_id': inference_job.id(), 'progress': inference_job.progress})
+        else:
+            return flask.render_template('models/images/classification/classify_many.html',
+                model_job          = model_job,
+                job                = inference_job,
+                running            = True,
+                )
+    else:
+        # the inference job has completed
+
+        # retrieve inference parameters
+        model_job, paths, ground_truths = inference_job.get_parameters()
 
     # retrieve inference data
     inputs, outputs, _ = inference_job.get_data()
 
+        labels = model_job.train_task().get_labels()
+
     # delete job
     scheduler.delete_job(inference_job)
 
-    if outputs is not None and len(outputs) < 1:
-        # an error occurred
-        outputs = None
+        if outputs is not None and len(outputs) >= 1:
 
-    if inputs is not None:
-        # retrieve path and ground truth of images that were successfully processed
-        paths = [paths[idx] for idx in inputs['ids']]
-        ground_truths = [ground_truths[idx] for idx in inputs['ids']]
-
-    # defaults
-    classifications = None
-    show_ground_truth = None
-    top1_accuracy = None
-    top5_accuracy = None
-    confusion_matrix = None
-    per_class_accuracy = None
-    labels = None
-
-    if outputs is not None:
         # convert to class probabilities for viewing
         last_output_name, last_output_data = outputs.items()[-1]
         if len(last_output_data) < 1:
             raise werkzeug.exceptions.BadRequest(
                     'Unable to classify any image from the file')
 
-        scores = last_output_data
-        # take top 5
-        indices = (-scores).argsort()[:, :5]
+            if inputs is not None:
+                # retrieve path and ground truth of images that were successfully processed
+                paths = [paths[idx] for idx in inputs['ids']]
+                ground_truths = [ground_truths[idx] for idx in inputs['ids']]
 
-        labels = model_job.train_task().get_labels()
-        n_labels = len(labels)
+            # get statistics
+            (classifications,
+             ground_truths,
+             top1_accuracy,
+             top5_accuracy,
+             confusion_matrix,
+             per_class_accuracy) = get_classification_stats(last_output_data, ground_truths, labels)
 
-        # remove invalid ground truth
-        ground_truths = [x if x is not None and (0 <= x < n_labels) else None for x in ground_truths]
-
-        # how many pieces of ground truth to we have?
-        n_ground_truth = len([1 for x in ground_truths if x is not None])
-        show_ground_truth = n_ground_truth > 0
-
-        # compute classifications and statistics
-        classifications = []
-        n_top1_accurate = 0
-        n_top5_accurate = 0
-        confusion_matrix = np.zeros((n_labels,n_labels), dtype=np.dtype(int))
-        for image_index, index_list in enumerate(indices):
-            result = []
-            if ground_truths[image_index] is not None:
-                if ground_truths[image_index] == index_list[0]:
-                    n_top1_accurate += 1
-                if ground_truths[image_index] in index_list:
-                    n_top5_accurate += 1
-                if (0 <= ground_truths[image_index] < n_labels) and (0 <= index_list[0] < n_labels):
-                   confusion_matrix[ground_truths[image_index], index_list[0]] += 1
-            for i in index_list:
-                # `i` is a category in labels and also an index into scores
-                result.append((labels[i], round(100.0*scores[image_index, i],2)))
-            classifications.append(result)
-
-        # accuracy
-        if show_ground_truth:
-            top1_accuracy = round(100.0 * n_top1_accurate / n_ground_truth, 2)
-            top5_accuracy = round(100.0 * n_top5_accurate / n_ground_truth, 2)
-            per_class_accuracy = []
-            for x in xrange(n_labels):
-                n_examples = sum(confusion_matrix[x])
-                per_class_accuracy.append(round(100.0 * confusion_matrix[x,x] / n_examples, 2) if n_examples > 0 else None)
         else:
-            top1_accuracy = None
-            top5_accuracy = None
-            per_class_accuracy = None
-
-        # replace ground truth indices with labels
-        ground_truths = [labels[x] if x is not None and (0 <= x < n_labels ) else None for x in ground_truths]
+            # an error occurred
+            [classifications,
+             ground_truths,
+             top1_accuracy,
+             top5_accuracy,
+             confusion_matrix,
+             per_class_accuracy] = 6 * [None]
 
     if request_wants_json():
         joined = dict(zip(paths, classifications))
@@ -497,15 +537,16 @@ def classify_many():
         return flask.render_template('models/images/classification/classify_many.html',
                 model_job          = model_job,
                 job                = inference_job,
+                running            = False,
                 paths              = paths,
+                labels             = labels,
                 classifications    = classifications,
-                show_ground_truth  = show_ground_truth,
+                show_ground_truth  = top1_accuracy != None,
                 ground_truths      = ground_truths,
                 top1_accuracy      = top1_accuracy,
                 top5_accuracy      = top5_accuracy,
                 confusion_matrix   = confusion_matrix,
                 per_class_accuracy = per_class_accuracy,
-                labels             = labels,
                 )
 
 @blueprint.route('/top_n', methods=['POST'])
@@ -526,13 +567,6 @@ def top_n():
         top_n = int(flask.request.form['top_n'])
     else:
         top_n = 9
-
-    if 'image_folder' in flask.request.form and flask.request.form['image_folder'].strip():
-        image_folder = flask.request.form['image_folder']
-        if not os.path.exists(image_folder):
-            raise werkzeug.exceptions.BadRequest('image_folder "%s" does not exit' % image_folder)
-    else:
-        image_folder = None
 
     if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
         num_test_images = int(flask.request.form['num_test_images'])

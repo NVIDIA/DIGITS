@@ -19,7 +19,13 @@ class InferenceJob(Job):
         images  -- list of image paths to perform inference on
         epoch   -- epoch of model snapshot to use
         layers  -- layers to import ('all' or 'none')
+
+        Keyword arguments:
+        ground_truths -- desired output
         """
+
+        ground_truths = kwargs.pop('ground_truths', None)
+
         super(InferenceJob, self).__init__(volatile = True, **kwargs)
 
         # get handle to framework object
@@ -32,7 +38,8 @@ class InferenceJob(Job):
             model     = model,
             images    = images,
             epoch     = epoch,
-            layers    = layers))
+            layers        = layers,
+            ground_truths = ground_truths))
 
     @override
     def __getstate__(self):
@@ -55,3 +62,28 @@ class InferenceJob(Job):
         """Return inference data"""
         task = self.inference_task()
         return task.inference_inputs, task.inference_outputs, task.inference_layers
+
+    def get_parameters(self):
+        """Return inference parameters"""
+        task = self.inference_task()
+        return task.model, task.images, task.ground_truths
+
+    @override
+    def on_status_update(self):
+        super(InferenceJob, self).on_status_update()
+
+        from digits.webapp import app, socketio
+
+        if not self.status.is_running():
+            message = {
+                    'job_id': self.id(),
+                    }
+
+            socketio.emit('job reload_page',
+                    message,
+                    namespace='/jobs',
+                    room=self.id(),
+                    )
+
+
+    
