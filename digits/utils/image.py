@@ -289,6 +289,29 @@ def embed_image_html(image):
     data = string_buf.getvalue().encode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)
 
+def get_color_from_map(value, colormap = 'jet'):
+    """
+    Return an RGB color from the colormap for normalized input value.
+
+    Arguments:
+    value -- normalized input value
+
+    Keyword arguments:
+    colormap -- the name of the colormap passed to get_color_map()
+
+    Example:
+    color = get_color_from_map(0.23, colormap='winter')
+    color = get_color_from_map(0.453)
+    """
+    import numpy as np
+    value = max(0.0, min(1.0, float(value))) # clamp
+    r_map, g_map, b_map = get_color_map(colormap)
+
+    r = int(np.interp(value, np.linspace(0, 1, len(r_map)), r_map))
+    g = int(np.interp(value, np.linspace(0, 1, len(g_map)), g_map))
+    b = int(np.interp(value, np.linspace(0, 1, len(b_map)), b_map))
+    return (r, g, b)
+
 def add_bboxes_to_image(image, bboxes, color='red', width=1):
     """
     Draw rectangles on the image for the bounding boxes
@@ -305,6 +328,7 @@ def add_bboxes_to_image(image, bboxes, color='red', width=1):
     Example:
     image = Image.open(filename)
     add_bboxes_to_image(image, bboxes[filename], width=2, color='#FF7700')
+    add_bboxes_to_image(image, bboxes[filename], width=2, color=get_color_from_map(0.24))
     image.show()
     """
     def expanded_bbox(bbox, n):
@@ -511,4 +535,3 @@ def get_color_map(name):
         greenmap    = [0,0,0.5,1,1,1,0.5,0,0]
         bluemap     = [0.5,1,1,1,0.5,0,0,0,0]
     return 255.0 * np.array(redmap), 255.0 * np.array(greenmap), 255.0 * np.array(bluemap)
-
