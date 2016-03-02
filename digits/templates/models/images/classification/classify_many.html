@@ -28,6 +28,9 @@
     <div class="panel-body">
         <p><img src="{{url_for('static', filename='images/loader.gif')}}"></p>
     </div>
+    <script>
+    setTimeout(reloadPageOnUpdateTimeout,10000,"{{job.id()}}",10000);
+    </script>
 {% else %}
     {% if not classifications %}
     <div class="alert alert-danger">
