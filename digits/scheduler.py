@@ -405,8 +405,10 @@ class Scheduler:
                         if job.status.is_running():
                             job.save()
                     last_saved = time.time()
-
-                time.sleep(utils.wait_time())
+                if 'DIGITS_MODE_TEST' not in os.environ:
+                    time.sleep(utils.wait_time())
+                else:
+                    time.sleep(0.05)
         except KeyboardInterrupt:
             pass
 
