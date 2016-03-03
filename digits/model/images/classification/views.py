@@ -419,7 +419,7 @@ def classify_one():
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
                 )
 
-@blueprint.route('/classify_many.json', methods=['POST'])
+@blueprint.route('/classify_many.json', methods=['POST', 'GET'])
 @blueprint.route('/classify_many', methods=['POST', 'GET'])
 def classify_many():
     """
