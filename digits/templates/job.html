@@ -13,14 +13,14 @@
 <script>
 window.gLastUpdateTimestamp = 0
 
-function reloadJobPage(job_id) {
+function reloadJobPage() {
     $("#job-info-box").html("Please wait while the page is being reloaded...")
-    window.location.search = "job_id="+job_id
+    location.reload(true)
 }
 
 function reloadPageOnUpdateTimeout(job_id, timeout_ms) {
     if ($.now() - window.gLastUpdateTimestamp > timeout_ms) {
-        reloadJobPage(job_id)
+        reloadJobPage()
     }
 }
 </script>
@@ -50,7 +50,7 @@ socket.on('job update', function (msg) {
     });
 
 socket.on('job reload_page', function (msg) {
-        reloadJobPage(msg['job_id'])
+        reloadJobPage()
     });
 
 socket.on('task update', function (msg) {

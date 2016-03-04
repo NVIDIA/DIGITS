@@ -193,7 +193,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <small>Leave blank to use all</small>
                         </div>
                         <button name="classify-many-btn"
-                            formaction="{{url_for('digits.model.images.classification.views.classify_many', job_id=job.id())}}"
+                            formaction="{{url_for('digits.inference.images.classification.views.classify_many', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             formtarget="_blank"

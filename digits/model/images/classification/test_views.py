@@ -593,6 +593,31 @@ class BaseTestCreated(BaseViewsTestWithModel):
             data = json.loads(rv.data)
             assert data['predictions'][0][0] == category, 'image misclassified'
 
+    def classify_many(self, data):
+        rv = self.app.post(
+                '/inference/images/classification/classify_many?job_id=%s' % self.model_id,
+                data = data,
+                )
+        # expect a redirect
+        if not 300 <= rv.status_code <= 310:
+            print 'Status code:', rv.status_code
+            s = BeautifulSoup(rv.data, 'html.parser')
+            div = s.select('div.alert-danger')
+            if div:
+                print div[0]
+            else:
+                print rv.data
+            raise RuntimeError('Failed to create job - status %s' % rv.status_code)
+        inference_job_id = self.job_id_from_response(rv)
+        assert self.job_exists(inference_job_id, 'inference'), 'model not found after successful creation'
+        self.job_wait_completion(inference_job_id)
+        # post request again with inference job id
+        rv = self.app.get('/inference/%s' % inference_job_id)
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        return rv
+
     def test_classify_many(self):
         textfile_images = ''
         label_id = 0
@@ -605,14 +630,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
-
-        rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        self.classify_many(data = {'image_list': file_upload})
 
     def test_classify_many_from_folder(self):
         textfile_images = ''
@@ -625,15 +643,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
-
-        rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload, 'image_folder': self.imageset_folder}
-                )
-
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        self.classify_many(data = {'image_list': file_upload, 'image_folder': self.imageset_folder})
 
     def test_classify_many_invalid_ground_truth(self):
         textfile_images = ''
@@ -648,14 +658,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
-
-        rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        self.classify_many(data = {'image_list': file_upload})
 
     def test_classify_many_json(self):
         textfile_images = ''
@@ -671,10 +674,19 @@ class BaseTestCreated(BaseViewsTestWithModel):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many.json?job_id=%s' % self.model_id,
+                '/inference/images/classification/classify_many.json?job_id=%s' % self.model_id,
                 data = {'image_list': file_upload}
                 )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        data = json.loads(rv.data)
+        # initial response should include the inference job ID and a progress indication
+        assert 'id' in data, 'invalid response: %s' % repr(data)
+        assert 'progress' in data, 'invalid response: %s' % repr(data)
+        inference_job_id = data['id']
+        self.job_wait_completion(inference_job_id)
+        # post request again with inference job id
+        rv = self.app.get('/inference/%s.json' % inference_job_id)
+        assert rv.status_code == 200, 'GET failed with %s' % rv.status_code
         data = json.loads(rv.data)
         assert 'classifications' in data, 'invalid response'
 

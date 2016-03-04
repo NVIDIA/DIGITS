@@ -96,7 +96,6 @@ class InferenceTask(Task):
         if match:
             self.progress = float(match.group(1))/int(match.group(2))
             self.emit_progress_update()
-            print "Progress: %f%%" % self.progress
             return True
 
         # path to inference data

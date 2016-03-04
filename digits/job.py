@@ -98,6 +98,7 @@ class Job(StatusCls):
                 'id': self.id(),
                 'name': self.name(),
                 'status': self.status.name,
+                'progress': self.get_progress(),
                 }
         if detailed:
             d.update({
