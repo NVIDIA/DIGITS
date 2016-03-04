@@ -1,6 +1,7 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+from collections import OrderedDict
 import copy
 import math
 import operator
@@ -1071,7 +1072,7 @@ class CaffeTrainTask(TrainTask):
         """
         Run inference on one image for a generic model
         Returns (output, visualizations)
-            output -- an dict of string -> np.ndarray
+            output -- an OrderedDict of string -> np.ndarray
             visualizations -- a list of dicts for the specified layers
         Returns (None, None) if something goes wrong
 
@@ -1097,7 +1098,13 @@ class CaffeTrainTask(TrainTask):
 
         # run inference
         net.blobs['data'].data[...] = preprocessed
-        output = net.forward()
+        o = net.forward()
+
+        # order outputs in prototxt order
+        output = OrderedDict()
+        for blob in net.blobs.keys():
+            if blob in o:
+                output[blob] = o[blob]
 
         visualizations = self.get_layer_visualizations(net, layers)
         return (output, visualizations)
@@ -1224,7 +1231,7 @@ class CaffeTrainTask(TrainTask):
 
     def infer_many_images(self, images, snapshot_epoch=None, gpu=None):
         """
-        Returns a list of np.ndarrays, one for each image
+        Returns a list of OrderedDict, one for each image
 
         Arguments:
         images -- a list of np.arrays
@@ -1258,10 +1265,17 @@ class CaffeTrainTask(TrainTask):
                 net.blobs['data'].data[index] = self.get_transformer().preprocess(
                         'data', image)
             o = net.forward()
+
+            # order output in prototxt order
+            output = OrderedDict()
+            for blob in net.blobs.keys():
+                if blob in o:
+                    output[blob] = o[blob]
+
             if outputs is None:
-                outputs = copy.deepcopy(o)
+                outputs = copy.deepcopy(output)
             else:
-                for name,blob in o.iteritems():
+                for name,blob in output.iteritems():
                     outputs[name] = np.vstack((outputs[name], blob))
             print 'Processed %s/%s images' % (len(outputs[outputs.keys()[0]]), len(caffe_images))
 

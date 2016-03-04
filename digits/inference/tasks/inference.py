@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import base64
+from collections import OrderedDict
 import h5py
 import os.path
 import tempfile
@@ -106,7 +107,7 @@ class InferenceTask(Task):
 
         # retrieve inference data
         visualizations = []
-        outputs = {}
+        outputs = OrderedDict()
         if self.inference_data_filename is not None:
             # the HDF5 database contains:
             # - input images, in a dataset "/inputs"
@@ -119,9 +120,15 @@ class InferenceTask(Task):
             input_data = db['input_data'][...]
 
             # collect outputs
+            o = []
             for output_key, output_data in db['outputs'].items():
                 output_name = base64.urlsafe_b64decode(str(output_key))
-                outputs[output_name] = output_data[...]
+                o.append({'id': output_data.attrs['id'], 'name': output_name, 'data': output_data[...]})
+            # sort outputs by ID
+            o = sorted(o, key=lambda x:x['id'])
+            # retain only data (using name as key)
+            for output in o:
+                outputs[output['name']] = output['data']
 
             # collect layer data, if applicable
             if 'layers' in db.keys():
