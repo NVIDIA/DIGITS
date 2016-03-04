@@ -1,11 +1,6 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import os
-import random
-import re
-import tempfile
-
 import flask
 import numpy as np
 import werkzeug.exceptions
