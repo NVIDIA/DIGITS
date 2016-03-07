@@ -609,7 +609,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 print rv.data
             raise RuntimeError('Failed to create job - status %s' % rv.status_code)
         inference_job_id = self.job_id_from_response(rv)
-        assert self.job_exists(inference_job_id, 'inference'), 'model not found after successful creation'
+        assert self.job_exists(inference_job_id, 'inference'), 'inference job not found after successful creation'
         self.job_wait_completion(inference_job_id)
         # post request again with inference job id
         rv = self.app.get('/inference/%s' % inference_job_id)
