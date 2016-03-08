@@ -187,7 +187,7 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
                 input_data = []
                 logger.info('Processed %d/%d images', idx+1, n_input_paths)
 
-    if n_input_samples == 0:
+    if n_loaded_samples == 0:
         raise InferenceError("Unable to load any image from file '%s'" % repr(input_list))
 
     db.close()
