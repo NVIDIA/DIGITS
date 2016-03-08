@@ -11,7 +11,7 @@ import werkzeug.exceptions
 import digits
 
 from digits import utils
-from digits.inference import ImageInferenceClassifyManyJob
+from digits.inference import ImageInferenceClassifyManyJob, ImageInferenceTopNJob
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
@@ -29,7 +29,6 @@ def read_image_list(image_list, image_folder, num_test_images):
         if not line:
             continue
 
-        path = None
         # might contain a numerical label at the end
         match = re.match(r'(.*\S)\s+(\d+)$', line)
         if match:
@@ -155,12 +154,66 @@ def classify_many():
     else:
         return flask.redirect(flask.url_for('digits.inference.views.show', job_id=inference_job.id()))
 
+@blueprint.route('/top_n', methods=['POST'])
+def top_n():
+    """
+    Classify many images and show the top N images per category by confidence
+    """
+    model_job = job_from_request()
+
+    image_list = flask.request.files['image_list']
+    if not image_list:
+        raise werkzeug.exceptions.BadRequest('File upload not found')
+
+    epoch = None
+    if 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+    if 'top_n' in flask.request.form and flask.request.form['top_n'].strip():
+        top_n = int(flask.request.form['top_n'])
+    else:
+        top_n = 9
+
+    if 'image_folder' in flask.request.form and flask.request.form['image_folder'].strip():
+        image_folder = flask.request.form['image_folder']
+        if not os.path.exists(image_folder):
+            raise werkzeug.exceptions.BadRequest('image_folder "%s" does not exit' % image_folder)
+    else:
+        image_folder = None
+
+    if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
+        num_test_images = int(flask.request.form['num_test_images'])
+    else:
+        num_test_images = None
+
+    paths, _ = read_image_list(image_list, image_folder, num_test_images)
+
+    # create inference job
+    inference_job = ImageInferenceTopNJob(
+                username    = utils.auth.get_username(),
+                name        = "TopN Image Classification",
+                model       = model_job,
+                images      = paths,
+                epoch       = epoch,
+                layers      = 'none',
+                top_n       = top_n,
+                )
+
+    # schedule tasks
+    scheduler.add_job(inference_job)
+
+    if request_wants_json():
+        return flask.jsonify(inference_job.json_dict())
+    else:
+        return flask.redirect(flask.url_for('digits.inference.views.show', job_id=inference_job.id()))
+
 """
 Show image classification inference job
 """
 def show(job):
     if isinstance(job, ImageInferenceClassifyManyJob):
         return show_classify_many(job)
+    if isinstance(job, ImageInferenceTopNJob):
+        return show_top_n(job)
     else:
         raise werkzeug.exceptions.BadRequest(
                     'Invalid job type')
@@ -242,3 +295,60 @@ def show_classify_many(inference_job):
                     confusion_matrix   = confusion_matrix,
                     per_class_accuracy = per_class_accuracy,
                     )
+
+def show_top_n(inference_job):
+
+    # retrieve inference parameters
+    model_job, _, _, top_n = inference_job.get_parameters()
+
+    if inference_job.status.is_running():
+        # the inference job is still running
+        if request_wants_json():
+            return flask.jsonify(inference_job.json_dict())
+        else:
+            return flask.render_template('inference/images/classification/top_n.html',
+                model_job          = model_job,
+                job                = inference_job,
+                running            = True,
+                )
+    else:
+
+        # retrieve inference data
+        inputs, outputs, _ = inference_job.get_data()
+
+        # delete job
+        scheduler.delete_job(inference_job)
+
+        results = None
+        if outputs is not None and len(outputs) > 0:
+            # convert to class probabilities for viewing
+            last_output_name, last_output_data = outputs.items()[-1]
+            scores = last_output_data
+
+            if scores is None:
+                raise RuntimeError('An error occured while processing the images')
+
+            labels = model_job.train_task().get_labels()
+            images = inputs['data']
+            indices = (-scores).argsort(axis=0)[:top_n]
+            results = []
+            # Can't have more images per category than the number of images
+            images_per_category = min(top_n, len(images))
+            for i in xrange(indices.shape[1]):
+                result_images = []
+                for j in xrange(images_per_category):
+                    result_images.append(images[indices[j][i]])
+                results.append((
+                        labels[i],
+                        utils.image.embed_image_html(
+                            utils.image.vis_square(np.array(result_images),
+                                colormap='white')
+                            )
+                        ))
+
+        return flask.render_template('inference/images/classification/top_n.html',
+                model_job       = model_job,
+                job             = inference_job,
+                results         = results,
+                running         = False,
+                )

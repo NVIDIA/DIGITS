@@ -64,7 +64,7 @@ class InferenceJob(Job):
         return task.inference_inputs, task.inference_outputs, task.inference_layers
 
     def get_parameters(self):
-        """Return inference parameters"""
+        """Return a tuple of inference parameters: (model, image_list, ground_truths,) """
         task = self.inference_task()
         return task.model, task.images, task.ground_truths
 

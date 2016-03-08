@@ -24,7 +24,7 @@ def show(job_id):
         raise werkzeug.exceptions.NotFound('Job not found')
 
     # show appropriate visualization
-    if isinstance(job, inference_images.ImageInferenceClassifyManyJob):
+    if isinstance(job, inference_images.ImageInferenceClassificationJob):
         return inference_images.classification.views.show(job)
     else:
         raise werkzeug.exceptions.BadRequest(

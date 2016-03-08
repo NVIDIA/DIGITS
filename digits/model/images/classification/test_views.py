@@ -690,6 +690,31 @@ class BaseTestCreated(BaseViewsTestWithModel):
         data = json.loads(rv.data)
         assert 'classifications' in data, 'invalid response'
 
+    def top_n(self, data):
+        rv = self.app.post(
+                '/inference/images/classification/top_n?job_id=%s' % self.model_id,
+                data = data,
+                )
+        # expect a redirect
+        if not 300 <= rv.status_code <= 310:
+            print 'Status code:', rv.status_code
+            s = BeautifulSoup(rv.data, 'html.parser')
+            div = s.select('div.alert-danger')
+            if div:
+                print div[0]
+            else:
+                print rv.data
+            raise RuntimeError('Failed to create job - status %s' % rv.status_code)
+        inference_job_id = self.job_id_from_response(rv)
+        assert self.job_exists(inference_job_id, 'inference'), 'inference job not found after successful creation'
+        self.job_wait_completion(inference_job_id)
+        # post request again with inference job id
+        rv = self.app.get('/inference/%s' % inference_job_id)
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        return rv
+
     def test_top_n(self):
         textfile_images = ''
         label_id = 0
@@ -703,13 +728,8 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
-        rv = self.app.post(
-                '/models/images/classification/top_n?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        rv = self.top_n(data = {'image_list': file_upload})
+
         keys = self.imageset_paths.keys()
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'
@@ -726,14 +746,8 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
-        rv = self.app.post(
-                '/models/images/classification/top_n?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload, 'image_folder': self.imageset_folder}
-                )
+        rv = self.top_n(data = {'image_list': file_upload, 'image_folder': self.imageset_folder})
 
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         keys = self.imageset_paths.keys()
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'

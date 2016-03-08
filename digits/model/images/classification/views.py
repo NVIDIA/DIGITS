@@ -26,36 +26,6 @@ from digits.webapp import app, scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
 
-"""
-Read an image list and return lists of paths and ground truth
-"""
-def read_image_list(image_list, image_folder, num_test_images):
-    paths = []
-    ground_truths = []
-
-    for line in image_list.readlines():
-        line = line.strip()
-        if not line:
-            continue
-
-        # might contain a numerical label at the end
-        match = re.match(r'(.*\S)\s+(\d+)$', line)
-        if match:
-            path = match.group(1)
-            ground_truth = int(match.group(2))
-        else:
-            path = line
-            ground_truth = None
-
-        if not utils.is_url(path) and image_folder and not os.path.isabs(path):
-            path = os.path.join(image_folder, path)
-        paths.append(path)
-        ground_truths.append(ground_truth)
-
-        if num_test_images is not None and len(paths) >= num_test_images:
-            break
-    return paths, ground_truths
-
 @blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
 def new():
@@ -361,95 +331,6 @@ def classify_one():
                 visualizations  = visualizations,
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
                 )
-
-
-@blueprint.route('/top_n', methods=['POST'])
-def top_n():
-    """
-    Classify many images and show the top N images per category by confidence
-    """
-    model_job = job_from_request()
-
-    image_list = flask.request.files['image_list']
-    if not image_list:
-        raise werkzeug.exceptions.BadRequest('File upload not found')
-
-    epoch = None
-    if 'snapshot_epoch' in flask.request.form:
-        epoch = float(flask.request.form['snapshot_epoch'])
-    if 'top_n' in flask.request.form and flask.request.form['top_n'].strip():
-        top_n = int(flask.request.form['top_n'])
-    else:
-        top_n = 9
-
-    if 'image_folder' in flask.request.form and flask.request.form['image_folder'].strip():
-        image_folder = flask.request.form['image_folder']
-        if not os.path.exists(image_folder):
-            raise werkzeug.exceptions.BadRequest('image_folder "%s" does not exit' % image_folder)
-    else:
-        image_folder = None
-
-    if 'num_test_images' in flask.request.form and flask.request.form['num_test_images'].strip():
-        num_test_images = int(flask.request.form['num_test_images'])
-    else:
-        num_test_images = None
-
-    paths, _ = read_image_list(image_list, image_folder, num_test_images)
-
-    # create inference job
-    inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "TopN Image Classification",
-                model       = model_job,
-                images      = paths,
-                epoch       = epoch,
-                layers      = 'none'
-                )
-
-    # schedule tasks
-    scheduler.add_job(inference_job)
-
-    # wait for job to complete
-    inference_job.wait_completion()
-
-    # retrieve inference data
-    inputs, outputs, _ = inference_job.get_data()
-
-    # delete job
-    scheduler.delete_job(inference_job)
-
-    results = None
-    if outputs is not None and len(outputs) > 0:
-        # convert to class probabilities for viewing
-        last_output_name, last_output_data = outputs.items()[-1]
-        scores = last_output_data
-
-        if scores is None:
-            raise RuntimeError('An error occured while processing the images')
-
-        labels = model_job.train_task().get_labels()
-        images = inputs['data']
-        indices = (-scores).argsort(axis=0)[:top_n]
-        results = []
-        # Can't have more images per category than the number of images
-        images_per_category = min(top_n, len(images))
-        for i in xrange(indices.shape[1]):
-            result_images = []
-            for j in xrange(images_per_category):
-                result_images.append(images[indices[j][i]])
-            results.append((
-                    labels[i],
-                    utils.image.embed_image_html(
-                        utils.image.vis_square(np.array(result_images),
-                            colormap='white')
-                        )
-                    ))
-
-    return flask.render_template('models/images/classification/top_n.html',
-            model_job       = model_job,
-            job             = inference_job,
-            results         = results,
-            )
 
 def get_datasets():
     return [(j.id(), j.name()) for j in sorted(

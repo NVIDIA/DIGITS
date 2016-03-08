@@ -13,10 +13,26 @@
     <h1>Top N Predictions per Category</h1>
 </div>
 
-{% if not results %}
-<div class="alert alert-danger">
-        <p>Classification failed, see job log</p>
-</div>
+{% if running %}
+    <div class="panel-heading">
+        <h4>
+            <div id="job-info-box">
+                Please wait while classification job is running...
+            </div>
+        </h4>
+    </div>
+    <div class="panel-body">
+        <p><img src="{{url_for('static', filename='images/loader.gif')}}"></p>
+    </div>
+    <script>
+    setTimeout(reloadPageOnUpdateTimeout,10000,"{{job.id()}}",10000);
+    </script>
+{% else %}
+    {% if not results %}
+    <div class="alert alert-danger">
+            <p>Classification failed, see job log</p>
+    </div>
+    {% endif %}
 {% endif %}
 
 {% endblock %}

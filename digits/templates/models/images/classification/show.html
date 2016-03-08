@@ -210,7 +210,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <input type="text" id="top_n" name="top_n" class="form-control" placeholder="9">
                         </div>
                         <button name="top-n-btn"
-                            formaction="{{url_for('digits.model.images.classification.views.top_n', job_id=job.id())}}"
+                            formaction="{{url_for('digits.inference.images.classification.views.top_n', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             formtarget="_blank"
