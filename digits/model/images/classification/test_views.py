@@ -551,51 +551,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 )
         assert status == 200, 'failed with %s' % status
 
-    def test_classify_one(self):
-        # carry out one inference test per category in dataset
-        for category in self.imageset_paths.keys():
-            image_path = self.imageset_paths[category][0]
-            image_path = os.path.join(self.imageset_folder, image_path)
-            with open(image_path,'rb') as infile:
-                # StringIO wrapping is needed to simulate POST file upload.
-                image_upload = (StringIO(infile.read()), 'image.png')
-
-            rv = self.app.post(
-                    '/models/images/classification/classify_one?job_id=%s' % self.model_id,
-                    data = {
-                        'image_file': image_upload,
-                        'show_visualizations': 'y',
-                        }
-                    )
-            s = BeautifulSoup(rv.data, 'html.parser')
-            body = s.select('body')
-            assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-            # gets an array of arrays [[confidence, label],...]
-            predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
-            assert predictions[0][1] == category, 'image misclassified'
-
-    def test_classify_one_json(self):
-        for category in self.imageset_paths.keys():
-            image_path = self.imageset_paths[category][0]
-            image_path = os.path.join(self.imageset_folder, image_path)
-            with open(image_path,'rb') as infile:
-                # StringIO wrapping is needed to simulate POST file upload.
-                image_upload = (StringIO(infile.read()), 'image.png')
-
-            rv = self.app.post(
-                    '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
-                    data = {
-                        'image_file': image_upload,
-                        'show_visualizations': 'y',
-                        }
-                    )
-            assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
-            data = json.loads(rv.data)
-            assert data['predictions'][0][0] == category, 'image misclassified'
-
-    def classify_many(self, data):
+    def classify(self, method, data):
         rv = self.app.post(
-                '/inference/images/classification/classify_many?job_id=%s' % self.model_id,
+                '/inference/images/classification/%s?job_id=%s' % (method, self.model_id),
                 data = data,
                 )
         # expect a redirect
@@ -618,6 +576,52 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         return rv
 
+    def test_classify_one(self):
+        # carry out one inference test per category in dataset
+        for category in self.imageset_paths.keys():
+            image_path = self.imageset_paths[category][0]
+            image_path = os.path.join(self.imageset_folder, image_path)
+            with open(image_path,'rb') as infile:
+                # StringIO wrapping is needed to simulate POST file upload.
+                image_upload = (StringIO(infile.read()), 'image.png')
+
+            rv = self.classify('classify_one',
+                data = {
+                        'image_file': image_upload,
+                        'show_visualizations': 'y',
+                        })
+            s = BeautifulSoup(rv.data, 'html.parser')
+            # gets an array of arrays [[confidence, label],...]
+            predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
+            assert predictions[0][1] == category, 'image misclassified'
+
+    def test_classify_one_json(self):
+        for category in self.imageset_paths.keys():
+            image_path = self.imageset_paths[category][0]
+            image_path = os.path.join(self.imageset_folder, image_path)
+            with open(image_path,'rb') as infile:
+                # StringIO wrapping is needed to simulate POST file upload.
+                image_upload = (StringIO(infile.read()), 'image.png')
+
+            rv = self.app.post(
+                    '/inference/images/classification/classify_one.json?job_id=%s' % self.model_id,
+                    data = {
+                        'image_file': image_upload,
+                        'show_visualizations': 'y',
+                        }
+                    )
+            # initial response should include the inference job ID and a progress indication
+            data = json.loads(rv.data)
+            assert 'id' in data, 'invalid response: %s' % repr(data)
+            assert 'progress' in data, 'invalid response: %s' % repr(data)
+            inference_job_id = data['id']
+            self.job_wait_completion(inference_job_id)
+            # post request again with inference job id
+            rv = self.app.get('/inference/%s.json' % inference_job_id)
+            assert rv.status_code == 200, 'GET failed with %s' % rv.status_code
+            data = json.loads(rv.data)
+            assert data['predictions'][0][0] == category, 'image misclassified'
+
     def test_classify_many(self):
         textfile_images = ''
         label_id = 0
@@ -630,7 +634,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
-        self.classify_many(data = {'image_list': file_upload})
+        self.classify('classify_many', data = {'image_list': file_upload})
 
     def test_classify_many_from_folder(self):
         textfile_images = ''
@@ -643,7 +647,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
-        self.classify_many(data = {'image_list': file_upload, 'image_folder': self.imageset_folder})
+        self.classify('classify_many', data = {'image_list': file_upload, 'image_folder': self.imageset_folder})
 
     def test_classify_many_invalid_ground_truth(self):
         textfile_images = ''
@@ -658,7 +662,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
-        self.classify_many(data = {'image_list': file_upload})
+        self.classify('classify_many', data = {'image_list': file_upload})
 
     def test_classify_many_json(self):
         textfile_images = ''
@@ -690,31 +694,6 @@ class BaseTestCreated(BaseViewsTestWithModel):
         data = json.loads(rv.data)
         assert 'classifications' in data, 'invalid response'
 
-    def top_n(self, data):
-        rv = self.app.post(
-                '/inference/images/classification/top_n?job_id=%s' % self.model_id,
-                data = data,
-                )
-        # expect a redirect
-        if not 300 <= rv.status_code <= 310:
-            print 'Status code:', rv.status_code
-            s = BeautifulSoup(rv.data, 'html.parser')
-            div = s.select('div.alert-danger')
-            if div:
-                print div[0]
-            else:
-                print rv.data
-            raise RuntimeError('Failed to create job - status %s' % rv.status_code)
-        inference_job_id = self.job_id_from_response(rv)
-        assert self.job_exists(inference_job_id, 'inference'), 'inference job not found after successful creation'
-        self.job_wait_completion(inference_job_id)
-        # post request again with inference job id
-        rv = self.app.get('/inference/%s' % inference_job_id)
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-        return rv
-
     def test_top_n(self):
         textfile_images = ''
         label_id = 0
@@ -728,7 +707,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
-        rv = self.top_n(data = {'image_list': file_upload})
+        rv = self.classify('top_n', data = {'image_list': file_upload})
 
         keys = self.imageset_paths.keys()
         for key in keys:
@@ -746,7 +725,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
-        rv = self.top_n(data = {'image_list': file_upload, 'image_folder': self.imageset_folder})
+        rv = self.classify('top_n', data = {'image_list': file_upload, 'image_folder': self.imageset_folder})
 
         keys = self.imageset_paths.keys()
         for key in keys:

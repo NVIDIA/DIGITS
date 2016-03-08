@@ -167,7 +167,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 ></span>
                         </div>
                         <button name="classify-one-btn"
-                            formaction="{{url_for('digits.model.images.classification.views.classify_one', job_id=job.id())}}"
+                            formaction="{{url_for('digits.inference.images.classification.views.classify_one', job_id=job.id())}}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             formtarget="_blank"

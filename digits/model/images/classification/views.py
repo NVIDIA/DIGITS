@@ -2,9 +2,6 @@
 from __future__ import absolute_import
 
 import os
-import random
-import re
-import tempfile
 
 import flask
 import numpy as np
@@ -17,7 +14,6 @@ from digits import frameworks
 from digits import utils
 from digits.config import config_value
 from digits.dataset import ImageClassificationDatasetJob
-from digits.inference import ImageInferenceJob
 from digits.status import Status
 from digits.utils import filesystem as fs
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
@@ -247,90 +243,6 @@ def large_graph():
     job = job_from_request()
 
     return flask.render_template('models/images/classification/large_graph.html', job=job)
-
-@blueprint.route('/classify_one.json', methods=['POST'])
-@blueprint.route('/classify_one', methods=['POST', 'GET'])
-def classify_one():
-    """
-    Classify one image and return the top 5 classifications
-
-    Returns JSON when requested: {predictions: {category: confidence,...}}
-    """
-    model_job = job_from_request()
-
-    if 'image_url' in flask.request.form and flask.request.form['image_url']:
-        image_path = flask.request.form['image_url']
-    elif 'image_file' in flask.request.files and flask.request.files['image_file']:
-        outfile = tempfile.mkstemp(suffix='.png')
-        flask.request.files['image_file'].save(outfile[1])
-        image_path = outfile[1]
-        os.close(outfile[0])
-    else:
-        raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
-
-    epoch = None
-    if 'snapshot_epoch' in flask.request.form:
-        epoch = float(flask.request.form['snapshot_epoch'])
-
-    layers = 'none'
-    if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
-        layers = 'all'
-
-    # create inference job
-    inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "Classify One Image",
-                model       = model_job,
-                images      = [image_path],
-                epoch       = epoch,
-                layers      = layers
-                )
-
-    # schedule tasks
-    scheduler.add_job(inference_job)
-
-    # wait for job to complete
-    inference_job.wait_completion()
-
-    # retrieve inference data
-    inputs, outputs, visualizations = inference_job.get_data()
-
-    # delete job
-    scheduler.delete_job(inference_job)
-
-    # remove file (fails silently if a URL was provided)
-    try:
-        os.remove(image_path)
-    except:
-        pass
-
-    image = None
-    predictions = []
-    if inputs is not None and len(inputs['data']) == 1:
-        image = utils.image.embed_image_html(inputs['data'][0])
-        # convert to class probabilities for viewing
-        last_output_name, last_output_data = outputs.items()[-1]
-
-        if len(last_output_data) == 1:
-            scores = last_output_data[0].flatten()
-            indices = (-scores).argsort()
-            labels = model_job.train_task().get_labels()
-            predictions = []
-            for i in indices:
-                predictions.append( (labels[i], scores[i]) )
-            predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
-
-    if request_wants_json():
-        return flask.jsonify({'predictions': predictions})
-    else:
-        return flask.render_template('models/images/classification/classify_one.html',
-                model_job       = model_job,
-                job             = inference_job,
-                image_src       = image,
-                predictions     = predictions,
-                visualizations  = visualizations,
-                total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
-                )
 
 def get_datasets():
     return [(j.id(), j.name()) for j in sorted(

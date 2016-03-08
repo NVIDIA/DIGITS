@@ -16,6 +16,17 @@ class ImageInferenceClassificationJob(ImageInferenceJob):
         return 'Image Classification Inference'
 
 @subclass
+class ImageInferenceClassifyOneJob(ImageInferenceClassificationJob):
+    """
+    A Job that exercises the forward pass of a classification image neural network
+    Inference exercised through 'classify_one' method
+    """
+
+    @override
+    def job_type(self):
+        return 'Image Classification Classify One Inference'
+
+@subclass
 class ImageInferenceClassifyManyJob(ImageInferenceClassificationJob):
     """
     A Job that exercises the forward pass of a classification image neural network

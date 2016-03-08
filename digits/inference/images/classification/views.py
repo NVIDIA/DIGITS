@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import os
 import re
+import tempfile
 
 import flask
 import numpy as np
@@ -11,7 +12,7 @@ import werkzeug.exceptions
 import digits
 
 from digits import utils
-from digits.inference import ImageInferenceClassifyManyJob, ImageInferenceTopNJob
+from digits.inference import ImageInferenceClassifyOneJob, ImageInferenceClassifyManyJob, ImageInferenceTopNJob
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
@@ -103,6 +104,52 @@ def get_classification_stats(scores, ground_truths, labels):
             top5_accuracy,
             confusion_matrix,
             per_class_accuracy)
+
+@blueprint.route('/classify_one.json', methods=['POST'])
+@blueprint.route('/classify_one', methods=['POST', 'GET'])
+def classify_one():
+    """
+    Classify one image and return the top 5 classifications
+
+    Returns JSON when requested: {predictions: {category: confidence,...}}
+    """
+    model_job = job_from_request()
+
+    if 'image_url' in flask.request.form and flask.request.form['image_url']:
+        image_path = flask.request.form['image_url']
+    elif 'image_file' in flask.request.files and flask.request.files['image_file']:
+        outfile = tempfile.mkstemp(suffix='.png')
+        flask.request.files['image_file'].save(outfile[1])
+        image_path = outfile[1]
+        os.close(outfile[0])
+    else:
+        raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
+
+    epoch = None
+    if 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+
+    layers = 'none'
+    if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
+        layers = 'all'
+
+    # create inference job
+    inference_job = ImageInferenceClassifyOneJob(
+                username    = utils.auth.get_username(),
+                name        = "Classify One Image",
+                model       = model_job,
+                images      = [image_path],
+                epoch       = epoch,
+                layers      = layers
+                )
+
+    # schedule tasks
+    scheduler.add_job(inference_job)
+
+    if request_wants_json():
+        return flask.jsonify(inference_job.json_dict())
+    else:
+        return flask.redirect(flask.url_for('digits.inference.views.show', job_id=inference_job.id()))
 
 @blueprint.route('/classify_many.json', methods=['POST', 'GET'])
 @blueprint.route('/classify_many', methods=['POST', 'GET'])
@@ -210,13 +257,77 @@ def top_n():
 Show image classification inference job
 """
 def show(job):
-    if isinstance(job, ImageInferenceClassifyManyJob):
+    if isinstance(job, ImageInferenceClassifyOneJob):
+        return show_classify_one(job)
+    elif isinstance(job, ImageInferenceClassifyManyJob):
         return show_classify_many(job)
-    if isinstance(job, ImageInferenceTopNJob):
+    elif isinstance(job, ImageInferenceTopNJob):
         return show_top_n(job)
     else:
         raise werkzeug.exceptions.BadRequest(
                     'Invalid job type')
+
+"""
+Show classify one inference job
+"""
+def show_classify_one(inference_job):
+
+    # retrieve inference parameters
+    model_job, paths, _ = inference_job.get_parameters()
+
+    if inference_job.status.is_running():
+        # the inference job is still running
+        if request_wants_json():
+            return flask.jsonify(inference_job.json_dict())
+        else:
+            return flask.render_template('inference/images/classification/classify_one.html',
+                model_job          = model_job,
+                job                = inference_job,
+                running            = True,
+                )
+    else:
+        # the inference job has completed
+
+        # retrieve inference data
+        inputs, outputs, visualizations = inference_job.get_data()
+
+        # delete job
+        scheduler.delete_job(inference_job)
+
+        # remove file (fails silently if a URL was provided)
+        try:
+            os.remove(paths[0])
+        except:
+            pass
+
+        image = None
+        predictions = []
+        if inputs is not None and len(inputs['data']) == 1:
+            image = utils.image.embed_image_html(inputs['data'][0])
+            # convert to class probabilities for viewing
+            last_output_name, last_output_data = outputs.items()[-1]
+
+            if len(last_output_data) == 1:
+                scores = last_output_data[0].flatten()
+                indices = (-scores).argsort()
+                labels = model_job.train_task().get_labels()
+                predictions = []
+                for i in indices:
+                    predictions.append( (labels[i], scores[i]) )
+                predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
+
+        if request_wants_json():
+            return flask.jsonify({'predictions': predictions})
+        else:
+            return flask.render_template('inference/images/classification/classify_one.html',
+                    model_job       = model_job,
+                    job             = inference_job,
+                    image_src       = image,
+                    predictions     = predictions,
+                    visualizations  = visualizations,
+                    total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
+                    running         = False,
+                    )
 
 """
 Show classify many inference job
@@ -295,7 +406,9 @@ def show_classify_many(inference_job):
                     confusion_matrix   = confusion_matrix,
                     per_class_accuracy = per_class_accuracy,
                     )
-
+"""
+show TopN classification job
+"""
 def show_top_n(inference_job):
 
     # retrieve inference parameters

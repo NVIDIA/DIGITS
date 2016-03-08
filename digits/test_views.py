@@ -104,7 +104,7 @@ class BaseViewsTest(object):
         return rv.status_code
 
     @classmethod
-    def job_wait_completion(cls, job_id, timeout=10, polling_period=0.5, job_type='jobs'):
+    def job_wait_completion(cls, job_id, timeout=10, polling_period=0.05, job_type='jobs'):
         """
         Poll the job status until it completes
         Returns the final status
