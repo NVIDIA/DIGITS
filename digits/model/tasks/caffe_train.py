@@ -419,11 +419,14 @@ class CaffeTrainTask(TrainTask):
         train_val_network.layer.extend(loss_layers)
         train_val_network.layer.extend(accuracy_layers)
 
-        # network sanity checks
-        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
-
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - train")
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
+        self.logger.debug("Network sanity check - val")
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
 
         ### Write deploy file
 
@@ -452,11 +455,12 @@ class CaffeTrainTask(TrainTask):
             prob_layer.bottom.append(network_outputs[-1])
             prob_layer.top.append('prob')
 
-        # network sanity checks
-        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
-
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - deploy")
+        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
 
         ### Write solver file
 
@@ -640,11 +644,14 @@ class CaffeTrainTask(TrainTask):
         # hidden layers
         train_val_network.MergeFrom(train_val_layers)
 
-        # network sanity checks
-        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
-
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - train")
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
+        self.logger.debug("Network sanity check - val")
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
 
         ### Write deploy file
 
@@ -667,11 +674,12 @@ class CaffeTrainTask(TrainTask):
         # hidden layers
         deploy_network.MergeFrom(deploy_layers)
 
-        # network sanity checks
-        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
-
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - deploy")
+        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
 
         ### Write solver file
 
