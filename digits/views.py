@@ -342,7 +342,7 @@ def path_autocomplete():
         suggestions = [p.replace('\\', '/') for p in suggestions]
 
     result = {
-        "suggestions": suggestions
+        "suggestions": sorted(suggestions)
     }
 
     return json.dumps(result)
