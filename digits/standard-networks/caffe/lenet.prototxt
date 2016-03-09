@@ -149,7 +149,7 @@ layer {
   }
 }
 layer {
-  name: "accuracy"
+  name: "train_accuracy"
   type: "Accuracy"
   bottom: "ip2"
   bottom: "label"
@@ -159,9 +159,15 @@ layer {
   }
 }
 layer {
-  name: "loss"
+  name: "train_loss"
   type: "SoftmaxWithLoss"
   bottom: "ip2"
   bottom: "label"
   top: "loss"
+}
+layer {
+  name: "deploy_prob"
+  type: "Softmax"
+  bottom: "ip2"
+  top: "prob"
 }

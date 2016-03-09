@@ -358,7 +358,7 @@ layer {
   }
 }
 layer {
-  name: "accuracy"
+  name: "train_accuracy"
   type: "Accuracy"
   bottom: "fc8"
   bottom: "label"
@@ -368,9 +368,15 @@ layer {
   }
 }
 layer {
-  name: "loss"
+  name: "train_loss"
   type: "SoftmaxWithLoss"
   bottom: "fc8"
   bottom: "label"
   top: "loss"
+}
+layer {
+  name: "deploy_prob"
+  type: "Softmax"
+  bottom: "fc8"
+  top: "prob"
 }
