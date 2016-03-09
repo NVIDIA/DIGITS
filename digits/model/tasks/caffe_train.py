@@ -34,8 +34,8 @@ CAFFE_TRAIN_VAL_FILE = 'train_val.prototxt'
 CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
 
-TRAIN_VAL_LAYER_EXCLUSION_PREFIX = "deploy_"
-DEPLOY_LAYER_EXCLUSION_PREFIX = "train_"
+TRAIN_VAL_LAYER_PREFIX = "train_"
+DEPLOY_LAYER_PREFIX = "deploy_"
 
 @subclass
 class Error(Exception):
@@ -243,15 +243,16 @@ class CaffeTrainTask(TrainTask):
 
         ### Check what has been specified in self.network
 
-        tops = []
-        bottoms = {}
         train_data_layer = None
         val_data_layer = None
-        hidden_layers = []
-        loss_layers = []
-        accuracy_layers = []
+
+        # Don't use an array of layers because we may need to modify layer names
+        #  without modifying the original self.network object
+        train_val_layers = caffe_pb2.NetParameter()
+        deploy_layers = caffe_pb2.NetParameter()
+
         for layer in self.network.layer:
-            assert layer.type not in ['DummyData', 'ImageData', 'MemoryData', 'WindowData'], 'unsupported data layer type'
+            assert layer.type not in ['DummyData', 'ImageData', 'MemoryData', 'WindowData'], 'unsupported data layer type %s' % layer.type
             if layer.type in ['Data', 'HDF5Data']:
                 for rule in layer.include:
                     if rule.phase == caffe_pb2.TRAIN:
@@ -260,44 +261,33 @@ class CaffeTrainTask(TrainTask):
                     elif rule.phase == caffe_pb2.TEST:
                         assert val_data_layer is None, 'cannot specify two test data layers'
                         val_data_layer = layer
-            elif layer.type == 'SoftmaxWithLoss':
-                loss_layers.append(layer)
-            elif layer.type == 'Accuracy':
-                addThis = True
-                if layer.accuracy_param.HasField('top_k'):
-                    if layer.accuracy_param.top_k >= len(self.get_labels()):
-                        self.logger.warning('Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (layer.name, layer.accuracy_param.top_k, len(self.get_labels())))
-                        addThis = False
-                if addThis:
-                    accuracy_layers.append(layer)
+                continue
+
+            if layer.type == 'Accuracy':
+                # Check to see if top_k > num_categories
+                if ( layer.accuracy_param.HasField('top_k') and
+                        layer.accuracy_param.top_k >= len(self.get_labels()) ):
+                    self.logger.warning('Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (layer.name, layer.accuracy_param.top_k, len(self.get_labels())))
+                    continue
+            elif layer.type == 'InnerProduct':
+                # Check to see if num_output is unset
+                if not layer.inner_product_param.HasField('num_output'):
+                    layer.inner_product_param.num_output = len(self.get_labels())
+
+            if layer.name.startswith(TRAIN_VAL_LAYER_PREFIX):
+                train_val_layers.layer.add().CopyFrom(layer)
+                # Strip the prefix
+                train_val_layers.layer[-1].name = layer.name[len(TRAIN_VAL_LAYER_PREFIX):]
+            elif layer.name.startswith(DEPLOY_LAYER_PREFIX):
+                deploy_layers.layer.add().CopyFrom(layer)
+                # Strip the prefix
+                deploy_layers.layer[-1].name = layer.name[len(DEPLOY_LAYER_PREFIX):]
             else:
-                hidden_layers.append(layer)
-                if len(layer.bottom) == 1 and len(layer.top) == 1 and layer.bottom[0] == layer.top[0]:
-                    pass
-                else:
-                    for top in layer.top:
-                        tops.append(top)
-                    for bottom in layer.bottom:
-                        bottoms[bottom] = True
+                train_val_layers.layer.add().CopyFrom(layer)
+                deploy_layers.layer.add().CopyFrom(layer)
 
         if train_data_layer is None:
             assert val_data_layer is None, 'cannot specify a test data layer without a train data layer'
-
-        assert len(loss_layers) > 0, 'must specify a loss layer'
-
-        network_outputs = []
-        for name in tops:
-            if name not in bottoms:
-                network_outputs.append(name)
-        assert len(network_outputs), 'network must have an output'
-
-        # Update num_output for any output InnerProduct layers automatically
-        for layer in hidden_layers:
-            if layer.type == 'InnerProduct':
-                for top in layer.top:
-                    if top in network_outputs:
-                        layer.inner_product_param.num_output = len(self.get_labels())
-                        break
 
         ### Write train_val file
 
@@ -415,18 +405,10 @@ class CaffeTrainTask(TrainTask):
                 if val_data_layer is not None and has_val_set and not val_data_layer.hdf5_data_param.HasField('batch_size'):
                     val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
-        # hidden layers
-        for layer in hidden_layers:
-            # don't add layers with names starting with the exclusion prefix
-            if not layer.name.startswith(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):
-                train_val_network.layer.add().CopyFrom(layer)
-                if layer.name.startswith(DEPLOY_LAYER_EXCLUSION_PREFIX):
-                    train_val_network.layer[-1].name = layer.name[len(DEPLOY_LAYER_EXCLUSION_PREFIX):]
+        # Non-data layers
+        train_val_network.MergeFrom(train_val_layers)
 
-        # output layers
-        train_val_network.layer.extend(loss_layers)
-        train_val_network.layer.extend(accuracy_layers)
-
+        # Write to file
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
 
@@ -440,7 +422,7 @@ class CaffeTrainTask(TrainTask):
 
         deploy_network = caffe_pb2.NetParameter()
 
-        # input
+        # Input
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
@@ -452,22 +434,10 @@ class CaffeTrainTask(TrainTask):
             shape.dim.append(self.dataset.image_dims[0])
             shape.dim.append(self.dataset.image_dims[1])
 
-        # hidden layers
-        for layer in hidden_layers:
-            # don't add layers with names starting with the exclusion prefix
-            if not layer.name.startswith(DEPLOY_LAYER_EXCLUSION_PREFIX):
-                deploy_network.layer.add().CopyFrom(layer)
-                if layer.name.startswith(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):
-                    deploy_network.layer[-1].name = layer.name[len(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):]
+        # Layers
+        deploy_network.MergeFrom(deploy_layers)
 
-        # output layers
-        if loss_layers[-1].type == 'SoftmaxWithLoss':
-            prob_layer = deploy_network.layer.add(
-                    type = 'Softmax',
-                    name = 'prob')
-            prob_layer.bottom.append(network_outputs[-1])
-            prob_layer.top.append('prob')
-
+        # Write to file
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
 
@@ -598,18 +568,14 @@ class CaffeTrainTask(TrainTask):
         val_image_data_layer = None
         val_label_data_layer = None
 
+        # Don't use an array of layers because we may need to modify layer names
+        #  without modifying the original self.network object
         train_val_layers = caffe_pb2.NetParameter()
         deploy_layers = caffe_pb2.NetParameter()
 
         for layer in self.network.layer:
-            assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
-            if layer.name.startswith(DEPLOY_LAYER_EXCLUSION_PREFIX):
-                train_val_layers.layer.add().CopyFrom(layer)
-                train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[len(DEPLOY_LAYER_EXCLUSION_PREFIX):]
-            elif layer.name.startswith(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):
-                deploy_layers.layer.add().CopyFrom(layer)
-                deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[len(TRAIN_VAL_LAYER_EXCLUSION_PREFIX):]
-            elif layer.type == 'Data':
+            assert layer.type not in ['DummyData', 'HDF5Data', 'ImageData', 'MemoryData', 'WindowData'], 'unsupported data layer type %s' % layer.type
+            if layer.type == 'Data':
                 for rule in layer.include:
                     if rule.phase == caffe_pb2.TRAIN:
                         if 'data' in layer.top:
@@ -625,12 +591,21 @@ class CaffeTrainTask(TrainTask):
                         elif 'label' in layer.top:
                             assert val_label_data_layer is None, 'cannot specify two val label data layers'
                             val_label_data_layer = layer
-            elif 'loss' in layer.type.lower():
-                # Don't add it to the deploy network
+                continue
+
+            if layer.type == 'InnerProduct':
+                # Check to see if num_output is unset
+                assert layer.inner_product_param.HasField('num_output'), \
+                    "Don't leave inner_product_param.num_output unset for generic networks (layer %s)" % layer.name
+
+            if layer.name.startswith(TRAIN_VAL_LAYER_PREFIX):
                 train_val_layers.layer.add().CopyFrom(layer)
-            elif 'accuracy' in layer.type.lower():
-                # Don't add it to the deploy network
-                train_val_layers.layer.add().CopyFrom(layer)
+                # Strip the prefix
+                train_val_layers.layer[-1].name = layer.name[len(TRAIN_VAL_LAYER_PREFIX):]
+            elif layer.name.startswith(DEPLOY_LAYER_PREFIX):
+                deploy_layers.layer.add().CopyFrom(layer)
+                # Strip the prefix
+                deploy_layers.layer[-1].name = layer.name[len(DEPLOY_LAYER_PREFIX):]
             else:
                 train_val_layers.layer.add().CopyFrom(layer)
                 deploy_layers.layer.add().CopyFrom(layer)
@@ -654,9 +629,10 @@ class CaffeTrainTask(TrainTask):
         if val_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_label_data_layer)
 
-        # hidden layers
+        # Non-data layers
         train_val_network.MergeFrom(train_val_layers)
 
+        # Write to file
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
 
@@ -670,7 +646,7 @@ class CaffeTrainTask(TrainTask):
 
         deploy_network = caffe_pb2.NetParameter()
 
-        # input
+        # Input
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
@@ -684,9 +660,10 @@ class CaffeTrainTask(TrainTask):
             shape.dim.append(train_image_db.image_height)
             shape.dim.append(train_image_db.image_width)
 
-        # hidden layers
+        # Layers
         deploy_network.MergeFrom(deploy_layers)
 
+        # Write to file
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
 
