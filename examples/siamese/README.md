@@ -47,6 +47,8 @@ The script also creates a validation database of 1000 samples. Overall, the scri
 - train and validation mean images,
 - two sets of 10 test images: one set includes images that are taken from the same class, the other set includes images that are taken from different classes
 
+> NOTE: `create_db.py` does not resize images. All images must have the same size.
+
 Now that we have created the required files, we may create the dataset using DIGITS. On the main page, click `New Dataset > Images > Other`:
 
 ![Create generic dataset](create-generic-dataset.png)

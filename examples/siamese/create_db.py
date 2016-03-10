@@ -42,7 +42,7 @@ TEST_IMAGE_COUNT = 10
 DB_BATCH_SIZE = 100
 
 
-def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_count=None, db_batch_size=None):
+def create_lmdbs(folder, file_list, image_count=None, db_batch_size=None):
     """
     Creates LMDBs for generic inference
     Returns the filename for a test image
@@ -55,10 +55,6 @@ def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_c
         mean.binaryproto
         test.png
     """
-    if image_width is None:
-        image_width = IMAGE_SIZE
-    if image_height is None:
-        image_height = IMAGE_SIZE
 
     if image_count is None:
         train_image_count = TRAIN_IMAGE_COUNT
@@ -145,7 +141,7 @@ def create_lmdbs(folder, file_list, image_width=None, image_height=None, image_c
             # encode into Datum object
             image = image_pair.astype('uint8')
             datum = caffe.io.array_to_datum(image, -1)
-            image_batch.append([str(i), datum])            
+            image_batch.append([str(i), datum])
 
             # create label Datum
             label_datum = caffe_pb2.Datum()
