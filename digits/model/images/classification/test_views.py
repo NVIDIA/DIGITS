@@ -52,14 +52,14 @@ layer {
     top: "output"
 }
 layer {
-    name: "loss"
+    name: "train_loss"
     type: "SoftmaxWithLoss"
     bottom: "output"
     bottom: "label"
     top: "loss"
 }
 layer {
-    name: "accuracy"
+    name: "train_accuracy"
     type: "Accuracy"
     bottom: "output"
     bottom: "label"
@@ -67,6 +67,12 @@ layer {
     include {
         phase: TEST
     }
+}
+layer {
+    name: "deploy_prob"
+    type: "Softmax"
+    bottom: "output"
+    top: "prob"
 }
 """
 
@@ -426,7 +432,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
                     top: "output"
                 }
                 layer {
-                    name: "loss"
+                    name: "train_loss"
                     type: "SoftmaxWithLoss"
                     bottom: "output"
                     bottom: "label"
@@ -834,14 +840,14 @@ layer {
     top: "output"
 }
 layer {
-    name: "loss"
+    name: "train_loss"
     type: "SoftmaxWithLoss"
     bottom: "output"
     bottom: "label"
     top: "loss"
 }
 layer {
-    name: "accuracy"
+    name: "train_accuracy"
     type: "Accuracy"
     bottom: "output"
     bottom: "label"
@@ -849,6 +855,12 @@ layer {
     include {
         phase: TEST
     }
+}
+layer {
+    name: "deploy_prob"
+    type: "Softmax"
+    bottom: "output"
+    top: "prob"
 }
 """
     TORCH_NETWORK = \
@@ -1001,14 +1013,14 @@ layer {
     top: "output"
 }
 layer {
-    name: "loss"
+    name: "train_loss"
     type: "SoftmaxWithLoss"
     bottom: "output"
     bottom: "label"
     top: "loss"
 }
 layer {
-    name: "accuracy"
+    name: "train_accuracy"
     type: "Accuracy"
     bottom: "output"
     bottom: "label"
@@ -1027,7 +1039,12 @@ layer {
         layer: "PythonLayer"
     }
 }
-
+layer {
+    name: "deploy_prob"
+    type: "Softmax"
+    bottom: "output"
+    top: "prob"
+}
 """
     def write_python_layer_script(self, filename):
         with open(filename, 'w') as f:

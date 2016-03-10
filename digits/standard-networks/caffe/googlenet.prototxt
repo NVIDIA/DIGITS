@@ -831,7 +831,7 @@ layer {
   top: "inception_4a/output"
 }
 layer {
-  name: "loss1/ave_pool"
+  name: "train_loss1/ave_pool"
   type: "Pooling"
   bottom: "inception_4a/output"
   top: "loss1/ave_pool"
@@ -842,7 +842,7 @@ layer {
   }
 }
 layer {
-  name: "loss1/conv"
+  name: "train_loss1/conv"
   type: "Convolution"
   bottom: "loss1/ave_pool"
   top: "loss1/conv"
@@ -868,13 +868,13 @@ layer {
   }
 }
 layer {
-  name: "loss1/relu_conv"
+  name: "train_loss1/relu_conv"
   type: "ReLU"
   bottom: "loss1/conv"
   top: "loss1/conv"
 }
 layer {
-  name: "loss1/fc"
+  name: "train_loss1/fc"
   type: "InnerProduct"
   bottom: "loss1/conv"
   top: "loss1/fc"
@@ -899,13 +899,13 @@ layer {
   }
 }
 layer {
-  name: "loss1/relu_fc"
+  name: "train_loss1/relu_fc"
   type: "ReLU"
   bottom: "loss1/fc"
   top: "loss1/fc"
 }
 layer {
-  name: "loss1/drop_fc"
+  name: "train_loss1/drop_fc"
   type: "Dropout"
   bottom: "loss1/fc"
   top: "loss1/fc"
@@ -914,7 +914,7 @@ layer {
   }
 }
 layer {
-  name: "loss1/classifier"
+  name: "train_loss1/classifier"
   type: "InnerProduct"
   bottom: "loss1/fc"
   top: "loss1/classifier"
@@ -927,6 +927,10 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 1000
     weight_filler {
       type: "xavier"
       std: 0.0009765625
@@ -938,7 +942,7 @@ layer {
   }
 }
 layer {
-  name: "loss1/loss"
+  name: "train_loss1/loss"
   type: "SoftmaxWithLoss"
   bottom: "loss1/classifier"
   bottom: "label"
@@ -946,7 +950,7 @@ layer {
   loss_weight: 0.3
 }
 layer {
-  name: "loss1/top-1"
+  name: "train_loss1/top-1"
   type: "Accuracy"
   bottom: "loss1/classifier"
   bottom: "label"
@@ -956,7 +960,7 @@ layer {
   }
 }
 layer {
-  name: "loss1/top-5"
+  name: "train_loss1/top-5"
   type: "Accuracy"
   bottom: "loss1/classifier"
   bottom: "label"
@@ -1614,7 +1618,7 @@ layer {
   top: "inception_4d/output"
 }
 layer {
-  name: "loss2/ave_pool"
+  name: "train_loss2/ave_pool"
   type: "Pooling"
   bottom: "inception_4d/output"
   top: "loss2/ave_pool"
@@ -1625,7 +1629,7 @@ layer {
   }
 }
 layer {
-  name: "loss2/conv"
+  name: "train_loss2/conv"
   type: "Convolution"
   bottom: "loss2/ave_pool"
   top: "loss2/conv"
@@ -1651,13 +1655,13 @@ layer {
   }
 }
 layer {
-  name: "loss2/relu_conv"
+  name: "train_loss2/relu_conv"
   type: "ReLU"
   bottom: "loss2/conv"
   top: "loss2/conv"
 }
 layer {
-  name: "loss2/fc"
+  name: "train_loss2/fc"
   type: "InnerProduct"
   bottom: "loss2/conv"
   top: "loss2/fc"
@@ -1682,13 +1686,13 @@ layer {
   }
 }
 layer {
-  name: "loss2/relu_fc"
+  name: "train_loss2/relu_fc"
   type: "ReLU"
   bottom: "loss2/fc"
   top: "loss2/fc"
 }
 layer {
-  name: "loss2/drop_fc"
+  name: "train_loss2/drop_fc"
   type: "Dropout"
   bottom: "loss2/fc"
   top: "loss2/fc"
@@ -1697,7 +1701,7 @@ layer {
   }
 }
 layer {
-  name: "loss2/classifier"
+  name: "train_loss2/classifier"
   type: "InnerProduct"
   bottom: "loss2/fc"
   top: "loss2/classifier"
@@ -1710,6 +1714,10 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 1000
     weight_filler {
       type: "xavier"
       std: 0.0009765625
@@ -1721,7 +1729,7 @@ layer {
   }
 }
 layer {
-  name: "loss2/loss"
+  name: "train_loss2/loss"
   type: "SoftmaxWithLoss"
   bottom: "loss2/classifier"
   bottom: "label"
@@ -1729,7 +1737,7 @@ layer {
   loss_weight: 0.3
 }
 layer {
-  name: "loss2/top-1"
+  name: "train_loss2/top-1"
   type: "Accuracy"
   bottom: "loss2/classifier"
   bottom: "label"
@@ -1739,7 +1747,7 @@ layer {
   }
 }
 layer {
-  name: "loss2/top-5"
+  name: "train_loss2/top-5"
   type: "Accuracy"
   bottom: "loss2/classifier"
   bottom: "label"
@@ -2441,6 +2449,10 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 1000
     weight_filler {
       type: "xavier"
     }
@@ -2451,7 +2463,7 @@ layer {
   }
 }
 layer {
-  name: "loss3/loss"
+  name: "train_loss3/loss"
   type: "SoftmaxWithLoss"
   bottom: "loss3/classifier"
   bottom: "label"
@@ -2459,7 +2471,7 @@ layer {
   loss_weight: 1
 }
 layer {
-  name: "loss3/top-1"
+  name: "train_loss3/top-1"
   type: "Accuracy"
   bottom: "loss3/classifier"
   bottom: "label"
@@ -2469,7 +2481,7 @@ layer {
   }
 }
 layer {
-  name: "loss3/top-5"
+  name: "train_loss3/top-5"
   type: "Accuracy"
   bottom: "loss3/classifier"
   bottom: "label"
@@ -2480,4 +2492,10 @@ layer {
   accuracy_param {
     top_k: 5
   }
+}
+layer {
+  name: "deploy_prob"
+  type: "Softmax"
+  bottom: "loss3/classifier"
+  top: "prob"
 }
