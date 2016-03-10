@@ -444,6 +444,12 @@ class CaffeTrainTask(TrainTask):
         # network sanity checks
         self.logger.debug("Network sanity check - deploy")
         CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
+        found_softmax = False
+        for layer in deploy_network.layer:
+            if layer.type == 'Softmax':
+                found_softmax = True
+                break
+        assert found_softmax, 'Your deploy network is missing a Softmax layer! Read the documentation for custom networks and/or look at the standard networks for examples.'
 
         ### Write solver file
 
