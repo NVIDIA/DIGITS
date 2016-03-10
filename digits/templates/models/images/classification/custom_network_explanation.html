@@ -1,13 +1,39 @@
 {# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
 
-
 <h1>Specifying a custom Caffe network</h1>
 
 <p>
-    You should enter a train_val network here. Some cleanup is done for you automatically:
+    This .prototxt file should describe three different networks - <code>Train</code>, <code>Val</code> and <code>Deploy</code>.
 </p>
-
 <ul>
+    <li>
+        You can mark a layer as belonging to a specific phase by using <b>layer.include.phase</b>.
+        The TRAIN phase is used for the <code>Train</code> network, while the TEST phase is used for both the <code>Val</code> and <code>Deploy</code> networks.
+        <pre>
+include { phase: TRAIN } # only Train
+include { phase: TEST }  # Val and Deploy</pre>
+    </li>
+</ul>
+
+<p>
+    This alone isn't sufficient to specify all three networks, so DIGITS has a mechanism to differentiate layers which belong to <code>Train</code> and <code>Val</code> networks, and those which belong to the <code>Deploy</code> network.
+</p>
+<ul>
+    <li>
+        As an addition to DIGITS, you can also differentiate between <code>train/val</code> and <code>deploy</code> by adding a prefix to <b>layer.name</b>.
+        <pre>
+            layer {
+                # Included in the "train" and "val" phases
+                name: "train_loss"
+                type: "SoftmaxWithLoss"
+            }
+            layer {
+                # Included in the "deploy" phase
+                name: "deploy_softmax"
+                type: "Softmax"
+            }
+        </pre>
+    </li>
     <li>
         The <i>num_output</i> for each <b>InnerProduct</b> layer which is a network output gets set to the number of labels in the chosen dataset.
     </li>
