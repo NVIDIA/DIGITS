@@ -36,7 +36,11 @@ before_script:
     - source $(pwd)/deps/torch/install/bin/torch-activate
     # Disable OpenMP multi-threading
     - export OMP_NUM_THREADS=1
+    - ./manage.py db init
+    - ./manage.py db migrate
+    - ./manage.py db upgrade
 script:
-    ./digits-test -v --with-coverage --cover-package=digits,tools,scripts
+    - ./digits-test -v --with-coverage --cover-package=digits,tools,scripts
+    - ./manage.py load_pkl_data
 after_success:
     coveralls

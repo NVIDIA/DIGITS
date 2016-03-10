@@ -35,10 +35,12 @@ class BaseViewsTest(object):
     @classmethod
     def tearDownClass(cls):
         # Remove all created jobs
-        for job_id in cls.created_models:
-            cls.delete_model(job_id)
-        for job_id in cls.created_datasets:
-            cls.delete_dataset(job_id)
+
+# XXX don't merge this!
+#        for job_id in cls.created_models:
+#            cls.delete_model(job_id)
+#        for job_id in cls.created_datasets:
+#            cls.delete_dataset(job_id)
 
         rv = cls.app.post('/logout')
         assert rv.status_code == 302, 'Logout failed with %s' % rv.status_code

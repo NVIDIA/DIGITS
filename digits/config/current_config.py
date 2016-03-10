@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 from .caffe_option import CaffeOption
+from .database_url_option import DatabaseUrlOption
 from .gpu_list import GpuListOption
 from .jobs_dir import JobsDirOption
 from .log_file import LogFileOption
@@ -20,6 +21,7 @@ def reset():
 
     option_list = [
             JobsDirOption(),
+            DatabaseUrlOption(),
             GpuListOption(),
             LogFileOption(),
             LogLevelOption(),
