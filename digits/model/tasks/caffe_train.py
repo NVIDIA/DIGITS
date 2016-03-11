@@ -231,78 +231,38 @@ class CaffeTrainTask(TrainTask):
         layer.transform_param.mean_file = mean_file
 
     # TODO merge these monolithic save_files functions
-    # TODO break them up into separate functions
     def save_files_classification(self):
         """
         Save solver, train_val and deploy files to disk
         """
-        has_val_set = self.dataset.val_db_task() is not None
-
-        ### Check what has been specified in self.network
-
-        tops = []
-        bottoms = {}
-        train_data_layer = None
-        val_data_layer = None
-        hidden_layers = caffe_pb2.NetParameter()
-        loss_layers = []
-        accuracy_layers = []
-        for layer in self.network.layer:
-            assert layer.type not in ['DummyData', 'ImageData', 'MemoryData', 'WindowData'], 'unsupported data layer type'
-            if layer.type in ['Data', 'HDF5Data']:
-                for rule in layer.include:
-                    if rule.phase == caffe_pb2.TRAIN:
-                        assert train_data_layer is None, 'cannot specify two train data layers'
-                        train_data_layer = layer
-                    elif rule.phase == caffe_pb2.TEST:
-                        assert val_data_layer is None, 'cannot specify two test data layers'
-                        val_data_layer = layer
-            elif layer.type == 'SoftmaxWithLoss':
-                loss_layers.append(layer)
-            elif layer.type == 'Accuracy':
-                addThis = True
-                if layer.accuracy_param.HasField('top_k'):
-                    if layer.accuracy_param.top_k >= len(self.get_labels()):
-                        self.logger.warning('Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (layer.name, layer.accuracy_param.top_k, len(self.get_labels())))
-                        addThis = False
-                if addThis:
-                    accuracy_layers.append(layer)
-            else:
-                hidden_layers.layer.add().CopyFrom(layer)
-                if len(layer.bottom) == 1 and len(layer.top) == 1 and layer.bottom[0] == layer.top[0]:
-                    pass
-                else:
-                    for top in layer.top:
-                        tops.append(top)
-                    for bottom in layer.bottom:
-                        bottoms[bottom] = True
-
-        if train_data_layer is None:
-            assert val_data_layer is None, 'cannot specify a test data layer without a train data layer'
-
-        assert len(loss_layers) > 0, 'must specify a loss layer'
-
-        network_outputs = []
-        for name in tops:
-            if name not in bottoms:
-                network_outputs.append(name)
-        assert len(network_outputs), 'network must have an output'
-
-        # Update num_output for any output InnerProduct layers automatically
-        for layer in hidden_layers.layer:
-            if layer.type == 'InnerProduct':
-                for top in layer.top:
-                    if top in network_outputs:
-                        layer.inner_product_param.num_output = len(self.get_labels())
-                        break
+        network = cleanedUpClassificationNetwork(self.network, len(self.get_labels()))
+        data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
 
         ### Write train_val file
 
         train_val_network = caffe_pb2.NetParameter()
 
-        dataset_backend = self.dataset.train_db_task().backend
+        # Data layers
+        # TODO clean this up
 
-        # data layers
+        train_data_layer = None
+        val_data_layer = None
+
+        for layer in data_layers.layer:
+            for rule in layer.include:
+                if rule.phase == caffe_pb2.TRAIN:
+                    assert train_data_layer is None, 'cannot specify two train data layers'
+                    train_data_layer = layer
+                elif rule.phase == caffe_pb2.TEST:
+                    assert val_data_layer is None, 'cannot specify two test data layers'
+                    val_data_layer = layer
+
+        if train_data_layer is None:
+            assert val_data_layer is None, 'cannot specify a test data layer without a train data layer'
+
+        dataset_backend = self.dataset.train_db_task().backend
+        has_val_set = self.dataset.val_db_task() is not None
+
         if train_data_layer is not None:
             if dataset_backend == 'lmdb':
                 assert train_data_layer.type == 'Data', 'expecting a Data layer'
@@ -412,13 +372,10 @@ class CaffeTrainTask(TrainTask):
                 if val_data_layer is not None and has_val_set and not val_data_layer.hdf5_data_param.HasField('batch_size'):
                     val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
-        # hidden layers
-        train_val_network.MergeFrom(hidden_layers)
+        # Non-data layers
+        train_val_network.MergeFrom(train_val_layers)
 
-        # output layers
-        train_val_network.layer.extend(loss_layers)
-        train_val_network.layer.extend(accuracy_layers)
-
+        # Write to file
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
 
@@ -432,7 +389,7 @@ class CaffeTrainTask(TrainTask):
 
         deploy_network = caffe_pb2.NetParameter()
 
-        # input
+        # Input
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
@@ -444,23 +401,22 @@ class CaffeTrainTask(TrainTask):
             shape.dim.append(self.dataset.image_dims[0])
             shape.dim.append(self.dataset.image_dims[1])
 
-        # hidden layers
-        deploy_network.MergeFrom(hidden_layers)
+        # Layers
+        deploy_network.MergeFrom(deploy_layers)
 
-        # output layers
-        if loss_layers[-1].type == 'SoftmaxWithLoss':
-            prob_layer = deploy_network.layer.add(
-                    type = 'Softmax',
-                    name = 'prob')
-            prob_layer.bottom.append(network_outputs[-1])
-            prob_layer.top.append('prob')
-
+        # Write to file
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
 
         # network sanity checks
         self.logger.debug("Network sanity check - deploy")
         CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
+        found_softmax = False
+        for layer in deploy_network.layer:
+            if layer.type == 'Softmax':
+                found_softmax = True
+                break
+        assert found_softmax, 'Your deploy network is missing a Softmax layer! Read the documentation for custom networks and/or look at the standard networks for examples.'
 
         ### Write solver file
 
@@ -580,53 +536,38 @@ class CaffeTrainTask(TrainTask):
 
         ### Split up train_val and deploy layers
 
-        train_image_data_layer = None
-        train_label_data_layer = None
-        val_image_data_layer = None
-        val_label_data_layer = None
-
-        train_val_layers = caffe_pb2.NetParameter()
-        deploy_layers = caffe_pb2.NetParameter()
-
-        for layer in self.network.layer:
-            assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
-            if layer.name.startswith('train_'):
-                train_val_layers.layer.add().CopyFrom(layer)
-                train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[6:]
-            elif layer.name.startswith('deploy_'):
-                deploy_layers.layer.add().CopyFrom(layer)
-                deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[7:]
-            elif layer.type == 'Data':
-                for rule in layer.include:
-                    if rule.phase == caffe_pb2.TRAIN:
-                        if 'data' in layer.top:
-                            assert train_image_data_layer is None, 'cannot specify two train image data layers'
-                            train_image_data_layer = layer
-                        elif 'label' in layer.top:
-                            assert train_label_data_layer is None, 'cannot specify two train label data layers'
-                            train_label_data_layer = layer
-                    elif rule.phase == caffe_pb2.TEST:
-                        if 'data' in layer.top:
-                            assert val_image_data_layer is None, 'cannot specify two val image data layers'
-                            val_image_data_layer = layer
-                        elif 'label' in layer.top:
-                            assert val_label_data_layer is None, 'cannot specify two val label data layers'
-                            val_label_data_layer = layer
-            elif 'loss' in layer.type.lower():
-                # Don't add it to the deploy network
-                train_val_layers.layer.add().CopyFrom(layer)
-            elif 'accuracy' in layer.type.lower():
-                # Don't add it to the deploy network
-                train_val_layers.layer.add().CopyFrom(layer)
-            else:
-                train_val_layers.layer.add().CopyFrom(layer)
-                deploy_layers.layer.add().CopyFrom(layer)
+        network = cleanedUpGenericNetwork(self.network)
+        data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
 
         ### Write train_val file
 
         train_val_network = caffe_pb2.NetParameter()
 
-        # data layers
+        # Data layers
+        # TODO clean this up
+
+        train_image_data_layer = None
+        train_label_data_layer = None
+        val_image_data_layer = None
+        val_label_data_layer = None
+
+        for layer in data_layers.layer:
+            for rule in layer.include:
+                if rule.phase == caffe_pb2.TRAIN:
+                    if 'data' in layer.top:
+                        assert train_image_data_layer is None, 'cannot specify two train image data layers'
+                        train_image_data_layer = layer
+                    elif 'label' in layer.top:
+                        assert train_label_data_layer is None, 'cannot specify two train label data layers'
+                        train_label_data_layer = layer
+                elif rule.phase == caffe_pb2.TEST:
+                    if 'data' in layer.top:
+                        assert val_image_data_layer is None, 'cannot specify two val image data layers'
+                        val_image_data_layer = layer
+                    elif 'label' in layer.top:
+                        assert val_label_data_layer is None, 'cannot specify two val label data layers'
+                        val_label_data_layer = layer
+
         train_image_data_layer = self.make_generic_data_layer(train_image_db, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
         if train_image_data_layer is not None:
             train_val_network.layer.add().CopyFrom(train_image_data_layer)
@@ -641,9 +582,10 @@ class CaffeTrainTask(TrainTask):
         if val_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_label_data_layer)
 
-        # hidden layers
+        # Non-data layers
         train_val_network.MergeFrom(train_val_layers)
 
+        # Write to file
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
 
@@ -657,7 +599,7 @@ class CaffeTrainTask(TrainTask):
 
         deploy_network = caffe_pb2.NetParameter()
 
-        # input
+        # Input
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
@@ -671,9 +613,10 @@ class CaffeTrainTask(TrainTask):
             shape.dim.append(train_image_db.image_height)
             shape.dim.append(train_image_db.image_width)
 
-        # hidden layers
+        # Layers
         deploy_network.MergeFrom(deploy_layers)
 
+        # Write to file
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
 
@@ -1472,3 +1415,178 @@ class CaffeTrainTask(TrainTask):
                                                      "this blob is not included at that stage. Please consider " \
                                                      "using an include directive to limit the scope of this layer." % (
                                                        layer.name, bottom, "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"))
+
+
+def cleanedUpClassificationNetwork(original_network, num_categories):
+    """
+    Perform a few cleanup routines on a classification network
+    Returns a new NetParameter
+    """
+    network = caffe_pb2.NetParameter()
+    network.CopyFrom(original_network)
+
+    for layer in network.layer:
+        if 'Data' in layer.type:
+            assert layer.type in ['Data', 'HDF5Data'], \
+                'Unsupported data layer type %s' % layer.type
+
+        if layer.type == 'Accuracy':
+            # Check to see if top_k > num_categories
+            if ( layer.accuracy_param.HasField('top_k') and
+                    layer.accuracy_param.top_k >= num_categories ):
+                self.logger.warning(
+                    'Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (
+                        layer.name, layer.accuracy_param.top_k, num_categories
+                ))
+
+        elif layer.type == 'InnerProduct':
+            # Check to see if num_output is unset
+            if not layer.inner_product_param.HasField('num_output'):
+                layer.inner_product_param.num_output = num_categories
+
+    return network
+
+
+def cleanedUpGenericNetwork(original_network):
+    """
+    Perform a few cleanup routines on a generic network
+    Returns a new NetParameter
+    """
+    network = caffe_pb2.NetParameter()
+    network.CopyFrom(original_network)
+
+    for layer in network.layer:
+        if 'Data' in layer.type:
+            assert layer.type in ['Data'], \
+                'Unsupported data layer type %s' % layer.type
+
+        if layer.type == 'InnerProduct':
+            # Check to see if num_output is unset
+            assert layer.inner_product_param.HasField('num_output'), \
+                "Don't leave inner_product_param.num_output unset for generic networks (layer %s)" % layer.name
+
+    return network
+
+
+def filterLayersByState(network):
+    """
+    Splits up a network into data, train_val and deploy layers
+    """
+    # The net has a NetState when in use
+    train_state = caffe_pb2.NetState()
+    text_format.Merge('phase: TRAIN stage: "train"', train_state)
+    val_state = caffe_pb2.NetState()
+    text_format.Merge('phase: TEST stage: "val"', val_state)
+    deploy_state = caffe_pb2.NetState()
+    text_format.Merge('phase: TEST stage: "deploy"', deploy_state)
+
+    # Each layer can have several NetStateRules
+    train_rule = caffe_pb2.NetStateRule()
+    text_format.Merge('phase: TRAIN', train_rule)
+    val_rule = caffe_pb2.NetStateRule()
+    text_format.Merge('phase: TEST', val_rule)
+
+    # Return three NetParameters
+    data_layers = caffe_pb2.NetParameter()
+    train_val_layers = caffe_pb2.NetParameter()
+    deploy_layers = caffe_pb2.NetParameter()
+
+    for layer in network.layer:
+        included_train = _layerIncludedInState(layer, train_state)
+        included_val = _layerIncludedInState(layer, val_state)
+        included_deploy = _layerIncludedInState(layer, deploy_state)
+
+        # Treat data layers differently (more processing done later)
+        if 'Data' in layer.type:
+            data_layers.layer.add().CopyFrom(layer)
+            rule = None
+            if not included_train:
+                # Exclude from train
+                rule = val_rule
+            elif not included_val:
+                # Exclude from val
+                rule = train_rule
+            _setLayerRule(data_layers.layer[-1], rule)
+
+        # Non-data layers
+        else:
+            if included_train or included_val:
+                # Add to train_val
+                train_val_layers.layer.add().CopyFrom(layer)
+                rule = None
+                if not included_train:
+                    # Exclude from train
+                    rule = val_rule
+                elif not included_val:
+                    # Exclude from val
+                    rule = train_rule
+                _setLayerRule(train_val_layers.layer[-1], rule)
+
+            if included_deploy:
+                # Add to deploy
+                deploy_layers.layer.add().CopyFrom(layer)
+                _setLayerRule(deploy_layers.layer[-1], None)
+
+    return (data_layers, train_val_layers, deploy_layers)
+
+
+def _layerIncludedInState(layer, state):
+    """
+    Returns True if this layer will be included in the given state
+    Logic copied from Caffe's Net::FilterNet()
+    """
+    # If no include rules are specified, the layer is included by default and
+    # only excluded if it meets one of the exclude rules.
+    layer_included = len(layer.include) == 0
+
+    for exclude_rule in layer.exclude:
+        if _stateMeetsRule(state, exclude_rule):
+            layer_included = False
+            break
+
+    for include_rule in layer.include:
+        if _stateMeetsRule(state, include_rule):
+            layer_included = True
+            break
+
+    return layer_included
+
+
+def _stateMeetsRule(state, rule):
+    """
+    Returns True if the given state meets the given rule
+    Logic copied from Caffe's Net::StateMeetsRule()
+    """
+    if rule.HasField('phase'):
+        if rule.phase != state.phase:
+            return False
+
+    if rule.HasField('min_level'):
+        if state.level < rule.min_level:
+            return False
+
+    if rule.HasField('max_level'):
+        if state.level > rule.max_level:
+            return False
+
+    # The state must contain ALL of the rule's stages
+    for stage in rule.stage:
+        if stage not in state.stage:
+            return False
+
+    # The state must contain NONE of the rule's not_stages
+    for stage in rule.not_stage:
+        if stage in state.not_stage:
+            return False
+
+    return True
+
+def _setLayerRule(layer, rule=None):
+    """
+    Set a new include rule for this layer
+    If rule is None, the layer will always be included
+    """
+    layer.ClearField('include')
+    layer.ClearField('exclude')
+    if rule is not None:
+        layer.include.add().CopyFrom(rule)

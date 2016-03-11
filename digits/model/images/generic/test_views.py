@@ -66,11 +66,12 @@ layer {
   }
 }
 layer {
-  name: "train_loss"
+  name: "loss"
   type: "EuclideanLoss"
   bottom: "output"
   bottom: "label"
   top: "loss"
+  exclude { stage: "deploy" }
 }
 """
 
@@ -711,11 +712,12 @@ layer {
   }
 }
 layer {
-  name: "train_loss"
+  name: "loss"
   type: "EuclideanLoss"
   bottom: "output"
   bottom: "label"
   top: "loss"
+  exclude { stage: "deploy" }
 }
 """
 

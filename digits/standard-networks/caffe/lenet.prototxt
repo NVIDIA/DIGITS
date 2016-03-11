@@ -1,3 +1,4 @@
+# LeNet
 name: "LeNet"
 layer {
   name: "mnist"
@@ -140,6 +141,10 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 10
     weight_filler {
       type: "xavier"
     }
@@ -154,9 +159,7 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "accuracy"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
 }
 layer {
   name: "loss"
@@ -164,4 +167,12 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "loss"
+  exclude { stage: "deploy" }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "ip2"
+  top: "softmax"
+  include { stage: "deploy" }
 }

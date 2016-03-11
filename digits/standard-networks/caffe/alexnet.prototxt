@@ -1,3 +1,4 @@
+# AlexNet
 name: "AlexNet"
 layer {
   name: "data"
@@ -347,6 +348,10 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 1000
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -363,9 +368,7 @@ layer {
   bottom: "fc8"
   bottom: "label"
   top: "accuracy"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
 }
 layer {
   name: "loss"
@@ -373,4 +376,12 @@ layer {
   bottom: "fc8"
   bottom: "label"
   top: "loss"
+  exclude { stage: "deploy" }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "fc8"
+  top: "softmax"
+  include { stage: "deploy" }
 }
