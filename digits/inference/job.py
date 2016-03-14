@@ -20,7 +20,7 @@ class InferenceJob(Job):
         epoch   -- epoch of model snapshot to use
         layers  -- layers to import ('all' or 'none')
         """
-        super(InferenceJob, self).__init__(**kwargs)
+        super(InferenceJob, self).__init__(persistent = False, **kwargs)
 
         # get handle to framework object
         fw_id = model.train_task().framework_id
@@ -55,11 +55,3 @@ class InferenceJob(Job):
         """Return inference data"""
         task = self.inference_task()
         return task.inference_inputs, task.inference_outputs, task.inference_layers
-
-    @override
-    def is_read_only(self):
-        """
-        Returns True if this job cannot be edited
-        """
-        return True
-

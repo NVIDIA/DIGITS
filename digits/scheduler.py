@@ -23,6 +23,12 @@ from .model import ModelJob
 from .status import Status
 from digits.utils import errors
 
+"""
+This constant configures how long to wait before automatically
+deleting completed non-persistent jobs
+"""
+NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = 3600
+
 class Resource(object):
     """
     Stores information about which tasks are using a resource
@@ -403,7 +409,11 @@ class Scheduler:
                 if not last_saved or time.time()-last_saved > 15:
                     for job in self.jobs.values():
                         if job.status.is_running():
-                            job.save()
+                            if job.is_persistent():
+                                job.save()
+                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS):
+                            # job has been unclaimed for far too long => proceed to garbage collection
+                            self.delete_job(job)
                     last_saved = time.time()
                 if 'DIGITS_MODE_TEST' not in os.environ:
                     time.sleep(utils.wait_time())

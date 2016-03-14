@@ -44,7 +44,7 @@ class Job(StatusCls):
                     task.detect_snapshots()
             return job
 
-    def __init__(self, name, username):
+    def __init__(self, name, username, persistent = True):
         """
         Arguments:
         name -- name of this job
@@ -62,6 +62,7 @@ class Job(StatusCls):
         self.exception = None
         self._notes = None
         self.event = threading.Event()
+        self.persistent = persistent
 
         os.mkdir(self._dir)
 
@@ -86,6 +87,7 @@ class Job(StatusCls):
         if 'username' not in state:
             state['username'] = None
         self.__dict__ = state
+        self.persistent = True
 
     def json_dict(self, detailed=False):
         """
@@ -266,8 +268,14 @@ class Job(StatusCls):
         if hasattr(self, 'event'):
             self.event.wait()
 
+    def is_persistent(self):
+        """
+        Returns whether job is persistent
+        """
+        return self.persistent
+
     def is_read_only(self):
         """
         Returns False if this job can be edited
         """
-        return False
+        return not self.is_persistent()
