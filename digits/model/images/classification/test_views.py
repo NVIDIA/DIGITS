@@ -215,6 +215,33 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         cls.created_models.append(job_id)
         return job_id
 
+    def classify(self, method, data, job_id = None):
+        if job_id is None:
+            job_id = self.model_id
+        rv = self.app.post(
+                '/inference/images/classification/%s?job_id=%s' % (method, job_id),
+                data = data,
+                )
+        # expect a redirect
+        if not 300 <= rv.status_code <= 310:
+            print 'Status code:', rv.status_code
+            s = BeautifulSoup(rv.data, 'html.parser')
+            div = s.select('div.alert-danger')
+            if div:
+                print div[0]
+            else:
+                print rv.data
+            raise RuntimeError('Failed to create job - status %s' % rv.status_code)
+        inference_job_id = self.job_id_from_response(rv)
+        assert self.job_exists(inference_job_id, 'inference'), 'inference job not found after successful creation'
+        self.job_wait_completion(inference_job_id)
+        # post request again with inference job id
+        rv = self.app.get('/inference/%s' % inference_job_id)
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        return rv
+
 
 class BaseViewsTestWithModel(BaseViewsTestWithDataset):
     """
@@ -344,15 +371,12 @@ class BaseTestCreation(BaseViewsTestWithDataset):
                 # StringIO wrapping is needed to simulate POST file upload.
                 image_upload = (StringIO(infile.read()), 'image.png')
 
-            rv = self.app.post(
-                    '/models/images/classification/classify_one?job_id=%s' % job_id,
-                    data = {
+            rv = self.classify('classify_one',
+                data = {
                         'image_file': image_upload,
-                        }
-                    )
+                        },
+                job_id = job_id)
             s = BeautifulSoup(rv.data, 'html.parser')
-            body = s.select('body')
-            assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
             # gets an array of arrays [[confidence, label],...]
             predictions = [p.get_text().split() for p in s.select('ul.list-group li')]
             if test_misclassification:
@@ -550,31 +574,6 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 notes='new notes'
                 )
         assert status == 200, 'failed with %s' % status
-
-    def classify(self, method, data):
-        rv = self.app.post(
-                '/inference/images/classification/%s?job_id=%s' % (method, self.model_id),
-                data = data,
-                )
-        # expect a redirect
-        if not 300 <= rv.status_code <= 310:
-            print 'Status code:', rv.status_code
-            s = BeautifulSoup(rv.data, 'html.parser')
-            div = s.select('div.alert-danger')
-            if div:
-                print div[0]
-            else:
-                print rv.data
-            raise RuntimeError('Failed to create job - status %s' % rv.status_code)
-        inference_job_id = self.job_id_from_response(rv)
-        assert self.job_exists(inference_job_id, 'inference'), 'inference job not found after successful creation'
-        self.job_wait_completion(inference_job_id)
-        # post request again with inference job id
-        rv = self.app.get('/inference/%s' % inference_job_id)
-        s = BeautifulSoup(rv.data, 'html.parser')
-        body = s.select('body')
-        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-        return rv
 
     def test_classify_one(self):
         # carry out one inference test per category in dataset
