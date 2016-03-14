@@ -174,9 +174,7 @@ layer {
   bottom: "ip2_odd_even"
   bottom: "label"
   top: "accuracy"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
 }
 layer {
   name: "loss"
@@ -184,4 +182,12 @@ layer {
   bottom: "ip2_odd_even"
   bottom: "label"
   top: "loss"
+  exclude { stage: "deploy" }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "ip2"
+  top: "softmax"
+  include { stage: "deploy" }
 }
