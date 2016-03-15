@@ -30,12 +30,16 @@ class InferenceTask(Task):
         images -- list of images to perform inference on
         epoch  -- model snapshot to use
         layers -- which layers to visualize (by default only the activations of the last layer)
+
+        Keyword arguments:
+        ground_truths -- desired output
         """
         # memorize parameters
         self.model = model
         self.images = images
         self.epoch = epoch
         self.layers = layers
+        self.ground_truths = kwargs.pop('ground_truths', None)
 
         self.image_list_path = None
         self.inference_log_file = "inference.log"
@@ -91,6 +95,7 @@ class InferenceTask(Task):
         match = re.match(r'Processed (\d+)\/(\d+)', message)
         if match:
             self.progress = float(match.group(1))/int(match.group(2))
+            self.emit_progress_update()
             return True
 
         # path to inference data

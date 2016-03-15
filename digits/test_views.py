@@ -59,7 +59,7 @@ class BaseViewsTest(object):
         """
         url = '/%s/%s' % (job_type, job_id)
         rv = cls.app.get(url, follow_redirects=True)
-        assert rv.status_code in [200, 404], 'got status code "%s" from "%s"' % (rv.status_code, url)
+        assert rv.status_code in [200, 404], 'got status code "%s" from "%s": %s' % (rv.status_code, url, repr(rv.data))
         return rv.status_code == 200
 
     @classmethod
@@ -104,7 +104,7 @@ class BaseViewsTest(object):
         return rv.status_code
 
     @classmethod
-    def job_wait_completion(cls, job_id, timeout=10, polling_period=0.5, job_type='jobs'):
+    def job_wait_completion(cls, job_id, timeout=10, polling_period=0.05, job_type='jobs'):
         """
         Poll the job status until it completes
         Returns the final status

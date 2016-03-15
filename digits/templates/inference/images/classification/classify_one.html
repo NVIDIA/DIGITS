@@ -19,29 +19,45 @@
     </h1>
 </div>
 
-<div class="row">
-    {% if image_src %}
-    <div class="col-sm-6">
-        <img src="{{image_src}}" style="max-width:100%;" />
+{% if running %}
+    <div class="panel-heading">
+        <h4>
+            <div id="job-info-box">
+                Please wait while classification job is running...
+            </div>
+        </h4>
     </div>
+    <div class="panel-body">
+        <p><img src="{{url_for('static', filename='images/loader.gif')}}"></p>
+    </div>
+    <script>
+    setTimeout(reloadPageOnUpdateTimeout,10000,"{{job.id()}}",10000);
+    </script>
+{% else %}
+    <div class="row">
+        {% if image_src %}
+        <div class="col-sm-6">
+            <img src="{{image_src}}" style="max-width:100%;" />
+        </div>
 
-    <div class="col-sm-6">
-        <h4>Predictions</h4>
-        <ul class="list-group">
-            {% for label, confidence in predictions %}
-            <li class="list-group-item">
-            <span class="badge">{{confidence}}%</span>
-            {{ label }}
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="col-sm-6">
+            <h4>Predictions</h4>
+            <ul class="list-group">
+                {% for label, confidence in predictions %}
+                <li class="list-group-item">
+                <span class="badge">{{confidence}}%</span>
+                {{ label }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        <div class="alert alert-danger">
+            <p>Classification failed, see job log</p>
+        </div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="alert alert-danger">
-        <p>Classification failed, see job log</p>
-    </div>
-    {% endif %}
-</div>
+{% endif %}
 
 {% endblock %}
 

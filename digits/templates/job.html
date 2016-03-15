@@ -9,6 +9,22 @@
 {% endblock %}
 
 {% block head %}
+
+<script>
+window.gLastUpdateTimestamp = 0
+
+function reloadJobPage() {
+    $("#job-info-box").html("Please wait while the page is being reloaded...")
+    location.reload(true)
+}
+
+function reloadPageOnUpdateTimeout(job_id, timeout_ms) {
+    if ($.now() - window.gLastUpdateTimestamp > timeout_ms) {
+        reloadJobPage()
+    }
+}
+</script>
+
     {% if job.status.is_running() %}
         {% with namespace = "/jobs" %}
             {% set room = job.id() %}
@@ -21,6 +37,7 @@ function setPanelClass(selector, css) {
 }
 
 socket.on('job update', function (msg) {
+        window.gLastUpdateTimestamp = $.now()
         if (msg['update'] == 'status') {
             $("#job-statuses .panel-title small").html(msg['status']);
             setPanelClass('#job-statuses', msg['css']);
@@ -30,6 +47,10 @@ socket.on('job update', function (msg) {
                 $('.gpu-utilization-info').hide();
             }
         }
+    });
+
+socket.on('job reload_page', function (msg) {
+        reloadJobPage()
     });
 
 socket.on('task update', function (msg) {

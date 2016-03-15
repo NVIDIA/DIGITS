@@ -1258,14 +1258,11 @@ class CaffeTrainTask(TrainTask):
 
         data_shape = tuple(self.get_transformer().inputs['data'])[1:]
 
-        if self.batch_size:
-            data_shape = (self.batch_size,) + data_shape
-        # TODO: grab batch_size from the TEST phase in train_val network
-        else:
-            data_shape = (constants.DEFAULT_BATCH_SIZE,) + data_shape
+        batch_size = self.get_test_batch_size()
+        data_shape = (batch_size,) + data_shape
 
         outputs = None
-        for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
+        for chunk in [caffe_images[x:x+batch_size] for x in xrange(0, len(caffe_images), batch_size)]:
             new_shape = (len(chunk),) + data_shape[1:]
             if net.blobs['data'].data.shape != new_shape:
                 net.blobs['data'].reshape(*new_shape)
@@ -1285,7 +1282,6 @@ class CaffeTrainTask(TrainTask):
             else:
                 for name,blob in output.iteritems():
                     outputs[name] = np.vstack((outputs[name], blob))
-            print 'Processed %s/%s images' % (len(outputs[outputs.keys()[0]]), len(caffe_images))
 
         return outputs
 
@@ -1472,3 +1468,14 @@ class CaffeTrainTask(TrainTask):
                                                      "this blob is not included at that stage. Please consider " \
                                                      "using an include directive to limit the scope of this layer." % (
                                                        layer.name, bottom, "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"))
+
+    def get_test_batch_size(self):
+        """
+        return the recommended batch size for inference
+        """
+        # TODO: grab batch_size from the TEST phase in train_val network
+        if self.batch_size:
+            return self.batch_size
+        else:
+            return constants.DEFAULT_BATCH_SIZE
+

@@ -44,7 +44,7 @@ class Job(StatusCls):
                     task.detect_snapshots()
             return job
 
-    def __init__(self, name, username):
+    def __init__(self, name, username, volatile = False):
         """
         Arguments:
         name -- name of this job
@@ -62,6 +62,8 @@ class Job(StatusCls):
         self.exception = None
         self._notes = None
         self.event = threading.Event()
+        # Volatile jobs should not be persisted to disk
+        self.volatile = volatile
 
         os.mkdir(self._dir)
 
@@ -86,6 +88,7 @@ class Job(StatusCls):
         if 'username' not in state:
             state['username'] = None
         self.__dict__ = state
+        self.volatile = False
 
     def json_dict(self, detailed=False):
         """
@@ -95,6 +98,7 @@ class Job(StatusCls):
                 'id': self.id(),
                 'name': self.name(),
                 'status': self.status.name,
+                'progress': self.get_progress(),
                 }
         if detailed:
             d.update({
@@ -261,8 +265,14 @@ class Job(StatusCls):
         """
         self.event.wait()
 
+    def is_volatile(self):
+        """
+        Returns whether job is volatile
+        """
+        return self.volatile
+
     def is_read_only(self):
         """
         Returns False if this job can be edited
         """
-        return False
+        return self.is_volatile()
