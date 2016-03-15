@@ -57,6 +57,7 @@ layer {
     bottom: "output"
     bottom: "label"
     top: "loss"
+    exclude { stage: "deploy" }
 }
 layer {
     name: "accuracy"
@@ -64,9 +65,14 @@ layer {
     bottom: "output"
     bottom: "label"
     top: "accuracy"
-    include {
-        phase: TEST
-    }
+    include { stage: "val" }
+}
+layer {
+    name: "softmax"
+    type: "Softmax"
+    bottom: "output"
+    top: "softmax"
+    include { stage: "deploy" }
 }
 """
 
@@ -431,6 +437,14 @@ class BaseTestCreation(BaseViewsTestWithDataset):
                     bottom: "output"
                     bottom: "label"
                     top: "loss"
+                    exclude { stage: "deploy" }
+                }
+                layer {
+                    name: "softmax"
+                    type: "Softmax"
+                    bottom: "output"
+                    top: "softmax"
+                    include { stage: "deploy" }
                 }
                 """
         elif self.FRAMEWORK == 'torch':
@@ -839,6 +853,7 @@ layer {
     bottom: "output"
     bottom: "label"
     top: "loss"
+    exclude { stage: "deploy" }
 }
 layer {
     name: "accuracy"
@@ -846,9 +861,14 @@ layer {
     bottom: "output"
     bottom: "label"
     top: "accuracy"
-    include {
-        phase: TEST
-    }
+    include { stage: "val" }
+}
+layer {
+    name: "softmax"
+    type: "Softmax"
+    bottom: "output"
+    top: "softmax"
+    include { stage: "deploy" }
 }
 """
     TORCH_NETWORK = \
@@ -1006,6 +1026,7 @@ layer {
     bottom: "output"
     bottom: "label"
     top: "loss"
+    exclude { stage: "deploy" }
 }
 layer {
     name: "accuracy"
@@ -1013,9 +1034,7 @@ layer {
     bottom: "output"
     bottom: "label"
     top: "accuracy"
-    include {
-        phase: TEST
-    }
+    include { stage: "val" }
 }
 layer {
     name: "py_test"
@@ -1027,7 +1046,13 @@ layer {
         layer: "PythonLayer"
     }
 }
-
+layer {
+    name: "softmax"
+    type: "Softmax"
+    bottom: "output"
+    top: "softmax"
+    include { stage: "deploy" }
+}
 """
     def write_python_layer_script(self, filename):
         with open(filename, 'w') as f:
