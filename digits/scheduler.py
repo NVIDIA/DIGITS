@@ -108,14 +108,15 @@ class Scheduler:
 
         self.running = False
         self.shutdown = gevent.event.Event()
-
+        
     def load_past_jobs(self):
         """
         Look in the jobs directory and load all valid jobs
         """
         loaded_jobs = []
         failed_jobs = []
-        for dir_name in sorted(os.listdir(config_value('jobs_dir'))):
+        directories = sorted(os.listdir(config_value('jobs_dir')))
+        for dir_name in directories:
             if os.path.isdir(os.path.join(config_value('jobs_dir'), dir_name)):
                 # Make sure it hasn't already been loaded
                 if dir_name in self.jobs:
@@ -135,7 +136,11 @@ class Scheduler:
                     loaded_jobs.append(job)
                 except Exception as e:
                     failed_jobs.append((dir_name, e))
-
+        
+        for job_name in self.jobs :
+            if not job_name in directories :
+                self.jobs.pop(job_name, None).id()
+                
         # add DatasetJobs
         for job in loaded_jobs:
             if isinstance(job, DatasetJob):

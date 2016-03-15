@@ -33,6 +33,7 @@ def home():
             models: [{id, name, status},...]
         }
     """
+    scheduler.load_past_jobs()
     running_datasets    = get_job_list(dataset.DatasetJob, True)
     completed_datasets  = get_job_list(dataset.DatasetJob, False)
     running_models      = get_job_list(model.ModelJob, True)
