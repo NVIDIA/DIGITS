@@ -327,4 +327,5 @@ layer {
   contrastive_loss_param {
     margin: 1.0
   }
+  exclude { stage: "deploy" }
 }
