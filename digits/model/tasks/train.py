@@ -541,3 +541,9 @@ class TrainTask(Task):
         """
         raise NotImplementedError()
 
+    def get_test_batch_size(self):
+        """
+        return the recommended batch size for inference
+        """
+        raise NotImplementedError()
+

@@ -141,6 +141,10 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
     else:
         raise InferenceError("Unknown dataset type")
 
+    # retrieve batch size (unless specified on command line)
+    if batch_size is None:
+        batch_size = task.get_test_batch_size()
+
     n_loaded_samples = 0  # number of samples we were able to load
     input_ids = []       # indices of samples within file list
     input_data = []      # sample data
@@ -175,7 +179,7 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
         if (not n_loaded_samples % batch_size) or (idx == n_input_paths - 1):
             # any item(s) left to save?
             if len(input_ids) > 0:
-    # perform inference
+                # perform inference
                 outputs, visualizations = infer_batch(model, input_data, epoch, layers, gpu)
                 # save visualizations
                 if visualizations is not None and len(visualizations)>0:
@@ -224,8 +228,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-b', '--batch_size',
             type=int,
-            default=1024,
-            help='Batch size',
+            default=None,
+            help='Batch size (default: network\'s default)',
             )
 
     parser.add_argument('-g', '--gpu',

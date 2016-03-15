@@ -939,3 +939,12 @@ class TorchTrainTask(TrainTask):
             desc = infile.read()
         return desc
 
+
+    def get_test_batch_size(self):
+        """
+        return the recommended batch size for inference
+        """
+        # since inference is running from a separate process, return
+        # a large value here - the inference process will further break
+        # these batches into smaller batches that can fit on GPU
+        return 1024
