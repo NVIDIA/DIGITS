@@ -1425,7 +1425,7 @@ def cleanedUpClassificationNetwork(original_network, num_categories):
     network = caffe_pb2.NetParameter()
     network.CopyFrom(original_network)
 
-    for layer in network.layer:
+    for i, layer in enumerate(network.layer):
         if 'Data' in layer.type:
             assert layer.type in ['Data', 'HDF5Data'], \
                 'Unsupported data layer type %s' % layer.type
@@ -1433,11 +1433,8 @@ def cleanedUpClassificationNetwork(original_network, num_categories):
         if layer.type == 'Accuracy':
             # Check to see if top_k > num_categories
             if ( layer.accuracy_param.HasField('top_k') and
-                    layer.accuracy_param.top_k >= num_categories ):
-                self.logger.warning(
-                    'Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (
-                        layer.name, layer.accuracy_param.top_k, num_categories
-                ))
+                    layer.accuracy_param.top_k > num_categories ):
+                del network.layer[i]
 
         elif layer.type == 'InnerProduct':
             # Check to see if num_output is unset
