@@ -27,7 +27,7 @@ class InferenceTask(Task):
         """
         Arguments:
         model  -- trained model to perform inference on
-        images -- list of images to perform inference on
+        images -- list of images to perform inference on, or path to a database
         epoch  -- model snapshot to use
         layers -- which layers to visualize (by default only the activations of the last layer)
         """
@@ -72,11 +72,12 @@ class InferenceTask(Task):
         super(InferenceTask, self).before_run()
         # create log file
         self.inference_log = open(self.path(self.inference_log_file), 'a')
-        # create a file to pass the list of images to perform inference on
-        imglist_handle, self.image_list_path = tempfile.mkstemp(dir=self.job_dir, suffix='.txt')
-        for image_path in self.images:
-            os.write(imglist_handle, "%s\n" % image_path)
-        os.close(imglist_handle)
+        if type(self.images) is list:
+            # create a file to pass the list of images to perform inference on
+            imglist_handle, self.image_list_path = tempfile.mkstemp(dir=self.job_dir, suffix='.txt')
+            for image_path in self.images:
+                os.write(imglist_handle, "%s\n" % image_path)
+            os.close(imglist_handle)
 
     @override
     def process_output(self, line):
@@ -191,7 +192,7 @@ class InferenceTask(Task):
 
         args = [sys.executable,
             os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(digits.__file__))), 'tools', 'inference.py'),
-            self.image_list_path,
+            self.image_list_path if self.image_list_path is not None else self.images,
             self.job_dir,
             self.model.id(),
             '--jobs_dir=%s' % digits.config.config_value('jobs_dir'),
@@ -207,6 +208,9 @@ class InferenceTask(Task):
 
         if self.gpu is not None:
             args.append('--gpu=%d' % self.gpu)
+
+        if self.image_list_path is None:
+            args.append('--db')
 
         return args
 
