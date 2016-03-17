@@ -7,6 +7,7 @@ requests>=2.2.1
 gevent>=1.0
 Flask>=0.10.1
 Flask-WTF>=0.11
+wtforms>=2.0.0
 Flask-SocketIO==0.6.0
 gunicorn==17.5
 setuptools>=3.3
