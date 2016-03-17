@@ -15,9 +15,6 @@ end
 
 require 'utils'
 check_require 'hdf5'
-
-package.path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
-
 require 'logmessage'
 require 'Optimizer'
 ----------------------------------------------------------------------
@@ -260,7 +257,7 @@ local function predictBatch(inputs, model)
     elseif opt.type =='cuda' then
         predictions = model:forward(inputs:cuda())
     end
-    
+
     for i=1,counter do
         local prediction
         index = index + 1
