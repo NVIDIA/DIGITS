@@ -198,3 +198,9 @@ class TestBBoxes():
         pixelMap = pil_color.load()
         assert pixelMap[4, 4] == (255, 0, 0)
         assert pixelMap[7, 7] == (255, 0, 0)
+
+    def test_get_color_from_map(self):
+        color = image_utils.get_color_from_map(0.0, colormap='white')
+        assert color == (0, 0, 0)
+        color = image_utils.get_color_from_map(1.0, colormap='white')
+        assert color == (255, 255, 255)
