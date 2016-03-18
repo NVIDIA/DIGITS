@@ -13,6 +13,7 @@ except ImportError:
 
 import numpy as np
 import PIL.Image
+import PIL.ImageDraw
 import scipy.misc
 
 from . import is_url, HTTP_TIMEOUT, errors
@@ -326,7 +327,7 @@ def add_bboxes_to_image(image, bboxes, color='red', width=1):
     width -- line width of the rectangles
 
     Example:
-    image = Image.open(filename)
+    image = PIL.Image.open(filename)
     add_bboxes_to_image(image, bboxes[filename], width=2, color='#FF7700')
     add_bboxes_to_image(image, bboxes[filename], width=2, color=get_color_from_map(0.24))
     image.show()
@@ -341,8 +342,7 @@ def add_bboxes_to_image(image, bboxes, color='red', width=1):
         b = max(bbox[0][1], bbox[1][1])
         return ((l - n, t - n), (r + n, b + n))
 
-    from PIL import Image, ImageDraw
-    draw = ImageDraw.Draw(image)
+    draw = PIL.ImageDraw.Draw(image)
     for bbox in bboxes:
         for n in xrange(width):
             draw.rectangle(expanded_bbox(bbox, n), outline = color)
