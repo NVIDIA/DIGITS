@@ -486,10 +486,14 @@ class TrainTask(Task):
                     data['xs'][col_id] = 'train_epochs'
                     data['names'][col_id] = '%s (train)' % name
                     if 'accuracy' in output.kind.lower():
-                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                        data['columns'].append([col_id] + [
+                            (100*x if x is not None else 'none')
+                            for x in output.data[::stride]])
                         data['axes'][col_id] = 'y2'
                     else:
-                        data['columns'].append([col_id] + output.data[::stride])
+                        data['columns'].append([col_id] + [
+                            (x if x is not None else 'none')
+                            for x in output.data[::stride]])
                     added_train_data = True
         if added_train_data:
             data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
@@ -507,10 +511,14 @@ class TrainTask(Task):
                     data['xs'][col_id] = 'val_epochs'
                     data['names'][col_id] = '%s (val)' % name
                     if 'accuracy' in output.kind.lower():
-                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                        data['columns'].append([col_id] + [
+                            (100*x if x is not None else 'none')
+                            for x in output.data[::stride]])
                         data['axes'][col_id] = 'y2'
                     else:
-                        data['columns'].append([col_id] + output.data[::stride])
+                        data['columns'].append([col_id] + [
+                            (x if x is not None else 'none')
+                            for x in output.data[::stride]])
                     added_val_data = True
         if added_val_data:
             data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
