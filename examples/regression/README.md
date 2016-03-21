@@ -4,9 +4,9 @@ Table of Contents
 =================
 * [Introduction](#introduction)
 * [Dataset creation](#dataset-creation)
+* [Model creation](#model-creation)
     * [Using Caffe](#using-caffe)
     * [Using Torch7](#using-torch7)
-* [Model creation](#model-creation)
 * [Verification](#verification)
 
 ## Introduction
