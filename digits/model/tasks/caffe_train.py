@@ -382,8 +382,9 @@ class CaffeTrainTask(TrainTask):
         # network sanity checks
         self.logger.debug("Network sanity check - train")
         CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
-        self.logger.debug("Network sanity check - val")
-        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
+        if has_val_set:
+            self.logger.debug("Network sanity check - val")
+            CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
 
         ### Write deploy file
 
