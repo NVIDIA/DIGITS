@@ -35,10 +35,9 @@ New Image Model
             </div>
             <div class="col">
                 <div class="well">
-                    <label for="{{form.python_layer_from_client.name}}">
-                        {{form.python_layer_from_client}}
-                        {{form.python_layer_from_client.label}}
-                    </label>
+                    <h4 style="display:inline-block;">Python Layers</h4>
+                    {{form.python_layer_from_client.explanation(file='/models/python_layer_explanation.html')}}
+                    <br>
                     <div class="form-group{{' has-error' if form.python_layer_client_file.errors}} python-layer-client-side-file">
                         {{form.python_layer_client_file.label}}
                         {{form.python_layer_client_file.tooltip}}
@@ -49,6 +48,10 @@ New Image Model
                         {{form.python_layer_server_file.tooltip}}
                         {{form.python_layer_server_file(class='form-control autocomplete_path')}}
                     </div>
+                    <label for="{{form.python_layer_from_client.name}}">
+                        {{form.python_layer_from_client}}
+                        {{form.python_layer_from_client.label}}
+                    </label>
                 </div>
             </div>
         </div>
