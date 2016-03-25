@@ -143,8 +143,13 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     <div class="col-sm-6">
                         <h3>Test a single image</h3>
                         <div class="form-group">
-                            <label for="image_url" class="control-label">Image URL</label>
-                            <input type="text" id="image_url" name="image_url" class="form-control">
+                            <label for="image_path" class="control-label">Image Path</label>
+                            <span name="image_path_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="Can be a path on the server's filesystem, or a URL."
+                                ></span>
+                            <input type="text" id="image_path" name="image_path" class="form-control autocomplete_path">
                         </div>
                         <div class="form-group">
                             <label for="image_file" class="control-label">Upload image</label>
@@ -152,8 +157,8 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                         </div>
                         <script type="text/javascript">
                             // When you fill in one field, the other gets blanked out
-                            $("#image_url").change(function() { $("#image_file").val(""); });
-                            $("#image_file").change(function() { $("#image_url").val(""); });
+                            $("#image_path").change(function() { $("#image_file").val(""); });
+                            $("#image_file").change(function() { $("#image_path").val(""); });
                         </script>
                         <div class="form-group">
                             <label for="show_visualizations">

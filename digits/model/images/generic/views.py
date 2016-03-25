@@ -238,16 +238,16 @@ def infer_one():
     """
     model_job = job_from_request()
 
-    image = None
-    if 'image_url' in flask.request.form and flask.request.form['image_url']:
-        image_path = flask.request.form['image_url']
+    remove_image_path = False
+    if 'image_path' in flask.request.form and flask.request.form['image_path']:
+        image_path = flask.request.form['image_path']
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
         outfile = tempfile.mkstemp(suffix='.bin')
         flask.request.files['image_file'].save(outfile[1])
         image_path = outfile[1]
         os.close(outfile[0])
     else:
-        raise werkzeug.exceptions.BadRequest('must provide image_url or image_file')
+        raise werkzeug.exceptions.BadRequest('must provide image_path or image_file')
 
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
@@ -279,11 +279,8 @@ def infer_one():
     # delete job folder and remove from scheduler list
     scheduler.delete_job(inference_job)
 
-    # remove file (fails if a URL was provided)
-    try:
+    if remove_image_path:
         os.remove(image_path)
-    except:
-        pass
 
     image = None
     if inputs is not None and len(inputs['data']) == 1:
