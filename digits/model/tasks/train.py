@@ -485,7 +485,7 @@ class TrainTask(Task):
                     col_id = '%s-train' % name
                     data['xs'][col_id] = 'train_epochs'
                     data['names'][col_id] = '%s (train)' % name
-                    if 'accuracy' in output.kind.lower():
+                    if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
                         data['columns'].append([col_id] + [
                             (100*x if x is not None else 'none')
                             for x in output.data[::stride]])
@@ -510,7 +510,7 @@ class TrainTask(Task):
                     col_id = '%s-val' % name
                     data['xs'][col_id] = 'val_epochs'
                     data['names'][col_id] = '%s (val)' % name
-                    if 'accuracy' in output.kind.lower():
+                    if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
                         data['columns'].append([col_id] + [
                             (100*x if x is not None else 'none')
                             for x in output.data[::stride]])
