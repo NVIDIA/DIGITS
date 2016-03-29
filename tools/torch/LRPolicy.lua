@@ -51,6 +51,7 @@ end
 function LRPolicy:GetLearningRate(iter)
 
   local rate=0
+  local progress = 100 * (iter / self.max_iter)  -- expressed in percent units
 
   if self.policy == "fixed" then
     rate = self.baselr
@@ -58,9 +59,9 @@ function LRPolicy:GetLearningRate(iter)
     local current_step = math.floor(iter/self.step_size)
     rate = self.baselr * math.pow(self.gamma, current_step)
   elseif self.policy == "exp" then
-    rate = self.baselr * math.pow(self.gamma, iter)
+    rate = self.baselr * math.pow(self.gamma, progress)
   elseif self.policy == "inv" then
-    rate = self.baselr * math.pow(1 + self.gamma * iter, - self.power)
+    rate = self.baselr * math.pow(1 + self.gamma * progress, - self.power)
   elseif self.policy == "multistep" then
     if (self.current_step <= self.stepvalue_size and iter >= self.step_values[self.current_step]) then
       self.current_step = self.current_step + 1
@@ -69,7 +70,7 @@ function LRPolicy:GetLearningRate(iter)
   elseif self.policy == "poly" then
     rate = self.baselr * math.pow(1.0 - (iter / self.max_iter), self.power)
   elseif self.policy == "sigmoid" then
-    rate = self.baselr * (1.0 / (1.0 + exp(-self.gamma * (iter - self.step_size))));
+    rate = self.baselr * (1.0 / (1.0 + math.exp(self.gamma * (progress - 100*self.step_size/self.max_iter))));
   else
     --have to include additional comments
     print("Unknown learning rate policy: " .. self.policy)
