@@ -266,3 +266,10 @@ class Job(StatusCls):
         Returns False if this job can be edited
         """
         return False
+
+    def parent_jobs(self):
+        """
+        Returns the list of the jobs on which the job
+        depends
+        """
+        raise NotImplementedError('Implement me!') #@TODO

@@ -235,6 +235,42 @@ $('#delete-job').on('click', function(event) {
         </div>
         <div class="gpu-utilization-info" style="display:none;"></div>
 
+        <!-- Related jobs -->
+        {% if related_jobs is not none and related_jobs|length > 0 %}
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    Related jobs
+                </h4>
+            </div>
+            <div class="panel-collapse">
+                <div class="panel-body">
+                    <div class="panel-group">
+                        <!-- Related model jobs -->
+                        {% for r_job in related_jobs %}
+                        {% if r_job.job_type() == "Image Classification Model" or r_job.job_type() == "Generic Image Model"%}
+                        {% if r_jobs_model != 1 %}
+                            <h4 class="panel-title">{{r_job.job_type()}}</h4><br/>
+                            {% set r_jobs_model = 1 %}
+                        {% endif %}
+                        <div id="{{r_job.id()}}-status" class="panel panel-{{ r_job.status.css }}">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">
+                                    <a target="_blank" href="/jobs/{{ r_job.id() }}">
+                                        {{ r_job.name() }}
+                                        <small>{{r_job.status.name}}</small>
+                                    </a>
+                                </h4>
+                            </div> 
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div id="notes-information" class="panel panel-default">
             <div class="panel-heading">
                 <h4>Notes</h4>
@@ -270,10 +306,8 @@ $('#delete-job').on('click', function(event) {
                     <a href=# class="btn btn-info" onClick="$('#edit-job-notes').hide(); $('#show-job-notes').show(); return false;">Cancel</a>
                 </div>
             </div>
-
         </div>
     </div>
-
 </div>
 <div class="row">
     {% block job_content_details %}

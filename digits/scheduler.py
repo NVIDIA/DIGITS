@@ -208,6 +208,20 @@ class Scheduler:
             return None
         return self.jobs.get(job_id, None)
 
+    def get_related_jobs(self, job):
+        """
+        Look through self.jobs to try to find the Jobs
+        whose parent contains job
+        """
+        related_jobs = []
+        for j in self.jobs:
+            try:
+                if job in self.jobs[j].parent_jobs():
+                    related_jobs.append(self.jobs[j])
+            except NotImplementedError: 
+                pass
+        return related_jobs
+
     def abort_job(self, job_id):
         """
         Aborts a running Job

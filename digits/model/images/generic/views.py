@@ -215,11 +215,11 @@ def create():
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/generic/show.html', job=job)
+    return flask.render_template('models/images/generic/show.html', job=job, related_jobs=related_jobs)
 
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():
