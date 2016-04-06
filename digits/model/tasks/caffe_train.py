@@ -435,6 +435,9 @@ class CaffeTrainTask(TrainTask):
 
         solver.snapshot_prefix = self.snapshot_prefix
 
+        # Iteration size
+        solver.iter_size = self.iter_size
+
         # Epochs -> Iterations
         train_iter = int(math.ceil(float(self.dataset.train_db_task().entries_count) / train_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
