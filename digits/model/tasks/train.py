@@ -38,6 +38,7 @@ class TrainTask(Task):
         gpu_count -- how many GPUs to use for training (integer)
         selected_gpus -- a list of GPU indexes to be used for training
         batch_size -- if set, override any network specific batch_size with this value
+        iter_size -- accumulate gradients over `iter_size` x `batch_size` instances
         val_interval -- how many epochs between validating the model with an epoch of validation data
         pretrained_model -- filename for a model to use for fine-tuning
         crop_size -- crop each image down to a square of this size
@@ -47,6 +48,7 @@ class TrainTask(Task):
         self.gpu_count = kwargs.pop('gpu_count', None)
         self.selected_gpus = kwargs.pop('selected_gpus', None)
         self.batch_size = kwargs.pop('batch_size', None)
+        self.iter_size = kwargs.pop('iter_size', None)
         self.val_interval = kwargs.pop('val_interval', None)
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.crop_size = kwargs.pop('crop_size', None)

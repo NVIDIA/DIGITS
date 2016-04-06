@@ -160,6 +160,11 @@ $("#dataset").change();
                     </small>
                     {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
                 </div>
+                <div class="form-group{{mark_errors([form.iter_size])}}">
+                    {{form.iter_size.label}}
+                    {{form.iter_size.tooltip}}
+                    {{form.iter_size(class='form-control', placeholder='[default = 1]')}}
+                </div>
                 <div class="form-group{{mark_errors([form.solver_type])}}">
                     {{form.solver_type.label}}
                     {{form.solver_type.tooltip}}

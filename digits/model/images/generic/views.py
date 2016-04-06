@@ -214,6 +214,7 @@ def create():
                         gpu_count       = gpu_count,
                         selected_gpus   = selected_gpus,
                         batch_size      = form.batch_size.data[0],
+                        iter_size       = form.iter_size.data,
                         val_interval    = form.val_interval.data,
                         pretrained_model= pretrained_model,
                         crop_size       = form.crop_size.data,
