@@ -186,8 +186,9 @@ class Job(StatusCls):
                 )
 
         if not self.status.is_running():
-            # release threads that are waiting for job to complete
-            self.event.set()
+            if hasattr(self, 'event'):
+                # release threads that are waiting for job to complete
+                self.event.set()
 
     def abort(self):
         """
@@ -259,7 +260,11 @@ class Job(StatusCls):
         """
         Wait for the job to complete
         """
-        self.event.wait()
+        # if job was loaded from disk (which is the only case
+        # when the 'event' attribute should be missing) then
+        # assume it has completed already (done, errored or interrupted)
+        if hasattr(self, 'event'):
+            self.event.wait()
 
     def is_read_only(self):
         """
