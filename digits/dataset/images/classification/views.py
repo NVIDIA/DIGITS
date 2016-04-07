@@ -328,11 +328,11 @@ def create():
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    return flask.render_template('datasets/images/classification/show.html', job=job)
+    return flask.render_template('datasets/images/classification/show.html', job=job, related_jobs=related_jobs)
 
 @blueprint.route('/summary', methods=['GET'])
 def summary():

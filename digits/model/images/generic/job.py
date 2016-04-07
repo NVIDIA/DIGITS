@@ -54,4 +54,7 @@ class GenericImageModelJob(ImageModelJob):
                     os.path.basename(snapshot_filename)))
 
         return download_files
-
+        
+    @override
+    def parent_jobs(self):
+        return [self.train_task().dataset]
