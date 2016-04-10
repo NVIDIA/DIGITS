@@ -172,6 +172,20 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             class="btn btn-primary">
                             Test One
                         </button>
+                        <h3>Test a Database</h3>
+                        <div class="form-group">
+                            <label for="db_path" class="control-label">LMDB path</label>
+                            <input type="text" id="db_path" name="db_path" class="form-control autocomplete_path">
+                            <small>Specify path to LMDB database on server</small>
+                        </div>
+                        <button name="infer-db-btn"
+                            formaction="{{url_for('digits.model.images.generic.views.infer_db', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            formtarget="_blank"
+                            class="btn btn-primary">
+                            Test One
+                        </button>
                     </div>
                     <div class="col-sm-6">
                         <h3>Test a list of images</h3>

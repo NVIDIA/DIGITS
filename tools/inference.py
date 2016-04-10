@@ -4,11 +4,16 @@
 import argparse
 import base64
 import h5py
+import lmdb
 import logging
 import numpy as np
 import PIL.Image
 import os
 import sys
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,10 +32,36 @@ import caffe_pb2
 
 logger = logging.getLogger('digits.tools.inference')
 
+class DbReader(object):
+    """
+    Reads a database
+    """
+
+    def __init__(self, location):
+        """
+        Arguments:
+        location -- where is the database
+        """
+        self._db = lmdb.open(location,
+                map_size=1024**3, # 1MB
+                readonly=True, lock=False)
+
+        with self._db.begin() as txn:
+            self.total_entries = txn.stat()['entries']
+
+    def entries(self):
+        """
+        Generator returning all entries in the DB
+        """
+        with self._db.begin() as txn:
+            cursor = txn.cursor()
+            for item in cursor:
+                yield item
+
 """
 Perform inference on a list of images using the specified model
 """
-def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers, gpu):
+def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers, gpu, input_is_db):
 
     # job directory defaults to that defined in DIGITS config
     if jobs_dir == 'none':
@@ -83,25 +114,54 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
     input_ids = []       # indices of samples within file list
     input_data = []      # sample data
 
-    # load paths from file
-    paths = None
-    with open(input_list) as infile:
-        paths = infile.readlines()
-    # load and resize images
-    for idx, path in enumerate(paths):
-        path = path.strip()
-        try:
-            image = utils.image.load_image(path.strip())
-            image = utils.image.resize_image(image,
-                        height, width,
-                        channels    = channels,
-                        resize_mode = resize_mode,
-                        )
-            input_ids.append(idx)
-            input_data.append(image)
+    if input_is_db:
+        # load images from database
+        reader = DbReader(input_list)
+        for key, value in reader.entries():
+            datum = caffe_pb2.Datum()
+            datum.ParseFromString(value)
+            if datum.encoded:
+                s = StringIO()
+                s.write(datum.data)
+                s.seek(0)
+                img = PIL.Image.open(s)
+                img = np.array(img)
+            else:
+                import caffe.io
+                arr = caffe.io.datum_to_array(datum)
+                # CHW -> HWC
+                arr = arr.transpose((1,2,0))
+                if arr.shape[2] == 1:
+                    # HWC -> HW
+                    arr = arr[:,:,0]
+                elif arr.shape[2] == 3:
+                    # BGR -> RGB
+                    # XXX see issue #59
+                    arr = arr[:,:,[2,1,0]]
+                img = arr
+            input_ids.append(key)
+            input_data.append(img)
             n_input_samples = n_input_samples + 1
-        except utils.errors.LoadImageError as e:
-            print e
+    else:
+        # load paths from file
+        paths = None
+        with open(input_list) as infile:
+            paths = infile.readlines()
+        # load and resize images
+        for idx, path in enumerate(paths):
+            path = path.strip()
+            try:
+                image = utils.image.load_image(path.strip())
+                image = utils.image.resize_image(image,
+                            height, width,
+                            channels    = channels,
+                            resize_mode = resize_mode,
+                            )
+                input_ids.append(idx)
+                input_data.append(image)
+                n_input_samples = n_input_samples + 1
+            except utils.errors.LoadImageError as e:
+                print e
 
     # perform inference
     visualizations = None
@@ -196,6 +256,11 @@ if __name__ == '__main__':
             help='GPU to use (as in nvidia-smi output, default: None)',
             )
 
+    parser.add_argument('--db',
+            action='store_true',
+            help='Input file is a database',
+            )
+
     args = vars(parser.parse_args())
 
     try:
@@ -208,6 +273,7 @@ if __name__ == '__main__':
             args['batch_size'],
             args['layers'],
             args['gpu'],
+            args['db'],
                 )
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))

@@ -572,6 +572,19 @@ class BaseTestCreated(BaseViewsTestWithModel):
         headers = s.select('table.table th')
         assert headers is not None, 'unrecognized page format'
 
+    def test_infer_db(self):
+        val_db_path = os.path.join(self.imageset_folder, 'val_images')
+
+        rv = self.app.post(
+                '/models/images/generic/infer_db?job_id=%s' % self.model_id,
+                data = {'db_path': val_db_path}
+                )
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        headers = s.select('table.table th')
+        assert headers is not None, 'unrecognized page format'
+
     def test_infer_many_from_folder(self):
         textfile_images = '%s\n' % os.path.basename(self.test_image)
 
@@ -599,6 +612,17 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 data = {'image_list': file_upload}
                 )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        data = json.loads(rv.data)
+        assert 'outputs' in data, 'invalid response'
+
+    def test_infer_db_json(self):
+        val_db_path = os.path.join(self.imageset_folder, 'val_images')
+
+        rv = self.app.post(
+                '/models/images/generic/infer_db.json?job_id=%s' % self.model_id,
+                data = {'db_path': val_db_path}
+                )
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         data = json.loads(rv.data)
         assert 'outputs' in data, 'invalid response'
 
