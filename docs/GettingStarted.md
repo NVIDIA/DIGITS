@@ -111,6 +111,7 @@ Once you have finished this guide, take a look at some of the other documentatio
 * [Train an autoencoder network](../examples/autoencoder/README.md)
 * [Train a regression network](../examples/regression/README.md)
 * [Train a Siamese network](../examples/siamese/README.md)
+* [Train a text classification network](../examples/text-classification/README.md)
 * [Learn more about weight initialization](../examples/weight-init/README.md)
 * [Use Python layers in your Caffe networks](../examples/python-layer/README.md)
 * [Download a model and use it to classify an image outside of DIGITS](../examples/classification/README.md)
