@@ -490,11 +490,11 @@ class TorchTrainTask(TrainTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        temp_image_handle, temp_image_path = tempfile.mkstemp(suffix='.jpeg')
+        temp_image_handle, temp_image_path = tempfile.mkstemp(suffix='.png')
         os.close(temp_image_handle)
         image = PIL.Image.fromarray(image)
         try:
-            image.save(temp_image_path, format='jpeg')
+            image.save(temp_image_path, format='png')
         except KeyError:
             error_message = 'Unable to save file to "%s"' % temp_image_path
             self.logger.error(error_message)
@@ -795,10 +795,10 @@ class TorchTrainTask(TrainTask):
             temp_imglist_handle, temp_imglist_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
             for image in images:
                 temp_image_handle, temp_image_path = tempfile.mkstemp(
-                        dir=temp_dir_path, suffix='.jpeg')
+                        dir=temp_dir_path, suffix='.png')
                 image = PIL.Image.fromarray(image)
                 try:
-                    image.save(temp_image_path, format='jpeg')
+                    image.save(temp_image_path, format='png')
                 except KeyError:
                     error_message = 'Unable to save file to "%s"' % temp_image_path
                     self.logger.error(error_message)
