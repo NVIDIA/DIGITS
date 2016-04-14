@@ -346,7 +346,11 @@ def classify_one():
             labels = model_job.train_task().get_labels()
             predictions = []
             for i in indices:
-                predictions.append( (labels[i], scores[i]) )
+                # ignore prediction if we don't have a label for the corresponding class
+                # the user might have set the final fully-connected layer's num_output to
+                # too high a value
+                if i < len(labels):
+                    predictions.append( (labels[i], scores[i]) )
             predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
     if request_wants_json():
@@ -470,7 +474,11 @@ def classify_many():
                    confusion_matrix[ground_truths[image_index], index_list[0]] += 1
             for i in index_list:
                 # `i` is a category in labels and also an index into scores
-                result.append((labels[i], round(100.0*scores[image_index, i],2)))
+                # ignore prediction if we don't have a label for the corresponding class
+                # the user might have set the final fully-connected layer's num_output to
+                # too high a value
+                if i < len(labels):
+                    result.append((labels[i], round(100.0*scores[image_index, i],2)))
             classifications.append(result)
 
         # accuracy
@@ -577,7 +585,9 @@ def top_n():
         results = []
         # Can't have more images per category than the number of images
         images_per_category = min(top_n, len(images))
-        for i in xrange(indices.shape[1]):
+        # Can't have more categories than the number of labels or the number of outputs
+        n_categories = min(indices.shape[1], len(labels))
+        for i in xrange(n_categories):
             result_images = []
             for j in xrange(images_per_category):
                 result_images.append(images[indices[j][i]])
