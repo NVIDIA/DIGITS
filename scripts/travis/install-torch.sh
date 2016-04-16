@@ -21,6 +21,7 @@ cd $INSTALL_DIR; ./install.sh -b
 # install custom packages
 ${INSTALL_DIR}/install/bin/luarocks install sys
 ${INSTALL_DIR}/install/bin/luarocks install image
+${INSTALL_DIR}/install/bin/luarocks install tds
 ${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
 ${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
 ${INSTALL_DIR}/install/bin/luarocks install lightningmdb LMDB_INCDIR=/usr/local/include LMDB_LIBDIR=/usr/local/lib
