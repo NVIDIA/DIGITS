@@ -424,7 +424,6 @@ function setFramework(fwid)
     $('#stdnetRole a[href="'+"#"+fwid+"_standard"+'"]').tab('show');
     $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
 }
-setFramework("{{form.framework.data}}");
             </script>
 
             <div id="torch-warning" class="alert alert-warning" style="display:none;">
@@ -722,7 +721,8 @@ if($("input:radio[name=previous_networks]").is(":checked")) {
 
 //Below two lines are required to show the same tab (that was selected before submitting the form) after the page validation fails i.e., preserving the status of window even after page validation fails.
 framework = $('#framework').val();
-$('#customFramework a[href="'+"#"+framework+"_custom"+'"]').tab('show');
+setFramework("{{form.framework.data}}");
+
 </script>
 
 {% endblock %}
