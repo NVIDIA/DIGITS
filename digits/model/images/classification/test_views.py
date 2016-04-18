@@ -904,6 +904,45 @@ class TestCaffeCreation(BaseTestCreation):
 class TestCaffeCreated(BaseTestCreated):
     FRAMEWORK = 'caffe'
 
+class TestCaffeCreatedMoreNumOutput(BaseTestCreated):
+    FRAMEWORK = 'caffe'
+
+    CAFFE_NETWORK = \
+"""
+layer {
+    name: "hidden"
+    type: 'InnerProduct'
+    bottom: "data"
+    top: "output"
+    inner_product_param {
+        num_output: 1000
+    }
+}
+layer {
+    name: "loss"
+    type: "SoftmaxWithLoss"
+    bottom: "output"
+    bottom: "label"
+    top: "loss"
+    exclude { stage: "deploy" }
+}
+layer {
+    name: "accuracy"
+    type: "Accuracy"
+    bottom: "output"
+    bottom: "label"
+    top: "accuracy"
+    include { stage: "val" }
+}
+layer {
+    name: "softmax"
+    type: "Softmax"
+    bottom: "output"
+    top: "softmax"
+    include { stage: "deploy" }
+}
+"""
+
 class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'caffe'
 
