@@ -11,6 +11,8 @@ package.path = debug.getinfo(1, "S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua
 require 'logmessage'
 local ffi = require 'ffi'
 
+local tds = check_require 'tds'
+
 -- enable shared serialization to speed up Tensor passing between threads
 threads.Threads.serialization('threads.sharedserialize')
 
@@ -320,7 +322,7 @@ end
 
 -- Derived class method lmdb_getKeys
 function DBSource:lmdb_getKeys ()
-    local Keys = {}
+    local Keys = tds.Vec()
     local i=0
     local key=nil
     for k,v in all_keys(self.lmdb_data.c,nil,self.lightningmdb.MDB_NEXT) do
