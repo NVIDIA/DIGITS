@@ -412,8 +412,8 @@ function setFramework(fwid)
     if (! $("select[name=solver_type] > option:selected").hasClass(fwid)) {
         $("select[name=solver_type] > option:selected").prop("selected", false);
     }
+    $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
 }
-setFramework("{{form.framework.data}}");
             </script>
 
             <ul class="nav nav-tabs" id="network-tabs">
@@ -588,6 +588,7 @@ $('#network-tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         updateNetworkTab( parts[parts.length-1] );
         });
 $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
+setFramework("{{form.framework.data}}");
             </script>
         </div>
     </div>
