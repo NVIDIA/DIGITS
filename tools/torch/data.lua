@@ -610,12 +610,12 @@ end
 
 -- wait until next data loader job completes
 function DataLoader:waitNext()
+    -- wait for next data loader job to complete
+    self.threadPool:dojob()
     -- check for errors in loader threads
     if self.threadPool:haserror() then -- check for errors
         self.threadPool:synchronize() -- finish everything and throw error
     end
-    -- wait for next data loader job to complete
-    self.threadPool:dojob()
 end
 
 -- free data loader resources
