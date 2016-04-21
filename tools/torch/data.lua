@@ -278,7 +278,7 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, meanTensor, isT
         end
     end
 
-    logmessage.display(0,'Image channels are ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeY .. ' and Image height is ' .. self.ImageSizeX)
+    logmessage.display(0,'Image channels are ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeX .. ' and Image height is ' .. self.ImageSizeY)
 
     self.mirror = mirror
     self.train = isTrain
