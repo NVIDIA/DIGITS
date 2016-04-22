@@ -175,7 +175,7 @@ $("#dataset").change(function() {
 {% for choice in form.solver_type.choices %}
 {% for fw in frameworks %}
 {% if fw.supports_solver_type(choice[0]) %}
-$("select[name=solver_type] > option[value={{choice[0]}}").addClass("{{fw.get_id()}}");
+$("select[name=solver_type] > option[value={{choice[0]}}]").addClass("{{fw.get_id()}}");
 {% endif %}
 {% endfor %}
 {% endfor %}
