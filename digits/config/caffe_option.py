@@ -241,10 +241,10 @@ class CaffeOption(config_option.FrameworkOption):
                 #   so that build/tools/caffe is aware of python layers there
                 os.environ['PYTHONPATH'] = '%s:%s' % (p, os.environ.get('PYTHONPATH'))
 
+			# for Windows environment, loading h5py before caffe solves the issue mentioned in
+			# https://github.com/NVIDIA/DIGITS/issues/47#issuecomment-206292824
+			import h5py
             try:
-                # for Windows environment, loading h5py before caffe solves the issue mentioned in
-                # https://github.com/NVIDIA/DIGITS/issues/47#issuecomment-206292824
-                import h5py
                 import caffe
             except ImportError:
                 print 'Did you forget to "make pycaffe"?'
