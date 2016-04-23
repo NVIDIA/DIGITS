@@ -1160,13 +1160,13 @@ class CaffeTrainTask(TrainTask):
         data -- a np.ndarray
         """
         # XXX These calculations can be super slow
-        mean = np.mean(data)
-        std = np.std(data)
+        mean = np.mean(data).astype(np.float32)
+        std = np.std(data).astype(np.float32)
         y, x = np.histogram(data, bins=20)
-        y = list(y)
+        y = list(y.astype(np.float32))
         ticks = x[[0,len(x)/2,-1]]
-        x = [(x[i]+x[i+1])/2.0 for i in xrange(len(x)-1)]
-        ticks = list(ticks)
+        x = [((x[i]+x[i+1])/2.0).astype(np.float32) for i in xrange(len(x)-1)]
+        ticks = list(ticks.astype(np.float32))
         return (mean, std, [y, x, ticks])
 
     @override
