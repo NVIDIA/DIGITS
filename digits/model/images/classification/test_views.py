@@ -901,10 +901,7 @@ class TestCaffeViews(BaseTestViews):
 class TestCaffeCreation(BaseTestCreation):
     FRAMEWORK = 'caffe'
 
-class TestCaffeCreated(BaseTestCreated):
-    FRAMEWORK = 'caffe'
-
-class TestCaffeCreatedMoreNumOutput(BaseTestCreated):
+class TestCaffeCreatedWideMoreNumOutput(BaseTestCreatedWide):
     FRAMEWORK = 'caffe'
 
     CAFFE_NETWORK = \
@@ -946,19 +943,13 @@ layer {
 class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'caffe'
 
-class TestCaffeCreatedWide(BaseTestCreatedWide):
-    FRAMEWORK = 'caffe'
-
-class TestCaffeCreatedTall(BaseTestCreatedTall):
-    FRAMEWORK = 'caffe'
-
 class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
     FRAMEWORK = 'caffe'
 
 class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'caffe'
 
-class TestCaffeCreatedMultiStepLR(BaseTestCreated):
+class TestCaffeCreatedTallMultiStepLR(BaseTestCreatedTall):
     FRAMEWORK = 'caffe'
     LR_POLICY = 'multistep'
     LR_MULTISTEP_VALUES = '50,75,90'
@@ -969,31 +960,25 @@ class TestTorchViews(BaseTestViews):
 class TestTorchCreation(BaseTestCreation):
     FRAMEWORK = 'torch'
 
-class TestTorchCreated(BaseTestCreated):
-    FRAMEWORK = 'torch'
-
-class TestTorchCreatedUnencoded(BaseTestCreated):
+class TestTorchCreatedUnencodedShuffle(BaseTestCreated):
     FRAMEWORK = 'torch'
     ENCODING = 'none'
-
-class TestTorchCreatedShuffle(TestTorchCreated):
     SHUFFLE = True
 
-class TestTorchCreatedHdf5(TestTorchCreated):
+class TestTorchCreatedHdf5(BaseTestCreated):
+    FRAMEWORK = 'torch'
     BACKEND = 'hdf5'
 
-class TestTorchCreatedHdf5Shuffle(TestTorchCreatedHdf5):
+class TestTorchCreatedTallHdf5Shuffle(BaseTestCreatedTall):
+    FRAMEWORK = 'torch'
+    BACKEND = 'hdf5'
     SHUFFLE = True
 
 class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'torch'
 
-class TestTorchCreatedMultiStepLR(BaseTestCreated):
-    FRAMEWORK = 'torch'
-    LR_POLICY = 'multistep'
-    LR_MULTISTEP_VALUES = '50,75,90'
-
-class TestCaffeLeNet(TestCaffeCreated):
+class TestCaffeLeNet(BaseTestCreated):
+    FRAMEWORK = 'caffe'
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
 
@@ -1009,13 +994,13 @@ class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'torch'
 
-class TestTorchCreatedWide(BaseTestCreatedWide):
+class TestTorchCreatedWideMultiStepLR(BaseTestCreatedWide):
     FRAMEWORK = 'torch'
+    LR_POLICY = 'multistep'
+    LR_MULTISTEP_VALUES = '50,75,90'
 
-class TestTorchCreatedTall(BaseTestCreatedTall):
+class TestTorchLeNet(BaseTestCreated):
     FRAMEWORK = 'torch'
-
-class TestTorchLeNet(TestTorchCreated):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
     TRAIN_EPOCHS = 20
@@ -1032,13 +1017,8 @@ class TestTorchLeNet(TestTorchCreated):
                 'standard-networks', 'torch', 'lenet.lua')
             ).read()
 
-class TestTorchLeNetShuffle(TestTorchLeNet):
-    SHUFFLE = True
-
-class TestTorchLeNetHdf5(TestTorchLeNet):
+class TestTorchLeNetHdf5Shuffle(TestTorchLeNet):
     BACKEND = 'hdf5'
-
-class TestTorchLeNetHdf5Shuffle(TestTorchLeNetHdf5):
     SHUFFLE = True
 
 class TestPythonLayer(BaseViewsTestWithDataset):
