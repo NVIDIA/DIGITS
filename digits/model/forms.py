@@ -128,6 +128,14 @@ class ModelForm(Form):
             tooltip = "How many images to process at once. If blank, values are used from the network definition."
             )
 
+    iter_size = utils.forms.IntegerField('Iteration size',
+        validators = [
+            validators.NumberRange(min=1),
+            validators.Optional(),
+            ],
+        tooltip = "Accumulate gradients over `iter_size` x `batch_size` instances."
+        )
+
     ### Solver types
 
     solver_type = utils.forms.SelectField(
