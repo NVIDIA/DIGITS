@@ -37,6 +37,8 @@ import digits.views
 app.register_blueprint(digits.views.blueprint)
 import digits.dataset.views
 app.register_blueprint(digits.dataset.views.blueprint, url_prefix='/datasets')
+import digits.dataset.generic.views
+app.register_blueprint(digits.dataset.generic.views.blueprint, url_prefix='/datasets/generic')
 import digits.dataset.images.views
 app.register_blueprint(digits.dataset.images.views.blueprint, url_prefix='/datasets/images')
 import digits.dataset.images.classification.views

@@ -255,6 +255,9 @@ class TestCreated(BaseViewsTestWithDataset):
                 name='new name'
                 )
         assert status == 200, 'failed with %s' % status
+        rv = self.app.get('/datasets/summary?job_id=%s' % self.dataset_id)
+        assert rv.status_code == 200
+        assert 'new name' in rv.data
 
     def test_edit_notes(self):
         status = self.edit_job(

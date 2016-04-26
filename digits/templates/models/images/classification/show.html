@@ -35,10 +35,22 @@
     <div class="col-sm-6">
         <div class="well">
             <h4 class='text-center'>Dataset</h4>
+            <div id="dataset-summary"></div>
             {% if job.dataset %}
-            {% with dataset = job.dataset %}
-            {% include 'datasets/images/classification/summary.html' %}
-            {% endwith %}
+            <script>
+            $.ajax("/datasets/summary?job_id={{ job.dataset.id() }}",
+            {
+                type: "GET",
+                }
+            )
+            .done(function(data) {
+                $("#dataset-summary").html(data);
+                })
+            .fail(function(data) {
+                $("#dataset-summary").html("");
+                errorAlert(data);
+                });
+            </script>
             {% endif %}
         </div>
     </div>

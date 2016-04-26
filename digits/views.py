@@ -14,7 +14,7 @@ import werkzeug.exceptions
 from .config import config_value
 from .webapp import app, socketio, scheduler
 import digits
-from digits import dataset, model, utils
+from digits import dataset, extensions, model, utils
 from digits.log import logger
 from digits.utils.routing import request_wants_json
 
@@ -52,41 +52,71 @@ def home():
         return flask.jsonify(data)
     else:
         new_dataset_options = {
-                                'Images': {
-                                    'image-classification': {
-                                        'title': 'Classification',
-                                        'url': flask.url_for('digits.dataset.images.classification.views.new'),
-                                    },
-                                    'image-generic': {
-                                        'title': 'Other',
-                                        'url': flask.url_for('digits.dataset.images.generic.views.new'),
-                                    },
-                                },
-                            }
+            'Images': {
+                'image-classification': {
+                    'title': 'Classification',
+                    'url': flask.url_for(
+                        'digits.dataset.images.classification.views.new'),
+                    },
+                'image-other': {
+                    'title': 'Other',
+                    'url': flask.url_for(
+                        'digits.dataset.images.generic.views.new'),
+                    },
+                },
+            }
 
         new_model_options = {
-                                'Images': {
-                                    'image-classification': {
-                                        'title': 'Classification',
-                                        'url': flask.url_for('digits.model.images.classification.views.new'),
-                                    },
-                                    'image-generic': {
-                                        'title': 'Other',
-                                        'url': flask.url_for('digits.model.images.generic.views.new'),
-                                    },
-                                },
-                            }
+            'Images': {
+                'image-classification': {
+                    'title': 'Classification',
+                    'url': flask.url_for(
+                        'digits.model.images.classification.views.new'),
+                    },
+                'image-other': {
+                    'title': 'Other',
+                    'url': flask.url_for(
+                        'digits.model.images.generic.views.new'),
+                    },
+                },
+            }
 
-        return flask.render_template('home.html',
-                new_dataset_options = new_dataset_options,
-                running_datasets    = running_datasets,
-                completed_datasets  = completed_datasets,
-                new_model_options   = new_model_options,
-                running_models      = running_models,
-                completed_models    = completed_models,
-                total_gpu_count     = len(scheduler.resources['gpus']),
-                remaining_gpu_count = sum(r.remaining() for r in scheduler.resources['gpus']),
-                )
+        # add dataset options for known dataset extensions
+        data_extensions = extensions.data.get_extensions()
+        for extension in data_extensions:
+            ext_category = extension.get_category()
+            ext_title = extension.get_title()
+            ext_id = extension.get_id()
+            if ext_category not in new_dataset_options:
+                new_dataset_options[ext_category] = {}
+            new_dataset_options[ext_category][ext_id] = {
+                'title': ext_title,
+                'url': flask.url_for(
+                    'digits.dataset.generic.views.new',
+                    extension_id=ext_id),
+                }
+            if ext_category not in new_model_options:
+                new_model_options[ext_category] = {}
+            new_model_options[ext_category][ext_id] = {
+                'title': ext_title,
+                'url': flask.url_for(
+                    'digits.model.images.generic.views.new',
+                    extension_id=ext_id),
+                }
+
+        return flask.render_template(
+            'home.html',
+            new_dataset_options=new_dataset_options,
+            running_datasets=running_datasets,
+            completed_datasets=completed_datasets,
+            new_model_options=new_model_options,
+            running_models=running_models,
+            completed_models=completed_models,
+            total_gpu_count=len(scheduler.resources['gpus']),
+            remaining_gpu_count=sum(r.remaining()
+                                    for r in scheduler.resources['gpus']),
+            )
+
 
 @blueprint.route('/completed_jobs.json', methods=['GET'])
 def completed_jobs():
@@ -360,6 +390,8 @@ def clone_job(clone):
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
+    if isinstance(job, dataset.GenericDatasetJob):
+        return flask.redirect(flask.url_for('digits.dataset.generic.views.new', extension_id=job.extension_id) + '?clone=' + clone)
     if isinstance(job, dataset.ImageClassificationDatasetJob):
         return flask.redirect(flask.url_for('digits.dataset.images.classification.views.new') + '?clone=' + clone)
     if isinstance(job, dataset.GenericImageDatasetJob):
