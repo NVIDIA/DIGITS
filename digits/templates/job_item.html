@@ -8,5 +8,5 @@
             <b>Submitted:</b> {{job.status_history[0][1]|print_time}}
             <br />
             <b>Status:</b> <span class="text-{{job.status.css}}">{{job.status.name}}</span>
-            <small>after {{(job.status_history[-1][1]-job.status_history[0][1])|print_time_diff}}</small>
+            <small>after {{(job.status_history[-1][1]-job.status_history[-2][1])|print_time_diff}}</small>
         </li>
