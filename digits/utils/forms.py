@@ -263,7 +263,10 @@ class MultiIntegerField(wtforms.Field):
     def process_formdata(self, valuelist):
         if valuelist:
             try:
-                self.data = [int(float(datum)) for datum in valuelist[0].split(',')]
+                valuelist[0] = valuelist[0].replace('[', '')
+                valuelist[0] = valuelist[0].replace(']', '')
+                valuelist[0] = valuelist[0].split(',')
+                self.data = [int(float(datum)) for datum in valuelist[0]]
             except ValueError:
                 self.data = [None]
                 raise ValueError(self.gettext('Not a valid integer value'))
@@ -305,7 +308,10 @@ class MultiFloatField(wtforms.Field):
     def process_formdata(self, valuelist):
         if valuelist:
             try:
-                self.data = [float(datum) for datum in valuelist[0].split(',')]
+                valuelist[0] = valuelist[0].replace('[', '')
+                valuelist[0] = valuelist[0].replace(']', '')
+                valuelist[0] = valuelist[0].split(',')
+                self.data = [float(datum) for datum in valuelist[0]]
             except ValueError:
                 self.data = [None]
                 raise ValueError(self.gettext('Not a valid float value'))

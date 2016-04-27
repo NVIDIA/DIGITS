@@ -128,6 +128,7 @@ def create():
     add_batch_size = len(form.batch_size.data) > 1
     n_jobs = len(sweeps)
 
+    jobs = []
     for sweep in sweeps:
         # Populate the form with swept data to be used in saving and
         # launching jobs.
@@ -275,6 +276,7 @@ def create():
             ## Save form data with the job so we can easily clone it later.
             save_form_to_job(job, form)
 
+            jobs.append(job)
             scheduler.add_job(job)
             if n_jobs == 1:
                 if request_wants_json():
@@ -286,6 +288,9 @@ def create():
             if job:
                 scheduler.delete_job(job)
             raise
+
+    if request_wants_json():
+        return flask.jsonify(jobs=[job.json_dict() for job in jobs])
 
     # If there are multiple jobs launched, go to the home page.
     return flask.redirect('/')

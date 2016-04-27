@@ -202,7 +202,11 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             if rv.status_code != 200:
                 print json.loads(rv.data)
                 raise RuntimeError('Model creation failed with %s' % rv.status_code)
-            return json.loads(rv.data)['id']
+            data = json.loads(rv.data)
+            if 'jobs' in data.keys():
+                return [j['id'] for j in data['jobs']]
+            else:
+                return data['id']
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
@@ -1123,3 +1127,15 @@ class PythonLayer(caffe.Layer):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']), 'should have at least snapshot'
+
+class TestSweepCreation(BaseViewsTestWithDataset):
+    FRAMEWORK = 'caffe'
+    """
+    Model creation tests
+    """
+    def test_sweep(self):
+        job_ids = self.create_model(json=True, learning_rate='[0.01, 0.02]', batch_size='[8, 10]')
+        for job_id in job_ids:
+            assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+            assert self.delete_model(job_id) == 200, 'delete failed'
+            assert not self.model_exists(job_id), 'model exists after delete'
