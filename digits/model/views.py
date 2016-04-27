@@ -160,7 +160,8 @@ def visualize_lr():
     Returns a JSON object of data used to create the learning rate graph
     """
     policy = flask.request.form['lr_policy']
-    lr = float(flask.request.form['learning_rate'])
+	# There may be multiple lrs if the learning_rate is swept
+    lrs = map(float, flask.request.form['learning_rate'].split(','))
     if policy == 'fixed':
         pass
     elif policy == 'step':
@@ -183,26 +184,29 @@ def visualize_lr():
     else:
         raise werkzeug.exceptions.BadRequest('Invalid policy')
 
-    data = ['Learning Rate']
-    for i in xrange(101):
-        if policy == 'fixed':
-            data.append(lr)
-        elif policy == 'step':
-            data.append(lr * math.pow(gamma, math.floor(float(i)/step)))
-        elif policy == 'multistep':
-            if current_step < len(steps) and i >= steps[current_step]:
-                current_step += 1
-            data.append(lr * math.pow(gamma, current_step))
-        elif policy == 'exp':
-            data.append(lr * math.pow(gamma, i))
-        elif policy == 'inv':
-            data.append(lr * math.pow(1.0 + gamma * i, -power))
-        elif policy == 'poly':
-            data.append(lr * math.pow(1.0 - float(i)/100, power))
-        elif policy == 'sigmoid':
-            data.append(lr / (1.0 + math.exp(gamma * (i - step))))
+    datalist = []
+    for j, lr in enumerate(lrs):
+        data = ['Learning Rate %d' % j]
+        for i in xrange(101):
+            if policy == 'fixed':
+                data.append(lr)
+            elif policy == 'step':
+                data.append(lr * math.pow(gamma, math.floor(float(i)/step)))
+            elif policy == 'multistep':
+                if current_step < len(steps) and i >= steps[current_step]:
+                    current_step += 1
+                data.append(lr * math.pow(gamma, current_step))
+            elif policy == 'exp':
+                data.append(lr * math.pow(gamma, i))
+            elif policy == 'inv':
+                data.append(lr * math.pow(1.0 + gamma * i, -power))
+            elif policy == 'poly':
+                data.append(lr * math.pow(1.0 - float(i)/100, power))
+            elif policy == 'sigmoid':
+                data.append(lr / (1.0 + math.exp(gamma * (i - step))))
+        datalist.append(data)
 
-    return json.dumps({'data': {'columns': [data]}})
+    return json.dumps({'data': {'columns': datalist}})
 
 @blueprint.route('/<job_id>/download',
         methods=['GET', 'POST'],

@@ -120,10 +120,10 @@ class ModelForm(Form):
             tooltip = "If you provide a random seed, then back-to-back runs with the same model and dataset should give identical results."
             )
 
-    batch_size = utils.forms.IntegerField('Batch size',
+    batch_size = utils.forms.MultiIntegerField('Batch size',
             validators = [
-                validators.NumberRange(min=1),
-                validators.Optional(),
+                utils.forms.MultiNumberRange(min=1),
+                utils.forms.MultiOptional(),
                 ],
             tooltip = "How many images to process at once. If blank, values are used from the network definition."
             )
@@ -153,10 +153,10 @@ class ModelForm(Form):
 
     ### Learning rate
 
-    learning_rate = utils.forms.FloatField('Base Learning Rate',
+    learning_rate = utils.forms.MultiFloatField('Base Learning Rate',
             default = 0.01,
             validators = [
-                validators.NumberRange(min=0),
+                utils.forms.MultiNumberRange(min=0),
                 ],
             tooltip = "Affects how quickly the network learns. If you are getting NaN for your loss, you probably need to lower this value."
             )

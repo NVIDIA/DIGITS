@@ -152,6 +152,9 @@ $("#dataset").change(function() {
                 <div class="form-group{{mark_errors([form.batch_size])}}">
                     {{form.batch_size.label}}
                     {{form.batch_size.tooltip}}
+                    <small class="pull-right">
+                        {{form.batch_size.small_text}}
+                    </small>
                     {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
                 </div>
                 <div class="form-group{{mark_errors([form.solver_type])}}">
@@ -162,6 +165,9 @@ $("#dataset").change(function() {
                 <div class="form-group{{mark_errors([form.learning_rate])}}">
                     {{form.learning_rate.label}}
                     {{form.learning_rate.tooltip}}
+                    <small class="pull-right">
+                        {{form.learning_rate.small_text}}
+                    </small>
                     {{form.learning_rate(class='form-control learning-rate-option')}}
                 </div>
 
