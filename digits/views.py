@@ -88,6 +88,52 @@ def home():
                 remaining_gpu_count = sum(r.remaining() for r in scheduler.resources['gpus']),
                 )
 
+@blueprint.route('/completed_jobs.json', methods=['GET'])
+def completed_jobs():
+    """
+    Returns JSON
+        {
+            datasets: [{id, name, status, status_css, submitted, elapsed, badge}],
+            models:   [{id, name, status, status_css, submitted, elapsed, badge}],
+        }
+    """
+    completed_datasets  = get_job_list(dataset.DatasetJob, False)
+    completed_models    = get_job_list(model.ModelJob, False)
+
+    def json_dict(job):
+        d = {
+            'id': job.id(),
+            'name': job.name(),
+            'status': job.status.name,
+            'status_css': job.status.css,
+            'submitted': job.status_history[0][1],
+            'elapsed': job.status_history[-1][1]-job.status_history[-2][1],
+        }
+
+        if 'train_db_task' in dir(job):
+            d.update({
+                'backend': job.train_db_task().backend,
+            })
+
+        if 'train_task' in dir(job):
+            d.update({
+                'framework': job.train_task().get_framework_id(),
+            })
+
+        if hasattr(job, 'dataset_id'):
+            d.update({
+                'dataset_id': job.dataset_id,
+            })
+
+        return d
+
+    data = {
+        'datasets': [ json_dict(j) for j in completed_datasets ],
+        'models': [ json_dict(j) for j in completed_models ],
+    }
+
+    return flask.jsonify(data)
+
 def get_job_list(cls, running):
     return sorted(
             [j for j in scheduler.jobs.values() if isinstance(j, cls) and j.status.is_running() == running],
@@ -235,6 +281,54 @@ def delete_job(job_id):
             raise werkzeug.exceptions.Forbidden('Job not deleted')
     except utils.errors.DeleteError as e:
         raise werkzeug.exceptions.Forbidden(str(e))
+
+@blueprint.route('/jobs', methods=['DELETE'])
+@utils.auth.requires_login(redirect=False)
+def delete_jobs():
+    """
+    Deletes a list of jobs
+    """
+    not_found = 0
+    forbidden = 0
+    failed = 0
+    job_ids = flask.request.form.getlist('job_ids[]')
+    for job_id in job_ids:
+
+        try:
+            job = scheduler.get_job(job_id)
+            if job is None:
+                print '%s not found' % job_id
+                not_found += 1
+                continue
+
+            if not utils.auth.has_permission(job, 'delete'):
+                print 'delete %s forbidden' % job_id
+                forbidden += 1
+                continue
+
+            if not scheduler.delete_job(job_id):
+                print 'delete %s failed' % job_id
+                failed += 1
+                continue
+        except Exception as e:
+            error.append(e)
+            pass
+
+    error = []
+    if not_found:
+        error.append('%d job%s not found.' % (not_found, '' if not_found == 1 else 's'))
+
+    if forbidden:
+        error.append('%d job%s not permitted to be deleted.' % (forbidden, '' if forbidden == 1 else 's'))
+
+    if failed:
+        error.append('%d job%s failed to delete.' % (failed, '' if failed == 1 else 's'))
+
+    if len(error) > 0:
+        error = ' '.join(error)
+        raise werkzeug.exceptions.BadRequest(error)
+
+    return 'Jobs deleted.'
 
 @blueprint.route('/datasets/<job_id>/abort', methods=['POST'])
 @blueprint.route('/models/<job_id>/abort', methods=['POST'])

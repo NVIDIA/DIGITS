@@ -4,23 +4,15 @@
 
 {% extends "layout.html" %}
 
+{% block head %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.time_filters.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/table_selection.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/home_app.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/table_selection.css') }}">
+{% endblock %}
+
 {% block content %}
-<script>
-function deleteJob(job_id) {
-    bootbox.confirm(
-            'Are you sure you want to delete this job?<br><br>All related files will be permanently removed.',
-            function(result) {
-                if (result)
-                    $.ajax('/jobs/' + job_id,
-                        {type: "DELETE"})
-                    .done(function() {
-                        window.location.reload(1);
-                        })
-                    .fail(function(data) { errorAlert(data); });
-            });
-    return false;
-}
-</script>
 <div class="page-header">
     {% if total_gpu_count %}
     <div id="gpus-available" class="pull-right">
@@ -35,121 +27,249 @@ function deleteJob(job_id) {
 
 {% include 'job_management.html' %}
 
-<div class="row">
-    <div class="col-sm-6">
-        <div class="well">
+<div class="container">
+    <section ng-app="home_app">
+        <style>
+         .table {
+             width: 100%;
+             border: 0;
+             table-layout:fixed;
+             word-wrap:break-word;
+             border-collapse:collapse;
+         }
+         .table>tbody>tr>td,.table>thead>tr>th {
+             padding: 2px;
+             border-collapse: collapse;
+             white-space: nowrap;
+             text-overflow: ellipsis;
+             overflow: hidden;
+         }
+         .table>thead>tr>th {
+             cursor: pointer;
+         }
+         .table-striped > tbody > tr:nth-child(odd) > td, .table-striped > tbody > tr:nth-child(odd) > th {
+             background-color: #f9f9f9;
+         }
+         .table-striped > tbody > tr:nth-child(even) > td, .table-striped > tbody > tr:nth-child(even) > th {
+             background-color: #ffffff;
+         }
 
-<!-- Datasets -->
-
-<div class="pull-right">
-    New Dataset
-    <ul class="nav nav-pills">
-        {% for category in new_dataset_options.keys()|sort %}
-        {% set options = new_dataset_options[category] %}
-        <li class="dropdown active">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                {{category}} <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu">
-                {% for id in options.keys()|sort %}
-                {% set option = options[id] %}
-                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
-                {% endfor %}
-            </ul>
-        </li>
-        {% endfor %}
-    </ul>
-</div>
-
-<h2>Datasets</h2>
-
-<div class="tab-content">
-    {% for batch in completed_datasets|batch(10) %}
-    <div class="tab-pane{{' active' if loop.index==1}}" id="completed-datasets-page-{{loop.index}}">
-        <ul class="list-group" id="datasets">
-            {% for job in batch %}
-            {% set show_func = 'digits.dataset.views.show' %}
-            {% set badge = job.get_backend() %}
-            {% include 'job_item.html' %}
-            {% else %}
-            <li class="list-group-item"><i>None</i></li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endfor %}
-</div>
-{% if completed_datasets|length > 10 %}
-<div class="text-center">
-    <ul class="pagination">
-        {% for i in range((completed_datasets|length/10)|round(0,'ceil')|int) %}
-        <li class="{{'active' if i==0}}"><a href="#completed-datasets-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
-        {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
+        </style>
+        
+        <div class="row">
+            <!-- Datasets -->
+            <div class="col-md-6">
+                <div class="well">
+                    <div ng-controller="datasets_controller">
+                        <div class="row">
+                            <div class="col-md-12" style="margin-bottom:15px">
+                                <div class="pull-right">
+                                    New Dataset
+                                    <ul class="nav nav-pills">
+                                        {% for category in new_dataset_options.keys()|sort %}
+                                        {% set options = new_dataset_options[category] %}
+                                        <li class="dropdown active">
+                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                                {{category}} <span class="caret"></span>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                {% for id in options.keys()|sort %}
+                                                {% set option = options[id] %}
+                                                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                                                {% endfor %}
+                                            </ul>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <h2>
+                                    {[title]}
+                                    <small>({[jobs.length]})</small>
+                                </h2>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 pull-right">
+                                <form>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                            <input type="text" class="form-control" placeholder="Filter" ng-model="search_text">
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="col-md-6">
+                                <a class="btn btn btn-danger" ng-click="delete_jobs();">Delete</a>
+                            </div>
+                        </div>
+                        <table id="datasets-table" class="table table-bordered table-striped list-group" width="100%">
+                            <col ng-repeat="width in widths track by $index" width="{[width]}">
+                            <thead>
+                                <tr>
+                                    <th ng-repeat="field in fields">
+                                        <div ng-click="change_sorting(field, $event)">
+                                            <small>
+                                                {[ field ]}
+                                            </small>
+                                            <i class="glyphicon" 
+                                               ng-class="get_icon(field)" style="width:14px">
+                                            </i>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody ng-if="jobs.length">
+                                <!-- Table -->
+                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | orderBy:sort.active:sort.descending | filter:search_text">
+                                    <td>
+                                        <a href="/datasets/{[ job.id ]}">
+                                            {[ job.name | major_name ]}
+                                        </a>
+                                        <small>
+                                            {[ job.name | minor_name ]}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {[ job.refs | positive ]}
+                                    </td>
+                                    <td>
+                                        <span class="badge">{[ job.backend ]}</span>
+                                    </td>
+                                    <td class="text-{[job.status_css]}">
+                                        {[ job.status ]}
+                                    </td>
+                                    <td start="{[job.elapsed]}">
+                                        {[ print_time_diff_terse(job.elapsed) ]}
+                                    </td>
+                                    <td start="{[job.submitted]}">
+                                        <small ng-if="!is_today(job.submitted)">
+                                            {[ job.submitted * 1000 | date:'MMM d, yy' ]}
+                                        </small>
+                                        <small ng-if="is_today(job.submitted)">
+                                            {[ job.submitted * 1000 | date:'h:mm a' ]}
+                                        </small>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tbody ng-if="jobs.length == 0">
+                                <tr>
+                                    <td colspan="{[fields.length]}">
+                                        <h5>
+                                            No Datasets{% if username %} for user {{username}}{% endif %}
+                                        </h5>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Models -->
+            <div class="col-md-6">
+                <div class="well">
+                    <div ng-controller="models_controller">
+                        <div class="row">
+                            <div class="col-md-12" style="margin-bottom:15px">
+                                <div class="pull-right">
+                                    New Model
+                                    <ul class="nav nav-pills">
+                                        {% for category in new_model_options.keys()|sort %}
+                                        {% set options = new_model_options[category] %}
+                                        <li class="dropdown active">
+                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                                {{category}} <span class="caret"></span>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                {% for id in options.keys()|sort %}
+                                                {% set option = options[id] %}
+                                                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                                                {% endfor %}
+                                            </ul>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <h2>
+                                    {[title]}
+                                    <small>({[jobs.length]})</small>
+                                </h2>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 pull-right">
+                                <form>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                            <input type="text" class="form-control" placeholder="Filter" ng-model="search_text">
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="col-md-6">
+                                <a class="btn btn btn-danger" ng-click="delete_jobs();">Delete</a>
+                            </div>
+                        </div>
+                        <table id="models-table" class="table table-bordered table-striped" width="100%">
+                            <col ng-repeat="width in widths track by $index" width="{[width]}">
+                            <thead>
+                                <tr>
+                                    <th ng-repeat="field in fields">
+                                        <div ng-click="change_sorting(field, $event)">
+                                            <small>
+                                                {[ field ]}
+                                            </small>
+                                            <i class="glyphicon" 
+                                               ng-class="get_icon(field)" style="width:14px">
+                                            </i>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody ng-if="jobs.length">
+                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | orderBy:sort.active:sort.descending | filter:search_text">
+                                    <td>
+                                        <a href="/models/{[ job.id ]}">
+                                            {[ job.name | major_name ]}
+                                        </a>
+                                        <small>
+                                            {[ job.name | minor_name ]}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge">{[ job.framework ]}</span>
+                                    </td>
+                                    <td class="text-{[job.status_css]}">
+                                        {[ job.status ]}
+                                    </td>
+                                    <td start="{[job.elapsed]}">
+                                        {[ print_time_diff_terse(job.elapsed) ]}
+                                    </td>
+                                    <td start="{[job.submitted]}">
+                                        <small ng-if="!is_today(job.submitted)">
+                                            {[ job.submitted * 1000 | date:'MMM d, yy' ]}
+                                        </small>
+                                        <small ng-if="is_today(job.submitted)">
+                                            {[ job.submitted * 1000 | date:'h:mm a' ]}
+                                        </small>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tbody ng-if="jobs.length == 0">
+                                <tr>
+                                    <td colspan="{[fields.length]}">
+                                        <h5>
+                                            No Models{% if username %} for user {{username}}{% endif %}
+                                        </h5>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="col-sm-6">
-        <div class="well">
-
-<!-- Models -->
-
-<div class="pull-right">
-    New Model
-    <ul class="nav nav-pills">
-        {% for category in new_model_options.keys()|sort %}
-        {% set options = new_model_options[category] %}
-        <li class="dropdown active">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                {{category}} <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu">
-                {% for id in options.keys()|sort %}
-                {% set option = options[id] %}
-                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
-                {% endfor %}
-            </ul>
-        </li>
-        {% endfor %}
-    </ul>
+    </section>
 </div>
-
-<h2>
-    Models
-    <small>
-        <a href="{{ url_for('digits.model.views.index') }}">View details</a>
-    </small>
-</h2>
-
-<div class="tab-content">
-    {% for batch in completed_models|batch(10) %}
-    <div class="tab-pane{{' active' if loop.index==1}}" id="completed-models-page-{{loop.index}}">
-    <ul class="list-group" id="models">
-        {% for job in batch %}
-        {% set show_func = 'digits.model.views.show' %}
-        {% set badge = job.train_task().get_framework_id() %}
-        {% include 'job_item.html' %}
-        {% else %}
-        <li class="list-group-item"><i>None</i></li>
-        {% endfor %}
-    </ul>
-    </div>
-    {% endfor %}
-</div>
-{% if completed_models|length > 10 %}
-<div class="text-center">
-    <ul class="pagination">
-        {% for i in range((completed_models|length/10)|round(0,'ceil')|int) %}
-        <li class="{{'active' if i==0}}"><a href="#completed-models-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
-        {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
-        </div>
-    </div>
-</div>
-
 {% endblock %}
-
