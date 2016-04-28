@@ -77,6 +77,7 @@ New Image Classification Model
          python_layer_file_state();
 
 $("#dataset").change(function() {
+    if ($(this).val()) {
         $.ajax("/datasets/images/classification/summary?job_id=" + $(this).val(),
             {
                 type: "GET",
@@ -89,7 +90,9 @@ $("#dataset").change(function() {
             $("#dataset-summary").html("");
             errorAlert(data);
             });
-        });
+        }
+    });
+$("#dataset").change();
         </script>
         <div class="col-sm-4">
             <div id="dataset-summary">
