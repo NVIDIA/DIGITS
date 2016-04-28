@@ -178,6 +178,14 @@ def edit_job(job_id):
         if not name:
             raise werkzeug.exceptions.BadRequest('name cannot be blank')
         job._name = name
+        # update form data so updated name gets used when cloning job
+        if 'form.dataset_name.data' in job.form_data:
+            job.form_data['form.dataset_name.data'] = name
+        elif 'form.model_name.data' in job.form_data:
+            job.form_data['form.model_name.data'] = name
+        else:
+            # we are utterly confused
+            raise werkzeug.exceptions.BadRequest('Unable to edit job type %s' % job.job_type())
         logger.info('Set name to "%s".' % job.name(), job_id=job.id())
 
     # Edit notes
