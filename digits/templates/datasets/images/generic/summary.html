@@ -14,7 +14,7 @@
 {% endif %}
 </p>
 <ul>
-    <li>DB backend: {{dataset.train_db_task().backend}}</li>
+    <li>DB backend: {{dataset.get_backend()}}</li>
     {% for task in dataset.analyze_db_tasks() %}
     <li>{{task.name()}}</li>
     <ul>

@@ -48,8 +48,8 @@ class ImageClassificationModelJob(ImageModelJob):
         download_files.extend([
             (task.dataset.path(task.dataset.labels_file),
                     os.path.basename(task.dataset.labels_file)),
-                (task.dataset.path(task.dataset.train_db_task().mean_file),
-                    os.path.basename(task.dataset.train_db_task().mean_file)),
+                (task.dataset.path(task.dataset.get_mean_file()),
+                    os.path.basename(task.dataset.get_mean_file())),
                 (snapshot_filename,
                     os.path.basename(snapshot_filename)),
             ])

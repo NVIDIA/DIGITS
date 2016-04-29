@@ -20,71 +20,38 @@ class DatasetJob(Job):
         super(DatasetJob, self).__init__(**kwargs)
         self.pickver_job_dataset = PICKLE_VERSION
 
-    @override
-    def json_dict(self, verbose=False):
-        d = super(DatasetJob, self).json_dict(verbose)
-
-        if verbose:
-            d.update({
-                'ParseFolderTasks': [{
-                    "name":        t.name(),
-                    "label_count": t.label_count,
-                    "train_count": t.train_count,
-                    "val_count":   t.val_count,
-                    "test_count":  t.test_count,
-                    } for t in self.parse_folder_tasks()],
-                'CreateDbTasks': [{
-                    "name":             t.name(),
-                    "entries":          t.entries_count,
-                    "image_width":      t.image_dims[0],
-                    "image_height":     t.image_dims[1],
-                    "image_channels":   t.image_dims[2],
-                    "backend":          t.backend,
-                    "encoding":         t.encoding,
-                    "compression":      t.compression,
-                                      } for t in self.create_db_tasks()],
-                })
-        return d
-
-    def parse_folder_tasks(self):
+    def get_backend(self):
         """
-        Return all ParseFolderTasks for this job
-        """
-        return [t for t in self.tasks if isinstance(t, tasks.ParseFolderTask)]
-
-    def create_db_tasks(self):
-        """
-        Return all CreateDbTasks for this job
-        """
-        return [t for t in self.tasks if isinstance(t, tasks.CreateDbTask)]
-
-    def train_db_task(self):
-        """
-        Return the task that creates the training set
+        Return the DB backend used to create this dataset
         """
         raise NotImplementedError('Please implement me')
 
-    def val_db_task(self):
+    def get_entry_count(self, stage):
         """
-        Return the task that creates the validation set
+        Return the number of entries in the DB matching the specified stage
         """
-        for t in self.tasks:
-            if isinstance(t, tasks.CreateDbTask) and 'val' in t.name().lower():
-                return t
-        return None
+        raise NotImplementedError('Please implement me')
 
-    def test_db_task(self):
+    def get_feature_db_path(self, stage):
         """
-        Return the task that creates the test set
+        Return the absolute feature DB path for the specified stage
         """
-        for t in self.tasks:
-            if isinstance(t, tasks.CreateDbTask) and 'test' in t.name().lower():
-                return t
-        return None
+        raise NotImplementedError('Please implement me')
 
-    def analyze_db_tasks(self):
+    def get_feature_dims(self):
         """
-        Return all AnalyzeDbTasks for this job
+        Return the shape of the feature N-D array
         """
-        return [t for t in self.tasks if isinstance(t, tasks.AnalyzeDbTask)]
+        raise NotImplementedError('Please implement me')
 
+    def get_label_db_path(self, stage):
+        """
+        Return the absolute label DB path for the specified stage
+        """
+        raise NotImplementedError('Please implement me')
+
+    def get_mean_file(self):
+        """
+        Return the mean file
+        """
+        raise NotImplementedError('Please implement me')

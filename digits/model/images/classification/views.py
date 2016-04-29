@@ -253,7 +253,7 @@ def create():
                  else ''), form.python_layer_server_file.data)
 
             job.tasks.append(fw.create_train_task(
-                        job_dir         = job.dir(),
+                        job             = job,
                         dataset         = datasetJob,
                         train_epochs    = form.train_epochs.data,
                         snapshot_interval   = form.snapshot_interval.data,

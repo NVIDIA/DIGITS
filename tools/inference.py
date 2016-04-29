@@ -96,19 +96,11 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
         raise InferenceError("Unable to find snapshot for epoch=%s" % repr(self.epoch))
 
     # retrieve image dimensions and resize mode
-    if isinstance(dataset, ImageClassificationDatasetJob):
-        height = dataset.image_dims[0]
-        width = dataset.image_dims[1]
-        channels = dataset.image_dims[2]
-        resize_mode = dataset.resize_mode
-    elif isinstance(dataset, GenericImageDatasetJob):
-        db_task = dataset.analyze_db_tasks()[0]
-        height = db_task.image_height
-        width = db_task.image_width
-        channels = db_task.image_channels
-        resize_mode = 'squash'
-    else:
-        raise InferenceError("Unknown dataset type")
+    image_dims = dataset.get_feature_dims()
+    height = image_dims[0]
+    width = image_dims[1]
+    channels = image_dims[2]
+    resize_mode = dataset.resize_mode if hasattr(dataset, 'resize_mode') else 'squash'
 
     n_input_samples = 0  # number of samples we were able to load
     input_ids = []       # indices of samples within file list

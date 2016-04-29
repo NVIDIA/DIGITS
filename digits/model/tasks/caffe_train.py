@@ -16,7 +16,8 @@ import numpy as np
 import scipy
 
 from .train import TrainTask
-from digits import utils, dataset
+import digits
+from digits import utils
 from digits.config import config_value
 from digits.status import Status
 from digits.utils import subclass, override, constants
@@ -129,9 +130,9 @@ class CaffeTrainTask(TrainTask):
     def before_run(self):
         super(CaffeTrainTask, self).before_run()
 
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
+        if isinstance(self.job, digits.model.images.classification.ImageClassificationModelJob):
             self.save_files_classification()
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
+        elif isinstance(self.job, digits.model.images.generic.GenericImageModelJob):
             self.save_files_generic()
         else:
             raise NotImplementedError
@@ -149,23 +150,13 @@ class CaffeTrainTask(TrainTask):
             blob = caffe_pb2.BlobProto()
             blob.MergeFromString(f.read())
 
-            if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-                mean_image = np.reshape(blob.data,
-                                        (
-                                            self.dataset.image_dims[2],
-                                            self.dataset.image_dims[0],
-                                            self.dataset.image_dims[1],
-                                        )
+            mean_image = np.reshape(blob.data,
+                                    (
+                                        self.dataset.get_feature_dims()[2],
+                                        self.dataset.get_feature_dims()[0],
+                                        self.dataset.get_feature_dims()[1],
                                     )
-            elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-                task = self.dataset.analyze_db_tasks()[0]
-                mean_image = np.reshape(blob.data,
-                                        (
-                                            task.image_channels,
-                                            task.image_height,
-                                            task.image_width,
-                                        )
-                                    )
+                                )
 
             # Resize the mean image if crop_size exists
             if mean_image is not None and resize:
@@ -260,8 +251,8 @@ class CaffeTrainTask(TrainTask):
         if train_data_layer is None:
             assert val_data_layer is None, 'cannot specify a test data layer without a train data layer'
 
-        dataset_backend = self.dataset.train_db_task().backend
-        has_val_set = self.dataset.val_db_task() is not None
+        dataset_backend = self.dataset.get_backend()
+        has_val_set = self.dataset.get_entry_count(constants.VAL_DB) > 0
 
         if train_data_layer is not None:
             if dataset_backend == 'lmdb':
@@ -273,7 +264,7 @@ class CaffeTrainTask(TrainTask):
                 assert not train_data_layer.data_param.HasField('backend'), "don't set the data_param.backend"
             if dataset_backend == 'hdf5' and train_data_layer.HasField('hdf5_data_param'):
                 assert not train_data_layer.hdf5_data_param.HasField('source'), "don't set the hdf5_data_param.source"
-            max_crop_size = min(self.dataset.image_dims[0], self.dataset.image_dims[1])
+            max_crop_size = min(self.dataset.get_feature_dims()[0], self.dataset.get_feature_dims()[1])
             if self.crop_size:
                 assert dataset_backend != 'hdf5', 'HDF5Data layer does not support cropping'
                 assert self.crop_size <= max_crop_size, 'crop_size is larger than the image size'
@@ -329,27 +320,27 @@ class CaffeTrainTask(TrainTask):
                 if self.crop_size:
                     val_data_layer.transform_param.crop_size = self.crop_size
         if dataset_backend == 'lmdb':
-            train_data_layer.data_param.source = self.dataset.path(self.dataset.train_db_task().db_name)
+            train_data_layer.data_param.source = self.dataset.get_feature_db_path(constants.TRAIN_DB)
             train_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
             if val_data_layer is not None and has_val_set:
-                val_data_layer.data_param.source = self.dataset.path(self.dataset.val_db_task().db_name)
+                val_data_layer.data_param.source = self.dataset.get_feature_db_path(constants.VAL_DB)
                 val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
         elif dataset_backend == 'hdf5':
-            train_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.train_db_task().textfile)
+            train_data_layer.hdf5_data_param.source = os.path.join(self.dataset.get_feature_db_path(constants.TRAIN_DB), 'list.txt')
             if val_data_layer is not None and has_val_set:
-                val_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.val_db_task().textfile)
+                val_data_layer.hdf5_data_param.source = os.path.join(self.dataset.get_feature_db_path(constants.VAL_DB), 'list.txt')
 
         if self.use_mean == 'pixel':
             assert dataset_backend != 'hdf5', 'HDF5Data layer does not support mean subtraction'
-            mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.train_db_task().mean_file))
+            mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
             self.set_mean_value(train_data_layer, mean_pixel)
             if val_data_layer is not None and has_val_set:
                 self.set_mean_value(val_data_layer, mean_pixel)
 
         elif self.use_mean == 'image':
-            self.set_mean_file(train_data_layer, self.dataset.path(self.dataset.train_db_task().mean_file))
+            self.set_mean_file(train_data_layer, self.dataset.path(self.dataset.get_mean_file()))
             if val_data_layer is not None and has_val_set:
-                self.set_mean_file(val_data_layer, self.dataset.path(self.dataset.train_db_task().mean_file))
+                self.set_mean_file(val_data_layer, self.dataset.path(self.dataset.get_mean_file()))
 
         if self.batch_size:
             if dataset_backend == 'lmdb':
@@ -394,13 +385,13 @@ class CaffeTrainTask(TrainTask):
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
-        shape.dim.append(self.dataset.image_dims[2])
+        shape.dim.append(self.dataset.get_feature_dims()[2])
         if self.crop_size:
             shape.dim.append(self.crop_size)
             shape.dim.append(self.crop_size)
         else:
-            shape.dim.append(self.dataset.image_dims[0])
-            shape.dim.append(self.dataset.image_dims[1])
+            shape.dim.append(self.dataset.get_feature_dims()[0])
+            shape.dim.append(self.dataset.get_feature_dims()[1])
 
         # Layers
         deploy_network.MergeFrom(deploy_layers)
@@ -436,7 +427,7 @@ class CaffeTrainTask(TrainTask):
         solver.snapshot_prefix = self.snapshot_prefix
 
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(self.dataset.train_db_task().entries_count) / train_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
@@ -447,7 +438,7 @@ class CaffeTrainTask(TrainTask):
             solver.snapshot = 0 # only take one snapshot at the end
 
         if has_val_set and self.val_interval:
-            solver.test_iter.append(int(math.ceil(float(self.dataset.val_db_task().entries_count) / val_data_layer.data_param.batch_size)))
+            solver.test_iter.append(int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) / val_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
                 solver.test_interval = 1 # don't round down
@@ -519,21 +510,12 @@ class CaffeTrainTask(TrainTask):
         """
         Save solver, train_val and deploy files to disk
         """
-        train_image_db = None
-        train_labels_db = None
-        val_image_db = None
-        val_labels_db = None
-        for task in self.dataset.tasks:
-            if task.purpose == 'Training Images':
-                train_image_db = task
-            if task.purpose == 'Training Labels':
-                train_labels_db = task
-            if task.purpose == 'Validation Images':
-                val_image_db = task
-            if task.purpose == 'Validation Labels':
-                val_labels_db = task
+        train_feature_db_path = self.dataset.get_feature_db_path(constants.TRAIN_DB)
+        train_label_db_path = self.dataset.get_label_db_path(constants.TRAIN_DB)
+        val_feature_db_path = self.dataset.get_feature_db_path(constants.VAL_DB)
+        val_label_db_path = self.dataset.get_label_db_path(constants.VAL_DB)
 
-        assert train_image_db is not None, 'Training images are required'
+        assert train_feature_db_path is not None, 'Training images are required'
 
         ### Split up train_val and deploy layers
 
@@ -569,17 +551,17 @@ class CaffeTrainTask(TrainTask):
                         assert val_label_data_layer is None, 'cannot specify two val label data layers'
                         val_label_data_layer = layer
 
-        train_image_data_layer = self.make_generic_data_layer(train_image_db, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
+        train_image_data_layer = self.make_generic_data_layer(train_feature_db_path, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
         if train_image_data_layer is not None:
             train_val_network.layer.add().CopyFrom(train_image_data_layer)
-        train_label_data_layer = self.make_generic_data_layer(train_labels_db, train_label_data_layer, 'label', 'label', caffe_pb2.TRAIN)
+        train_label_data_layer = self.make_generic_data_layer(train_label_db_path, train_label_data_layer, 'label', 'label', caffe_pb2.TRAIN)
         if train_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(train_label_data_layer)
 
-        val_image_data_layer = self.make_generic_data_layer(val_image_db, val_image_data_layer, 'data', 'data', caffe_pb2.TEST)
+        val_image_data_layer = self.make_generic_data_layer(val_feature_db_path, val_image_data_layer, 'data', 'data', caffe_pb2.TEST)
         if val_image_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_image_data_layer)
-        val_label_data_layer = self.make_generic_data_layer(val_labels_db, val_label_data_layer, 'label', 'label', caffe_pb2.TEST)
+        val_label_data_layer = self.make_generic_data_layer(val_label_db_path, val_label_data_layer, 'label', 'label', caffe_pb2.TEST)
         if val_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_label_data_layer)
 
@@ -604,15 +586,15 @@ class CaffeTrainTask(TrainTask):
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
-        shape.dim.append(train_image_db.image_channels)
+        shape.dim.append(self.dataset.get_feature_dims()[2]) # channels
         if train_image_data_layer.transform_param.HasField('crop_size'):
             shape.dim.append(
                     train_image_data_layer.transform_param.crop_size)
             shape.dim.append(
                     train_image_data_layer.transform_param.crop_size)
         else:
-            shape.dim.append(train_image_db.image_height)
-            shape.dim.append(train_image_db.image_width)
+            shape.dim.append(self.dataset.get_feature_dims()[0]) # height
+            shape.dim.append(self.dataset.get_feature_dims()[1]) # width
 
         # Layers
         deploy_network.MergeFrom(deploy_layers)
@@ -642,7 +624,7 @@ class CaffeTrainTask(TrainTask):
         solver.snapshot_prefix = self.snapshot_prefix
 
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(train_image_db.image_count) / train_image_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_image_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
@@ -653,7 +635,7 @@ class CaffeTrainTask(TrainTask):
             solver.snapshot = 0 # only take one snapshot at the end
 
         if val_image_data_layer:
-            solver.test_iter.append(int(math.ceil(float(val_image_db.image_count) / val_image_data_layer.data_param.batch_size)))
+            solver.test_iter.append(int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) / val_image_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
                 solver.test_interval = 1 # don't round down
@@ -721,16 +703,16 @@ class CaffeTrainTask(TrainTask):
 
         return True
 
-    def make_generic_data_layer(self, db, orig_layer, name, top, phase):
+    def make_generic_data_layer(self, db_path, orig_layer, name, top, phase):
         """
         Utility within save_files_generic for creating a Data layer
         Returns a LayerParameter (or None)
 
         Arguments:
-        db -- an AnalyzeDbTask (or None)
+        db_path -- path to database (or None)
         orig_layer -- a LayerParameter supplied by the user (or None)
         """
-        if db is None:
+        if db_path is None:
             #TODO allow user to specify a standard data layer even if it doesn't exist in the dataset
             return None
         layer = caffe_pb2.LayerParameter()
@@ -747,7 +729,7 @@ class CaffeTrainTask(TrainTask):
         # source
         if layer.data_param.HasField('source'):
             self.logger.warning('Ignoring data_param.source ...')
-        layer.data_param.source = db.path(db.database)
+        layer.data_param.source = db_path
         if layer.data_param.HasField('backend'):
             self.logger.warning('Ignoring data_param.backend ...')
         layer.data_param.backend = caffe_pb2.DataParameter.LMDB
@@ -759,17 +741,17 @@ class CaffeTrainTask(TrainTask):
             layer.data_param.batch_size = self.batch_size
 
         # mean
-        if name == 'data' and self.dataset.mean_file:
+        if name == 'data' and self.dataset.get_mean_file():
             if self.use_mean == 'pixel':
-                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.mean_file))
+                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
                 ## remove any values that may already be in the network
                 self.set_mean_value(layer, mean_pixel)
             elif self.use_mean == 'image':
-                self.set_mean_file(layer, self.dataset.path(self.dataset.mean_file))
+                self.set_mean_file(layer, self.dataset.path(self.dataset.get_mean_file()))
 
         # crop size
         if name == 'data' and self.crop_size:
-            max_crop_size = min(db.image_width, db.image_height)
+            max_crop_size = min(self.dataset.get_feature_dims()[0], self.dataset.get_feature_dims()[1])
             assert self.crop_size <= max_crop_size, 'crop_size is larger than the image size'
             layer.transform_param.crop_size = self.crop_size
         return layer
@@ -1005,20 +987,12 @@ class CaffeTrainTask(TrainTask):
         return False
 
     @override
-    def can_infer_one(self):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return True
-        return False
-
-    @override
     def infer_one(self, data, snapshot_epoch=None, layers=None, gpu=None):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_one_image(data,
-                    snapshot_epoch=snapshot_epoch,
-                    layers=layers,
-                    gpu=gpu,
-                    )
-        raise NotImplementedError()
+        return self.infer_one_image(data,
+                snapshot_epoch=snapshot_epoch,
+                layers=layers,
+                gpu=gpu,
+                )
 
     def infer_one_image(self, image, snapshot_epoch=None, layers=None, gpu=None):
         """
@@ -1172,16 +1146,8 @@ class CaffeTrainTask(TrainTask):
         return (mean, std, [y, x, ticks])
 
     @override
-    def can_infer_many(self):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return True
-        return False
-
-    @override
     def infer_many(self, data, snapshot_epoch=None, gpu=None):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
-        raise NotImplementedError()
+        return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
 
     def infer_many_images(self, images, snapshot_epoch=None, gpu=None):
         """
@@ -1318,29 +1284,16 @@ class CaffeTrainTask(TrainTask):
         else:
             data_shape = network.input_dim[:4]
 
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            if self.dataset.image_dims[2] == 3 and \
-                    self.dataset.train_db_task().image_channel_order == 'BGR':
-                # XXX see issue #59
-                channel_swap = (2,1,0)
+        if self.dataset.get_feature_dims()[2] == 3:
+            # BGR when there are three channels
+            # XXX see issue #59
+            channel_swap = (2,1,0)
 
+        if self.dataset.get_mean_file():
             if self.use_mean == 'pixel':
-                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.train_db_task().mean_file))
+                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
             elif self.use_mean == 'image':
-                mean_image = self.get_mean_image(self.dataset.path(self.dataset.train_db_task().mean_file), True)
-
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            task = self.dataset.analyze_db_tasks()[0]
-
-            if task.image_channels == 3:
-                # XXX see issue #59
-                channel_swap = (2,1,0)
-
-            if self.dataset.mean_file:
-                if self.use_mean == 'pixel':
-                    mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.mean_file))
-                elif self.use_mean == 'image':
-                    mean_image = self.get_mean_image(self.dataset.path(self.dataset.mean_file), True)
+                mean_image = self.get_mean_image(self.dataset.path(self.dataset.get_mean_file()), True)
 
         t = caffe.io.Transformer(
                 inputs = {'data': tuple(data_shape)}
