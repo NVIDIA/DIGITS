@@ -294,6 +294,7 @@ def get_layer_vis_square(data,
         normalize = True,
         min_img_dim = 100,
         max_width = 1200,
+        channel_order = 'RGB',
         ):
     """
     Returns a vis_square for the given layer data
@@ -306,6 +307,8 @@ def get_layer_vis_square(data,
     normalize -- whether to normalize the data when visualizing
     max_width -- maximum width for the vis_square
     """
+    if channel_order not in ['RGB', 'BGR']:
+        raise ValueError('Unsupported channel_order %s' % channel_order)
     if data.ndim == 1:
         # interpret as 1x1 grayscale images
         # (N, 1, 1)
@@ -318,7 +321,8 @@ def get_layer_vis_square(data,
         if data.shape[0] == 3:
             # interpret as a color image
             # (1, H, W,3)
-            data = data[[2,1,0],...] # BGR to RGB (see issue #59)
+            if channel_order == 'BGR':
+                data = data[[2,1,0],...] # BGR to RGB (see issue #59)
             data = data.transpose(1,2,0)
             data = data[np.newaxis,...]
         else:
@@ -330,12 +334,14 @@ def get_layer_vis_square(data,
             # interpret as HxW color images
             # (N, H, W, 3)
             data = data.transpose(1,2,3,0)
-            data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
+            if channel_order == 'BGR':
+                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
         elif data.shape[1] == 3:
             # interpret as HxW color images
             # (N, H, W, 3)
             data = data.transpose(0,2,3,1)
-            data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
+            if channel_order == 'BGR':
+                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
         else:
             # interpret as HxW grayscale images
             # (N, H, W)
