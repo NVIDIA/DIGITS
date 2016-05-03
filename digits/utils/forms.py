@@ -257,7 +257,7 @@ class MultiIntegerField(wtforms.Field):
 
     def _value(self):
         if self.raw_data:
-            return self.raw_data[0]
+            return ','.join([str(x) for x in self.raw_data[0] if self.is_int(x)])
         return ','.join([str(x) for x in self.data if self.is_int(x)])
 
     def process_formdata(self, valuelist):
@@ -302,7 +302,7 @@ class MultiFloatField(wtforms.Field):
 
     def _value(self):
         if self.raw_data:
-            return self.raw_data[0]
+            return ','.join([str(x) for x in self.raw_data[0] if self.is_float(x)])
         return ','.join([str(x) for x in self.data if self.is_float(x)])
 
     def process_formdata(self, valuelist):
@@ -382,7 +382,10 @@ class MultiOptional(object):
             self.string_check = lambda s: s
 
     def __call__(self, form, field):
-        if not field.raw_data or isinstance(field.raw_data[0], string_types) and not self.string_check(field.raw_data[0]):
+        if (not field.raw_data or
+            (len(field.raw_data[0]) and
+             isinstance(field.raw_data[0][0], string_types) and
+             not self.string_check(field.raw_data[0][0]))):
             field.errors[:] = []
             raise validators.StopValidation()
 
