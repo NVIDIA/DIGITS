@@ -1075,7 +1075,8 @@ class CaffeTrainTask(TrainTask):
                         if bottom in net.blobs and bottom not in added_activations:
                             data = net.blobs[bottom].data[0]
                             vis = utils.image.get_layer_vis_square(data,
-                                    allow_heatmap=bool(bottom != 'data'))
+                                    allow_heatmap=bool(bottom != 'data'),
+                                    channel_order = 'BGR')
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
                                     {
@@ -1094,7 +1095,7 @@ class CaffeTrainTask(TrainTask):
                     if layer.name in net.params:
                         data = net.params[layer.name][0].data
                         if layer.type not in ['InnerProduct']:
-                            vis = utils.image.get_layer_vis_square(data)
+                            vis = utils.image.get_layer_vis_square(data, channel_order = 'BGR')
                         else:
                             vis = None
                         mean, std, hist = self.get_layer_statistics(data)
@@ -1129,7 +1130,8 @@ class CaffeTrainTask(TrainTask):
                                 normalize = False
                             vis = utils.image.get_layer_vis_square(data,
                                     normalize = normalize,
-                                    allow_heatmap = bool(top != 'data'))
+                                    allow_heatmap = bool(top != 'data'),
+                                    channel_order = 'BGR')
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
                                     {
