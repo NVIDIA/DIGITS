@@ -339,26 +339,39 @@ class MultiNumberRange(object):
         interpolated using `%(min)s` and `%(max)s` if desired. Useful defaults
         are provided depending on the existence of min and max.
     """
-    def __init__(self, min=None, max=None, message=None):
+    def __init__(self, min=None, max=None, min_inclusive=True, max_inclusive=True, message=None):
         self.min = min
         self.max = max
         self.message = message
+        self.min_inclusive = min_inclusive
+        self.max_inclusive = max_inclusive
 
     def __call__(self, form, field):
         fdata = field.data if isinstance(field.data, (list, tuple)) else [field.data]
         for data in fdata:
-            if data is None or (self.min is not None and data < self.min) or \
-                    (self.max is not None and data > self.max):
+            print 'checking', data, self.min
+            flags = 0
+            flags |= (data is None) << 0
+            flags |= (self.min is not None and self.min_inclusive and data < self.min) << 1
+            flags |= (self.max is not None and self.max_inclusive and data > self.max) << 2
+            flags |= (self.min is not None and not self.min_inclusive and data <= self.min) << 3
+            flags |= (self.max is not None and not self.max_inclusive and data >= self.max) << 4
+
+            if flags:
                 message = self.message
                 if message is None:
                     # we use %(min)s interpolation to support floats, None, and
                     # Decimals without throwing a formatting exception.
-                    if self.max is None:
+                    if flags & 1<<0:
+                        message = field.gettext('No data.')
+                    elif flags & 1<<1:
                         message = field.gettext('Number %(data)s must be at least %(min)s.')
-                    elif self.min is None:
+                    elif flags & 1<<2:
                         message = field.gettext('Number %(data)s must be at most %(max)s.')
-                    else:
-                        message = field.gettext('Number %(data)s must be between %(min)s and %(max)s.')
+                    elif flags & 1<<3:
+                        message = field.gettext('Number %(data)s must be greater than %(min)s.')
+                    elif flags & 1<<4:
+                        message = field.gettext('Number %(data)s must be less than %(max)s.')
 
                 raise validators.ValidationError(message % dict(data=data, min=self.min, max=self.max))
 
