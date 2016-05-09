@@ -1,13 +1,10 @@
 # LeNet
 name: "LeNet"
 layer {
-  name: "mnist"
+  name: "train-data"
   type: "Data"
   top: "scaled"
   top: "label"
-  include {
-    phase: TRAIN
-  }
   transform_param {
     # 1/(standard deviation)
     scale: 0.0125
@@ -15,15 +12,13 @@ layer {
   data_param {
     batch_size: 64
   }
+  include { stage: "train" }
 }
 layer {
-  name: "mnist"
+  name: "val-data"
   type: "Data"
   top: "scaled"
   top: "label"
-  include {
-    phase: TEST
-  }
   transform_param {
     # 1/(standard deviation)
     scale: 0.0125
@@ -31,6 +26,7 @@ layer {
   data_param {
     batch_size: 100
   }
+  include { stage: "val" }
 }
 layer {
   # Use Power layer in deploy phase for input scaling
