@@ -24,7 +24,7 @@ layer {
     scale: 0.0125
   }
   data_param {
-    batch_size: 100
+    batch_size: 32
   }
   include { stage: "val" }
 }

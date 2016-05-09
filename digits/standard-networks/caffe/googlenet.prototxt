@@ -10,7 +10,7 @@ layer {
     crop_size: 224
   }
   data_param {
-    batch_size: 24
+    batch_size: 32
   }
   include { stage: "train" }
 }
@@ -24,7 +24,7 @@ layer {
     crop_size: 224
   }
   data_param {
-    batch_size: 24
+    batch_size: 16
   }
   include { stage: "val" }
 }
