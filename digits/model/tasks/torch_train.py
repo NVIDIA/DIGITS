@@ -443,7 +443,7 @@ class TorchTrainTask(TrainTask):
 
         for filename in os.listdir(snapshot_dir):
             # find models
-            match = re.match(r'%s_(\d+)\.?(\d*)_Weights\.t7' % os.path.basename(self.snapshot_prefix), filename)
+            match = re.match(r'%s_(\d+)\.?(\d*)(_Weights|_Model)\.t7' % os.path.basename(self.snapshot_prefix), filename)
             if match:
                 epoch = 0
                 if match.group(2) == '':
@@ -505,14 +505,15 @@ class TorchTrainTask(TrainTask):
         else:
             torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
+        file_to_load = self.get_snapshot(snapshot_epoch)
+
         args = [torch_bin,
                 os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
                 'test.lua',
                 '--image=%s' % temp_image_path,
                 '--network=%s' % self.model_file.split(".")[0],
                 '--networkDirectory=%s' % self.job_dir,
-                '--load=%s' % self.job_dir,
-                '--snapshotPrefix=%s' % self.snapshot_prefix,
+                '--snapshot=%s' % file_to_load,
                 ]
         if isinstance(self.dataset, ImageClassificationDatasetJob):
             args.append('--labels=%s' % self.dataset.path(self.dataset.labels_file))
@@ -522,9 +523,6 @@ class TorchTrainTask(TrainTask):
             if self.use_mean != 'none':
                 args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
             args.append('--allPredictions=yes')
-
-        if snapshot_epoch:
-            args.append('--epoch=%d' % int(snapshot_epoch))
 
         if self.use_mean == 'pixel':
             args.append('--subtractMean=pixel')
@@ -812,6 +810,8 @@ class TorchTrainTask(TrainTask):
             else:
                 torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
+            file_to_load = self.get_snapshot(snapshot_epoch)
+
             args = [torch_bin,
                     os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
                     'test.lua',
@@ -821,8 +821,7 @@ class TorchTrainTask(TrainTask):
                     '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
                     '--network=%s' % self.model_file.split(".")[0],
                     '--networkDirectory=%s' % self.job_dir,
-                    '--load=%s' % self.job_dir,
-                    '--snapshotPrefix=%s' % self.snapshot_prefix,
+                    '--snapshot=%s' % file_to_load,
                     ]
 
             if isinstance(self.dataset, ImageClassificationDatasetJob):
@@ -833,8 +832,6 @@ class TorchTrainTask(TrainTask):
                 if self.use_mean != 'none':
                     args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
 
-            if snapshot_epoch:
-                args.append('--epoch=%d' % int(snapshot_epoch))
             if self.use_mean == 'pixel':
                 args.append('--subtractMean=pixel')
             elif self.use_mean == 'image':
@@ -938,4 +935,24 @@ class TorchTrainTask(TrainTask):
         with open (os.path.join(self.job_dir,TORCH_MODEL_FILE), "r") as infile:
             desc = infile.read()
         return desc
+
+    def get_snapshot(self, epoch):
+        """
+        return snapshot file for specified epoch
+        """
+        file_to_load = None
+
+        if not epoch:
+            epoch = self.snapshots[-1][1]
+            file_to_load = self.snapshots[-1][0]
+        else:
+            for snapshot_file, snapshot_epoch in self.snapshots:
+                if snapshot_epoch == epoch:
+                    file_to_load = snapshot_file
+                    break
+        if file_to_load is None:
+            raise Exception('snapshot not found for epoch "%s"' % epoch)
+
+        return file_to_load
+
 

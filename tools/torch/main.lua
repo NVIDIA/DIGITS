@@ -351,6 +351,24 @@ logmessage.display(0,'Network definition: \n' .. model:__tostring())
 
 logmessage.display(0,'Network definition ends')
 
+local function saveModel(model, directory, prefix, epoch)
+    local filename
+    local modelObjectToSave
+    if model.clearState then
+        -- save the full model
+        filename = paths.concat(directory, prefix .. '_' .. epoch .. '_Model.t7')
+        modelObjectToSave = model:clearState()
+    else
+        -- this version of Torch doesn't support clearing the model state => save only the weights
+        local Weights,Gradients = model:getParameters()
+        filename = paths.concat(directory, prefix .. '_' .. epoch .. '_Weights.t7')
+        modelObjectToSave = Weights
+    end
+    logmessage.display(0,'Snapshotting to ' .. filename)
+    torch.save(filename, modelObjectToSave)
+    logmessage.display(0,'Snapshot saved - ' .. filename)
+end
+
 local function switchType(newType, model, loss)
     if newType == 'float' then
         logmessage.display(0,'switching to floats')
@@ -370,15 +388,22 @@ end
 if opt.weights ~= '' then
     if paths.filep(opt.weights) then
         logmessage.display(0,'Loading weights from pretrained model - ' .. opt.weights)
-        local w, grad = model:getParameters()
-        w:copy(torch.load(opt.weights))
+        if (string.find(opt.weights, '_Weights')) then
+            local w, grad = model:getParameters()
+            w:copy(torch.load(opt.weights))
+        else
+            -- the full model was saved
+            assert(string.find(opt.weights, '_Model'))
+            model = torch.load(opt.weights)
+            network.model = model
+        end
     else
         logmessage.display(2,'Weight file for pretrained model not found: ' .. opt.weights)
         os.exit(-1)
     end
 end
 
--- allow user to fine tune model
+-- allow user to fine tune model (this needs to be done *after* we have loaded the snapshot)
 if network.fineTuneHook then
     logmessage.display(0,'Calling user-defined fine tuning hook...')
     model = network.fineTuneHook(model)
@@ -559,8 +584,6 @@ while tmp_batchsize <= trainSize do
     epoch_round = epoch_round + 1
 end
 logmessage.display(0,'While logging, epoch value will be rounded to ' .. epoch_round .. ' significant digits')
-
-logmessage.display(0,'Model weights will be saved as ' .. snapshot_prefix .. '_<EPOCH>_Weights.t7')
 
 --[[ -- NOTE: uncomment this block when "crash recovery" feature was implemented
 logmessage.display(0,'model, lrpolicy, optim state and random number states will be saved for recovery from crash')
@@ -766,12 +789,7 @@ local function Train(epoch, dataLoader)
             end
 
             if current_epoch >= next_snapshot_save then
-                -- save weights
-                local filename = paths.concat(opt.save, snapshot_prefix .. '_' .. current_epoch .. '_Weights.t7')
-                logmessage.display(0,'Snapshotting to ' .. filename)
-                torch.save(filename, Weights)
-                logmessage.display(0,'Snapshot saved - ' .. filename)
-
+                saveModel(model, opt.save, snapshot_prefix, current_epoch)
                 next_snapshot_save = (utils.round(current_epoch/opt.snapshotInterval) + 1) * opt.snapshotInterval -- To find next nearest epoch value that exactly divisible by opt.snapshotInterval
                 last_snapshot_save_epoch = current_epoch
             end
@@ -820,10 +838,7 @@ end
 
 -- if required, save snapshot at the end
 if opt.epoch > last_snapshot_save_epoch then
-    local filename = paths.concat(opt.save, snapshot_prefix .. '_' .. opt.epoch .. '_Weights.t7')
-    logmessage.display(0,'Snapshotting to ' .. filename)
-    torch.save(filename, Weights)
-    logmessage.display(0,'Snapshot saved - ' .. filename)
+    saveModel(model, opt.save, snapshot_prefix, opt.epoch)
 end
 
 -- close databases
