@@ -46,15 +46,21 @@ return function(params)
 
     local model
     if params.ngpus > 1 then
-       model = nn.DataParallelTable(1)  -- Split along first (batch) dimension
-       for i = 1, params.ngpus do
-          cutorch.setDevice(i)
-          model:add(lenet:clone(), i)  -- Use the ith GPU
-       end
-       cutorch.setDevice(1)  -- This is the 'primary' GPU
-       model.gradInput = nil
+      local gpus = torch.range(1, params.ngpus):totable()
+      local fastest, benchmark
+      local use_cudnn = cudnn ~= nil
+      if use_cudnn then
+        fastest, benchmark = cudnn.fastest, cudnn.benchmark
+      end
+      model = nn.DataParallelTable(1, true, true):add(lenet,gpus):threads(function()
+            if use_cudnn then
+              local cudnn = require 'cudnn'
+              cudnn.fastest, cudnn.benchmark = fastest, benchmark
+            end
+      end)
+      model.gradInput = nil
     else
-       model = lenet
+      model = lenet
     end
 
     return {
