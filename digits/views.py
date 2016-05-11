@@ -51,34 +51,31 @@ def home():
             data['server_name'] = config_value('server_name')
         return flask.jsonify(data)
     else:
-        new_dataset_options = [
-                ('Images', [
-                    {
-                        'title': 'Classification',
-                        'id': 'image-classification',
-                        'url': flask.url_for('digits.dataset.images.classification.views.new'),
-                        },
-                    {
-                        'title': 'Other',
-                        'id': 'image-generic',
-                        'url': flask.url_for('digits.dataset.images.generic.views.new'),
-                        },
-                    ])
-                ]
-        new_model_options = [
-                ('Images', [
-                    {
-                        'title': 'Classification',
-                        'id': 'image-classification',
-                        'url': flask.url_for('digits.model.images.classification.views.new'),
-                        },
-                    {
-                        'title': 'Other',
-                        'id': 'image-generic',
-                        'url': flask.url_for('digits.model.images.generic.views.new'),
-                        },
-                    ])
-                ]
+        new_dataset_options = {
+                                'Images': {
+                                    'image-classification': {
+                                        'title': 'Classification',
+                                        'url': flask.url_for('digits.dataset.images.classification.views.new'),
+                                    },
+                                    'image-generic': {
+                                        'title': 'Other',
+                                        'url': flask.url_for('digits.dataset.images.generic.views.new'),
+                                    },
+                                },
+                            }
+
+        new_model_options = {
+                                'Images': {
+                                    'image-classification': {
+                                        'title': 'Classification',
+                                        'url': flask.url_for('digits.model.images.classification.views.new'),
+                                    },
+                                    'image-generic': {
+                                        'title': 'Other',
+                                        'url': flask.url_for('digits.model.images.generic.views.new'),
+                                    },
+                                },
+                            }
 
         return flask.render_template('home.html',
                 new_dataset_options = new_dataset_options,

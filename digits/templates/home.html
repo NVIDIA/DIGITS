@@ -44,13 +44,15 @@ function deleteJob(job_id) {
 <div class="pull-right">
     New Dataset
     <ul class="nav nav-pills">
-        {% for category in new_dataset_options %}
+        {% for category in new_dataset_options.keys()|sort %}
+        {% set options = new_dataset_options[category] %}
         <li class="dropdown active">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                {{category[0]}} <span class="caret"></span>
+                {{category}} <span class="caret"></span>
             </a>
             <ul class="dropdown-menu">
-                {% for option in category[1] %}
+                {% for id in options.keys()|sort %}
+                {% set option = options[id] %}
                 <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
                 {% endfor %}
             </ul>
@@ -96,13 +98,15 @@ function deleteJob(job_id) {
 <div class="pull-right">
     New Model
     <ul class="nav nav-pills">
-        {% for category in new_model_options %}
+        {% for category in new_model_options.keys()|sort %}
+        {% set options = new_model_options[category] %}
         <li class="dropdown active">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                {{category[0]}} <span class="caret"></span>
+                {{category}} <span class="caret"></span>
             </a>
             <ul class="dropdown-menu">
-                {% for option in category[1] %}
+                {% for id in options.keys()|sort %}
+                {% set option = options[id] %}
                 <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
                 {% endfor %}
             </ul>
