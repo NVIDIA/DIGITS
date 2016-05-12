@@ -257,11 +257,18 @@ def create(extension_id=None):
     # If there are multiple jobs launched, go to the home page.
     return flask.redirect('/')
 
+
 def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/generic/show.html', job=job, related_jobs=related_jobs)
+    view_extensions = get_view_extensions()
+    return flask.render_template(
+        'models/images/generic/show.html',
+        job=job,
+        view_extensions=view_extensions,
+        related_jobs=related_jobs)
+
 
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():
@@ -317,7 +324,7 @@ def infer_one():
     inference_job.wait_completion()
 
     # retrieve inference data
-    inputs, outputs, visualizations = inference_job.get_data()
+    inputs, outputs, model_visualization = inference_job.get_data()
 
     # set return status code
     status_code = 500 if inference_job.status == 'E' else 200
@@ -329,20 +336,30 @@ def infer_one():
         os.remove(image_path)
 
     image = None
+    inference_view_html = None
     if inputs is not None and len(inputs['data']) == 1:
         image = utils.image.embed_image_html(inputs['data'][0])
+        visualizations, summary = get_inference_visualizations(
+            model_job.dataset,
+            inputs,
+            outputs)
+        inference_view_html = visualizations[0]
 
     if request_wants_json():
-        return flask.jsonify({'outputs': dict((name, blob.tolist()) for name,blob in outputs.iteritems())}), status_code
+        return flask.jsonify({'outputs': dict((name, blob.tolist())
+                             for name, blob in outputs.iteritems())}), status_code
     else:
-        return flask.render_template('models/images/generic/infer_one.html',
-                model_job       = model_job,
-                job             = inference_job,
-                image_src       = image,
-                network_outputs = outputs,
-                visualizations  = visualizations,
-                total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
-                ), status_code
+        return flask.render_template(
+            'models/images/generic/infer_one.html',
+            model_job=model_job,
+            job=inference_job,
+            image_src=image,
+            inference_view_html=inference_view_html,
+            visualizations=model_visualization,
+            total_parameters=sum(v['param_count'] for v in model_visualization
+                                 if v['vis_type'] == 'Weights'),
+            ), status_code
+
 
 @blueprint.route('/infer_db.json', methods=['POST'])
 @blueprint.route('/infer_db', methods=['POST', 'GET'])
@@ -393,8 +410,13 @@ def infer_db():
         # an error occurred
         outputs = None
 
+    inference_views_html = None
     if inputs is not None:
         keys = [str(idx) for idx in inputs['ids']]
+        inference_views_html, summary_html = get_inference_visualizations(
+            model_job.dataset,
+            inputs,
+            outputs)
     else:
         keys = None
 
@@ -404,12 +426,15 @@ def infer_db():
             result[key] = dict((name, blob[i].tolist()) for name,blob in outputs.iteritems())
         return flask.jsonify({'outputs': result}), status_code
     else:
-        return flask.render_template('models/images/generic/infer_db.html',
-                model_job       = model_job,
-                job             = inference_job,
-                keys            = keys,
-                network_outputs = outputs,
-                ), status_code
+        return flask.render_template(
+            'models/images/generic/infer_db.html',
+            model_job=model_job,
+            job=inference_job,
+            keys=keys,
+            inference_views_html=inference_views_html,
+            summary_html=summary_html,
+            ), status_code
+
 
 @blueprint.route('/infer_many.json', methods=['POST'])
 @blueprint.route('/infer_many', methods=['POST', 'GET'])
@@ -490,21 +515,28 @@ def infer_many():
         # an error occurred
         outputs = None
 
+    inference_views_html = None
     if inputs is not None:
         paths = [paths[idx] for idx in inputs['ids']]
+        inference_views_html, summary_html = get_inference_visualizations(
+            model_job.dataset,
+            inputs,
+            outputs)
 
     if request_wants_json():
         result = {}
         for i, path in enumerate(paths):
-            result[path] = dict((name, blob[i].tolist()) for name,blob in outputs.iteritems())
+            result[path] = dict((name, blob[i].tolist()) for name, blob in outputs.iteritems())
         return flask.jsonify({'outputs': result}), status_code
     else:
-        return flask.render_template('models/images/generic/infer_many.html',
-                model_job       = model_job,
-                job             = inference_job,
-                paths           = paths,
-                network_outputs = outputs,
-                ), status_code
+        return flask.render_template(
+            'models/images/generic/infer_many.html',
+            model_job=model_job,
+            job=inference_job,
+            paths=paths,
+            inference_views_html=inference_views_html,
+            summary_html=summary_html,
+            ), status_code
 
 
 def get_datasets(extension_id):
@@ -519,6 +551,46 @@ def get_datasets(extension_id):
                 and (j.status.is_running() or j.status == Status.DONE)]
     return [(j.id(), j.name())
             for j in sorted(jobs, cmp=lambda x, y: cmp(y.id(), x.id()))]
+
+
+def get_inference_visualizations(dataset, inputs, outputs):
+    # get extension ID from form and retrieve extension class
+    if 'view_extension_id' in flask.request.form:
+        view_extension_id = flask.request.form['view_extension_id']
+        extension_class = extensions.view.get_extension(view_extension_id)
+        if extension_class is None:
+            raise ValueError("Unknown extension '%s'" % view_extension_id)
+    else:
+        # no view extension specified, use default
+        extension_class = extensions.view.get_default_extension()
+    extension_form = extension_class.get_config_form()
+
+    # validate form
+    extension_form_valid = extension_form.validate_on_submit()
+    if not extension_form_valid:
+        raise ValueError("Extension form validation failed with %s" % repr(extension_form.errors))
+
+    # create instance of extension class
+    extension = extension_class(dataset, **extension_form.data)
+
+    visualizations = []
+    # process data
+    n = len(inputs['ids'])
+    for idx in xrange(n):
+        input_id = inputs['ids'][idx]
+        input_data = inputs['data'][idx]
+        output_data = {key: outputs[key][idx] for key in outputs}
+        data = extension.process_data(
+            input_id,
+            input_data,
+            output_data)
+        template, context = extension.get_view_template(data)
+        visualizations.append(
+            flask.render_template_string(template, **context))
+    # get summary
+    template, context = extension.get_summary_template()
+    summary = flask.render_template_string(template, **context) if template else None
+    return visualizations, summary
 
 
 def get_previous_networks():
@@ -546,3 +618,13 @@ def get_previous_network_snapshots():
         prev_network_snapshots.append(e)
     return prev_network_snapshots
 
+
+def get_view_extensions():
+    """
+    return all enabled view extensions
+    """
+    view_extensions = {}
+    all_extensions = extensions.view.get_extensions()
+    for extension in all_extensions:
+        view_extensions[extension.get_id()] = extension.get_title()
+    return view_extensions

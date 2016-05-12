@@ -17,7 +17,7 @@
     </h1>
 </div>
 
-{% if not network_outputs %}
+{% if not keys %}
 <div class="alert alert-danger">
     <p>Inference failed, see job log</p>
 </div>
@@ -27,26 +27,34 @@
 
 {% block job_content_details %}
 
-{% if network_outputs %}
-<table class="table">
-    <tr>
-        <th>Index</th>
-        <th>Key</th>
-        {% for key in network_outputs.keys() %}
-        <th>{{key}}</th>
+{% if summary_html %}
+<div class="row">
+    <h3>Summary</h3>
+    {{summary_html|safe}}
+</div>
+{% endif %}
+
+{% if inference_views_html %}
+<div class="row">
+    <h3>Visualizations</h3>
+    <table class="table">
+        <tr>
+            <th>Index</th>
+            <th>Key</th>
+            <th>Data</th>
+        </tr>
+        {% for key in keys %}
+        <tr>
+            <td>{{loop.index}}</td>
+            <td>{{key}}</td>
+            <td>
+                {% set index=loop.index0 %}
+                {{ inference_views_html[index]|safe }}
+            </td>
+        </tr>
         {% endfor %}
-    </tr>
-    {% for key in keys %}
-    <tr>
-        <td>{{loop.index}}</td>
-        <td>{{key}}</td>
-        {% set index=loop.index0 %}
-        {% for key, val in network_outputs.iteritems() %}
-        <td>{{network_outputs[key][index]}}</td>
-        {% endfor %}
-    </tr>
-    {% endfor %}
-</table>
+    </table>
+</div>
 {% endif %}
 
 {% endblock %}

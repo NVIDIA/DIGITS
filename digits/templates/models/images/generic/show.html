@@ -146,6 +146,43 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                 </div>
                 <div class="row">
                     <div class="col-sm-6">
+                        <h3>Select Visualization Method</h3>
+                        <div class="form-group">
+                            <select id="view_extension_id" name="view_extension_id" class="form-control">
+                                {% for key in view_extensions.keys()|sort %}
+                                    <option value="{{ key }}">{{ view_extensions[key] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <h3>Visualization Options</h3>
+                        <div id="view_extension-details">
+                        </div>
+                    </div>
+                    <script>
+                        $("#view_extension_id").change(function() {
+                            if ($(this).val()) {
+                                $.ajax("/models/view-config/" + $(this).val(),
+                                    {
+                                        type: "GET",
+                                        }
+                                    )
+                                .done(function(data) {
+                                    $("#view_extension-details").html(data);
+                                    })
+                                .fail(function(data) {
+                                    $("#view_extension-details").html("");
+                                    errorAlert(data);
+                                    });
+                                }
+                            });
+                        $("#view_extension_id").change();
+                    </script>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-6">
                         <h3>Test a single image</h3>
                         <div class="form-group">
                             <label for="image_path" class="control-label">Image Path</label>
