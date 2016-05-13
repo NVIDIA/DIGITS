@@ -20,11 +20,11 @@
         <dt>Resize Transformation</dt>
         <dd>{{ job.resize_mode_name() }}</dd>
         <dt>DB Backend</dt>
-        <dd>{{job.train_db_task().backend}}</dd>
+        <dd>{{job.get_backend()}}</dd>
         <dt>Image Encoding</dt>
-        <dd>{{job.train_db_task().encoding}}</dd>
+        <dd>{{job.get_encoding()}}</dd>
         <dt>DB Compression</dt>
-        <dd>{{job.train_db_task().compression}}</dd>
+        <dd>{{job.get_compression()}}</dd>
     </dl>
     <dl>
         <dt>Dataset size</dt>

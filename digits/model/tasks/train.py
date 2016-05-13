@@ -24,9 +24,10 @@ class TrainTask(Task):
     Defines required methods for child classes
     """
 
-    def __init__(self, dataset, train_epochs, snapshot_interval, learning_rate, lr_policy, **kwargs):
+    def __init__(self, job, dataset, train_epochs, snapshot_interval, learning_rate, lr_policy, **kwargs):
         """
         Arguments:
+        job -- model job
         dataset -- a DatasetJob containing the dataset for this model
         train_epochs -- how many epochs of training data to train on
         snapshot_interval -- how many epochs between taking a snapshot
@@ -56,9 +57,10 @@ class TrainTask(Task):
         self.network = kwargs.pop('network', None)
         self.framework_id = kwargs.pop('framework_id', None)
 
-        super(TrainTask, self).__init__(**kwargs)
+        super(TrainTask, self).__init__(job_dir = job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION
 
+        self.job = job
         self.dataset = dataset
         self.train_epochs = train_epochs
         self.snapshot_interval = snapshot_interval
@@ -376,12 +378,6 @@ class TrainTask(Task):
         View the weights for a specific model and layer[s]
         """
         return None
-
-    def can_infer_one(self):
-        """
-        Returns True if this Task can run inference on one input
-        """
-        raise NotImplementedError()
 
     def can_view_activations(self):
         """

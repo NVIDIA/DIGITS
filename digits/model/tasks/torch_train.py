@@ -15,9 +15,8 @@ import PIL.Image
 
 from .train import TrainTask
 import digits
-from digits import utils, dataset
+from digits import utils
 from digits.config import config_value
-from digits.dataset import ImageClassificationDatasetJob
 from digits.utils import subclass, override, constants
 
 # Must import after importing digit.config
@@ -109,6 +108,30 @@ class TorchTrainTask(TrainTask):
         self.temp_unrecognized_output = []
         return True
 
+    def create_mean_file(self):
+        filename = os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE)
+        # don't recreate file if it already exists
+        if not os.path.exists(filename):
+            mean_file = self.dataset.get_mean_file()
+            assert mean_file != None and mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
+            blob = caffe_pb2.BlobProto()
+            with open(self.dataset.path(mean_file),'rb') as infile:
+                blob.ParseFromString(infile.read())
+            data = np.array(blob.data, dtype=np.uint8).reshape(blob.channels, blob.height, blob.width)
+            if blob.channels == 3:
+                # converting from BGR to RGB
+                data = data[[2,1,0],...] # channel swap
+                # convert to (height, width, channels)
+                data = data.transpose((1,2,0))
+            else:
+                assert blob.channels == 1
+                # convert to (height, width)
+                data = data[0]
+            # save to file
+            image = PIL.Image.fromarray(data)
+            image.save(filename)
+        return filename
+
     @override
     def task_arguments(self, resources, env):
         if config_value('torch_root') == '<PATHS>':
@@ -116,7 +139,7 @@ class TorchTrainTask(TrainTask):
         else:
             torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
 
-        dataset_backend = self.dataset.train_db_task().backend
+        dataset_backend = self.dataset.get_backend()
         assert dataset_backend=='lmdb' or dataset_backend=='hdf5'
 
         args = [torch_bin,
@@ -136,54 +159,25 @@ class TorchTrainTask(TrainTask):
         if self.batch_size is not None:
             args.append('--batchSize=%d' % self.batch_size)
 
-        if isinstance(self.dataset, ImageClassificationDatasetJob):
-            args.append('--train=%s' % self.dataset.path(constants.TRAIN_DB))
-            if os.path.exists(self.dataset.path(constants.VAL_DB)) and self.val_interval > 0:
-                args.append('--validation=%s' % self.dataset.path(constants.VAL_DB))
-            args.append('--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE))
+        if self.use_mean != 'none':
+            filename = self.create_mean_file()
+            args.append('--mean=%s' % filename)
+
+        if hasattr(self.dataset, 'labels_file'):
             args.append('--labels=%s' % self.dataset.path(self.dataset.labels_file))
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            train_image_db = None
-            train_labels_db = None
-            val_image_db = None
-            val_labels_db = None
-            for task in self.dataset.tasks:
-                if task.purpose == 'Training Images':
-                    train_image_db = task
-                if task.purpose == 'Training Labels':
-                    train_labels_db = task
-                if task.purpose == 'Validation Images':
-                    val_image_db = task
-                if task.purpose == 'Validation Labels':
-                    val_labels_db = task
-            assert train_image_db is not None, 'Training images are required'
-            args.append('--train=%s' % train_image_db.path(train_image_db.database))
-            if train_labels_db:
-                args.append('--train_labels=%s' % train_labels_db.path(train_labels_db.database))
-            if val_image_db:
-                args.append('--validation=%s' % val_image_db.path(val_image_db.database))
-            if val_labels_db:
-                args.append('--validation_labels=%s' % val_labels_db.path(val_labels_db.database))
-            if self.use_mean != 'none':
-                assert self.dataset.mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
-                blob = caffe_pb2.BlobProto()
-                with open(self.dataset.path(self.dataset.mean_file),'rb') as infile:
-                    blob.ParseFromString(infile.read())
-                data = np.array(blob.data, dtype=np.uint8).reshape(blob.channels, blob.height, blob.width)
-                if blob.channels == 3:
-                    # converting from BGR to RGB
-                    data = data[[2,1,0],...] # channel swap
-                    # convert to (height, width, channels)
-                    data = data.transpose((1,2,0))
-                else:
-                    assert blob.channels == 1
-                    # convert to (height, width)
-                    data = data[0]
-                # save to file
-                filename = os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE)
-                image = PIL.Image.fromarray(data)
-                image.save(filename)
-                args.append('--mean=%s' % filename)
+
+        train_feature_db_path = self.dataset.get_feature_db_path(constants.TRAIN_DB)
+        train_label_db_path = self.dataset.get_label_db_path(constants.TRAIN_DB)
+        val_feature_db_path = self.dataset.get_feature_db_path(constants.VAL_DB)
+        val_label_db_path = self.dataset.get_label_db_path(constants.VAL_DB)
+
+        args.append('--train=%s' % train_feature_db_path)
+        if train_label_db_path:
+            args.append('--train_labels=%s' % train_label_db_path)
+        if val_feature_db_path:
+            args.append('--validation=%s' % val_feature_db_path)
+        if val_label_db_path:
+            args.append('--validation_labels=%s' % val_label_db_path)
 
         #learning rate policy input parameters
         if self.lr_policy['policy'] == 'fixed':
@@ -467,13 +461,11 @@ class TorchTrainTask(TrainTask):
 
     @override
     def infer_one(self, data, snapshot_epoch=None, layers=None, gpu=None):
-        if isinstance(self.dataset, ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_one_image(data,
-                    snapshot_epoch=snapshot_epoch,
-                    layers=layers,
-                    gpu=gpu,
-                    )
-        raise NotImplementedError('torch infer one')
+        return self.infer_one_image(data,
+                snapshot_epoch=snapshot_epoch,
+                layers=layers,
+                gpu=gpu,
+                )
 
     def infer_one_image(self, image, snapshot_epoch=None, layers=None, gpu=None):
         """
@@ -514,15 +506,14 @@ class TorchTrainTask(TrainTask):
                 '--network=%s' % self.model_file.split(".")[0],
                 '--networkDirectory=%s' % self.job_dir,
                 '--snapshot=%s' % file_to_load,
+                '--allPredictions=yes',
                 ]
-        if isinstance(self.dataset, ImageClassificationDatasetJob):
+        if hasattr(self.dataset, 'labels_file'):
             args.append('--labels=%s' % self.dataset.path(self.dataset.labels_file))
-            args.append('--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE))
-            args.append('--allPredictions=yes')
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            if self.use_mean != 'none':
-                args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
-            args.append('--allPredictions=yes')
+
+        if self.use_mean != 'none':
+            filename = self.create_mean_file()
+            args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
 
         if self.use_mean == 'pixel':
             args.append('--subtractMean=pixel')
@@ -764,9 +755,7 @@ class TorchTrainTask(TrainTask):
 
     @override
     def infer_many(self, data, snapshot_epoch=None, gpu=None):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob) or isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
-        raise NotImplementedError('torch infer many')
+        return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
 
     def infer_many_images(self, images, snapshot_epoch=None, gpu=None):
         """
@@ -824,13 +813,12 @@ class TorchTrainTask(TrainTask):
                     '--snapshot=%s' % file_to_load,
                     ]
 
-            if isinstance(self.dataset, ImageClassificationDatasetJob):
-                labels = self.get_labels()         #TODO: probably we no need to return this, as we can directly access from the calling function
+            if hasattr(self.dataset, 'labels_file'):
                 args.append('--labels=%s' % self.dataset.path(self.dataset.labels_file))
-                args.append('--mean=%s' % self.dataset.path(constants.MEAN_FILE_IMAGE))
-            elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-                if self.use_mean != 'none':
-                    args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+
+            if self.use_mean != 'none':
+                filename = self.create_mean_file()
+                args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
 
             if self.use_mean == 'pixel':
                 args.append('--subtractMean=pixel')

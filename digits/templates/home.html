@@ -69,7 +69,7 @@ function deleteJob(job_id) {
         <ul class="list-group" id="datasets">
             {% for job in batch %}
             {% set show_func = 'digits.dataset.views.show' %}
-            {% set badge = job.train_db_task().backend %}
+            {% set badge = job.get_backend() %}
             {% include 'job_item.html' %}
             {% else %}
             <li class="list-group-item"><i>None</i></li>

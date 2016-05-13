@@ -25,7 +25,7 @@
     {% endif %}
     </dd>
     <dt>DB backend</dt>
-    <dd>{{dataset.train_db_task().backend}}</dd>
+    <dd>{{dataset.get_backend()}}</dd>
     {% for task in dataset.create_db_tasks() %}
     <dt>{{task.name()}}</dt>
     <dd>
