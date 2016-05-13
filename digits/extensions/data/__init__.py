@@ -1,8 +1,13 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-data_extensions = {
-}
+from . import imageGradients
+
+data_extensions = [
+    # set show=True if extension should be listed in known extensions
+    {'class': imageGradients.DataIngestion, 'show': False},
+]
+
 
 def get_extensions():
     """
