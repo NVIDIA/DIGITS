@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 from . import imageGradients
+from . import imageProcessing
 from . import objectDetection
 
 data_extensions = [
@@ -9,6 +10,7 @@ data_extensions = [
     # on DIGITS home page. These defaults can be changed by
     # editing DIGITS config option 'data_extension_list'
     {'class': imageGradients.DataIngestion, 'show': False},
+    {'class': imageProcessing.DataIngestion, 'show': True},
     {'class': objectDetection.DataIngestion, 'show': True},
 ]
 
