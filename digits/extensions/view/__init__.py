@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 from . import boundingBox
+from . import imageGradients
 from . import rawData
 
 view_extensions = [
@@ -10,6 +11,7 @@ view_extensions = [
     # can be changed by editing DIGITS config option
     # 'view_extension_list'
     {'class': boundingBox.Visualization, 'show': True},
+    {'class': imageGradients.Visualization, 'show': False},
     {'class': rawData.Visualization, 'show': True},
 ]
 
