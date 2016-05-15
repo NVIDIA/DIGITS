@@ -37,7 +37,7 @@ def index():
     for rjob in raw_jobs:
         train_outs = rjob.train_task().train_outputs
         val_outs = rjob.train_task().val_outputs
-        history = rjob.status_history
+        history = rjob.train_task().status_history
 
         # update column attribute set
         keys = set(train_outs.keys() + val_outs.keys())
@@ -47,7 +47,7 @@ def index():
             rjob.name(),
             rjob.id(),
             rjob.status,
-            time_filters.print_time_diff_nosuffixes(history[-1][1] - history[0][1]),
+            time_filters.print_time_diff_nosuffixes(history[-1][1] - history[-2][1]),
             rjob.train_task().framework_id
         )
 
