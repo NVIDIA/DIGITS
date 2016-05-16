@@ -24,7 +24,7 @@
     </td>
     <td>{{job.status_history[0][1]|print_time}}</td>
     <td>
-        <span id="status" class="text-{{job.status.css}}">{{job.status.name}}
+        <span id="status" class="text-{{job.status_of_tasks().css}}">{{job.status_of_tasks().name}}
         </span>
     </td>
     <td style="width:200px">
