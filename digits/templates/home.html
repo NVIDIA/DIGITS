@@ -13,9 +13,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="row">
     {% if total_gpu_count %}
-    <div id="gpus-available" class="pull-right">
+    <div id="gpus-available" class="pull-right" style="margin-top:20px">
         {{remaining_gpu_count}}/{{total_gpu_count}}
         GPU{{'s' if total_gpu_count != 1 }} available
     </div>
@@ -27,7 +27,7 @@
 
 {% include 'job_management.html' %}
 
-<div class="container">
+<div class="row">
     <section ng-app="home_app">
         <style>
          .table {

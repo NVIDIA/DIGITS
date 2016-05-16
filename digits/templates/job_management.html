@@ -41,6 +41,7 @@
             scrollY: "600px",
             scrollCollapse: true,
             paging: false,
+            info: false,
             searching: false,
             ordering: true,
             order: [ 1, 'desc' ],
@@ -213,7 +214,7 @@
 </div>
 
 {# else show this text #}
-<h3 id="no_jobs_running"{{' style=display:none;' if running_jobs|length > 0}}>No Jobs Running</h3>
+<h4 class="row" id="no_jobs_running"{{' style=display:none;' if running_jobs|length > 0}}>No Jobs Running</h4>
 {# endif #}
 
 {% endblock %}
