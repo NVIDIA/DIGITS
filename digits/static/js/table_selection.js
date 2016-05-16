@@ -163,6 +163,17 @@ function TableSelection(table_id) {
         e.stopPropagation();
     });
 
+    // deselect when the mouse is cli
+    $(document).on('click', 'body', function(e) {
+        var tag = e.target.tagName.toLowerCase();
+        if (tag == 'input' || tag == 'textarea' || tag == 'button' || tag == 'a') {
+            return;
+        }
+
+        if (TableSelection.current_table == null) {
+            deselect($('tr'));
+        }
+    });
 
     // Let links continue to work.  Without this, a click would
     // only do a row selection.
