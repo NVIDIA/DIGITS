@@ -110,6 +110,11 @@ class Task(StatusCls):
                 room=self.job_id,
                 )
 
+        from digits.webapp import scheduler
+        job = scheduler.get_job(self.job_id)
+        if job:
+            job.on_status_update()
+
     def path(self, filename, relative=False):
         """
         Returns a path to the given file

@@ -104,10 +104,10 @@ def completed_jobs():
         d = {
             'id': job.id(),
             'name': job.name(),
-            'status': job.status.name,
-            'status_css': job.status.css,
+            'status': job.status_of_tasks().name,
+            'status_css': job.status_of_tasks().css,
             'submitted': job.status_history[0][1],
-            'elapsed': job.status_history[-1][1]-job.status_history[-2][1],
+            'elapsed': job.runtime_of_tasks(),
         }
 
         if 'train_db_task' in dir(job):

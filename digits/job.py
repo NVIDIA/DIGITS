@@ -158,6 +158,62 @@ class Job(StatusCls):
         """
         raise NotImplementedError('Implement me!')
 
+    def status_of_tasks(self):
+        """
+        Returns the status of the job's tasks
+        """
+        job_status = self.status
+
+        if job_status in [Status.ABORT, Status.ERROR]:
+            return job_status
+
+        task_statuses = [t.status for t in self.tasks]
+
+        important_statuses = [
+            Status(s) for s in [
+                # Sorted by importance
+                Status.ERROR,
+                Status.ABORT,
+                Status.RUN,
+                Status.WAIT,
+                Status.INIT,
+                Status.DONE,
+            ]
+        ]
+        for s in important_statuses:
+            # Return if any task matches
+            if s in task_statuses:
+                return s
+
+        return Status(Status.DONE)
+
+    def runtime_of_tasks(self):
+        """
+        Returns the time (in sec) between when the first task started and when the last task stopped
+        NOTE: this may not be what you're expecting if there was some WAIT time in-between
+        """
+        starts = []
+        stops = []
+        for task in self.tasks:
+            for start_status, start_timestamp in task.status_history:
+                if start_status == Status.RUN:
+                    starts.append(start_timestamp)
+                    # Only search for stops if the task was started at some point
+                    for stop_status, stop_timestamp in task.status_history:
+                        if stop_status in [Status.DONE, Status.ABORT, Status.ERROR]:
+                            stops.append(stop_timestamp)
+                    break
+
+        if len(starts):
+            min_start = min(starts)
+            if len(stops):
+                max_stop = max(stops)
+                return max_stop - min_start
+            else:
+                return time.time() - min_start
+        else:
+            return 0
+
     def on_status_update(self):
         """
         Called when StatusCls.status.setter is used
@@ -166,8 +222,8 @@ class Job(StatusCls):
 
         message = {
                 'update': 'status',
-                'status': self.status.name,
-                'css': self.status.css,
+                'status': self.status_of_tasks().name,
+                'css': self.status_of_tasks().css,
                 'running': self.status.is_running(),
                 'job_id': self.id(),
                 }
