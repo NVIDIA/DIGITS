@@ -47,6 +47,7 @@ function TableSelection(table_id) {
     // track the current table for key events
     // should be $(table_id).mouseleave(function() {
     $(table_id).mouseleave(function() {
+        TableSelection.current_ts.mousedown_row = null;
         TableSelection.current_table = null;
         TableSelection.current_ts = null;
     });
