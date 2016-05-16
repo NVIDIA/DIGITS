@@ -160,10 +160,11 @@ $("#dataset").change();
                     </small>
                     {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
                 </div>
-                <div class="form-group{{mark_errors([form.iter_size])}}">
-                    {{form.iter_size.label}}
-                    {{form.iter_size.tooltip}}
-                    {{form.iter_size(class='form-control', placeholder='[default = 1]')}}
+                <div class="form-group{{mark_errors([form.batch_accumulation])}}"
+                    id="batch-accumulation-option" style="display:none;">
+                    {{form.batch_accumulation.label}}
+                    {{form.batch_accumulation.tooltip}}
+                    {{form.batch_accumulation(class='form-control')}}
                 </div>
                 <div class="form-group{{mark_errors([form.solver_type])}}">
                     {{form.solver_type.label}}
@@ -409,7 +410,8 @@ var frameworks = {};
 {% for fw in frameworks %}
 framework = {
     name : '{{ fw.get_name() }}',
-    can_shuffle : '{{ fw.can_shuffle_data() }}'=='True'
+    can_shuffle : '{{ fw.can_shuffle_data() }}'=='True',
+    can_accumulate_gradients : '{{ fw.can_accumulate_gradients() }}'=='True',
     };
 frameworks['{{ fw.get_id() }}'] = framework;
 {% endfor %}
@@ -427,6 +429,14 @@ function setFramework(fwid)
         $("select[name=solver_type] > option:selected").prop("selected", false);
     }
     $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
+
+    if (frameworks[fwid].can_accumulate_gradients) {
+        $('#batch_accumulation').prop('disabled', false);
+        $('#batch-accumulation-option').show();
+    } else {
+        $('#batch-accumulation-option').hide();
+        $('#batch_accumulation').prop('disabled', true);
+    }
 }
             </script>
 

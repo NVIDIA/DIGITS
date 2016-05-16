@@ -121,3 +121,8 @@ class CaffeFramework(Framework):
             net.name = 'Network'
         return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
 
+    @override
+    def can_accumulate_gradients(self):
+        return (config_value('caffe_root')['version']
+                > parse_version('0.14.0-alpha'))
+
