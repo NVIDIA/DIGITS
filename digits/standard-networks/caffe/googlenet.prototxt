@@ -1,36 +1,32 @@
 # GoogLeNet
 name: "GoogleNet"
 layer {
-  name: "data"
+  name: "train-data"
   type: "Data"
   top: "data"
   top: "label"
-  include {
-    phase: TRAIN
-  }
   transform_param {
     mirror: true
     crop_size: 224
   }
   data_param {
-    batch_size: 24
+    batch_size: 32
   }
+  include { stage: "train" }
 }
 layer {
-  name: "data"
+  name: "val-data"
   type: "Data"
   top: "data"
   top: "label"
-  include {
-    phase: TEST
-  }
   transform_param {
     mirror: false
     crop_size: 224
   }
   data_param {
-    batch_size: 24
+    batch_size: 16
   }
+  include { stage: "val" }
 }
 layer {
   name: "conv1/7x7_s2"
