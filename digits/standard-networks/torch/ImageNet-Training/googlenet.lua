@@ -131,8 +131,8 @@ return function(params)
     return {
         model = createModel(params.ngpus, channels, nclasses),
         croplen = 224,
-        trainBatchSize = 24,
-        validationBatchSize = 24,
+        trainBatchSize = 32,
+        validationBatchSize = 16,
     }
 end
 

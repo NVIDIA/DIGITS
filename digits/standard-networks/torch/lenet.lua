@@ -61,7 +61,7 @@ return function(params)
         model = model,
         loss = nn.ClassNLLCriterion(),
         trainBatchSize = 64,
-        validationBatchSize = 100,
+        validationBatchSize = 32,
     }
 end
 
