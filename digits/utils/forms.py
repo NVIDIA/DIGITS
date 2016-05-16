@@ -446,11 +446,9 @@ def set_data(job, form, key, value):
     return False
 
 ## function to pass to iterate_over_form to get data from job
+## Don't warn if key is not in job.form_data
 def get_data(job, form, key, value):
-    if key not in job.form_data:
-        add_warning(form, 'Unable to recover data form source Job.')
-        return True
-    else:
+    if key in job.form_data.keys():
         form.data = job.form_data[key]
     return False
 
