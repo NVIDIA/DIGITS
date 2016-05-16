@@ -137,6 +137,10 @@ function populate_completed_jobs() {
             return print_time_diff_terse(diff);
         }
 
+        $scope.print_time_diff = function(diff) {
+            return print_time_diff(diff);
+        }
+
         $scope.is_today = function(date) {
             // return true if the date is from today
             var t0 = new Date(date * 1000).setHours(0, 0, 0, 0);

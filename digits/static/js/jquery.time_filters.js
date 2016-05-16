@@ -5,10 +5,10 @@ function print_time_diff(diff) {
         return 'Negative Time';
     }
     var total_seconds = Math.floor(diff);
-    var days = Math.floor(total_seconds/(24*3600));
-    var hours = Math.floor((total_seconds % (24*3600))/3600);
-    var minutes = Math.floor((total_seconds % 3600)/60);
-    var seconds = Math.floor(total_seconds % 60);
+    var days = total_seconds/(24*3600);
+    var hours = (total_seconds % (24*3600))/3600;
+    var minutes = (total_seconds % 3600)/60;
+    var seconds = total_seconds % 60;
 
     function plural(number, name) {
         return number + ' ' + name + (number == 1 ? '' : 's');
@@ -22,12 +22,12 @@ function print_time_diff(diff) {
     }
 
     if (days >= 1)
-        return pair(days, 'day', hours, 'hour');
+        return pair(Math.floor(days), 'day', Math.round(hours), 'hour');
     else if (hours >= 1)
-        return pair(hours, 'hour', minutes, 'minute');
+        return pair(Math.floor(hours), 'hour', Math.round(minutes), 'minute');
     else if (minutes >= 1)
-        return pair(minutes, 'minute', seconds, 'second');
-    return plural(seconds, 'second');
+        return pair(Math.floor(minutes), 'minute', Math.round(seconds), 'second');
+    return plural(Math.round(seconds), 'second');
 }
 
 function print_time_diff_simple(diff, min_unit) {
@@ -39,22 +39,22 @@ function print_time_diff_simple(diff, min_unit) {
     if (typeof(min_unit)==='undefined') min_unit = 'second';
 
     var total_seconds = Math.floor(diff);
-    var days = Math.floor(total_seconds/(24*3600));
-    var hours = Math.floor((total_seconds % (24*3600))/3600);
-    var minutes = Math.floor((total_seconds % 3600)/60);
-    var seconds = Math.floor(total_seconds % 60);
+    var days = total_seconds/(24*3600);
+    var hours = (total_seconds % (24*3600))/3600;
+    var minutes = (total_seconds % 3600)/60;
+    var seconds = total_seconds % 60;
 
     function plural(number, name) {
         return number + ' ' + name + (number == 1 ? '' : 's');
     }
 
     if (days >= 1 || min_unit == 'day')
-        return plural(days, 'day');
+        return plural(Math.round(days), 'day');
     else if (hours >= 1 || min_unit == 'hour')
-        return plural(hours, 'hour');
+        return plural(Math.round(hours), 'hour');
     else if (minutes >= 1 || min_unit == 'minute')
-        return plural(minutes, 'minute');
-    return plural(seconds, 'second');
+        return plural(Math.round(minutes), 'minute');
+    return plural(Math.round(seconds), 'second');
 }
 
 function print_time_diff_terse(diff, min_unit) {
@@ -66,18 +66,18 @@ function print_time_diff_terse(diff, min_unit) {
     if (typeof(min_unit)==='undefined') min_unit = 'second';
 
     var total_seconds = Math.floor(diff);
-    var days = Math.floor(total_seconds/(24*3600));
-    var hours = Math.floor((total_seconds % (24*3600))/3600);
-    var minutes = Math.floor((total_seconds % 3600)/60);
-    var seconds = Math.floor(total_seconds % 60);
+    var days = total_seconds/(24*3600);
+    var hours = (total_seconds % (24*3600))/3600;
+    var minutes = (total_seconds % 3600)/60;
+    var seconds = total_seconds % 60;
 
     if (days >= 1 || min_unit == 'day')
-        return days + 'd'
+        return Math.round(days) + 'd'
     else if (hours >= 1 || min_unit == 'hour')
-        return hours + 'h'
+        return Math.round(hours) + 'h'
     else if (minutes >= 1 || min_unit == 'minute')
-        return minutes + 'm'
-    return seconds + 's'
+        return Math.round(minutes) + 'm'
+    return Math.round(seconds) + 's'
 }
 
 function print_time_diff_ago(start, min_unit) {
