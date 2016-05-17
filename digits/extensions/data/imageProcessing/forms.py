@@ -1,12 +1,14 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import os
+
+from flask.ext.wtf import Form
+from wtforms import validators
+
 from digits import utils
 from digits.utils import subclass
 from digits.utils.forms import validate_required_iff
-from flask.ext.wtf import Form
-import os
-from wtforms import validators
 
 
 @subclass
