@@ -47,12 +47,18 @@ function createModel(nGPU, channels, nClasses)
 
    local model
    if nGPU>1 then
-      local parallel_features = nn.DataParallelTable(1)  -- Split along first (batch) dimension
-      for i = 1, nGPU do
-         cutorch.setDevice(i)
-         parallel_features:add(features:clone(), i)  -- Use the ith GPU
+      local gpus = torch.range(1, nGPU):totable()
+      local fastest, benchmark
+      local use_cudnn = cudnn ~= nil
+      if use_cudnn then
+        fastest, benchmark = cudnn.fastest, cudnn.benchmark
       end
-      cutorch.setDevice(1)  -- This is the 'primary' GPU
+      local parallel_features = nn.DataParallelTable(1, true, true):add(features,gpus):threads(function()
+            if use_cudnn then
+              local cudnn = require 'cudnn'
+              cudnn.fastest, cudnn.benchmark = fastest, benchmark
+            end
+      end)
       parallel_features.gradInput = nil
       model = nn.Sequential():add(parallel_features):add(classifier)
    else

@@ -107,6 +107,10 @@ function loadNetwork(dir, name, labels, weightsFile, tensorType, inputTensorShap
         nclasses = (labels ~= nil) and #labels or nil,
         inputShape = inputTensorShape,
     }
+    if nn.DataParallelTable then
+        -- set number of GPUs to use when deserializing model
+        nn.DataParallelTable.deserializeNGPUs = parameters.ngpus
+    end
     local network = require (name)(parameters)
 
     local model

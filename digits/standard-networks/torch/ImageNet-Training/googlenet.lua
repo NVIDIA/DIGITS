@@ -60,15 +60,15 @@ function createModel(nGPU, nChannels, nClasses)
    -- in order to help the network learn faster
    local features = nn.Sequential()
    features:add(nn.MulConstant(0.02))
-   features:add(convLayer(nChannels,64,7,7,2,2,3,3)):add(nn.SpatialBatchNormalization(64,1e-3)):add(backend.ReLU(true))
+   features:add(convLayer(nChannels,64,7,7,2,2,3,3)):add(backend.SpatialBatchNormalization(64,1e-3)):add(backend.ReLU(true))
    features:add(backend.SpatialMaxPooling(3,3,2,2):ceil())
-   features:add(convLayer(64,64,1,1)):add(nn.SpatialBatchNormalization(64,1e-3)):add(backend.ReLU(true))
-   features:add(convLayer(64,192,3,3,1,1,1,1)):add(nn.SpatialBatchNormalization(192,1e-3)):add(backend.ReLU(true))
+   features:add(convLayer(64,64,1,1)):add(backend.SpatialBatchNormalization(64,1e-3)):add(backend.ReLU(true))
+   features:add(convLayer(64,192,3,3,1,1,1,1)):add(backend.SpatialBatchNormalization(192,1e-3)):add(backend.ReLU(true))
    features:add(backend.SpatialMaxPooling(3,3,2,2):ceil())
    features:add(inception( 192, {{ 64},{ 64, 64},{ 64, 96},{'avg', 32}})) -- 3(a)
    features:add(inception( 256, {{ 64},{ 64, 96},{ 64, 96},{'avg', 64}})) -- 3(b)
    features:add(inception( 320, {{  0},{128,160},{ 64, 96},{'max',  0}})) -- 3(c)
-   features:add(convLayer(576,576,2,2,2,2)):add(nn.SpatialBatchNormalization(576,1e-3))
+   features:add(convLayer(576,576,2,2,2,2)):add(backend.SpatialBatchNormalization(576,1e-3))
    features:add(inception( 576, {{224},{ 64, 96},{ 96,128},{'avg',128}})) -- 4(a)
    features:add(inception( 576, {{192},{ 96,128},{ 96,128},{'avg',128}})) -- 4(b)
    features:add(inception( 576, {{160},{128,160},{128,160},{'avg', 96}})) -- 4(c)
@@ -76,7 +76,7 @@ function createModel(nGPU, nChannels, nClasses)
 
    local main_branch = nn.Sequential()
    main_branch:add(inception( 576, {{  0},{128,192},{192,256},{'max',  0}})) -- 4(e)
-   main_branch:add(convLayer(1024,1024,2,2,2,2)):add(nn.SpatialBatchNormalization(1024,1e-3))
+   main_branch:add(convLayer(1024,1024,2,2,2,2)):add(backend.SpatialBatchNormalization(1024,1e-3))
    main_branch:add(inception(1024, {{352},{192,320},{160,224},{'avg',128}})) -- 5(a)
    main_branch:add(inception(1024, {{352},{192,320},{192,224},{'max',128}})) -- 5(b)
    main_branch:add(backend.SpatialAveragePooling(7,7,1,1))
@@ -89,7 +89,7 @@ function createModel(nGPU, nChannels, nClasses)
    local l = backend.SpatialAveragePooling(5,5,3,3)
    if backend == cudnn then l = l:ceil() end
    aux_classifier:add(l)
-   aux_classifier:add(convLayer(576,128,1,1,1,1)):add(nn.SpatialBatchNormalization(128,1e-3))
+   aux_classifier:add(convLayer(576,128,1,1,1,1)):add(backend.SpatialBatchNormalization(128,1e-3))
    aux_classifier:add(nn.View(128*4*4):setNumInputDims(3))
    aux_classifier:add(nn.Linear(128*4*4,768))
    aux_classifier:add(backend.ReLU())
@@ -103,12 +103,18 @@ function createModel(nGPU, nChannels, nClasses)
 
    local model
    if nGPU>1 then
-      model = nn.DataParallelTable(1)  -- Split along first (batch) dimension
-      for i = 1, nGPU do
-         cutorch.setDevice(i)
-         model:add(googlenet:clone(), i)  -- Use the ith GPU
+      local gpus = torch.range(1, nGPU):totable()
+      local fastest, benchmark
+      local use_cudnn = cudnn ~= nil
+      if use_cudnn then
+        fastest, benchmark = cudnn.fastest, cudnn.benchmark
       end
-      cutorch.setDevice(1)  -- This is the 'primary' GPU
+      model = nn.DataParallelTable(1, true, true):add(googlenet,gpus):threads(function()
+            if use_cudnn then
+              local cudnn = require 'cudnn'
+              cudnn.fastest, cudnn.benchmark = fastest, benchmark
+            end
+      end)
       model.gradInput = nil
    else
       model = googlenet

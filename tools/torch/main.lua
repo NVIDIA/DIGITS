@@ -394,6 +394,10 @@ if opt.weights ~= '' then
         else
             -- the full model was saved
             assert(string.find(opt.weights, '_Model'))
+            if nn.DataParallelTable then
+                -- set number of GPUs to use when deserializing model
+                nn.DataParallelTable.deserializeNGPUs = nGpus
+            end
             model = torch.load(opt.weights)
             network.model = model
         end
@@ -757,9 +761,6 @@ local function Train(epoch, dataLoader)
             end
 
             _,learningrate,_,trainerr = optimizer:optimize(inputs, targets)
-
-            -- DataParallelTable's syncParameters
-            model:apply(function(m) if m.syncParameters then m:syncParameters() end end)
 
             -- adding the loss values of each mini batch and also maintaining the counter for number of batches, so that average loss value can be found at the time of logging details
             loss_sum = loss_sum + trainerr[1]
