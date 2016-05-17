@@ -30,7 +30,7 @@ Go to https://github.com/NVIDIA/DIGITS/issues and create a "New Issue".
 If you would like to directly contribute to the codebase of DIGITS, open a pull request instead of an issue.
 Or, even better, submit a fix for an existing issue in the tracker! Please follow these guidelines:
 
-1. Send a signed copy of the [Contributor License Agreement](CLA) (CLA) to digits@nvidia.com.
+1. Send a signed copy of the [Contributor License Agreement](../CLA) (CLA) to digits@nvidia.com.
 2. Follow [these instructions](https://help.github.com/articles/fork-a-repo) to create your own fork of DIGITS.
 3. Make your changes in a new branch and push them to your fork.
 3. Follow [these instructions](https://help.github.com/articles/using-pull-requests) to create a pull request.
