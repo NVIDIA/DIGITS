@@ -163,7 +163,7 @@ function TableSelection(table_id) {
         e.stopPropagation();
     });
 
-    // deselect when the mouse is cli
+    // deselect when the mouse is clicked outside the table
     $(document).on('click', 'body', function(e) {
         var tag = e.target.tagName.toLowerCase();
         if (tag == 'input' || tag == 'textarea' || tag == 'button' || tag == 'a') {
@@ -173,12 +173,6 @@ function TableSelection(table_id) {
         if (TableSelection.current_table == null) {
             deselect($('tr'));
         }
-    });
-
-    // Let links continue to work.  Without this, a click would
-    // only do a row selection.
-    $(table_id).on('click', 'a', function(e) {
-        location.href = $(this).attr('href');
     });
 
     // Because the key event is global, only register once.

@@ -84,7 +84,7 @@
                                 </div>
                                 <h2>
                                     {[title]}
-                                    <small>({[jobs.length]})</small>
+                                    <small>({[(jobs | filter:search_text).length]})</small>
                                 </h2>
                             </div>
                         </div>
@@ -119,9 +119,9 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody ng-if="jobs.length">
+                            <tbody ng-if="(jobs | filter:search_text).length">
                                 <!-- Table -->
-                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | orderBy:sort.active:sort.descending | filter:search_text">
+                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | filter:search_text | orderBy:sort.active:sort.descending">
                                     <td>
                                         <a href="/datasets/{[ job.id ]}">
                                             {[ job.name | major_name ]}
@@ -152,7 +152,7 @@
                                     </td>
                                 </tr>
                             </tbody>
-                            <tbody ng-if="jobs.length == 0">
+                            <tbody ng-if="(jobs | filter:search_text).length == 0">
                                 <tr>
                                     <td colspan="{[fields.length]}">
                                         <h5>
@@ -192,7 +192,7 @@
                                 </div>
                                 <h2>
                                     {[title]}
-                                    <small>({[jobs.length]})</small>
+                                    <small>({[(jobs | filter:search_text).length]})</small>
                                 </h2>
                             </div>
                         </div>
@@ -227,8 +227,8 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody ng-if="jobs.length">
-                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | orderBy:sort.active:sort.descending | filter:search_text">
+                            <tbody ng-if="(jobs | filter:search_text).length">
+                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | filter:search_text | orderBy:sort.active:sort.descending">
                                     <td>
                                         <a href="/models/{[ job.id ]}">
                                             {[ job.name | major_name ]}
@@ -256,7 +256,7 @@
                                     </td>
                                 </tr>
                             </tbody>
-                            <tbody ng-if="jobs.length == 0">
+                            <tbody ng-if="(jobs | filter:search_text).length == 0">
                                 <tr>
                                     <td colspan="{[fields.length]}">
                                         <h5>
