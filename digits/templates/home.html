@@ -123,7 +123,7 @@
                                 <!-- Table -->
                                 <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | filter:search_text | orderBy:sort.active:sort.descending">
                                     <td>
-                                        <a href="/datasets/{[ job.id ]}">
+                                        <a href="/datasets/{[ job.id ]}" title="{[job.name]}">
                                             {[ job.name | major_name ]}
                                         </a>
                                         <small>
@@ -140,13 +140,15 @@
                                         {[ job.status ]}
                                     </td>
                                     <td start="{[job.elapsed]}">
-                                        {[ print_time_diff_terse(job.elapsed) ]}
+                                        <small title="{[ print_time_diff(job.elapsed) ]}">
+                                            {[ print_time_diff_terse(job.elapsed) ]}
+                                        </small>
                                     </td>
                                     <td start="{[job.submitted]}">
-                                        <small ng-if="!is_today(job.submitted)">
+                                        <small ng-if="!is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
                                             {[ job.submitted * 1000 | date:'MMM d, yy' ]}
                                         </small>
-                                        <small ng-if="is_today(job.submitted)">
+                                        <small ng-if="is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
                                             {[ job.submitted * 1000 | date:'h:mm a' ]}
                                         </small>
                                     </td>
@@ -230,7 +232,7 @@
                             <tbody ng-if="(jobs | filter:search_text).length">
                                 <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | filter:search_text | orderBy:sort.active:sort.descending">
                                     <td>
-                                        <a href="/models/{[ job.id ]}">
+                                        <a href="/models/{[ job.id ]}" title="{[job.name]}">
                                             {[ job.name | major_name ]}
                                         </a>
                                         <small>
@@ -244,13 +246,15 @@
                                         {[ job.status ]}
                                     </td>
                                     <td start="{[job.elapsed]}">
-                                        {[ print_time_diff_terse(job.elapsed) ]}
+                                        <small title="{[ print_time_diff(job.elapsed) ]}">
+                                            {[ print_time_diff_terse(job.elapsed) ]}
+                                        </small>
                                     </td>
                                     <td start="{[job.submitted]}">
-                                        <small ng-if="!is_today(job.submitted)">
+                                        <small ng-if="!is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
                                             {[ job.submitted * 1000 | date:'MMM d, yy' ]}
                                         </small>
-                                        <small ng-if="is_today(job.submitted)">
+                                        <small ng-if="is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
                                             {[ job.submitted * 1000 | date:'h:mm a' ]}
                                         </small>
                                     </td>
