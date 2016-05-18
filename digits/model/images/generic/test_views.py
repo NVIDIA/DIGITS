@@ -518,11 +518,6 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
                 break
         assert found, 'model not found in list'
 
-    def test_models_page(self):
-        rv = self.app.get('/models', follow_redirects=True)
-        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        assert 'Models' in rv.data, 'unexpected page format'
-
     def test_model_json(self):
         rv = self.app.get('/models/%s.json' % self.model_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code

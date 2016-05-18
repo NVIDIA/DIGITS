@@ -1,4 +1,4 @@
-table.selectable tr
+.table.selectable tr
 {
     -khtml-user-select: none;
     -moz-user-select: none;
@@ -7,23 +7,30 @@ table.selectable tr
     -webkit-touch-callout: none;
     -webkit-user-select: none;
 }
-table.selectable tbody tr.selected td
+.table.selectable tbody tr.selected td
 {
     background-color:#B0BED9
 }
-table.selectable.stripe tbody tr.odd,table.selectable.display tbody tr.odd td
-{
-    background-color:#f9f9f9
+.table {
+    width: 100%;
+    border: 0;
+    table-layout:fixed;
+    word-wrap:break-word;
+    border-collapse:collapse;
 }
-table.selectable.stripe tbody tr.odd.selected,table.selectable.display tbody tr.odd.selected td
-{
-    background-color:#acbad4
+.table>tbody>tr>td,.table>thead>tr>th {
+    padding: 2px;
+    border-collapse: collapse;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
-table.selectable.hover tbody tr:hover,table.selectable.display tbody tr:hover td
-{
-    background-color:#f6f6f6
+.table>thead>tr>th {
+    cursor: pointer;
 }
-table.selectable.hover tbody tr:hover.selected,table.selectable.display tbody tr:hover.selected td
-{
-    background-color:#aab7d1
+.table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th {
+    background-color: #f9f9f9;
+}
+.table-striped>tbody>tr:nth-child(even)>td, .table-striped>tbody>tr:nth-child(even)>th {
+    background-color: #ffffff;
 }
