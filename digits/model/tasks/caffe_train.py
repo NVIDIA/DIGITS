@@ -426,6 +426,11 @@ class CaffeTrainTask(TrainTask):
 
         solver.snapshot_prefix = self.snapshot_prefix
 
+        # Batch accumulation
+        from digits.frameworks import CaffeFramework
+        if CaffeFramework().can_accumulate_gradients():
+            solver.iter_size = self.batch_accumulation
+
         # Epochs -> Iterations
         train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
@@ -622,6 +627,11 @@ class CaffeTrainTask(TrainTask):
             solver.solver_mode = caffe_pb2.SolverParameter.CPU
 
         solver.snapshot_prefix = self.snapshot_prefix
+
+        # Batch accumulation
+        from digits.frameworks import CaffeFramework
+        if CaffeFramework().can_accumulate_gradients():
+            solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
         train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_image_data_layer.data_param.batch_size))

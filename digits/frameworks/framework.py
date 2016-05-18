@@ -76,7 +76,6 @@ class Framework(object):
         """
         raise NotImplementedError('Please implement me')
 
-
-
-
+    def can_accumulate_gradients(self):
+        return False
 
