@@ -1539,7 +1539,7 @@ def _stateMeetsRule(state, rule):
 
     # The state must contain NONE of the rule's not_stages
     for stage in rule.not_stage:
-        if stage in state.not_stage:
+        if stage in state.stage:
             return False
 
     return True
