@@ -38,7 +38,7 @@ function populate_completed_jobs() {
     var app = angular.module('home_app', []);
 
     app.controller('tab_controller', function () {
-        this.tab = 2;
+        this.tab = 1;
 
         this.setTab = function (tabId) {
             this.tab = tabId;
