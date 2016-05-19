@@ -279,6 +279,7 @@ def infer_one():
         flask.request.files['image_file'].save(outfile[1])
         image_path = outfile[1]
         os.close(outfile[0])
+        remove_image_path = True
     else:
         raise werkzeug.exceptions.BadRequest('must provide image_path or image_file')
 
