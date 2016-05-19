@@ -292,6 +292,7 @@ def delete_jobs():
     forbidden = 0
     failed = 0
     job_ids = flask.request.form.getlist('job_ids[]')
+    error = []
     for job_id in job_ids:
 
         try:
@@ -311,10 +312,9 @@ def delete_jobs():
                 failed += 1
                 continue
         except Exception as e:
-            error.append(e)
+            error.append(str(e))
             pass
 
-    error = []
     if not_found:
         error.append('%d job%s not found.' % (not_found, '' if not_found == 1 else 's'))
 
