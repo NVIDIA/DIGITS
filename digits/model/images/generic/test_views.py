@@ -23,6 +23,7 @@ import mock
 import PIL.Image
 from urlparse import urlparse
 
+from digits import extensions
 from digits.config import config_value
 import digits.dataset.images.generic.test_views
 import digits.test_views
@@ -239,6 +240,11 @@ class BaseTestViews(BaseViewsTest):
 
     def test_nonexistent_model(self):
         assert not self.model_exists('foo'), "model shouldn't exist"
+
+    def test_view_config(self):
+        extension = extensions.view.get_default_extension()
+        rv = self.app.get('/models/view-config/%s' % extension.get_id())
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
 
     def test_visualize_network(self):
         rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
@@ -595,9 +601,15 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
+        # try selecting the extension explicitly
+        extension = extensions.view.get_default_extension()
+        extension_id = extension.get_id()
+
         rv = self.app.post(
                 '/models/images/generic/infer_many?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload, 'image_folder': os.path.dirname(self.test_image)}
+                data = {'image_list': file_upload,
+                        'image_folder': os.path.dirname(self.test_image),
+                        'view_extension_id': extension_id}
                 )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
