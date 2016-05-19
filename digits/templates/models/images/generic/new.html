@@ -19,7 +19,14 @@ New Image Model
     <h1>New Image Model</h1>
 </div>
 
-<form id="model-form" action="{{url_for('digits.model.images.generic.views.create')}}" enctype="multipart/form-data" method="post">
+<script>
+function syncAceEditor(){
+    // Syncs (copies) the ace editor's contents to the custom_network flask container
+    $("textarea#custom_network").val(editor.getValue());
+}
+</script>
+
+<form onsubmit="syncAceEditor();" id="model-form" action="{{url_for('digits.model.images.generic.views.create')}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {{ print_errors(form) }}
@@ -375,14 +382,16 @@ function customizeNetwork(network, snapshot_list, framework) {
               )
         .done(function(data) {
                 data = $.parseJSON(data);
-                $('textarea[name=custom_network]').val(data['network']);
+                editor.setValue(data['network']);
+                editor.selection.moveTo(0, 0);
                 if (data['snapshot'])
                     $('input[name=custom_network_snapshot]').val(data['snapshot']);
                 else
                     $('input[name=custom_network_snapshot]').val('');
                 })
         .fail(function(data) {
-                $('textarea[name=custom_network]').val('');
+                editor.setValue('');
+                editor.selection.moveTo(0, 0);
                 $('input[name=custom_network_snapshot]').val('');
                 errorAlert(data);
                 });
@@ -390,7 +399,7 @@ function customizeNetwork(network, snapshot_list, framework) {
         $('#customFramework a[href="'+"#"+framework+"_custom"+'"]').tab('show');
     }
 
-    if ($('textarea[name=custom_network]').val() != "") {
+    if (editor.getValue() != "") {
         bootbox.confirm(
                 'This will overwrite data in the Custom Network tab. Continue?',
                 function(result) { if (result) fillCustomTab(network, snapshot_list, framework); }
@@ -420,6 +429,14 @@ function setFramework(fwid)
     $("select[name=solver_type] > option").not("." + fwid).prop('disabled', true);
     if (! $("select[name=solver_type] > option:selected").hasClass(fwid)) {
         $("select[name=solver_type] > option:selected").prop("selected", false);
+    }
+
+    if (fwid == 'torch'){
+        $("#torch-warning").show();
+        editor.session.setMode(new LuaMode()); // Change editor syntax environment
+    } else {
+        $("#torch-warning").hide();
+        editor.session.setMode(new PythonMode()); // Change editor syntax environment
     }
     $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
 }
@@ -554,6 +571,7 @@ $('#customFramework li').on('shown.bs.tab', function(e) {
 
 function visualizeNetwork() {
     framework = $('#framework').val();
+    syncAceEditor(); // Sync ace editor to custom_network editor
     $.ajax("{{url_for('digits.model.views.visualize_network')}}?framework="+framework,
         {
             type: "POST",
@@ -575,11 +593,24 @@ function visualizeNetwork() {
                     <div class="form-group{{mark_errors([form.custom_network])}}">
                         {{form.custom_network.label}}
                         {{form.custom_network.explanation(file='/models/images/generic/custom_network_explanation.html')}}
-                        <div class="pull-right">
-                            <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
-                        </div>
-                        {{form.custom_network(class='form-control', rows=10)}}
+                        <div style="display: none;">{{form.custom_network(class='form-control', rows=10)}}</div>
+                        <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
                     </div>
+                    <div id="ace-editor"></div>
+                    <script>
+                        var editor = ace.edit("ace-editor");
+                        editor.$blockScrolling = Infinity;
+                        editor.setTheme("ace/theme/chrome");
+                        editor.session.setFoldStyle('manual');
+                        editor.setShowPrintMargin(false);
+                        var PythonMode = ace.require("ace/mode/python").Mode;
+                        var LuaMode = ace.require("ace/mode/lua").Mode;
+                        $( document ).ready(function() {
+                            editor.setValue($('textarea#custom_network').val());
+                            editor.selection.moveTo(0, 0);
+                        });
+                    </script>
+
                     <div class="form-group{{mark_errors([form.custom_network_snapshot])}}">
                         {{form.custom_network_snapshot.label}}
                         {{form.custom_network_snapshot.tooltip}}
