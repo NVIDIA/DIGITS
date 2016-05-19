@@ -38,6 +38,7 @@ function syncAceEditor(){
                     {{form.dataset.label}}
                     {{form.dataset.tooltip}}
                     {{form.dataset(class='form-control', size=5)}}
+                    <div id="dataset-summary"></div>
                 </div>
             </div>
             <div class="col">
@@ -100,30 +101,6 @@ $("#dataset").change(function() {
     });
 $("#dataset").change();
         </script>
-        <div class="col-sm-4">
-            <div id="dataset-summary">
-            </div>
-        </div>
-        <div class="col-sm-4">
-            <div class="well">
-                <h4>Data Transformations</h4>
-                <div class="form-group{{mark_errors([form.crop_size])}}">
-                    {{form.crop_size.label}}
-                    {{form.crop_size.tooltip}}
-                    {{form.crop_size(class='form-control', placeholder='none')}}
-                </div>
-                <div class="form-group{{mark_errors([form.use_mean])}}">
-                    {{form.use_mean.label}}
-                    {{form.use_mean.tooltip}}
-                    {{form.use_mean(class='form-control')}}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <hr>
-
-    <div class="row">
         <div class="col-sm-4">
             <div class="well">
                 <h4>Solver Options</h4>
@@ -367,7 +344,27 @@ showHideAdvancedLROptions();
                 </div>
             </div>
         </div>
-        <div class="col-sm-8">
+        <div class="col-sm-4">
+            <div class="well">
+                <h4>Data Transformations</h4>
+                <div class="form-group{{mark_errors([form.crop_size])}}">
+                    {{form.crop_size.label}}
+                    {{form.crop_size.tooltip}}
+                    {{form.crop_size(class='form-control', placeholder='none')}}
+                </div>
+                <div class="form-group{{mark_errors([form.use_mean])}}">
+                    {{form.use_mean.label}}
+                    {{form.use_mean.tooltip}}
+                    {{form.use_mean(class='form-control')}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-sm-12">
             <script>
 function customizeNetwork(network, snapshot_list, framework) {
     function fillCustomTab(network, snapshot_list, framework) {
