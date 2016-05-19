@@ -360,6 +360,9 @@ def classify_one():
     # retrieve inference data
     inputs, outputs, visualizations = inference_job.get_data()
 
+    # set return status code
+    status_code = 500 if inference_job.status == 'E' else 200
+
     # delete job
     scheduler.delete_job(inference_job)
 
@@ -387,7 +390,7 @@ def classify_one():
             predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
 
     if request_wants_json():
-        return flask.jsonify({'predictions': predictions})
+        return flask.jsonify({'predictions': predictions}), status_code
     else:
         return flask.render_template('models/images/classification/classify_one.html',
                 model_job       = model_job,
@@ -396,7 +399,7 @@ def classify_one():
                 predictions     = predictions,
                 visualizations  = visualizations,
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
-                )
+                ), status_code
 
 @blueprint.route('/classify_many.json', methods=['POST'])
 @blueprint.route('/classify_many', methods=['POST', 'GET'])
@@ -448,6 +451,9 @@ def classify_many():
 
     # retrieve inference data
     inputs, outputs, _ = inference_job.get_data()
+
+    # set return status code
+    status_code = 500 if inference_job.status == 'E' else 200
 
     # delete job
     scheduler.delete_job(inference_job)
@@ -532,7 +538,7 @@ def classify_many():
 
     if request_wants_json():
         joined = dict(zip(paths, classifications))
-        return flask.jsonify({'classifications': joined})
+        return flask.jsonify({'classifications': joined}), status_code
     else:
         return flask.render_template('models/images/classification/classify_many.html',
                 model_job          = model_job,
@@ -546,7 +552,7 @@ def classify_many():
                 confusion_matrix   = confusion_matrix,
                 per_class_accuracy = per_class_accuracy,
                 labels             = labels,
-                )
+                ), status_code
 
 @blueprint.route('/top_n', methods=['POST'])
 def top_n():
