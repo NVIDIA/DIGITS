@@ -14,9 +14,10 @@ mkdir -p $INSTALL_DIR
 
 # install Torch7
 # instructions from: http://torch.ch/docs/getting-started.html
-curl -s https://raw.githubusercontent.com/torch/ezinstall/master/install-deps | bash
 git clone https://github.com/torch/distro.git $INSTALL_DIR --recursive
-cd $INSTALL_DIR; ./install.sh -b
+cd $INSTALL_DIR
+./install-deps
+./install.sh -b
 
 # install custom packages
 ${INSTALL_DIR}/install/bin/luarocks install tds
