@@ -14,18 +14,19 @@ mkdir -p $INSTALL_DIR
 
 NUM_THREADS=${NUM_THREADS-4}
 
-CAFFE_BRANCH="caffe-0.13"
+CAFFE_BRANCH="caffe-0.14"
 CAFFE_URL="https://github.com/NVIDIA/caffe.git"
 
 # Get source
 git clone --depth 1 --branch $CAFFE_BRANCH $CAFFE_URL $INSTALL_DIR
 cd $INSTALL_DIR
 
-# Install dependencies
+# install dependencies (as root)
 sudo -E ./scripts/travis/travis_install.sh
-# change permissions for installed python packages
-sudo chown $USER -R ~/miniconda
-sudo chown $USER -R ~/.cache
+
+# change permissions to current user
+# (needed to install conda dependencies later
+sudo chown $USER -Rf ~/miniconda ~/miniconda2 ~/miniconda3 ~/.cache || true
 
 # Build source
 cp Makefile.config.example Makefile.config
