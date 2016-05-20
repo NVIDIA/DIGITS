@@ -2,4 +2,5 @@
 from __future__ import absolute_import
 
 from .images import *
+from .generic import *
 from .job import DatasetJob

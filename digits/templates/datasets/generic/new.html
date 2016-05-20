@@ -1,0 +1,75 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_combined_errors %}
+{% from "helper.html" import mark_errors %}
+
+{% extends "layout.html" %}
+
+{% block title %}
+New {{ extension_title }} Dataset
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{url_for('digits.dataset.generic.views.new', extension_id=extension_id)}}">New Dataset</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>New {{ extension_title }} Dataset</h1>
+</div>
+
+<form action="{{url_for('digits.dataset.generic.views.create', extension_id=extension_id)}}" enctype="multipart/form-data" method="post">
+
+    {{ form.hidden_tag() }}
+
+    {{ print_combined_errors(errors, warnings) }}
+
+    <div class="row">
+        <div class="col-sm-6 col-sm-offset-3 well">
+            {{ extension_html|safe }}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6 col-sm-offset-3 well">
+            <div class="form-group{{mark_errors([form.dsopts_feature_encoding])}}">
+                {{form.dsopts_feature_encoding.label}}
+                {{form.dsopts_feature_encoding.tooltip}}
+                {{form.dsopts_feature_encoding(class='form-control')}}
+            </div>
+            <div class="form-group{{mark_errors([form.dsopts_label_encoding])}}">
+                {{form.dsopts_label_encoding.label}}
+                {{form.dsopts_label_encoding.tooltip}}
+                {{form.dsopts_label_encoding(class='form-control')}}
+            </div>
+            <div class="form-group{{mark_errors([form.dsopts_batch_size])}}">
+                {{ form.dsopts_batch_size.label }}
+                {{ form.dsopts_batch_size.tooltip }}
+                {{ form.dsopts_batch_size(class='form-control') }}
+            </div>
+            <div class="form-group{{mark_errors([form.dsopts_num_threads])}}">
+                {{ form.dsopts_num_threads.label }}
+                {{ form.dsopts_num_threads.tooltip }}
+                {{ form.dsopts_num_threads(class='form-control') }}
+            </div>
+            <div class="form-group{{mark_errors([form.dsopts_backend])}}">
+                {{ form.dsopts_backend.label }}
+                {{ form.dsopts_backend.tooltip }}
+                {{ form.dsopts_backend(class='form-control') }}
+            </div>
+            <div class="form-group{{mark_errors([form.dataset_name])}}">
+                {{ form.dataset_name.label }}
+                {{ form.dataset_name(class='form-control') }}
+            </div>
+            <input type="submit" name="create-dataset" class="btn btn-primary" value="Create">
+        </div>
+    </div>
+
+</form>
+
+<script>
+$(".explanation-tooltip").tooltip();
+</script>
+
+{% endblock %}

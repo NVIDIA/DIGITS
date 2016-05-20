@@ -5,8 +5,9 @@ import flask
 import werkzeug.exceptions
 
 from . import images as dataset_images
-from digits.utils.routing import request_wants_json
-from digits.webapp import app, scheduler
+from . import generic
+from digits.utils.routing import job_from_request, request_wants_json
+from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -30,6 +31,23 @@ def show(job_id):
             return dataset_images.classification.views.show(job)
         elif isinstance(job, dataset_images.GenericImageDatasetJob):
             return dataset_images.generic.views.show(job)
+        elif isinstance(job, generic.GenericDatasetJob):
+            return generic.views.show(job)
         else:
             raise werkzeug.exceptions.BadRequest('Invalid job type')
 
+
+@blueprint.route('/summary', methods=['GET'])
+def summary():
+    """
+    Return a short HTML summary of a DatasetJob
+    """
+    job = job_from_request()
+    if isinstance(job, dataset_images.ImageClassificationDatasetJob):
+        return dataset_images.classification.views.summary(job)
+    elif isinstance(job, dataset_images.GenericImageDatasetJob):
+        return dataset_images.generic.views.summary(job)
+    elif isinstance(job, generic.GenericDatasetJob):
+        return generic.views.summary(job)
+    else:
+        raise werkzeug.exceptions.BadRequest('Invalid job type')

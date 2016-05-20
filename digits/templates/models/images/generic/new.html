@@ -7,16 +7,16 @@
 {% extends "layout.html" %}
 
 {% block title %}
-New Image Model
+New {% if extension_title %}{{ extension_title }}{% else %}Image{% endif %} Model
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{url_for('digits.model.images.generic.views.new')}}">New Model</a></li>
+<li class="active"><a href="{{url_for('digits.model.images.generic.views.new', extension_id=extension_id)}}">New Model</a></li>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>New Image Model</h1>
+    <h1>New {% if extension_title %}{{ extension_title }}{% else %}Image{% endif %} Model</h1>
 </div>
 
 <script>
@@ -26,7 +26,7 @@ function syncAceEditor(){
 }
 </script>
 
-<form onsubmit="syncAceEditor();" id="model-form" action="{{url_for('digits.model.images.generic.views.create')}}" enctype="multipart/form-data" method="post">
+<form onsubmit="syncAceEditor();" id="model-form" action="{{url_for('digits.model.images.generic.views.create', extension_id=extension_id)}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {{ print_errors(form) }}
@@ -85,7 +85,7 @@ function syncAceEditor(){
 
 $("#dataset").change(function() {
     if ($(this).val()) {
-        $.ajax("/datasets/images/generic/summary?job_id=" + $(this).val(),
+        $.ajax("/datasets/summary?job_id=" + $(this).val(),
             {
                 type: "GET",
                 }

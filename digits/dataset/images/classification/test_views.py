@@ -472,11 +472,13 @@ class TestCreated(BaseViewsTestWithDataset):
         assert pil_image.size == (self.IMAGE_WIDTH, self.IMAGE_HEIGHT), 'image size is %s' % (pil_image.size,)
 
     def test_edit_name(self):
-        status = self.edit_job(
-                self.dataset_id,
-                name='new name'
-                )
+        status = self.edit_job(self.dataset_id,
+                               name='new name'
+                               )
         assert status == 200, 'failed with %s' % status
+        rv = self.app.get('/datasets/summary?job_id=%s' % self.dataset_id)
+        assert rv.status_code == 200
+        assert 'new name' in rv.data
 
     def test_edit_notes(self):
         status = self.edit_job(

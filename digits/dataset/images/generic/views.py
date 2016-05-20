@@ -7,7 +7,7 @@ from .forms import GenericImageDatasetForm
 from .job import GenericImageDatasetJob
 from digits import utils
 from digits.dataset import tasks
-from digits.webapp import app, scheduler
+from digits.webapp import scheduler
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 
@@ -120,12 +120,10 @@ def show(job):
     """
     return flask.render_template('datasets/images/generic/show.html', job=job)
 
-@blueprint.route('/summary', methods=['GET'])
-def summary():
-    """
-    Return a short HTML summary of a DatasetJob
-    """
-    job = job_from_request()
 
-    return flask.render_template('datasets/images/generic/summary.html', dataset=job)
-
+def summary(job):
+    """
+    Return a short HTML summary of a GenericImageDatasetJob
+    """
+    return flask.render_template('datasets/images/generic/summary.html',
+                                 dataset=job)

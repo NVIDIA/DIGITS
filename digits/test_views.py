@@ -121,6 +121,19 @@ class BaseViewsTest(object):
         while True:
             status = cls.job_status(job_id, job_type=job_type)
             if status in ['Done', 'Abort', 'Error']:
+                # make sure job appears in completed jobs
+                url = '/completed_jobs.json'
+                rv = cls.app.get(url)
+                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+                info = json.loads(rv.data)
+                dataset_ids = [job['id'] for job in info['datasets']]
+                model_ids = [job['id'] for job in info['models']]
+                assert job_id in dataset_ids or job_id in model_ids, "job %s not found in completed jobs" % job_id
+                # make sure job can be shown without error
+                url = '/jobs/%s' % job_id
+                rv = cls.app.get(url, follow_redirects=True)
+                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+                assert job_id in rv.data
                 return status
             assert (time.time() - start) < timeout, 'Job took more than %s seconds' % timeout
             time.sleep(polling_period)

@@ -45,6 +45,35 @@
     {% endif %}
 {% endmacro %}
 
+{% macro print_combined_errors(errors, warnings) %}
+    {% if errors %}
+        <div class="alert alert-danger">
+            {% for field_name, field in errors.iteritems() %}
+                <li><label>{{ field_name }}</label>
+                    <ul>
+                        {% for e in field %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if warnings %}
+        <div class="alert alert-warning">
+            {% for field_name, field in warnings.iteritems() %}
+                <li><label>{{ field.label.text }}</label>
+                    <ul>
+                        {% for e in field %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}
+
 {% macro mark_errors(list) %}
     {% for form in list %}
         {{ ' has-error' if form.errors else '' }}
