@@ -539,38 +539,53 @@ class CaffeTrainTask(TrainTask):
         val_image_data_layer = None
         val_label_data_layer = None
 
+        # Find the existing Data layers
         for layer in data_layers.layer:
             for rule in layer.include:
                 if rule.phase == caffe_pb2.TRAIN:
-                    if 'data' in layer.top:
-                        assert train_image_data_layer is None, 'cannot specify two train image data layers'
-                        train_image_data_layer = layer
-                    elif 'label' in layer.top:
-                        assert train_label_data_layer is None, 'cannot specify two train label data layers'
-                        train_label_data_layer = layer
+                    for top_name in layer.top:
+                        if 'data' in top_name:
+                            assert train_image_data_layer is None, \
+                                'cannot specify two train image data layers'
+                            train_image_data_layer = layer
+                        elif 'label' in top_name:
+                            assert train_label_data_layer is None, \
+                                'cannot specify two train label data layers'
+                            train_label_data_layer = layer
                 elif rule.phase == caffe_pb2.TEST:
-                    if 'data' in layer.top:
-                        assert val_image_data_layer is None, 'cannot specify two val image data layers'
-                        val_image_data_layer = layer
-                    elif 'label' in layer.top:
-                        assert val_label_data_layer is None, 'cannot specify two val label data layers'
-                        val_label_data_layer = layer
+                    for top_name in layer.top:
+                        if 'data' in top_name:
+                            assert val_image_data_layer is None, \
+                                'cannot specify two val image data layers'
+                            val_image_data_layer = layer
+                        elif 'label' in top_name:
+                            assert val_label_data_layer is None, \
+                                'cannot specify two val label data layers'
+                            val_label_data_layer = layer
 
-        train_image_data_layer = self.make_generic_data_layer(train_feature_db_path, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
+        # Create and add the Data layers
+        # (uses info from existing data layers, where possible)
+        train_image_data_layer = self.make_generic_data_layer(
+            train_feature_db_path, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
         if train_image_data_layer is not None:
             train_val_network.layer.add().CopyFrom(train_image_data_layer)
-        train_label_data_layer = self.make_generic_data_layer(train_label_db_path, train_label_data_layer, 'label', 'label', caffe_pb2.TRAIN)
+
+        train_label_data_layer = self.make_generic_data_layer(
+            train_label_db_path, train_label_data_layer, 'label', 'label', caffe_pb2.TRAIN)
         if train_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(train_label_data_layer)
 
-        val_image_data_layer = self.make_generic_data_layer(val_feature_db_path, val_image_data_layer, 'data', 'data', caffe_pb2.TEST)
+        val_image_data_layer = self.make_generic_data_layer(
+            val_feature_db_path, val_image_data_layer, 'data', 'data', caffe_pb2.TEST)
         if val_image_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_image_data_layer)
-        val_label_data_layer = self.make_generic_data_layer(val_label_db_path, val_label_data_layer, 'label', 'label', caffe_pb2.TEST)
+
+        val_label_data_layer = self.make_generic_data_layer(
+            val_label_db_path, val_label_data_layer, 'label', 'label', caffe_pb2.TEST)
         if val_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_label_data_layer)
 
-        # Non-data layers
+        # Add non-data layers
         train_val_network.MergeFrom(train_val_layers)
 
         # Write to file
@@ -729,9 +744,9 @@ class CaffeTrainTask(TrainTask):
         if orig_layer is not None:
             layer.CopyFrom(orig_layer)
         layer.type = 'Data'
-        layer.name = name
-        if top not in layer.top:
-            layer.ClearField('top')
+        if not layer.HasField('name'):
+            layer.name = name
+        if not len(layer.top):
             layer.top.append(top)
         layer.ClearField('include')
         layer.include.add(phase=phase)
