@@ -13,6 +13,7 @@ except ImportError:
 
 import numpy as np
 import PIL.Image
+import PIL.ImageDraw
 import scipy.misc
 
 from . import is_url, HTTP_TIMEOUT, errors
@@ -289,6 +290,65 @@ def embed_image_html(image):
     data = string_buf.getvalue().encode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)
 
+def get_color_from_map(value, colormap = 'jet'):
+    """
+    Return an RGB color from the colormap for normalized input value.
+
+    Arguments:
+    value -- normalized input value
+
+    Keyword arguments:
+    colormap -- the name of the colormap passed to get_color_map()
+
+    Example:
+    color = get_color_from_map(0.23, colormap='winter')
+    color = get_color_from_map(0.453)
+    """
+    import numpy as np
+    value = max(0.0, min(1.0, float(value))) # clamp
+    r_map, g_map, b_map = get_color_map(colormap)
+
+    r = int(np.interp(value, np.linspace(0, 1, len(r_map)), r_map))
+    g = int(np.interp(value, np.linspace(0, 1, len(g_map)), g_map))
+    b = int(np.interp(value, np.linspace(0, 1, len(b_map)), b_map))
+    return (r, g, b)
+
+def add_bboxes_to_image(image, bboxes, color='red', width=1):
+    """
+    Draw rectangles on the image for the bounding boxes
+    Returns a PIL.Image
+
+    Arguments:
+    image -- input image
+    bboxes -- bounding boxes in the [((l, t), (r, b)), ...] format
+
+    Keyword arguments:
+    color -- color to draw the rectangles
+    width -- line width of the rectangles
+
+    Example:
+    image = PIL.Image.open(filename)
+    add_bboxes_to_image(image, bboxes[filename], width=2, color='#FF7700')
+    add_bboxes_to_image(image, bboxes[filename], width=2, color=get_color_from_map(0.24))
+    image.show()
+    """
+    def expanded_bbox(bbox, n):
+        """
+        Grow the bounding box by n pixels
+        """
+        l = min(bbox[0][0], bbox[1][0])
+        r = max(bbox[0][0], bbox[1][0])
+        t = min(bbox[0][1], bbox[1][1])
+        b = max(bbox[0][1], bbox[1][1])
+        return ((l - n, t - n), (r + n, b + n))
+
+    draw = PIL.ImageDraw.Draw(image)
+    for bbox in bboxes:
+        for n in xrange(width):
+            draw.rectangle(expanded_bbox(bbox, n), outline = color)
+
+    return image
+
 def get_layer_vis_square(data,
         allow_heatmap = True,
         normalize = True,
@@ -481,4 +541,3 @@ def get_color_map(name):
         greenmap    = [0,0,0.5,1,1,1,0.5,0,0]
         bluemap     = [0.5,1,1,1,0.5,0,0,0,0]
     return 255.0 * np.array(redmap), 255.0 * np.array(greenmap), 255.0 * np.array(bluemap)
-
