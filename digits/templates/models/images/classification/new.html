@@ -19,7 +19,14 @@ New Image Classification Model
     <h1>New Image Classification Model</h1>
 </div>
 
-<form id="model-form" action="{{url_for('digits.model.images.classification.views.create')}}" enctype="multipart/form-data" method="post">
+<script>
+function syncAceEditor(){
+    // Syncs (copies) the ace editor's contents to the custom_network flask container
+    $("textarea#custom_network").val(editor.getValue());
+}
+</script>
+
+<form onsubmit="syncAceEditor();" id="model-form" action="{{url_for('digits.model.images.classification.views.create')}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {{ print_errors(form) }}
@@ -31,6 +38,7 @@ New Image Classification Model
                     {{form.dataset.label}}
                     {{form.dataset.tooltip}}
                     {{form.dataset(class='form-control', size=5)}}
+                    <div id="dataset-summary"></div>
                 </div>
             </div>
 
@@ -94,30 +102,7 @@ $("#dataset").change(function() {
     });
 $("#dataset").change();
         </script>
-        <div class="col-sm-4">
-            <div id="dataset-summary">
-            </div>
-        </div>
-        <div class="col-sm-4">
-            <div class="well">
-                <h4>Data Transformations</h4>
-                <div class="form-group{{mark_errors([form.crop_size])}}">
-                    {{form.crop_size.label}}
-                    {{form.crop_size.tooltip}}
-                    {{form.crop_size(class='form-control', placeholder='none')}}
-                </div>
-                <div class="form-group{{mark_errors([form.use_mean])}}">
-                    {{form.use_mean.label}}
-                    {{form.use_mean.tooltip}}
-                    {{form.use_mean(class='form-control')}}
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <hr>
-
-    <div class="row">
         <div class="col-sm-4">
             <div class="well">
                 <h4>Solver Options</h4>
@@ -367,7 +352,28 @@ showHideAdvancedLROptions();
                 </div>
             </div>
         </div>
-        <div class="col-sm-8">
+
+        <div class="col-sm-4">
+            <div class="well">
+                <h4>Data Transformations</h4>
+                <div class="form-group{{mark_errors([form.crop_size])}}">
+                    {{form.crop_size.label}}
+                    {{form.crop_size.tooltip}}
+                    {{form.crop_size(class='form-control', placeholder='none')}}
+                </div>
+                <div class="form-group{{mark_errors([form.use_mean])}}">
+                    {{form.use_mean.label}}
+                    {{form.use_mean.tooltip}}
+                    {{form.use_mean(class='form-control')}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-sm-12">
             <script>
 function customizeNetwork(network, snapshot_list, framework) {
     function fillCustomTab(network, snapshot_list, framework) {
@@ -382,14 +388,16 @@ function customizeNetwork(network, snapshot_list, framework) {
               )
         .done(function(data) {
                 data = $.parseJSON(data);
-                $('textarea[name=custom_network]').val(data['network']);
+                editor.setValue(data['network']);
+                editor.selection.moveTo(0, 0);
                 if (data['snapshot'])
                     $('input[name=custom_network_snapshot]').val(data['snapshot']);
                 else
                     $('input[name=custom_network_snapshot]').val('');
                 })
         .fail(function(data) {
-                $('textarea[name=custom_network]').val('');
+                editor.setValue('');
+                editor.selection.moveTo(0, 0);
                 $('input[name=custom_network_snapshot]').val('');
                 errorAlert(data);
                 });
@@ -399,7 +407,7 @@ function customizeNetwork(network, snapshot_list, framework) {
     if (!framework)
         var $tab = $('#stdnetRole'), $active = $tab.find('.active'), framework = $active.attr('id');
 
-    if ($('textarea[name=custom_network]').val() != "") {
+    if (editor.getValue() != "") {
         bootbox.confirm(
                 'This will overwrite data in the Custom Network tab. Continue?',
                 function(result) { if (result) fillCustomTab(network, snapshot_list, framework); }
@@ -433,10 +441,13 @@ function setFramework(fwid)
         $("select[name=solver_type] > option:selected").prop("selected", false);
     }
 
-    if (fwid == 'torch')
+    if (fwid == 'torch'){
         $("#torch-warning").show();
-    else
+        editor.session.setMode(new LuaMode()); // Change editor syntax environment
+    } else {
         $("#torch-warning").hide();
+        editor.session.setMode(new PythonMode()); // Change editor syntax environment
+    }
     $('#stdnetRole a[href="'+"#"+fwid+"_standard"+'"]').tab('show');
     $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
 
@@ -639,6 +650,7 @@ function setFramework(fwid)
 
 function visualizeNetwork() {
     framework = $('#framework').val();
+    syncAceEditor(); // Sync ace editor to custom_network editor
     $.ajax("{{url_for('digits.model.views.visualize_network')}}?framework="+framework,
         {
             type: "POST",
@@ -662,12 +674,25 @@ function visualizeNetwork() {
                                 <div class="form-group{{mark_errors([form.custom_network])}}">
                                     {{form.custom_network.label}}
                                     {{form.custom_network.explanation(file='/models/images/classification/custom_network_explanation.html')}}
-                                    <div class="pull-right">
-                                        <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
-                                    </div>
-                                    {{form.custom_network(class='form-control', rows=10)}}
+                                    <div style="display: none;">{{form.custom_network(class='form-control', rows=10)}}</div>
+                                    <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
                                 </div>
                         </div>
+                        <div id="ace-editor"></div>
+                        <script>
+                            var editor = ace.edit("ace-editor");
+                            editor.$blockScrolling = Infinity;
+                            editor.setTheme("ace/theme/chrome");
+                            editor.session.setFoldStyle('manual');
+                            editor.setShowPrintMargin(false);
+                            var PythonMode = ace.require("ace/mode/python").Mode;
+                            var LuaMode = ace.require("ace/mode/lua").Mode;
+                            $( document ).ready(function() {
+                                editor.setValue($('textarea#custom_network').val());
+                                editor.selection.moveTo(0, 0);
+                            });
+                        </script>
+
                         <script>$(this).addClass('active');
                             $('#custom_textareas div:first').addClass('tab-pane active') // Select first tab
                         </script>
