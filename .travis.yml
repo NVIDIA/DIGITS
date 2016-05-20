@@ -1,42 +1,50 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 
 sudo: required
-dist: precise
+dist: trusty
 
 language: python
 python:
     2.7
-compiler: gcc   # for Caffe
+compiler: gcc
 env:
     global:
-        # Make
         - NUM_THREADS=4
-        # Caffe
-        - WITH_CUDA=false
-        - WITH_CMAKE=false
+
 before_install:
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
-    - export PATH=/home/travis/miniconda/bin:$PATH
+    # undo all of TravisCI's "helpful" Python shenanigans on 14.04
+    - deactivate
+    # use --system-site-packages so that Python will use deb packages
+    - virtualenv --system-site-packages ~/venv
+    - source ~/venv/bin/activate
+    - which python
+    - python --version
+    - which pip
+    - pip --version
+
 install:
-    # Caffe
-    - ./scripts/travis/install-caffe.sh $(pwd)/deps/caffe
+    # apt packages
+    - ./scripts/travis/install-apt.sh
 
-    # Torch
-    - travis_wait ./scripts/travis/install-torch-wrapper.sh $(pwd)/deps/torch $(pwd)/torch-install-log.txt
+    # build caffe
+    - ./scripts/travis/install-caffe.sh ~/caffe
 
-    # DIGITS
-    - sudo apt-get install graphviz
-    # conda (fast)
-    - conda install --yes gevent greenlet
-    # pip (slow)
+    # build torch
+    - travis_wait ./scripts/travis/install-torch-wrapper.sh ~/torch $(pwd)/torch-install-log.txt
+
+    # digits requirements
     - pip install -r requirements.txt
     - pip install -r requirements_test.txt
+
 before_script:
-    - export CAFFE_HOME=$(pwd)/deps/caffe
-    - source $(pwd)/deps/torch/install/bin/torch-activate
+    - export CAFFE_ROOT=~/caffe
+    - export TORCH_ROOT=~/torch/install
     # Disable OpenMP multi-threading
     - export OMP_NUM_THREADS=1
+
 script:
     ./digits-test -v --with-coverage --cover-package=digits,tools,scripts
+
 after_success:
     coveralls
+
