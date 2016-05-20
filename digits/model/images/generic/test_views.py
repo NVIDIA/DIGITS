@@ -909,3 +909,71 @@ class TestSweepCreation(BaseViewsTestWithDataset):
             assert self.model_wait_completion(job_id) == 'Done', 'create failed'
             assert self.delete_model(job_id) == 200, 'delete failed'
             assert not self.model_exists(job_id), 'model exists after delete'
+
+
+class TestAllInOneNetwork(BaseTestCreation, BaseTestCreated):
+    """
+    Test an all-in-one network
+    """
+    FRAMEWORK = 'caffe'
+    CAFFE_NETWORK = \
+"""
+layer {
+  name: "train_data"
+  type: "Data"
+  top: "scaled_data"
+  transform_param {
+    scale: 0.004
+  }
+  include { phase: TRAIN }
+}
+layer {
+  name: "train_label"
+  type: "Data"
+  top: "label"
+  include { phase: TRAIN }
+}
+layer {
+  name: "val_data"
+  type: "Data"
+  top: "scaled_data"
+  transform_param {
+    scale: 0.004
+  }
+  include { phase: TEST }
+}
+layer {
+  name: "val_label"
+  type: "Data"
+  top: "label"
+  include { phase: TEST }
+}
+layer {
+  name: "scale"
+  type: "Power"
+  bottom: "data"
+  top: "scaled_data"
+  power_param {
+    scale: 0.004
+  }
+  include { stage: "deploy" }
+}
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scaled_data"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+  exclude { stage: "deploy" }
+}
+"""
+
