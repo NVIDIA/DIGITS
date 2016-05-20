@@ -192,8 +192,25 @@ class CaffeOption(config_option.FrameworkOption):
             # XXX: guess and let the user figure out errors later
             return parse_version(0,11,0)
         elif platform.system() == 'Windows':
-            # XXX: guess and let the user figure out errors later
-            return parse_version(0,11,0)
+            p = subprocess.Popen([executable,'-version'],
+                    stdout = subprocess.PIPE,
+                    stderr = subprocess.PIPE)
+            if p.wait():
+                raise config_option.BadValue(p.stderr.read().strip())
+            else:
+                pattern = 'version'
+                parsed_version = parse_version(0,11,0)
+                for line in p.stdout:
+                    if pattern in line:
+                        try:
+                            # if CAFFE for Windows is built with properly formatted version string
+                            parsed_version = parse_version(line[line.find(pattern)+len(pattern):].rstrip())
+                        except ValueError:
+                            # what follows "version" is "CAFFE_VERSION" or some unrecognized string
+                            pass
+                        finally:
+                            break
+                return parsed_version
         else:
             print 'WARNING: platform "%s" not supported' % platform.system()
             return None
