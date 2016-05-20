@@ -1411,7 +1411,11 @@ def cleanedUpClassificationNetwork(original_network, num_categories):
             assert layer.type in ['Data', 'HDF5Data'], \
                 'Unsupported data layer type %s' % layer.type
 
-        if layer.type == 'Accuracy':
+        elif layer.type == 'Input':
+            # DIGITS handles the deploy file for you
+            del network.layer[i]
+
+        elif layer.type == 'Accuracy':
             # Check to see if top_k > num_categories
             if ( layer.accuracy_param.HasField('top_k') and
                     layer.accuracy_param.top_k > num_categories ):
@@ -1433,12 +1437,16 @@ def cleanedUpGenericNetwork(original_network):
     network = caffe_pb2.NetParameter()
     network.CopyFrom(original_network)
 
-    for layer in network.layer:
+    for i, layer in enumerate(network.layer):
         if 'Data' in layer.type:
             assert layer.type in ['Data'], \
                 'Unsupported data layer type %s' % layer.type
 
-        if layer.type == 'InnerProduct':
+        elif layer.type == 'Input':
+            # DIGITS handles the deploy file for you
+            del network.layer[i]
+
+        elif layer.type == 'InnerProduct':
             # Check to see if num_output is unset
             assert layer.inner_product_param.HasField('num_output'), \
                 "Don't leave inner_product_param.num_output unset for generic networks (layer %s)" % layer.name
