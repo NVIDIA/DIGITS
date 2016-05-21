@@ -34,11 +34,17 @@ class CaffeFramework(Framework):
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = False
 
-    if config_value('caffe_root')['version'] > parse_version('0.14.0-alpha'):
+    if config_value('caffe_root')['flavor'] == 'NVIDIA':
+        if config_value('caffe_root')['version'] > parse_version('0.14.0-alpha'):
+            SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
+                                      'RMSPROP', 'ADADELTA', 'ADAM']
+        else:
+            SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD']
+    elif config_value('caffe_root')['flavor'] == 'BVLC':
         SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
                                   'RMSPROP', 'ADADELTA', 'ADAM']
     else:
-        SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD']
+        raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
 
     @override
     def __init__(self):
@@ -123,6 +129,10 @@ class CaffeFramework(Framework):
 
     @override
     def can_accumulate_gradients(self):
-        return (config_value('caffe_root')['version']
-                > parse_version('0.14.0-alpha'))
+        if config_value('caffe_root')['flavor'] == 'BVLC':
+            return True
+        elif config_value('caffe_root')['flavor'] == 'NVIDIA':
+            return config_value('caffe_root')['version'] > parse_version('0.14.0-alpha')
+        else:
+            raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
 
