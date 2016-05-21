@@ -123,11 +123,11 @@ def create(extension_id):
         raise
 
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.dataset.views.show()
     """
-    return flask.render_template('datasets/generic/show.html', job=job)
+    return flask.render_template('datasets/generic/show.html', job=job, related_jobs=related_jobs)
 
 
 def summary(job):

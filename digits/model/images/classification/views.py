@@ -296,11 +296,11 @@ def create():
     # If there are multiple jobs launched, go to the home page.
     return flask.redirect('/')
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()])
+    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()], related_jobs=related_jobs)
 
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():

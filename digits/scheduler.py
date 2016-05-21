@@ -214,6 +214,29 @@ class Scheduler:
             return None
         return self.jobs.get(job_id, None)
 
+    def get_related_jobs(self, job):
+        """
+        Look through self.jobs to try to find the Jobs
+        whose parent contains job
+        """
+        related_jobs = []
+
+        if isinstance(job, ModelJob):
+            datajob = job.dataset
+            related_jobs.append(datajob)
+        elif isinstance(job, DatasetJob):
+            datajob = job
+        else:
+            raise ValueError("Unhandled job type %s" % job.job_type())
+
+        for j in self.jobs.values():          
+            # Any model that shares (this/the same) dataset should be added too:
+            if isinstance(j, ModelJob):
+                if datajob == j.train_task().dataset:
+                    related_jobs.append(j)
+
+        return related_jobs
+
     def abort_job(self, job_id):
         """
         Aborts a running Job
