@@ -24,15 +24,17 @@ def show(job_id):
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
+    related_jobs = scheduler.get_related_jobs(job)
+
     if request_wants_json():
         return flask.jsonify(job.json_dict(True))
     else:
         if isinstance(job, dataset_images.ImageClassificationDatasetJob):
-            return dataset_images.classification.views.show(job)
+            return dataset_images.classification.views.show(job, related_jobs=related_jobs)
         elif isinstance(job, dataset_images.GenericImageDatasetJob):
-            return dataset_images.generic.views.show(job)
+            return dataset_images.generic.views.show(job, related_jobs=related_jobs)
         elif isinstance(job, generic.GenericDatasetJob):
-            return generic.views.show(job)
+            return generic.views.show(job, related_jobs=related_jobs)
         else:
             raise werkzeug.exceptions.BadRequest('Invalid job type')
 

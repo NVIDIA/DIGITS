@@ -114,11 +114,11 @@ def create():
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    return flask.render_template('datasets/images/generic/show.html', job=job)
+    return flask.render_template('datasets/images/generic/show.html', job=job, related_jobs=related_jobs)
 
 
 def summary(job):

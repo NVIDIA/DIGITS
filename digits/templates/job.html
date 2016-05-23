@@ -235,6 +235,53 @@ $('#delete-job').on('click', function(event) {
         </div>
         <div class="gpu-utilization-info" style="display:none;"></div>
 
+
+        <!-- Related jobs -->
+        {% if related_jobs is not none and related_jobs|length > 0 %}
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    Related jobs
+                </h4>
+            </div>
+            <div class="panel-collapse">
+                <div class="panel-body">
+                    <div class="panel-group">
+                        <!-- Related model jobs -->
+                        {% for r_job in related_jobs %}
+                        {% if prev_job_model != r_job.job_type() %}
+                            <h4 class="panel-title" style="margin:10px">{{r_job.job_type()}}</h4>
+                            {% set prev_job_model = r_job.job_type() %}
+                        {% endif %}
+                        <div id="{{r_job.id()}}-status" class="panel panel-{{ r_job.status.css }}">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">
+                                    <a href="{{ url_for('digits.views.show_job', job_id=r_job.id()) }}">
+                                        {{ r_job.name() }}
+                                        <small>{{r_job.status.name}}</small>
+                                    </a>
+                                    <a data-toggle="collapse" href="#{{r_job.id()}}-status-collapse" style="float:right">
+                                        <span class="caret"></span>
+                                    </a>
+                                </h4>
+                            </div>
+                            <div id="{{r_job.id()}}-status-collapse" class="panel-collapse collapse">
+                                <div class="panel-body">
+                                    <div class="task-statuses">
+                                        {% with updates = r_job.status_history %}
+                                            {% include "status_updates.html" %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div id="notes-information" class="panel panel-default">
             <div class="panel-heading">
                 <h4>Notes</h4>
