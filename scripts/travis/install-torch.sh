@@ -14,13 +14,14 @@ mkdir -p $INSTALL_DIR
 
 # install Torch7
 # instructions from: http://torch.ch/docs/getting-started.html
-curl -s https://raw.githubusercontent.com/torch/ezinstall/master/install-deps | bash
 git clone https://github.com/torch/distro.git $INSTALL_DIR --recursive
-cd $INSTALL_DIR; ./install.sh -b
+cd $INSTALL_DIR
+./install-deps
+./install.sh -b
 
 # install custom packages
 ${INSTALL_DIR}/install/bin/luarocks install tds
 ${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
 ${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
-${INSTALL_DIR}/install/bin/luarocks install lightningmdb LMDB_INCDIR=/usr/local/include LMDB_LIBDIR=/usr/local/lib
+${INSTALL_DIR}/install/bin/luarocks install lightningmdb LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
 
