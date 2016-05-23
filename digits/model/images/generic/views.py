@@ -319,6 +319,9 @@ def infer_one():
     # retrieve inference data
     inputs, outputs, visualizations = inference_job.get_data()
 
+    # set return status code
+    status_code = 500 if inference_job.status == 'E' else 200
+
     # delete job folder and remove from scheduler list
     scheduler.delete_job(inference_job)
 
@@ -330,7 +333,7 @@ def infer_one():
         image = utils.image.embed_image_html(inputs['data'][0])
 
     if request_wants_json():
-        return flask.jsonify({'outputs': dict((name, blob.tolist()) for name,blob in outputs.iteritems())})
+        return flask.jsonify({'outputs': dict((name, blob.tolist()) for name,blob in outputs.iteritems())}), status_code
     else:
         return flask.render_template('models/images/generic/infer_one.html',
                 model_job       = model_job,
@@ -339,7 +342,7 @@ def infer_one():
                 network_outputs = outputs,
                 visualizations  = visualizations,
                 total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
-                )
+                ), status_code
 
 @blueprint.route('/infer_db.json', methods=['POST'])
 @blueprint.route('/infer_db', methods=['POST', 'GET'])
@@ -380,6 +383,9 @@ def infer_db():
     # retrieve inference data
     inputs, outputs, _ = inference_job.get_data()
 
+    # set return status code
+    status_code = 500 if inference_job.status == 'E' else 200
+
     # delete job folder and remove from scheduler list
     scheduler.delete_job(inference_job)
 
@@ -396,14 +402,14 @@ def infer_db():
         result = {}
         for i, key in enumerate(keys):
             result[key] = dict((name, blob[i].tolist()) for name,blob in outputs.iteritems())
-        return flask.jsonify({'outputs': result})
+        return flask.jsonify({'outputs': result}), status_code
     else:
         return flask.render_template('models/images/generic/infer_db.html',
                 model_job       = model_job,
                 job             = inference_job,
                 keys            = keys,
                 network_outputs = outputs,
-                )
+                ), status_code
 
 @blueprint.route('/infer_many.json', methods=['POST'])
 @blueprint.route('/infer_many', methods=['POST', 'GET'])
@@ -474,6 +480,9 @@ def infer_many():
     # retrieve inference data
     inputs, outputs, _ = inference_job.get_data()
 
+    # set return status code
+    status_code = 500 if inference_job.status == 'E' else 200
+
     # delete job folder and remove from scheduler list
     scheduler.delete_job(inference_job)
 
@@ -488,14 +497,14 @@ def infer_many():
         result = {}
         for i, path in enumerate(paths):
             result[path] = dict((name, blob[i].tolist()) for name,blob in outputs.iteritems())
-        return flask.jsonify({'outputs': result})
+        return flask.jsonify({'outputs': result}), status_code
     else:
         return flask.render_template('models/images/generic/infer_many.html',
                 model_job       = model_job,
                 job             = inference_job,
                 paths           = paths,
                 network_outputs = outputs,
-                )
+                ), status_code
 
 
 def get_datasets(extension_id):
