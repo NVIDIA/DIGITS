@@ -21,6 +21,7 @@ from digits import utils
 from digits.config import config_value
 from digits.status import Status
 from digits.utils import subclass, override, constants
+from digits.utils.filesystem import tail
 
 # Must import after importing digit.config
 import caffe
@@ -941,7 +942,7 @@ class CaffeTrainTask(TrainTask):
     @override
     def after_runtime_error(self):
         if os.path.exists(self.path(self.CAFFE_LOG)):
-            output = subprocess.check_output(['tail', '-n40', self.path(self.CAFFE_LOG)])
+            output = tail(self.path(self.CAFFE_LOG), 40)
             lines = []
             for line in output.split('\n'):
                 # parse caffe header

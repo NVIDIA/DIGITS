@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import os.path
 import shutil
+import platform
 
 def get_tree_size(start_path):
     """
@@ -34,3 +35,25 @@ def copy_python_layer_file(from_client, job_dir, client_file, server_file):
     elif server_file and len(server_file) > 0:
         filename = get_python_file_dst(job_dir, server_file)
         shutil.copy(server_file, filename)
+
+def tail(file, n=40):
+    """
+    Returns last n lines of text file (or all lines if the file has fewer lines)
+
+    Arguments:
+    file -- full path of that file, calling side must ensure its existence
+    n -- the number of tailing lines to return
+    """
+    if platform.system() in ['Linux', 'Darwin']:
+        import subprocess
+        output = subprocess.check_output(['tail', '-n{}'.format(n), file])
+    else:
+        from collections import deque
+        tailing_lines = deque()
+        with open(file) as f:
+            for line in f:
+                tailing_lines.append(line)
+                if len(tailing_lines) > n:
+                    tailing_lines.popleft()
+        output = ''.join(tailing_lines)
+    return output
