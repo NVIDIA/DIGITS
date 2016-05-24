@@ -120,13 +120,14 @@ class LmdbWriter(DbWriter):
         else:
             # Transpose to (height, width, channel)
             data = data.transpose((1, 2, 0))
-            if data.shape[2] == 1:
-                # grayscale
-                data = data[:, :, 0]
             datum = caffe_pb2.Datum()
             datum.height = data.shape[0]
             datum.width = data.shape[1]
+            datum.channels = data.shape[2]
             datum.label = scalar_label
+            if data.shape[2] == 1:
+                # grayscale
+                data = data[:, :, 0]
             s = StringIO()
             if encoding == 'png':
                 PIL.Image.fromarray(data).save(s, format='PNG')
