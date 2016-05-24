@@ -205,6 +205,18 @@ def create(extension_id=None):
                     selected_gpus = [str(form.select_gpu.data)]
                     gpu_count = None
 
+            # Set up data augmentation structure
+            data_aug = {}
+            data_aug['flip']     = form.aug_flip.data
+            data_aug['quad_rot'] = form.aug_quad_rot.data
+            data_aug['rot']      = form.aug_rot.data
+            data_aug['scale']    = form.aug_scale.data
+            data_aug['noise']    = form.aug_noise.data
+            data_aug['hsv_use']  = form.aug_hsv_use.data
+            data_aug['hsv_h']    = form.aug_hsv_h.data
+            data_aug['hsv_s']    = form.aug_hsv_s.data
+            data_aug['hsv_v']    = form.aug_hsv_v.data
+
             # Python Layer File may be on the server or copied from the client.
             fs.copy_python_layer_file(
                 bool(form.python_layer_from_client.data),
@@ -232,6 +244,7 @@ def create(extension_id=None):
                         random_seed = form.random_seed.data,
                         solver_type = form.solver_type.data,
                         shuffle = form.shuffle.data,
+                        data_aug = data_aug,
                         )
                     )
 

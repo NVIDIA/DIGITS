@@ -351,18 +351,22 @@ showHideAdvancedLROptions();
             </div>
         </div>
         <div class="col-sm-4">
-            <div class="well">
+            <div class="well" id="data-transformation">
                 <h4>Data Transformations</h4>
-                <div class="form-group{{mark_errors([form.crop_size])}}">
-                    {{form.crop_size.label}}
-                    {{form.crop_size.tooltip}}
-                    {{form.crop_size(class='form-control', placeholder='none')}}
-                </div>
-                <div class="form-group{{mark_errors([form.use_mean])}}">
+                <div class="form-group{{mark_errors([form.use_mean])}} data-transformation-input" id="MEAN_SUBTRACTION">
                     {{form.use_mean.label}}
                     {{form.use_mean.tooltip}}
                     {{form.use_mean(class='form-control')}}
                 </div>
+                <div class="form-group{{mark_errors([form.crop_size])}} data-transformation-input" id="CROPPING">
+                    {{form.crop_size.label}}
+                    {{form.crop_size.tooltip}}
+                    {{form.crop_size(class='form-control', placeholder='none')}}
+                </div>
+            </div>
+            <div class="well" id="data-augmentation" style="display:none;">
+                <h4>Data Augmentations</h4>
+                {% include "/models/data_augmentation.html" %}
             </div>
         </div>
     </div>
@@ -418,6 +422,8 @@ framework = {
     name : '{{ fw.get_name() }}',
     can_shuffle : '{{ fw.can_shuffle_data() }}'=='True',
     can_accumulate_gradients : '{{ fw.can_accumulate_gradients() }}'=='True',
+    data_aug_types : [{% for dttype in fw.SUPPORTED_DATA_TRANSFORMATION_TYPES %} '{{dttype}}' {% if not loop.last %} , {% endif %} {% endfor %}],
+    data_trans_types : [{% for datype in fw.SUPPORTED_DATA_AUGMENTATION_TYPES %} '{{datype}}' {% if not loop.last %} , {% endif %} {% endfor %}],
     };
 frameworks['{{ fw.get_id() }}'] = framework;
 {% endfor %}
@@ -434,6 +440,25 @@ function setFramework(fwid)
     if (! $("select[name=solver_type] > option:selected").hasClass(fwid)) {
         $("select[name=solver_type] > option:selected").prop("selected", false);
     }
+
+    $(".data-transformation-input").hide();
+    $(".data-augmentation-input").hide();
+    $.each(frameworks[fwid].data_trans_types, function( index, value ) {
+        $("#"+value).show();
+    });
+    $.each(frameworks[fwid].data_aug_types, function( index, value ) {
+        $("#"+value).show();
+    });
+
+    // Hide the entire box including title when none is available
+    if (frameworks[fwid].data_aug_types.length)
+        $("#data-transformation").show();
+    else
+        $("#data-transformation").hide();
+    if (frameworks[fwid].data_trans_types.length)
+        $("#data-augmentation").show();
+    else
+        $("#data-augmentation").hide();
 
     if (fwid == 'torch'){
         $("#torch-warning").show();

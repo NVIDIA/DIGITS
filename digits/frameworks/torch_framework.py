@@ -36,6 +36,10 @@ class TorchFramework(Framework):
     SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
                               'RMSPROP', 'ADADELTA', 'ADAM']
 
+    SUPPORTED_DATA_TRANSFORMATION_TYPES = ['MEAN_SUBTRACTION', 'CROPPING']
+    SUPPORTED_DATA_AUGMENTATION_TYPES = ['FLIPPING', 'QUAD_ROTATION', 'ARBITRARY_ROTATION', 
+                                          'SCALING', 'NOISE', 'HSV_SHIFTING']
+
     def __init__(self):
         super(TorchFramework, self).__init__()
         # id must be unique

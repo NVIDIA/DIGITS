@@ -145,6 +145,15 @@ class BaseViewsTestWithDataset(BaseViewsTest,
     LR_POLICY = None
     LR_MULTISTEP_VALUES = None
     LEARNING_RATE = None
+    AUG_FLIP = None
+    AUG_QUAD_ROT = None
+    AUG_ROT = None
+    AUG_SCALE = None
+    AUG_NOISE = None
+    AUG_HSV_USE = None
+    AUG_HSV_H = None
+    AUG_HSV_S = None
+    AUG_HSV_V = None
 
     @classmethod
     def setUpClass(cls):
@@ -189,6 +198,26 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             data['learning_rate'] = cls.LEARNING_RATE
         if cls.LR_MULTISTEP_VALUES is not None:
             data['lr_multistep_values'] = cls.LR_MULTISTEP_VALUES
+
+        if cls.AUG_FLIP is not None:
+            data['aug_flip'] = cls.AUG_FLIP
+        if cls.AUG_QUAD_ROT is not None:
+            data['aug_quad_rot'] = cls.AUG_QUAD_ROT
+        if cls.AUG_ROT is not None:
+            data['aug_rot'] = cls.AUG_ROT
+        if cls.AUG_SCALE is not None:
+            data['aug_scale'] = cls.AUG_SCALE
+        if cls.AUG_NOISE is not None:
+            data['aug_noise'] = cls.AUG_NOISE
+        if cls.AUG_HSV_USE is not None:
+            data['aug_hsv_use'] = cls.AUG_HSV_USE
+        if cls.AUG_HSV_H is not None:
+            data['aug_hsv_h'] = cls.AUG_HSV_H
+        if cls.AUG_HSV_S is not None:
+            data['aug_hsv_s'] = cls.AUG_HSV_S
+        if cls.AUG_HSV_V is not None:
+            data['aug_hsv_v'] = cls.AUG_HSV_V
+
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -820,6 +849,17 @@ class BaseTestCreatedTall(BaseTestCreated):
 class BaseTestCreatedCropInForm(BaseTestCreated):
     CROP_SIZE = 8
 
+class BaseTestCreatedDataAug(BaseTestCreatedTall):
+    AUG_FLIP = 'fliplrud'
+    AUG_QUAD_ROT = 'rotall'
+    AUG_ROT = 45
+    AUG_SCALE = 0.07
+    AUG_NOISE = 0.03
+    AUG_HSV_USE = True
+    AUG_HSV_H = 0.02
+    AUG_HSV_S = 0.04
+    AUG_HSV_V = 0.06
+
 class BaseTestCreatedCropInNetwork(BaseTestCreated):
     CAFFE_NETWORK = \
 """
@@ -995,6 +1035,9 @@ class TestCaffeLeNet(BaseTestCreated):
             ).read()
 
 class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
+    FRAMEWORK = 'torch'
+
+class TestTorchCreatedDataAug(BaseTestCreatedDataAug):
     FRAMEWORK = 'torch'
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
