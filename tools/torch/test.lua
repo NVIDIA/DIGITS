@@ -204,7 +204,7 @@ local function preprocess(im, mean, croplen)
     -- crop to match network expected input dimensions
     if croplen then
         image_size = image_preprocessed:size()
-        assert(image_size[2] == image_size[3], "Expected square image")
+        assert(image_size[2] >= croplen and image_size[3] >= croplen, "Image must be larger than crop length in all spatial dimensions")
         c = (image_size[2]-croplen)/2 + 1
         image_preprocessed = data.PreProcess(image_preprocessed, -- input image
                                              nil, -- no mean subtraction (this was done before)
