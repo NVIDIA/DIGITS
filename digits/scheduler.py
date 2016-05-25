@@ -229,7 +229,7 @@ class Scheduler:
         else:
             raise ValueError("Unhandled job type %s" % job.job_type())
 
-        for j in self.jobs.values():          
+        for j in self.jobs.values():
             # Any model that shares (this/the same) dataset should be added too:
             if isinstance(j, ModelJob):
                 if datajob == j.train_task().dataset:
