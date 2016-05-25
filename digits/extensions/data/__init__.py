@@ -2,10 +2,12 @@
 from __future__ import absolute_import
 
 from . import imageGradients
+from . import objectDetection
 
 data_extensions = [
     # set show=True if extension should be listed in known extensions
     {'class': imageGradients.DataIngestion, 'show': False},
+    {'class': objectDetection.DataIngestion, 'show': True},
 ]
 
 

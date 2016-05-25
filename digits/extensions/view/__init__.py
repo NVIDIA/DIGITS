@@ -1,10 +1,12 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+from . import boundingBox
 from . import rawData
 
 view_extensions = [
     # set show=True if extension should be listed in known extensions
+    {'class': boundingBox.Visualization, 'show': True},
     {'class': rawData.Visualization, 'show': True},
 ]
 
