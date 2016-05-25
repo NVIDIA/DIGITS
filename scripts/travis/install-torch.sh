@@ -10,6 +10,13 @@ then
     exit 1
 fi
 INSTALL_DIR=$1
+
+if [ -d "$INSTALL_DIR" ] && [ -e "$INSTALL_DIR/install/bin/th" ]; then
+    echo "Using cached build at $INSTALL_DIR ..."
+    exit 0
+fi
+
+rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 
 # install Torch7
