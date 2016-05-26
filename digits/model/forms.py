@@ -129,7 +129,6 @@ class ModelForm(Form):
             )
 
     batch_accumulation = utils.forms.IntegerField('Batch Accumulation',
-        default=1,
         validators = [
             validators.NumberRange(min=1),
             validators.Optional(),

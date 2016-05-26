@@ -429,7 +429,7 @@ class CaffeTrainTask(TrainTask):
 
         # Batch accumulation
         from digits.frameworks import CaffeFramework
-        if CaffeFramework().can_accumulate_gradients():
+        if self.batch_accumulation and CaffeFramework().can_accumulate_gradients():
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
@@ -646,7 +646,7 @@ class CaffeTrainTask(TrainTask):
 
         # Batch accumulation
         from digits.frameworks import CaffeFramework
-        if CaffeFramework().can_accumulate_gradients():
+        if self.batch_accumulation and CaffeFramework().can_accumulate_gradients():
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
