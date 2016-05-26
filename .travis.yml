@@ -11,6 +11,13 @@ env:
     global:
         - NUM_THREADS=4
 
+cache:
+    timeout: 604800  # 1 week
+    apt: true
+    directories:
+        - ~/caffe
+        - ~/torch
+
 before_install:
     # undo all of TravisCI's "helpful" Python shenanigans on 14.04
     - deactivate
