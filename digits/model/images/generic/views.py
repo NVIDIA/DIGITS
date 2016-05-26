@@ -410,7 +410,6 @@ def infer_db():
         # an error occurred
         outputs = None
 
-    inference_views_html = None
     if inputs is not None:
         keys = [str(idx) for idx in inputs['ids']]
         inference_views_html, summary_html = get_inference_visualizations(
@@ -418,6 +417,8 @@ def infer_db():
             inputs,
             outputs)
     else:
+        inference_views_html = None
+        summary_html = None
         keys = None
 
     if request_wants_json():
@@ -515,13 +516,15 @@ def infer_many():
         # an error occurred
         outputs = None
 
-    inference_views_html = None
     if inputs is not None:
         paths = [paths[idx] for idx in inputs['ids']]
         inference_views_html, summary_html = get_inference_visualizations(
             model_job.dataset,
             inputs,
             outputs)
+    else:
+        inference_views_html = None
+        summary_html = None
 
     if request_wants_json():
         result = {}
