@@ -5,7 +5,10 @@ from . import boundingBox
 from . import rawData
 
 view_extensions = [
-    # set show=True if extension should be listed in known extensions
+    # Set show=True if extension should be shown by default
+    # in the 'Select Visualization Method' dialog. These defaults
+    # can be changed by editing DIGITS config option
+    # 'view_extension_list'
     {'class': boundingBox.Visualization, 'show': True},
     {'class': rawData.Visualization, 'show': True},
 ]
@@ -18,12 +21,13 @@ def get_default_extension():
     return rawData.Visualization
 
 
-def get_extensions():
+def get_extensions(show_all=False):
     """
     return set of data data extensions
     """
-    return [extension['class'] for extension
-            in view_extensions if extension['show']]
+    return [extension['class']
+            for extension in view_extensions
+            if show_all or extension['show']]
 
 
 def get_extension(extension_id):
