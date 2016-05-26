@@ -4,10 +4,13 @@ Table of Contents
 =================
 * [Introduction](#introduction)
 * [Dataset creation](#dataset-creation)
+    * [Using the Gradient Data Extension](#using-the-gradient-data-extension)
+    * [Alternative method: manually creating LMDB files](#alternative-method-manually-creating-lmdb-files)
 * [Model creation](#model-creation)
     * [Using Caffe](#using-caffe)
     * [Using Torch7](#using-torch7)
 * [Verification](#verification)
+    * [Visualizing the network output](#visualizing-the-network-output)
 
 ## Introduction
 
@@ -17,6 +20,61 @@ DIGITS may be used to train image regression models. This page will walk you thr
 (a linear image is an image that has constant gradients in the `x` and `y` directions - `x` and `y` gradients may be different though).
 
 ## Dataset Creation
+
+### Using the Gradient Data Extension
+
+Data extensions are thin user-defined plugins that may be used to import data into DIGITS.
+The Gradient Data Extension merely creates a number of linear images with random gradients.
+
+By default the Gradient data extension is not shown on the DIGITS home page.
+To enable the extension you may edit the DIGITS configuration.
+When prompted for a list of data and view extensions, type `A` to enable all available extensions:
+
+```sh
+$ ./digits-devserver -c
+...
+=============================== Data extensions ================================
+Available extensions:
+  ID='image-gradients' Title='Gradients'
+  ID='image-object-detection' Title='Object Detection'
+
+Input the IDs of the extensions you would like to use, separated by commas.
+
+  Suggested values:
+  (D*) [default] image-object-detection
+  (A)  [all]     image-gradients,image-object-detection
+  (N)  [none]    <NONE>
+>> A
+Using "image-gradients,image-object-detection"
+
+=============================== View extensions ================================
+Available extensions:
+  ID='image-bounding-boxes' Title='Bounding boxes'
+  ID='image-gradients' Title='Gradients'
+  ID='all-raw-data' Title='Raw Data'
+
+Input the IDs of the extensions you would like to use, separated by commas.
+
+  Suggested values:
+  (D*) [default] image-bounding-boxes,all-raw-data
+  (A)  [all]     image-bounding-boxes,image-gradients,all-raw-data
+  (N)  [none]    <NONE>
+>> A
+Using "image-bounding-boxes,image-gradients,all-raw-data"
+```
+
+Upon restarting DIGITS, the Gradient Data Extension will show on the home page as below.
+Select the `Datasets` tab then click `New Dataset>Images>Gradients`:
+
+![test image](select-gradient-data-extension.png)
+
+On the dataset creation page, default values are suitable to follow this example though you may elect to change any of these.
+In particular you may request larger images (e.g. `128x128`) to see the gradient more clearly during visualization.
+When you are ready, give the dataset a name then click `Create`:
+
+![create dataset using extension](create-dataset-using-extension.png)
+
+### Alternative method: manually creating LMDB files
 
 Non-classification datasets may be created in DIGITS through the "other" type of datasets. For these datasets, DIGITS expects the user to provide a set of LMDB databases.
 Note that since labels may be vectors (or matrices), it is not possible to use a single LMDB database to hold the image and its label. Therefore DIGITS expects one LMDB database for the images and a separate LMDB database for the labels.
@@ -38,7 +96,8 @@ See for example the `test.png` image which is created using gradients of 0.5 in 
 
 ![test image](test.png)
 
-Now that we have created the required files, we may create the dataset using DIGITS. On the main page, click `New Dataset\Images\Other`:
+Now that we have created the required files, we may create the dataset using DIGITS.
+On the main page, select the `Datasets` tab then click `New Dataset>Images>Other`:
 
 ![Create generic dataset](create-generic-dataset.png)
 
@@ -53,7 +112,8 @@ In the generic dataset creation form you need to provide the paths to:
 
 ## Model creation
 
-Now that you have a regression dataset to train on, you may create a regression model by clicking on `New Model\Images\Other` on the main page:
+Now that you have a regression dataset to train on, you will create a regression model.
+On the home page, select the `Models` tab then click `New Model>Images>Gradients` or `New Model>Images>Other`, depending on how you created the dataset.
 
 ![Create generic model](create-model.png)
 
@@ -92,6 +152,8 @@ layer {
 }
 ```
 
+You may lower the base learning rate to `0.001` to ensure a smoother learning curve.
+
 ### Using Torch7
 Under the `Custom Network` tab, select `Torch`. There you can paste the following network definition:
 ```lua
@@ -124,3 +186,20 @@ to the real gradients used to create the test image (`[0.5, 0.5]`).
 
 ![Original image](regression-output.png)
 
+### Visualizing the network output
+
+The Gradient View Extension may be used to visualize the network output.
+To this avail, in the `Select Visualization Method` section, select the `Gradients` extension:
+
+![Select gradient extension](select-gradient-view-extension.png)
+
+Use the validation database to test a list of images.
+The validation database may be found within the `val_db/features` sub-folder of the dataset job folder:
+
+![Test DB](test-db.png)
+
+Click `Test DB`.
+The output may be rendered as below.
+You will notice that the arrow is rightly pointing in the direction of the gradient (i.e. towards the light) on those images:
+
+![Test DB Inference](test-db-inference.png)
