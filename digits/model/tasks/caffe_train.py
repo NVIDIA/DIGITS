@@ -492,10 +492,9 @@ class CaffeTrainTask(TrainTask):
         except AttributeError:
             pass
 
-        # go with the suggested defaults
         if solver.solver_type not in unsupported:
             solver.momentum = 0.9
-        solver.weight_decay = 0.0005
+        solver.weight_decay = solver.base_lr / 100.0
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
