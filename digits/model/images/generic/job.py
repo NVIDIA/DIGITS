@@ -44,10 +44,10 @@ class GenericImageModelJob(ImageModelJob):
         download_files = [(self.path(filename), os.path.basename(filename))
                           for filename in model_files.values()]
 
-        if task.dataset.mean_file:
+        if task.dataset.get_mean_file():
             download_files.append((
-                task.dataset.path(task.dataset.mean_file),
-                os.path.basename(task.dataset.mean_file)))
+                task.dataset.path(task.dataset.get_mean_file()),
+                os.path.basename(task.dataset.get_mean_file())))
 
         # add snapshot
         download_files.append((snapshot_filename,
