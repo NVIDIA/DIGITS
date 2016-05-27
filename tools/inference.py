@@ -93,7 +93,7 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
                 snapshot_filename = f
                 break
     if not snapshot_filename:
-        raise InferenceError("Unable to find snapshot for epoch=%s" % repr(self.epoch))
+        raise InferenceError("Unable to find snapshot for epoch=%s" % repr(epoch))
 
     # retrieve image dimensions and resize mode
     image_dims = dataset.get_feature_dims()
