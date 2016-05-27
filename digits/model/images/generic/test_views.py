@@ -3,7 +3,9 @@ from __future__ import absolute_import
 
 import itertools
 import json
+import numpy as np
 import os
+import PIL.Image
 import re
 import shutil
 import tempfile
@@ -26,7 +28,9 @@ from urlparse import urlparse
 from digits import extensions
 from digits.config import config_value
 import digits.dataset.images.generic.test_views
+import digits.dataset.generic.test_views
 import digits.test_views
+from digits.utils import constants
 import digits.webapp
 
 # Must import after importing digit.config
@@ -129,11 +133,12 @@ end
     def network(cls):
         return cls.TORCH_NETWORK if cls.FRAMEWORK=='torch' else cls.CAFFE_NETWORK
 
-
-class BaseViewsTestWithDataset(BaseViewsTest,
-        digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
+class BaseViewsTestWithAnyDataset(BaseViewsTest):
     """
     Provides a dataset
+    This is a common interface to work with either "images/generic"
+    datasets or "generic" datasets. The dataset type to use is chosen
+    further down in the class hierarchy, see e.g. BaseViewsTestWithDataset
     """
 
     # Inherited classes may want to override these attributes
@@ -144,7 +149,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
 
     @classmethod
     def setUpClass(cls):
-        super(BaseViewsTestWithDataset, cls).setUpClass()
+        super(BaseViewsTestWithAnyDataset, cls).setUpClass()
         cls.created_models = []
 
     @classmethod
@@ -152,7 +157,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         # delete any created datasets
         for job_id in cls.created_models:
             cls.delete_model(job_id)
-        super(BaseViewsTestWithDataset, cls).tearDownClass()
+        super(BaseViewsTestWithAnyDataset, cls).tearDownClass()
 
     @classmethod
     def create_model(cls, learning_rate=None, **kwargs):
@@ -218,14 +223,22 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         cls.created_models.append(job_id)
         return job_id
 
+class BaseViewsTestWithDataset(BaseViewsTestWithAnyDataset,
+        digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
+    """
+    This inherits from BaseViewsTestWithAnyDataset and
+    digits.dataset.images.generic.test_views.BaseViewsTestWithDataset
+    in order to provide an interface to test models on "images/generic" datasets
+    """
+    pass
 
-class BaseViewsTestWithModel(BaseViewsTestWithDataset):
+class BaseViewsTestWithModelWithAnyDataset(BaseViewsTestWithAnyDataset):
     """
     Provides a model
     """
     @classmethod
     def setUpClass(cls):
-        super(BaseViewsTestWithModel, cls).setUpClass()
+        super(BaseViewsTestWithModelWithAnyDataset, cls).setUpClass()
         cls.model_id = cls.create_model(json=True)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
@@ -477,7 +490,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
 
         assert (job1.form_data == job2.form_data), 'form content does not match'
 
-class BaseTestCreated(BaseViewsTestWithModel):
+class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
     """
     Tests on a model that has already been created
     """
@@ -567,7 +580,8 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 'image regression result is wrong: %s' % data['outputs']['output']
 
     def test_infer_many(self):
-        textfile_images = '%s\n' % self.test_image
+        # use the same image twice to make a list of two images
+        textfile_images = '%s\n%s\n' % (self.test_image, self.test_image)
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
@@ -583,11 +597,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert headers is not None, 'unrecognized page format'
 
     def test_infer_db(self):
-        val_db_path = os.path.join(self.imageset_folder, 'val_images')
-
         rv = self.app.post(
                 '/models/images/generic/infer_db?job_id=%s' % self.model_id,
-                data = {'db_path': val_db_path}
+                data = {'db_path': self.val_db_path}
                 )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
@@ -632,15 +644,51 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert 'outputs' in data, 'invalid response'
 
     def test_infer_db_json(self):
-        val_db_path = os.path.join(self.imageset_folder, 'val_images')
-
         rv = self.app.post(
                 '/models/images/generic/infer_db.json?job_id=%s' % self.model_id,
-                data = {'db_path': val_db_path}
+                data = {'db_path': self.val_db_path}
                 )
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
         data = json.loads(rv.data)
         assert 'outputs' in data, 'invalid response'
+
+class BaseTestCreated(BaseTestCreatedWithAnyDataset,
+    digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
+    """
+    Tests on a model that has already been created with an "images/generic" dataset
+    """
+    pass
+
+class BaseTestCreatedWithGradientDataExtension(BaseTestCreatedWithAnyDataset,
+    digits.dataset.generic.test_views.BaseViewsTestWithDataset):
+    """
+    Tests on a model that has already been created with a "generic" dataset,
+    using the gradients extension in that instance
+    """
+    EXTENSION_ID = "image-gradients"
+
+    @classmethod
+    def setUpClass(cls):
+        super(BaseTestCreatedWithGradientDataExtension, cls).setUpClass()
+        if not hasattr(cls, 'imageset_folder'):
+            # Create test image
+            cls.imageset_folder = tempfile.mkdtemp()
+            image_size = 32
+            yy, xx = np.mgrid[:image_size,
+                              :image_size].astype('float')
+            xslope, yslope = 0.5, 0.5
+            a = xslope * 255 / image_size
+            b = yslope * 255 / image_size
+            test_image = a * (xx - image_size/2) + b * (yy - image_size/2) + 127.5
+            test_image = test_image.astype('uint8')
+            pil_img = PIL.Image.fromarray(test_image)
+            cls.test_image = os.path.join(cls.imageset_folder, 'test.png')
+            pil_img.save(cls.test_image)
+            # Save val DB path
+            json = cls.get_dataset_json()
+            cls.val_db_path = os.path.join(json["directory"], "val_db", "features")
+        cls.model_id = cls.create_model(json=True)
+        assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
 
 class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
@@ -799,6 +847,9 @@ class TestCaffeCreation(BaseTestCreation):
 class TestCaffeCreated(BaseTestCreated):
     FRAMEWORK = 'caffe'
 
+class TestCaffeCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension):
+    FRAMEWORK = 'caffe'
+
 class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'caffe'
 
@@ -815,6 +866,9 @@ class TestTorchCreation(BaseTestCreation):
     FRAMEWORK = 'torch'
 
 class TestTorchCreated(BaseTestCreated):
+    FRAMEWORK = 'torch'
+
+class TestTorchCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension):
     FRAMEWORK = 'torch'
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):

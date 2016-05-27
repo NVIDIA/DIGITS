@@ -69,6 +69,9 @@ class BaseViewsTestWithImageset(BaseViewsTest):
             # Create folder and LMDBs for all test classes
             BaseViewsTestWithImageset.imageset_folder = tempfile.mkdtemp()
             BaseViewsTestWithImageset.test_image = create_lmdbs(BaseViewsTestWithImageset.imageset_folder)
+            BaseViewsTestWithImageset.val_db_path = os.path.join(
+                BaseViewsTestWithImageset.imageset_folder,
+                'val_images')
         cls.created_datasets = []
 
     @classmethod
