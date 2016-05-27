@@ -98,6 +98,12 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         return job_id
 
     @classmethod
+    def get_dataset_json(cls):
+        rv = cls.app.get('/datasets/%s.json' % cls.dataset_id)
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+        return json.loads(rv.data)
+
+    @classmethod
     def setUpClass(cls, **kwargs):
         super(BaseViewsTestWithDataset, cls).setUpClass()
         cls.dataset_id = cls.create_dataset(json=True, **kwargs)
@@ -205,10 +211,8 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
         assert found, 'dataset not found in list'
 
     def test_dataset_json(self):
-        rv = self.app.get('/datasets/%s.json' % self.dataset_id)
-        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
-        assert content['id'] == self.dataset_id, 'expected different job_id'
+        content = self.get_dataset_json()
+        assert content['id'] == self.dataset_id, 'expected same job_id: %s != %s' % (content['id'], self.dataset_id)
 
     def test_edit_name(self):
         status = self.edit_job(
