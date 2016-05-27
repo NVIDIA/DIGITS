@@ -22,7 +22,6 @@ require 'Optimizer'
 --print 'processing options'
 
 opt = lapp[[
--m,--resizeMode (default squash) Resize mode (squash/crop/fill/half_crop) for the input test image, if it's dimensions differs from those of Train DB images.
 -t,--threads (default 8) number of threads
 -p,--type (default cuda) float or cuda
 -d,--devid (default 1) device ID (if using CUDA)

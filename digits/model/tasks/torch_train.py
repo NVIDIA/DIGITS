@@ -807,7 +807,6 @@ class TorchTrainTask(TrainTask):
                     '--testMany=yes',
                     '--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
                     '--image=%s' % str(temp_imglist_path),
-                    '--resizeMode=%s' % str(self.dataset.resize_mode),   # Here, we are using original images, so they will be resized in Torch code. This logic needs to be changed to eliminate the rework of resizing. Need to find a way to send python images array to Lua script efficiently
                     '--network=%s' % self.model_file.split(".")[0],
                     '--networkDirectory=%s' % self.job_dir,
                     '--snapshot=%s' % file_to_load,
