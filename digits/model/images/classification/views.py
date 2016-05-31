@@ -634,7 +634,7 @@ def top_n():
                     labels[i],
                     utils.image.embed_image_html(
                         utils.image.vis_square(np.array(result_images),
-                            colormap='white')
+                            colormap='Greys_r')
                         )
                     ))
 
