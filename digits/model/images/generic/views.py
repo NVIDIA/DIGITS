@@ -320,15 +320,21 @@ def infer_one():
     if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
         layers = 'all'
 
+    if 'dont_resize' in flask.request.form and flask.request.form['dont_resize']:
+        resize = False
+    else:
+        resize = True
+
     # create inference job
     inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "Infer One Image",
-                model       = model_job,
-                images      = [image_path],
-                epoch       = epoch,
-                layers      = layers
-                )
+        username= utils.auth.get_username(),
+        name= "Infer One Image",
+        model=model_job,
+        images=[image_path],
+        epoch=epoch,
+        layers=layers,
+        resize=resize,
+        )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -397,15 +403,21 @@ def infer_db():
     if 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
 
+    if 'dont_resize' in flask.request.form and flask.request.form['dont_resize']:
+        resize = False
+    else:
+        resize = True
+
     # create inference job
     inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "Infer Many Images",
-                model       = model_job,
-                images      = db_path,
-                epoch       = epoch,
-                layers      = 'none',
-                )
+        username=utils.auth.get_username(),
+        name="Infer Many Images",
+        model=model_job,
+        images=db_path,
+        epoch=epoch,
+        layers='none',
+        resize=resize,
+        )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -481,6 +493,11 @@ def infer_many():
     if 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
 
+    if 'dont_resize' in flask.request.form and flask.request.form['dont_resize']:
+        resize = False
+    else:
+        resize = True
+
     paths = []
 
     for line in image_list.readlines():
@@ -505,13 +522,14 @@ def infer_many():
 
     # create inference job
     inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "Infer Many Images",
-                model       = model_job,
-                images      = paths,
-                epoch       = epoch,
-                layers      = 'none'
-                )
+        username=utils.auth.get_username(),
+        name="Infer Many Images",
+        model=model_job,
+        images=paths,
+        epoch=epoch,
+        layers='none',
+        resize=resize,
+        )
 
     # schedule tasks
     scheduler.add_job(inference_job)

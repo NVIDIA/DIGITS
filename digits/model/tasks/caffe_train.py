@@ -39,6 +39,50 @@ CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
 
 @subclass
+class DigitsTransformer(caffe.io.Transformer):
+    """
+    A subclass of caffe.io.Transformer (an old-style class)
+    Handles cases when we don't want to resize inputs
+    """
+    def __init__(self, resize, **kwargs):
+        """
+        Arguments:
+        resize -- whether to resize inputs to the network default
+        """
+        self.resize = resize
+        caffe.io.Transformer.__init__(self, **kwargs)
+
+    def preprocess(self, in_, data):
+        """
+        Preprocess an image
+        See parent class for details
+        """
+        if not self.resize:
+            # update target input dimension such that no resize occurs
+            self.inputs[in_] = self.inputs[in_][:2] + data.shape[:2]
+            # do we have a mean?
+            if in_ in self.mean:
+                # resize mean if necessary
+                if self.mean[in_].size > 1:
+                    # we are doing mean image subtraction
+                    if self.mean[in_].size != data.size:
+                        # mean image size is different from data size
+                        # => we need to resize the mean image
+                        transpose = self.transpose.get(in_)
+                        if transpose is not None:
+                            # detranspose
+                            self.mean[in_] = self.mean[in_].transpose(
+                                np.argsort(transpose))
+                        self.mean[in_] = caffe.io.resize_image(
+                            self.mean[in_],
+                            data.shape[:2])
+                        if transpose is not None:
+                            # retranspose
+                            self.mean[in_] = self.mean[in_].transpose(transpose)
+        return caffe.io.Transformer.preprocess(self, in_, data)
+
+
+@subclass
 class Error(Exception):
     pass
 
@@ -1156,14 +1200,25 @@ class CaffeTrainTask(TrainTask):
         return False
 
     @override
-    def infer_one(self, data, snapshot_epoch=None, layers=None, gpu=None):
+    def infer_one(self,
+                  data,
+                  snapshot_epoch=None,
+                  layers=None,
+                  gpu=None,
+                  resize=True):
         return self.infer_one_image(data,
                 snapshot_epoch=snapshot_epoch,
                 layers=layers,
                 gpu=gpu,
+                resize=resize
                 )
 
-    def infer_one_image(self, image, snapshot_epoch=None, layers=None, gpu=None):
+    def infer_one_image(self,
+                        image,
+                        snapshot_epoch=None,
+                        layers=None,
+                        gpu=None,
+                        resize=True):
         """
         Run inference on one image for a generic model
         Returns (output, visualizations)
@@ -1183,7 +1238,8 @@ class CaffeTrainTask(TrainTask):
         # process image
         if image.ndim == 2:
             image = image[:,:,np.newaxis]
-        preprocessed = self.get_transformer().preprocess(
+
+        preprocessed = self.get_transformer(resize).preprocess(
                 'data', image)
 
         # reshape net input (if necessary)
@@ -1315,10 +1371,21 @@ class CaffeTrainTask(TrainTask):
         return (mean, std, [y, x, ticks])
 
     @override
-    def infer_many(self, data, snapshot_epoch=None, gpu=None):
-        return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
+    def infer_many(self,
+                   data,
+                   snapshot_epoch=None,
+                   gpu=None,
+                   resize=True):
+        return self.infer_many_images(data,
+                                      snapshot_epoch=snapshot_epoch,
+                                      gpu=gpu,
+                                      resize=resize)
 
-    def infer_many_images(self, images, snapshot_epoch=None, gpu=None):
+    def infer_many_images(self,
+                          images,
+                          snapshot_epoch=None,
+                          gpu=None,
+                          resize=True):
         """
         Returns a list of OrderedDict, one for each image
 
@@ -1337,7 +1404,7 @@ class CaffeTrainTask(TrainTask):
             else:
                 caffe_images.append(image)
 
-        data_shape = tuple(self.get_transformer().inputs['data'])[1:]
+        data_shape = tuple(self.get_transformer(resize).inputs['data'])[1:]
 
         if self.batch_size:
             data_shape = (self.batch_size,) + data_shape
@@ -1351,7 +1418,7 @@ class CaffeTrainTask(TrainTask):
             if net.blobs['data'].data.shape != new_shape:
                 net.blobs['data'].reshape(*new_shape)
             for index, image in enumerate(chunk):
-                net.blobs['data'].data[index] = self.get_transformer().preprocess(
+                net.blobs['data'].data[index] = self.get_transformer(resize).preprocess(
                         'data', image)
             o = net.forward()
 
@@ -1421,9 +1488,11 @@ class CaffeTrainTask(TrainTask):
 
         return self._caffe_net
 
-    def get_transformer(self):
+    def get_transformer(self, resize=True):
         """
-        Returns an instance of caffe.io.Transformer
+        Returns an instance of DigitsTransformer
+        Parameters:
+        - resize_shape: specify shape of network (or None for network default)
         """
         # check if already loaded
         if hasattr(self, '_transformer') and self._transformer is not None:
@@ -1453,9 +1522,10 @@ class CaffeTrainTask(TrainTask):
             elif self.use_mean == 'image':
                 mean_image = self.get_mean_image(self.dataset.path(self.dataset.get_mean_file()), True)
 
-        t = caffe.io.Transformer(
-                inputs = {'data': tuple(data_shape)}
-                )
+        t = DigitsTransformer(
+            inputs={'data': tuple(data_shape)},
+            resize=resize
+            )
 
         # transpose to (channels, height, width)
         t.set_transpose('data', (2,0,1))

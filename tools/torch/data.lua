@@ -194,8 +194,25 @@ local PreProcess = function(im, train, meanTensor, augOpt)
 
     -- Note :do any augmentation that directly changes pixel values before mean subtraction
     if meanTensor then
+        if meanTensor:nDimension() > 1 then
+            -- mean image subtraction - test whether sizes match
+            assert(meanTensor:nDimension() == im:nDimension(), 'Tensor dimension mismatch')
+            size_match = true
+            for i=1,im:nDimension() do
+                if meanTensor:size(i) ~= im:size(i) then size_match = false end
+            end
+            if not size_match then
+                -- we need to resize the mean image to the dimensions of the input sample
+                -- it is highly inefficient to do so therefore mean pixel subtraction is
+                -- preferred when working with variable image sizes
+                logmessage.display(1,'resizing mean: use mean pixel subtraction for better performance')
+                meanTensor = image.scale(meanTensor, im:size(3), im:size(2))
+            end
+        end
         for i=1,meanTensor:size(1) do
-            im[i]:add(-meanTensor[i])
+            -- mean *pixel* subtraction => meanTensor[i] is a scalar
+            -- mean *image* subtraction => meanTensor[i] is a tensor
+            im[i]:csub(meanTensor[i])
         end
     end
 
