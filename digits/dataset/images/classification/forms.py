@@ -66,8 +66,11 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 return True
         else:
             # make sure the filesystem path exists
+            # and make sure the filesystem path is absolute
             if not os.path.exists(field.data) or not os.path.isdir(field.data):
                 raise validators.ValidationError('Folder does not exist')
+            elif not os.path.isabs(field.data):
+                raise validators.ValidationError('Filesystem path is not absolute')
             else:
                 return True
 
