@@ -179,7 +179,9 @@ class DataIngestion(DataIngestionInterface):
         elif stage == constants.VAL_DB:
             if self.val_image_folder != '':
                 # load ground truth
-                self.load_ground_truth(self.val_label_folder)
+                self.load_ground_truth(
+                    self.val_label_folder,
+                    self.val_min_box_size)
                 # get validation image file names
                 return self.make_image_list(self.val_image_folder)
             else:
@@ -188,11 +190,11 @@ class DataIngestion(DataIngestionInterface):
         else:
             raise ValueError("Unknown stage: %s" % stage)
 
-    def load_ground_truth(self, folder):
+    def load_ground_truth(self, folder, min_box_size=None):
         """
         load ground truth from specified folder
         """
-        datasrc = GroundTruth(folder)
+        datasrc = GroundTruth(folder, min_box_size=min_box_size)
         datasrc.load_gt_obj()
         self.datasrc_annotation_dict = datasrc.objects_all
 

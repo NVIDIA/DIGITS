@@ -68,3 +68,9 @@
     {{ form.channel_conversion.tooltip }}
     {{ form.channel_conversion(class='form-control')}}
 </div>
+
+<div class="form-group{{mark_errors([form.val_min_box_size])}}">
+    {{ form.val_min_box_size.label }}
+    {{ form.val_min_box_size.tooltip }}
+    {{ form.val_min_box_size(class='form-control')}}
+</div>
