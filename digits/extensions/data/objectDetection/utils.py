@@ -163,7 +163,7 @@ class GroundTruth:
         files = os.listdir(self.label_dir)
         files = filter(lambda x: x.endswith(self.label_ext), files)
         if len(files) == 0:
-            raise exception('error: no label files found in', self.label_dir)
+            raise RuntimeError('error: no label files found in %s' % self.label_dir)
         for label_file in files:
             objects_per_image = list()
             with open( os.path.join(self.label_dir, label_file), 'rb') as flabel:
