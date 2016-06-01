@@ -3,8 +3,11 @@ from __future__ import absolute_import
 
 import json
 import os
+import tempfile
 
 from bs4 import BeautifulSoup
+import numpy as np
+import PIL.Image
 
 import digits.test_views
 from digits import extensions
@@ -52,6 +55,10 @@ class BaseViewsTestWithDataset(BaseViewsTest):
     Provides some functions
     """
 
+    IMAGE_WIDTH = 32
+    IMAGE_HEIGHT = 32
+    CHANNELS = 1
+
     @classmethod
     def create_dataset(cls, **kwargs):
         """
@@ -77,7 +84,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         if request_json:
             if rv.status_code != 200:
                 raise RuntimeError(
-                    'Model creation failed with %s' % rv.status_code)
+                    'Dataset creation failed with %s' % rv.status_code)
             return json.loads(rv.data)['id']
 
         # expect a redirect
@@ -103,6 +110,44 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         rv = cls.app.get('/datasets/%s.json' % cls.dataset_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         return json.loads(rv.data)
+
+    @classmethod
+    def get_entry_count(cls, stage):
+        json_data = cls.get_dataset_json()
+        for t in json_data['create_db_tasks']:
+            if t['stage'] == stage:
+                return t['entry_count']
+        return None
+
+    @classmethod
+    def get_feature_dims(cls):
+        json_data = cls.get_dataset_json()
+        return json_data['feature_dims']
+
+    @classmethod
+    def create_random_imageset(cls, **kwargs):
+        """
+        Create a folder of random grayscale images
+        """
+        num_images = kwargs.pop('num_images', 10)
+        image_width = kwargs.pop('image_width', 32)
+        image_height = kwargs.pop('image_height', 32)
+        if not hasattr(cls, 'imageset_folder'):
+            # create a temporary folder
+            cls.imageset_folder = tempfile.mkdtemp()
+            for i in xrange(num_images):
+                x = np.random.randint(
+                    low=0,
+                    high=256,
+                    size=(image_height, image_width))
+                x = x.astype('uint8')
+                pil_img = PIL.Image.fromarray(x)
+                filename = os.path.join(
+                    cls.imageset_folder,
+                    '%d.png' % i)
+                pil_img.save(filename)
+                if not hasattr(cls, 'test_image'):
+                    cls.test_image = filename
 
     @classmethod
     def setUpClass(cls, **kwargs):
@@ -248,6 +293,11 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
         # just make sure this doesn't return an error
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
 
+    def test_feature_dims(self):
+        dims = self.get_feature_dims()
+        assert dims == [self.IMAGE_HEIGHT, self.IMAGE_WIDTH, self.CHANNELS]
+
+
 ################################################################################
 # Test classes
 ################################################################################
@@ -268,7 +318,18 @@ class TestImageGradientCreation(GenericCreationTest):
 
     @classmethod
     def setUpClass(cls, **kwargs):
-        super(TestImageGradientCreation, cls).setUpClass(train_image_count=100)
+        super(TestImageGradientCreation, cls).setUpClass(
+            train_image_count=100,
+            val_image_count=20,
+            test_image_count=10,
+            image_width=cls.IMAGE_WIDTH,
+            image_height=cls.IMAGE_HEIGHT,
+            )
+
+    def test_entry_counts(self):
+        assert self.get_entry_count(constants.TRAIN_DB) == 100
+        assert self.get_entry_count(constants.VAL_DB) == 20
+        assert self.get_entry_count(constants.TEST_DB) == 10
 
 
 class TestImageGradientCreated(GenericCreatedTest):
@@ -276,7 +337,68 @@ class TestImageGradientCreated(GenericCreatedTest):
     Test that create datasets
     """
     EXTENSION_ID = "image-gradients"
+    IMAGE_WIDTH = 8
+    IMAGE_HEIGHT = 24
 
     @classmethod
     def setUpClass(cls, **kwargs):
-        super(TestImageGradientCreated, cls).setUpClass(train_image_count=100)
+        super(TestImageGradientCreated, cls).setUpClass(
+            image_width=cls.IMAGE_WIDTH,
+            image_height=cls.IMAGE_HEIGHT)
+
+
+class TestImageProcessingCreated(GenericCreatedTest):
+    """
+    Test Image processing extension
+    """
+    EXTENSION_ID = "image-processing"
+
+    NUM_IMAGES = 100
+    FOLDER_PCT_VAL = 10
+
+    @classmethod
+    def setUpClass(cls, **kwargs):
+        cls.create_random_imageset(
+            num_images=cls.NUM_IMAGES,
+            image_width=cls.IMAGE_WIDTH,
+            image_height=cls.IMAGE_HEIGHT)
+        super(TestImageProcessingCreated, cls).setUpClass(
+            feature_folder=cls.imageset_folder,
+            label_folder=cls.imageset_folder,
+            folder_pct_val=cls.FOLDER_PCT_VAL,
+            channel_conversion='L')
+
+    def test_entry_counts(self):
+        assert self.get_entry_count(constants.TRAIN_DB) == self.NUM_IMAGES * (1.-self.FOLDER_PCT_VAL/100.)
+        assert self.get_entry_count(constants.VAL_DB) == self.NUM_IMAGES * (self.FOLDER_PCT_VAL/100.)
+
+
+class TestImageProcessingCreatedWithSeparateValidationDirs(GenericCreatedTest):
+    """
+    Test Image processing extension, using separate fields for the train and validation folders
+    Use RGB channel conversion for this test
+    """
+    EXTENSION_ID = "image-processing"
+
+    NUM_IMAGES = 100
+    CHANNELS = 3
+    IMAGE_HEIGHT = 16
+    IMAGE_WIDTH = 64
+
+    @classmethod
+    def setUpClass(cls, **kwargs):
+        cls.create_random_imageset(
+            num_images=cls.NUM_IMAGES,
+            image_width=cls.IMAGE_WIDTH,
+            image_height=cls.IMAGE_HEIGHT)
+        super(TestImageProcessingCreatedWithSeparateValidationDirs, cls).setUpClass(
+            feature_folder=cls.imageset_folder,
+            label_folder=cls.imageset_folder,
+            has_val_folder='y',
+            validation_feature_folder=cls.imageset_folder,
+            validation_label_folder=cls.imageset_folder,
+            channel_conversion='RGB')
+
+    def test_entry_counts(self):
+        assert self.get_entry_count(constants.TRAIN_DB) == self.NUM_IMAGES
+        assert self.get_entry_count(constants.VAL_DB) == self.NUM_IMAGES
