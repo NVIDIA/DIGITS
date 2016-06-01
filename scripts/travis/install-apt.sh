@@ -30,6 +30,7 @@ sudo apt-get install -y --no-install-recommends \
     python-gevent \
     python-gflags \
     python-h5py \
+    python-matplotlib \
     python-mock \
     python-nose \
     python-numpy \
