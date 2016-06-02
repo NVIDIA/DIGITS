@@ -824,11 +824,16 @@ class CaffeTrainTask(TrainTask):
             if len(identifiers) == 1:
                 args.append('--gpu=%s' % identifiers[0])
             elif len(identifiers) > 1:
-                if config_value('caffe_root')['version'] < utils.parse_version('0.14.0-alpha'):
-                    # Prior to version 0.14, NVcaffe used the --gpus switch
-                    args.append('--gpus=%s' % ','.join(identifiers))
-                else:
+                if config_value('caffe_root')['flavor'] == 'NVIDIA':
+                    if config_value('caffe_root')['version'] < utils.parse_version('0.14.0-alpha'):
+                        # Prior to version 0.14, NVcaffe used the --gpus switch
+                        args.append('--gpus=%s' % ','.join(identifiers))
+                    else:
+                        args.append('--gpu=%s' % ','.join(identifiers))
+                elif config_value('caffe_root')['flavor'] == 'BVLC':
                     args.append('--gpu=%s' % ','.join(identifiers))
+                else:
+                    raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
         if self.pretrained_model:
             args.append('--weights=%s' % ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':'))))
         return args

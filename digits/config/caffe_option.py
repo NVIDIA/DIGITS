@@ -12,8 +12,10 @@ from . import config_option
 from . import prompt
 from digits import device_query
 from digits.utils import parse_version
+from digits.utils.errors import UnsupportedPlatformError
 
 class CaffeOption(config_option.FrameworkOption):
+
     @staticmethod
     def config_file_key():
         return 'caffe_root'
@@ -125,95 +127,139 @@ class CaffeOption(config_option.FrameworkOption):
         Arguments:
         executable -- path to a caffe executable
         """
-        minimum_version = parse_version(0,11,0)
-        version = cls.get_version(executable)
-
-        if version is None:
-            raise config_option.BadValue('Could not get version information from caffe at "%s". Are you using the NVIDIA fork?'
-                    % executable)
-        elif minimum_version > version:
-            raise config_option.BadValue('Required version "%s" is greater than "%s". Upgrade your installation.'
-                    % (
-                        '.'.join(str(n) for n in minimum_version),
-                        '.'.join(str(n) for n in version)
-                        ))
+        nvidia_minimum_version = '0.11.0'
+        info_dict = cls.get_info(executable)
+        if info_dict['ver_str'] is None:
+            raise config_option.BadValue('Your Caffe does not have version info.  Please upgrade it.')
         else:
-            return True
+            flavor = CaffeOption.get_flavor(info_dict['ver_str'])
+            if flavor == 'NVIDIA' and parse_version(nvidia_minimum_version) > parse_version(info_dict['ver_str']):
+                raise config_option.BadValue(
+                    'Required version "{min_ver}" is greater than "{running_ver}".  '\
+                    'Upgrade your installation.'\
+                    .format(min_ver = nvidia_minimum_version, running_ver = info_dict['ver_str']))
+            else:
+                return True
 
     @staticmethod
-    def get_version(executable):
+    def get_executable_version_string(executable):
         """
-        Returns the caffe version as a (MAJOR, MINOR, PATCH) tuple or None
+        Returns the caffe version as either a string from results of command line option '-version'
+        or None if '-version' not implemented
 
         Arguments:
         executable -- path to a caffe executable
         """
-        # TODO: check `caffe --version` when it's implemented
 
-        NVIDIA_SUFFIX = '-nv'
-
-        if platform.system() == 'Linux':
-            p = subprocess.Popen(['ldd', executable],
-                    stdout = subprocess.PIPE,
-                    stderr = subprocess.PIPE)
-            if p.wait():
-                raise config_option.BadValue(p.stderr.read().strip())
+        supported_platforms = ['Windows', 'Linux', 'Darwin']
+        version_string = None
+        if platform.system() in supported_platforms:
+            if platform.system() == 'Darwin':
+                version_string = '0.11.0'
             else:
-                libname = 'libcaffe'
-                caffe_line = None
-
-                # Search output for caffe library
-                for line in p.stdout:
-                    if libname in line:
-                        caffe_line = line
-                        break
-                if caffe_line is None:
-                    raise config_option.BadValue('%s not found in ldd output' % libname)
-
-                # Read the symlink for libcaffe from ldd output
-                symlink = caffe_line.split()[2]
-                filename = os.path.basename(os.path.realpath(symlink))
-
-                # Check for the nvidia suffix
-                if NVIDIA_SUFFIX not in filename:
-                    raise config_option.BadValue('Library at "%s" does not have expected suffix "%s". Are you using the NVIDIA/caffe fork?'
-                            % (filename, NVIDIA_SUFFIX))
-
-                # parse the version string
-                match = re.match(r'%s%s\.so\.(\S+)$'
-                        % (libname, NVIDIA_SUFFIX), filename)
-                if match:
-                    version_str = match.group(1)
-                    return parse_version(version_str)
+                p = subprocess.Popen([executable, '-version'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+                if p.wait():
+                    raise config_option.BadValue(p.stderr.read().strip())
                 else:
-                    return None
-
-        elif platform.system() == 'Darwin':
-            # XXX: guess and let the user figure out errors later
-            return parse_version(0,11,0)
-        elif platform.system() == 'Windows':
-            p = subprocess.Popen([executable,'-version'],
-                    stdout = subprocess.PIPE,
-                    stderr = subprocess.PIPE)
-            if p.wait():
-                raise config_option.BadValue(p.stderr.read().strip())
-            else:
-                pattern = 'version'
-                parsed_version = parse_version(0,11,0)
-                for line in p.stdout:
-                    if pattern in line:
-                        try:
-                            # if CAFFE for Windows is built with properly formatted version string
-                            parsed_version = parse_version(line[line.find(pattern)+len(pattern):].rstrip())
-                        except ValueError:
-                            # what follows "version" is "CAFFE_VERSION" or some unrecognized string
-                            pass
-                        finally:
+                    pattern = 'version'
+                    for line in p.stdout:
+                        if pattern in line:
+                            version_string = line[line.find(pattern) + len(pattern)+1:].rstrip()
                             break
-                return parsed_version
+                    try:
+                        parse_version(version_string)
+                    except ValueError: #version_string is either ill-formatted or 'CAFFE_VERSION'
+                        version_string = None
+            return version_string
         else:
-            print 'WARNING: platform "%s" not supported' % platform.system()
-            return None
+            raise UnsupportedPlatformError('platform "%s" not supported' % platform.system())
+
+    @staticmethod
+    def get_linked_library_version_string(executable):
+        """
+        Returns the information about executable's linked library name version
+        or None if error
+
+        Arguments:
+        executable -- path to a caffe executable
+        """
+
+        version_string = None
+
+        p = subprocess.Popen(['ldd', executable],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        if p.wait():
+            raise config_option.BadValue(p.stderr.read().strip())
+        libname = 'libcaffe'
+        caffe_line = None
+
+        # Search output for caffe library
+        for line in p.stdout:
+            if libname in line:
+                caffe_line = line
+                break
+        if caffe_line is None:
+            raise config_option.BadValue('%s not found in ldd output' % libname)
+
+        # Read the symlink for libcaffe from ldd output
+        symlink = caffe_line.split()[2]
+        filename = os.path.basename(os.path.realpath(symlink))
+
+        # parse the version string
+        match = re.match(r'%s(.*)\.so\.(\S+)$'
+                         % (libname), filename)
+        if match:
+            version_string = match.group(2)
+        return version_string
+
+    @staticmethod
+    def get_flavor(ver_str):
+        """
+        Returns the information about caffe library enhancement (NVIDIA or BVLC)
+
+        Arguments:
+        ver_str -- version string that can identify enhancement flavor
+        """
+        if parse_version(0,99,0) > parse_version(ver_str) > parse_version(0,9,0):
+            return 'NVIDIA'
+        else:
+            return 'BVLC'
+
+    @staticmethod
+    def get_version_string(executable):
+        """
+        Returns the caffe version as a string from executable or linked library name
+
+        Arguments:
+        executable -- path to a caffe executable
+        """
+
+        version_string = CaffeOption.get_executable_version_string(executable)
+        if not version_string and platform.system() in ['Linux', 'Darwin']:
+            version_string = CaffeOption.get_linked_library_version_string(executable)
+        return version_string
+
+    @staticmethod
+    def get_info(executable):
+        """
+        Returns the caffe info a dict {'ver_str', 'flavor'}
+            values of dict are None if unable to get version.
+
+        Arguments:
+        executable -- path to a caffe executable
+        """
+        try:
+            version_string = CaffeOption.get_version_string(executable)
+        except UnsupportedPlatformError:
+            return {'ver_str': None, 'flavor': None}
+
+        if version_string:
+            return {'ver_str': version_string, 'flavor': CaffeOption.get_flavor(version_string)}
+        else:
+            return {'ver_str': None, 'flavor': None}
 
     def _set_config_dict_value(self, value):
         if not value:
@@ -226,21 +272,24 @@ class CaffeOption(config_option.FrameworkOption):
             else:
                 executable = os.path.join(value, 'build', 'tools', 'caffe')
 
-            version = self.get_version(executable)
-
+            info_dict = self.get_info(executable)
+            version = parse_version(info_dict['ver_str'])
             if version >= parse_version(0,12):
                 multi_gpu = True
             else:
                 multi_gpu = False
 
+            flavor = info_dict['flavor']
             # TODO: ask caffe for this information
             cuda_enabled = len(device_query.get_devices()) > 0
 
             self._config_dict_value = {
                     'executable':   executable,
                     'version':      version,
+                    'ver_str':      info_dict['ver_str'],
                     'multi_gpu':    multi_gpu,
                     'cuda_enabled': cuda_enabled,
+                    'flavor':       flavor
                     }
 
     def apply(self):
