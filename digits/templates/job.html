@@ -64,10 +64,32 @@ socket.on('task update', function (msg) {
             showExplorationLink(msg['task']);
         }
         else if (msg['update'] == 'combined_graph') {
-            drawCombinedGraph(msg['data']);
+          window.Data1 = formatData(msg['data']);
+
+          if (_.isUndefined(window.Data2)){
+            window.Data2 = {
+              data: [{data: [], label: "lr", title: "Learning Rate"}],
+              titles: ["Learning Rate"]
+            };
+          }
+
+          if (window.charts.length < 1){
+            buildCharts("#graph",window.Data1,window.Data2,300);
+          }else{
+            updateCharts(window.Data1,window.Data2);
+          }
+
         }
         else if (msg['update'] == 'lr_graph') {
-            drawLRGraph(msg['data']);
+          window.Data2 = formatData(msg['data']);
+          if (_.isUndefined(window.Data1)){return;}
+
+          if (window.charts.length < 1){
+            buildCharts("#graph",window.Data1,window.Data2,300);
+          }else{
+            updateCharts(window.Data1,window.Data2);
+          }
+
         }
         else if (msg['update'] == 'snapshots') {
             updateSnapshotList(msg['data']);
@@ -328,4 +350,3 @@ $('#delete-job').on('click', function(event) {
 </div>
 
 {% endblock %}
-

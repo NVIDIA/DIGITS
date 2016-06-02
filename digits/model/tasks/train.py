@@ -234,7 +234,8 @@ class TrainTask(Task):
         self.logger.debug('Training %s%% complete.' % round(100 * self.current_epoch/self.train_epochs,2))
 
         # loss graph data
-        data = self.combined_graph_data()
+        data = self.combined_graph_data(False)
+
         if data:
             socketio.emit('task update',
                     {
@@ -246,22 +247,21 @@ class TrainTask(Task):
                     room=self.job_id,
                     )
 
-            if data['columns']:
-                # isolate the Loss column data for the sparkline
-                graph_data = data['columns'][0][1:]
-                socketio.emit('task update',
-                              {
-                                  'task': self.html_id(),
-                                  'job_id': self.job_id,
-                                  'update': 'combined_graph',
-                                  'data': graph_data,
-                              },
-                              namespace='/jobs',
-                              room='job_management',
-                          )
+            # isolate the Loss column data for the sparkline
+            graph_data = data['loss-train']['data']
+            socketio.emit('task update',
+                          {
+                              'task': self.html_id(),
+                              'job_id': self.job_id,
+                              'update': 'combined_graph',
+                              'data': graph_data
+                          },
+                          namespace='/jobs',
+                          room='job_management',
+                      )
 
         # lr graph data
-        data = self.lr_graph_data()
+        data = self.lr_graph_data(False)
         if data:
             socketio.emit('task update',
                     {
@@ -283,7 +283,7 @@ class TrainTask(Task):
             return
 
         # loss graph data
-        data = self.combined_graph_data()
+        data = self.combined_graph_data(False)
         if data:
             socketio.emit('task update',
                     {
@@ -429,7 +429,7 @@ class TrainTask(Task):
         self._labels = labels
         return self._labels
 
-    def lr_graph_data(self):
+    def lr_graph_data(self, cull=True):
         """
         Returns learning rate data formatted for a C3.js graph
 
@@ -439,20 +439,31 @@ class TrainTask(Task):
         if not self.train_outputs or 'epoch' not in self.train_outputs or 'learning_rate' not in self.train_outputs:
             return None
 
+        plot_data = {}
         # return 100-200 values or fewer
-        stride = max(len(self.train_outputs['epoch'].data)/100,1)
-        e = ['epoch'] + self.train_outputs['epoch'].data[::stride]
-        lr = ['lr'] + self.train_outputs['learning_rate'].data[::stride]
+        if cull:
+            # max 200 data points
+            stride = max(len(self.train_outputs['epoch'].data)/100,1)
 
-        return {
-                'columns': [e, lr],
-                'xs': {
-                    'lr': 'epoch'
-                    },
-                'names': {
-                    'lr': 'Learning Rate'
-                    },
-                }
+        else:
+            # return all data
+            stride = 1
+
+
+        plot_data['epoch-lr'] = {
+            'data': self.train_outputs['epoch'].data[::stride],
+            'isX': 'true'
+        }
+
+        plot_data['lr'] = {
+            'data': self.train_outputs['learning_rate'].data[::stride],
+            'title': 'Learning Rate',
+            'xlabel': 'epoch-lr',
+            'ylabel': 'y2',
+            'isX': 'false'
+        }
+
+        return plot_data
 
     def combined_graph_data(self, cull=True):
         """
@@ -461,12 +472,8 @@ class TrainTask(Task):
         Keyword arguments:
         cull -- if True, cut down the number of data points returned to a reasonable size
         """
-        data = {
-                'columns': [],
-                'xs': {},
-                'axes': {},
-                'names': {},
-                }
+
+        plot_data = {};
 
         added_train_data = False
         added_val_data = False
@@ -479,22 +486,37 @@ class TrainTask(Task):
                 # return all data
                 stride = 1
             for name, output in self.train_outputs.iteritems():
+
                 if name not in ['epoch', 'learning_rate']:
                     col_id = '%s-train' % name
-                    data['xs'][col_id] = 'train_epochs'
-                    data['names'][col_id] = '%s (train)' % name
+                    title  = '%s' % name
+                    plot_data[col_id] = {
+                        'title': title,
+                        'ylabel': '',
+                        'xlabel': 'train_epochs',
+                        'data': [],
+                        'isX': 'false'
+                    }
+
                     if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
-                        data['columns'].append([col_id] + [
+                        plot_data[col_id]['data'] = [
                             (100*x if x is not None else 'none')
-                            for x in output.data[::stride]])
-                        data['axes'][col_id] = 'y2'
+                            for x in output.data[::stride]]
+                        plot_data[col_id]['ylabel'] = 'y1'
+
                     else:
-                        data['columns'].append([col_id] + [
+                        plot_data[col_id]['data']= [
                             (x if x is not None else 'none')
-                            for x in output.data[::stride]])
+                            for x in output.data[::stride]]
+                        plot_data[col_id]['ylabel'] = 'y1'
                     added_train_data = True
+
         if added_train_data:
-            data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
+            plot_data['train_epochs'] = {
+                'data': [],
+                'isX': 'true'
+            }
+            plot_data['train_epochs']['data'] = self.train_outputs['epoch'].data[::stride]
 
         if self.val_outputs and 'epoch' in self.val_outputs:
             if cull:
@@ -506,23 +528,36 @@ class TrainTask(Task):
             for name, output in self.val_outputs.iteritems():
                 if name not in ['epoch']:
                     col_id = '%s-val' % name
-                    data['xs'][col_id] = 'val_epochs'
-                    data['names'][col_id] = '%s (val)' % name
+                    title  = '%s' % name
+                    plot_data[col_id] = {
+                        'title': title,
+                        'ylabel': '',
+                        'xlabel': 'val_epochs',
+                        'data': [],
+                        'isX': 'false'
+                    }
+
                     if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
-                        data['columns'].append([col_id] + [
+                        plot_data[col_id]['data'] = [
                             (100*x if x is not None else 'none')
-                            for x in output.data[::stride]])
-                        data['axes'][col_id] = 'y2'
+                            for x in output.data[::stride]]
+                        plot_data[col_id]['ylabel'] = 'y1'
+
                     else:
-                        data['columns'].append([col_id] + [
+                        plot_data[col_id]['data'] = [
                             (x if x is not None else 'none')
-                            for x in output.data[::stride]])
+                            for x in output.data[::stride]]
+                        plot_data[col_id]['ylabel'] = 'y1'
                     added_val_data = True
         if added_val_data:
-            data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
+            plot_data['val_epochs'] = {
+                'data': [],
+                'isX': 'true'
+            }
+            plot_data['val_epochs']['data'] = self.val_outputs['epoch'].data[::stride]
 
         if added_train_data:
-            return data
+            return plot_data
         else:
             # return None if only validation data exists
             # helps with ordering of columns in graph
@@ -546,4 +581,3 @@ class TrainTask(Task):
         return text description of model
         """
         raise NotImplementedError()
-

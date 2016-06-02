@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block head %}
-<script src="{{ url_for('static', filename='js/model-graphs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/collapsibleCharts.js') }}"></script>
 {% endblock %}
 
 {% block nav %}
@@ -21,19 +21,19 @@
 <div class="row">
     <div class="col-sm-12">
         <div class="well">
-            {% set combined_graph_data = job.train_task().combined_graph_data(cull=False) %}
-            {% if combined_graph_data %}
-            <div id="combined-graph" style="height:800px;width:100%;background:white"></div>
-            <script>
-                drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
-            </script>
-            {% else %}
-            <i>No data.</i>
-            {% endif %}
+          <div id="graph"></div>
+          {% set combined_graph_data = job.train_task().combined_graph_data() %}
+          {% set lr_graph_data = job.train_task().lr_graph_data() %}
+          {% if combined_graph_data and lr_graph_data %}
+          <script>
+              var allData = {% autoescape false %}{{combined_graph_data}}{% endautoescape %};
+              var lrData  = {% autoescape false %}{{lr_graph_data}}{% endautoescape %};
+              largeGraph(allData,lrData);
+          </script>
+          {% endif %}
 
         </div>
     </div>
 </div>
 
 {% endblock %}
-
