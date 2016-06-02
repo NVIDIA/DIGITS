@@ -145,17 +145,18 @@ class GroundTruth:
     """ this class load the ground truth
     """
 
-    def __init__(self, label_dir, label_ext='.txt', label_delimiter=' '):
+    def __init__(self, label_dir, label_ext='.txt', label_delimiter=' ', min_box_size=None):
         self.label_dir = label_dir
         self.label_ext = label_ext  # extension of label files
         self.label_delimiter = label_delimiter  # space is used as delimiter in label files
         self._objects_all = dict()  # positive bboxes across images
+        self.min_box_size = min_box_size
 
     def update_objects_all(self, _key, _bboxes):
         if _bboxes:
             self._objects_all[_key] = _bboxes
         else:
-            self._objects_all[_key] = none
+            self._objects_all[_key] = []
 
     def load_gt_obj(self):
 
@@ -187,6 +188,12 @@ class GroundTruth:
                     gt.locz = float(row[13])
                     gt.roty = float(row[14])
                     gt.set_type()
+                    box_dimensions = [gt.bbox.xr - gt.bbox.xl, gt.bbox.yb - gt.bbox.yt]
+                    if self.min_box_size is not None:
+                        if not all(x >= self.min_box_size for x in box_dimensions):
+                            # object is smaller than threshold => set to "DontCare"
+                            gt.stype = ''
+                            gt.object = ObjectType.Dontcare
                     objects_per_image.append(gt)
                     key = int(os.path.splitext(label_file)[0])
                 self.update_objects_all(key, objects_per_image)

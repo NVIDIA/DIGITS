@@ -100,7 +100,7 @@ class DatasetForm(Form):
         )
 
     channel_conversion = utils.forms.SelectField(
-        'Channel conversion',
+        u'Channel conversion',
         choices=[
             ('RGB', 'RGB'),
             ('L', 'Grayscale'),
@@ -108,4 +108,16 @@ class DatasetForm(Form):
             ],
         default='RGB',
         tooltip="Perform selected channel conversion."
+        )
+
+    val_min_box_size = utils.forms.IntegerField(
+        u'Minimum box size (in pixels) for validation set',
+        default='25',
+        validators=[
+            validators.DataRequired(),
+            validators.NumberRange(min=0),
+            ],
+        tooltip="Retain only the boxes that are larger than the specified "
+                "value in both dimensions. This only affects objects in "
+                "the validation set. Enter 0 to disable this threshold."
         )
