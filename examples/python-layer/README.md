@@ -73,8 +73,8 @@ Find those layers (a few lines from the top) and insert this snippet of prototxt
 layer {
   name: "blank_square"
   type: "Python"
-  bottom: "scale"
-  top: "scale"
+  bottom: "scaled"
+  top: "scaled"
   python_param {
     module: "digits_python_layers"
     layer: "BlankSquareLayer"

@@ -1,0 +1,22 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<small>Compute gradient magnitude and direction</small>
+
+<div class="form-group{{mark_errors([form.arrow_color])}}">
+    {{ form.arrow_color.label }}
+    {{ form.arrow_color.tooltip }}
+    {{ form.arrow_color(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.arrow_size])}}">
+    {{ form.arrow_size.label }}
+    {{ form.arrow_size.tooltip }}
+    {{ form.arrow_size(class='form-control') }}
+</div>
+
+
+

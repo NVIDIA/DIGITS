@@ -21,6 +21,7 @@ from digits import utils
 from digits.config import config_value
 from digits.status import Status
 from digits.utils import subclass, override, constants
+from digits.utils.filesystem import tail
 
 # Must import after importing digit.config
 import caffe
@@ -428,7 +429,7 @@ class CaffeTrainTask(TrainTask):
 
         # Batch accumulation
         from digits.frameworks import CaffeFramework
-        if CaffeFramework().can_accumulate_gradients():
+        if self.batch_accumulation and CaffeFramework().can_accumulate_gradients():
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
@@ -491,10 +492,9 @@ class CaffeTrainTask(TrainTask):
         except AttributeError:
             pass
 
-        # go with the suggested defaults
         if solver.solver_type not in unsupported:
             solver.momentum = 0.9
-        solver.weight_decay = 0.0005
+        solver.weight_decay = solver.base_lr / 100.0
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
@@ -645,7 +645,7 @@ class CaffeTrainTask(TrainTask):
 
         # Batch accumulation
         from digits.frameworks import CaffeFramework
-        if CaffeFramework().can_accumulate_gradients():
+        if self.batch_accumulation and CaffeFramework().can_accumulate_gradients():
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
@@ -708,10 +708,9 @@ class CaffeTrainTask(TrainTask):
         except AttributeError:
             pass
 
-        # go with the suggested defaults
         if solver.solver_type not in unsupported:
             solver.momentum = 0.9
-        solver.weight_decay = 0.0005
+        solver.weight_decay = solver.base_lr / 100.0
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
@@ -941,7 +940,7 @@ class CaffeTrainTask(TrainTask):
     @override
     def after_runtime_error(self):
         if os.path.exists(self.path(self.CAFFE_LOG)):
-            output = subprocess.check_output(['tail', '-n40', self.path(self.CAFFE_LOG)])
+            output = tail(self.path(self.CAFFE_LOG), 40)
             lines = []
             for line in output.split('\n'):
                 # parse caffe header

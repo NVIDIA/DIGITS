@@ -5,6 +5,7 @@ import glob
 import json
 import platform
 import traceback
+import os
 
 import flask
 from flask.ext.socketio import join_room, leave_room
@@ -82,7 +83,7 @@ def home():
             }
 
         # add dataset options for known dataset extensions
-        data_extensions = extensions.data.get_extensions()
+        data_extensions = config_value('data_extension_list')
         for extension in data_extensions:
             ext_category = extension.get_category()
             ext_title = extension.get_title()
@@ -467,6 +468,11 @@ def path_autocomplete():
 
     """
     path = flask.request.args.get('query','')
+
+    if not os.path.isabs(path) :
+        # Only allow absolute paths by prepending forward slash
+        path = os.path.sep + path
+
     suggestions = glob.glob(path+"*")
     if platform.system() == 'Windows':
         # on windows, convert backslashes with forward slashes

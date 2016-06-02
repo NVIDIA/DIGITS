@@ -2,3 +2,4 @@
 from __future__ import absolute_import
 
 from .data import *
+from .view import *
