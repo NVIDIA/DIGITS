@@ -13,6 +13,7 @@ import time
 
 from google.protobuf import text_format
 import numpy as np
+import platform
 import scipy
 
 from .train import TrainTask
@@ -785,6 +786,32 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def task_arguments(self, resources, env):
+        """
+        Generate Caffe command line options or, in certain cases, pycaffe Python script
+        Returns a list of strings
+
+        Arguments:
+        resources -- dict of available task resources
+        env -- dict of environment variables
+        """
+        if platform.system() == 'Windows':
+            if any([layer.type == 'Python' for layer in self.network.layer]):
+                # Arriving here because the network includes Python Layer and we are running inside Windows.
+                # We can not invoke caffe.exe and need to fallback to pycaffe
+                # https://github.com/Microsoft/caffe/issues/87
+                # TODO: Remove this once caffe.exe works fine with Python Layer
+                win_python_layer_gpu_id = None
+                if 'gpus' in resources:
+                    n_gpus = len(resources['gpus'])
+                    if n_gpus > 1:
+                        raise Exception('Please select single GPU when running in Windows with Python layer.')
+                    elif n_gpus == 1:
+                        win_python_layer_gpu_id = resources['gpus'][0][0]
+                # We know which GPU to use, call helper to create the script
+                return self._pycaffe_args(win_python_layer_gpu_id)
+
+        # Not in Windows, or in Windows but no Python Layer
+        # This is the normal path
         args = [config_value('caffe_root')['executable'],
                 'train',
                 '--solver=%s' % self.path(self.solver_file),
@@ -804,7 +831,33 @@ class CaffeTrainTask(TrainTask):
                     args.append('--gpu=%s' % ','.join(identifiers))
         if self.pretrained_model:
             args.append('--weights=%s' % ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':'))))
+        return args
 
+
+    def _pycaffe_args(self, gpu_id):
+        """
+        Helper to generate pycaffe Python script
+        Returns a list of strings
+
+        Arguments:
+        gpu_id -- the GPU device id to use
+        """
+        # TODO: Remove this once caffe.exe works fine with Python Layer
+        gpu_script = "caffe.set_device({id});".format(id=gpu_id) if gpu_id else ""
+        if self.pretrained_model:
+            weight_files = ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':')))
+            loading_script = "solv.net.copy_from('{weight}');".format(weight=weight_files)
+        else:
+            loading_script = ""
+        command_script =\
+            "import caffe;" \
+            "{gpu_script}" \
+            "solv=caffe.{solver_type}Solver('{solver_file}');" \
+            "{loading_script}" \
+            "solv.solve()" \
+            .format(gpu_script=gpu_script, solver_type=self.solver_type,
+                    solver_file = self.solver_file, loading_script=loading_script)
+        args = ['python -c '+ '\"' + command_script + '\"']
         return args
 
     @override

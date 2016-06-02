@@ -184,7 +184,7 @@ class Task(StatusCls):
         self.before_run()
 
         env = os.environ.copy()
-        args = self.task_arguments(resources, env )
+        args = self.task_arguments(resources, env)
         if not args:
             self.logger.error('Could not create the arguments for Popen')
             self.status = Status.ERROR
@@ -199,6 +199,12 @@ class Task(StatusCls):
 
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
+
+        #https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
+        if platform.system() == 'Windows':
+            args = ' '.join(args)
+        self.logger.info('Task subprocess args: {}'.format(args))
+
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
