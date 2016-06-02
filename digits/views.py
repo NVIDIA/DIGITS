@@ -119,6 +119,62 @@ def home():
             )
 
 
+def json_dict(job, model_output_fields):
+    d = {
+        'id': job.id(),
+        'name': job.name(),
+        'status': job.status_of_tasks().name,
+        'status_css': job.status_of_tasks().css,
+        'submitted': job.status_history[0][1],
+        'elapsed': job.runtime_of_tasks(),
+    }
+
+    if 'train_db_task' in dir(job):
+        d.update({
+            'backend': job.train_db_task().backend,
+        })
+
+    if 'train_task' in dir(job):
+        d.update({
+            'framework': job.train_task().get_framework_id(),
+        })
+
+        for prefix, outputs in (('train', job.train_task().train_outputs),
+                               ('val', job.train_task().val_outputs)):
+            for key in outputs.keys():
+                data = outputs[key].data
+                if len(data) > 0:
+                    key = '%s (%s) ' % (key, prefix)
+                    model_output_fields.add(key + 'last')
+                    model_output_fields.add(key + 'min')
+                    model_output_fields.add(key + 'max')
+                    d.update({key + 'last': data[-1]})
+                    d.update({key + 'min': min(data)})
+                    d.update({key + 'max': max(data)})
+
+        if (job.train_task().combined_graph_data() and
+            'columns' in job.train_task().combined_graph_data()):
+            d.update({
+                'sparkline': job.train_task().combined_graph_data()['columns'][0][1:],
+            })
+
+    if 'get_progress' in dir(job):
+        d.update({
+            'progress': int(round(100*job.get_progress())),
+        })
+
+    if hasattr(job, 'dataset_id'):
+        d.update({
+            'dataset_id': job.dataset_id,
+        })
+
+    if isinstance(job, dataset.DatasetJob):
+        d.update({ 'type': 'dataset' })
+    if isinstance(job, model.ModelJob):
+        d.update({ 'type': 'model' })
+
+    return d
+
 @blueprint.route('/completed_jobs.json', methods=['GET'])
 def completed_jobs():
     """
@@ -130,40 +186,30 @@ def completed_jobs():
     """
     completed_datasets  = get_job_list(dataset.DatasetJob, False)
     completed_models    = get_job_list(model.ModelJob, False)
+    running_datasets  = get_job_list(dataset.DatasetJob, True)
+    running_models    = get_job_list(model.ModelJob, True)
 
-    def json_dict(job):
-        d = {
-            'id': job.id(),
-            'name': job.name(),
-            'status': job.status_of_tasks().name,
-            'status_css': job.status_of_tasks().css,
-            'submitted': job.status_history[0][1],
-            'elapsed': job.runtime_of_tasks(),
-        }
-
-        if 'train_db_task' in dir(job):
-            d.update({
-                'backend': job.train_db_task().backend,
-            })
-
-        if 'train_task' in dir(job):
-            d.update({
-                'framework': job.train_task().get_framework_id(),
-            })
-
-        if hasattr(job, 'dataset_id'):
-            d.update({
-                'dataset_id': job.dataset_id,
-            })
-
-        return d
-
+    model_output_fields = set()
     data = {
-        'datasets': [ json_dict(j) for j in completed_datasets ],
-        'models': [ json_dict(j) for j in completed_models ],
+        'running': [json_dict(j, model_output_fields) for j in running_datasets + running_models],
+        'datasets': [json_dict(j, model_output_fields) for j in completed_datasets],
+        'models': [json_dict(j, model_output_fields) for j in completed_models],
+        'model_output_fields': sorted(list(model_output_fields)),
     }
 
     return flask.jsonify(data)
+
+@blueprint.route('/jobs/<job_id>/table_data.json', methods=['GET'])
+def job_table_data(job_id):
+    """
+    Get the job data for the front page tables
+    """
+    job = scheduler.get_job(job_id)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
+    model_output_fields = set()
+    return flask.jsonify({'job': json_dict(job, model_output_fields)})
 
 def get_job_list(cls, running):
     return sorted(
@@ -329,17 +375,14 @@ def delete_jobs():
         try:
             job = scheduler.get_job(job_id)
             if job is None:
-                print '%s not found' % job_id
                 not_found += 1
                 continue
 
             if not utils.auth.has_permission(job, 'delete'):
-                print 'delete %s forbidden' % job_id
                 forbidden += 1
                 continue
 
             if not scheduler.delete_job(job_id):
-                print 'delete %s failed' % job_id
                 failed += 1
                 continue
         except Exception as e:
@@ -360,6 +403,54 @@ def delete_jobs():
         raise werkzeug.exceptions.BadRequest(error)
 
     return 'Jobs deleted.'
+
+@blueprint.route('/abort_jobs', methods=['POST'])
+@utils.auth.requires_login(redirect=False)
+def abort_jobs():
+    """
+    Aborts a list of jobs
+    """
+    not_found = 0
+    forbidden = 0
+    failed = 0
+    job_ids = flask.request.form.getlist('job_ids[]')
+    print job_ids
+    for job_id in job_ids:
+        print job_id
+
+        try:
+            job = scheduler.get_job(job_id)
+            if job is None:
+                not_found += 1
+                continue
+
+            if not utils.auth.has_permission(job, 'abort'):
+                forbidden += 1
+                continue
+
+            if not scheduler.abort_job(job_id):
+                failed += 1
+                continue
+
+        except Exception as e:
+            error.append(e)
+            pass
+
+    error = []
+    if not_found:
+        error.append('%d job%s not found.' % (not_found, '' if not_found == 1 else 's'))
+
+    if forbidden:
+        error.append('%d job%s not permitted to be aborted.' % (forbidden, '' if forbidden == 1 else 's'))
+
+    if failed:
+        error.append('%d job%s failed to abort.' % (failed, '' if failed == 1 else 's'))
+
+    if len(error) > 0:
+        error = ' '.join(error)
+        raise werkzeug.exceptions.BadRequest(error)
+
+    return 'Jobs aborted.'
 
 @blueprint.route('/datasets/<job_id>/abort', methods=['POST'])
 @blueprint.route('/models/<job_id>/abort', methods=['POST'])

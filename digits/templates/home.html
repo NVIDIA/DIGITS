@@ -7,9 +7,15 @@
 {% block head %}
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.time_filters.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/table_selection.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ngStorage.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.sparkline.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/home_app.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/table_selection.css') }}">
+
+{% with namespace = "/jobs" %}
+    {% set room = "job_management" %}
+    {% include 'socketio.html' %}
+{% endwith %}
 {% endblock %}
 
 {% block content %}
@@ -25,74 +31,221 @@
 
 {{ print_flashes() }}
 
-{% include 'job_management.html' %}
+<style>
+ #ruler { visibility: hidden; white-space: nowrap; }
+ .dropdown-menu {
+     width: 200px !important;
+ }
+</style>
+<span id="ruler"></span>
+<div class="row"
+     id="all-jobs"
+     ng-app="home_app"
+     ng-controller="all_jobs_controller as jc"
+     ng-click="deselect_all();">
+    {[jc.running_jobs = (jobs | filter:is_running);'']}
+    {[jc.dataset_jobs = (jobs | filter:is_dataset);'']}
+    {[jc.model_jobs = (jobs | filter:is_model);'']}
+    <section ng-controller="tab_controller as tab">
+        <div ng-controller="running_controller">
+            <div ng-if="jc.running_jobs.length">
+                {[jobs = (jc.running_jobs | filter:search_text | orderBy:predicate2:sort.descending2 | orderBy:predicate1:sort.descending1 | empty_to_end:this);'']}
+                {[set_jobs(jobs)]}
+                <h4>
+                    Running Jobs
+                    <small>
+                        ({[jobs.length]})
+                    </small>
+                </h4>
+                <div class="well row">
+                    <div class="row">
+                        <div class="col-md-4 pull-right">
+                            <form>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                        <input type="text" class="form-control" placeholder="Filter" ng-model="search_text">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        {[enabled = any_selected();'']}
+                        <div class="col-md-8">
+                            <a class="btn btn-xs btn-danger"
+                               ng-disabled="!enabled"
+                               ng-click="delete_jobs();">
+                                Delete
+                            </a>
+                            <a class="btn btn-xs btn-warning"
+                               ng-disabled="!enabled"
+                               ng-click="abort_jobs();">
+                                Abort
+                            </a>
+                        </div>
+                    </div>
+                    <table id="running-table"
+                           ng-mouseleave="mouseleave()"
+                           class="table table-bordered table-striped list-group selectable"
+                           width="100%">
+                        <col ng-repeat="field in fields"
+                             ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
+                        <thead>
+                            <tr>
+                                <th ng-repeat="field in fields">
+                                    <div ng-click="change_sorting(field.name, $event)">
+                                        <small>
+                                            {[ field.name ]}
+                                        </small>
+                                        <i class="glyphicon" 
+                                           ng-class="get_icon(field.name)" style="width:14px">
+                                        </i>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody ng-if="jobs.length">
+                            <!-- Table -->
+                            <tr ng-attr-id="{[ job.id ]}"
+                                ng-mousedown="mousedown($index, $event)"
+                                ng-mousemove="mousemove($index, $event)"
+                                ng-mouseup="mouseup($index, $event)"
+                                ng-click="click($index, $event)"
+                                ng-keydown="keydown($event)"
+                                ng-class="{selected:job.selected}"
+                                ng-repeat="job in jobs">
+                                <td>
+                                    <a href="/jobs/{[ job.id ]}" title="{[job.name]}">
+                                        {[ job.name | major_name ]}
+                                    </a>
+                                    <small>
+                                        {[ job.name | minor_name ]}
+                                    </small>
+                                </td>
+                                <td start="{[job.submitted]}">
+                                    <small ng-if="!is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                        {[ job.submitted * 1000 | date:'MMM d, yy' ]}
+                                    </small>
+                                    <small ng-if="is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                        {[ job.submitted * 1000 | date:'h:mm a' ]}
+                                    </small>
+                                </td>
+                                <td class="text-{[job.status_css]}">
+                                    {[ job.status ]}
+                                </td>
+                                <td>
+                                    <span style="width:150px; display:inline-block">
+                                        <sparkline ng-if="job.sparkline" data="{[job.sparkline]}"></sparkline>
+                                    </span>
+                                    <span>
+                                        {[ job.sparkline[job.sparkline.length - 1] | precision:3 ]}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="margin-bottom: 0px;">
+                                        <div class="progress-bar"
+                                             role="progressbar" ng-style="{width : ( job.progress + '%' ) }">
+                                            {[job.progress]}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody ng-if="jobs.length == 0">
+                            <tr>
+                                <td colspan="{[fields.length]}">
+                                    <h5>
+                                        No Running Jobs
+                                    </h5>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div ng-if="jc.running_jobs.length == 0">
+                <h4>
+                    No Jobs Running
+                </h4>
+            </div>
+        </div>
 
-<div class="row">
-    <section ng-app="home_app" ng-controller="tab_controller as tab">
-        <style>
-         .table {
-             width: 100%;
-             border: 0;
-             table-layout:fixed;
-             word-wrap:break-word;
-             border-collapse:collapse;
-         }
-         .table>tbody>tr>td,.table>thead>tr>th {
-             padding: 2px;
-             border-collapse: collapse;
-             white-space: nowrap;
-             text-overflow: ellipsis;
-             overflow: hidden;
-         }
-         .table>thead>tr>th {
-             cursor: pointer;
-         }
-         .table-striped > tbody > tr:nth-child(odd) > td, .table-striped > tbody > tr:nth-child(odd) > th {
-             background-color: #f9f9f9;
-         }
-         .table-striped > tbody > tr:nth-child(even) > td, .table-striped > tbody > tr:nth-child(even) > th {
-             background-color: #ffffff;
-         }
-
-        </style>
-        
-        <ul class="nav nav-tabs" role="tablist">
-            <li ng-class="{active:tab.isSet(1)}"><a href ng-click="tab.setTab(1)">Datasets</a></li>
-            <li ng-class="{active:tab.isSet(2)}"><a href ng-click="tab.setTab(2)">Models</a></li>
-        </ul>
+        <!-- Tabs -->
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li ng-class="{active:tab.isSet(1)}">
+                        <a href ng-click="tab.setTab(1, $event)">
+                            <h4>
+                                Datasets
+                                <small>
+                                    ({[jc.dataset_jobs.length]})
+                                </small>
+                            </h4>
+                        </a>
+                    </li>
+                    <li ng-class="{active:tab.isSet(2)}">
+                        <a href ng-click="tab.setTab(2, $event)">
+                            <h4>
+                                Models
+                                <small>
+                                    ({[jc.model_jobs.length]})
+                                </small>
+                            </h4>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="pull-right">
+                            New Model
+                            <ul class="nav nav-pills">
+                                {% for category in new_model_options.keys()|sort %}
+                                {% set options = new_model_options[category] %}
+                                <li class="dropdown active">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                        {{category}} <span class="caret"></span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        {% for id in options.keys()|sort %}
+                                        {% set option = options[id] %}
+                                        <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="pull-right" style="margin-right:10px">
+                            New Dataset
+                            <ul class="nav nav-pills">
+                                {% for category in new_dataset_options.keys()|sort %}
+                                {% set options = new_dataset_options[category] %}
+                                <li class="dropdown active">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                        {{category}} <span class="caret"></span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        {% for id in options.keys()|sort %}
+                                        {% set option = options[id] %}
+                                        <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="row">
             <!-- Datasets -->
             <div ng-show="tab.isSet(1)">
                 <div class="well">
                     <div ng-controller="datasets_controller">
-                        <div class="row">
-                            <div class="col-md-12" style="margin-bottom:15px">
-                                <div class="pull-right">
-                                    New Dataset
-                                    <ul class="nav nav-pills">
-                                        {% for category in new_dataset_options.keys()|sort %}
-                                        {% set options = new_dataset_options[category] %}
-                                        <li class="dropdown active">
-                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                                {{category}} <span class="caret"></span>
-                                            </a>
-                                            <ul class="dropdown-menu">
-                                                {% for id in options.keys()|sort %}
-                                                {% set option = options[id] %}
-                                                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
-                                                {% endfor %}
-                                            </ul>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                                <h2>
-                                    {[title]}
-                                    <small>({[(jobs | filter:search_text).length]})</small>
-                                </h2>
-                            </div>
-                        </div>
                         <div class="row">
                             <div class="col-md-4 pull-right">
                                 <form>
@@ -105,30 +258,47 @@
                                 </form>
                             </div>
                             <div class="col-md-8">
-                                <a class="btn btn btn-danger" ng-click="delete_jobs();">Delete</a>
+                                <a class="btn btn-xs btn-danger"
+                                   ng-disabled="!any_selected()"
+                                   ng-click="delete_jobs();">
+                                    Delete
+                                </a>
                             </div>
                         </div>
-                        <table id="datasets-table" class="table table-bordered table-striped list-group" width="100%">
-                            <col ng-repeat="width in widths track by $index" width="{[width]}">
+                        <table id="datasets-table"
+                               ng-mouseleave="mouseleave()"
+                               class="table table-bordered table-striped list-group selectable"
+                               width="100%">
+                            <col ng-repeat="field in fields"
+                                 ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
                             <thead>
                                 <tr>
                                     <th ng-repeat="field in fields">
-                                        <div ng-click="change_sorting(field, $event)">
+                                        <div ng-click="change_sorting(field.name, $event)">
                                             <small>
-                                                {[ field ]}
+                                                {[ field.name ]}
                                             </small>
                                             <i class="glyphicon" 
-                                               ng-class="get_icon(field)" style="width:14px">
+                                               ng-class="get_icon(field.name)" style="width:14px">
                                             </i>
                                         </div>
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody ng-if="(jobs | filter:search_text).length">
+                            {[jobs = (jc.dataset_jobs | filter:search_text | orderBy:predicate2:sort.descending2 | orderBy:predicate1:sort.descending1 | empty_to_end:this);'']}
+                            {[set_jobs(jobs)]}
+                            <tbody ng-if="jobs.length">
                                 <!-- Table -->
-                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | filter:search_text | orderBy:sort.active:sort.descending">
+                                <tr ng-attr-id="{[ job.id ]}"
+                                    ng-mousedown="mousedown($index, $event)"
+                                    ng-mousemove="mousemove($index, $event)"
+                                    ng-mouseup="mouseup($index, $event)"
+                                    ng-click="click($index, $event)"
+                                    ng-keydown="keydown($event)"
+                                    ng-class="{selected:job.selected}"
+                                    ng-repeat="job in jobs">
                                     <td>
-                                        <a href="/datasets/{[ job.id ]}" title="{[job.name]}">
+                                        <a href="/jobs/{[ job.id ]}" title="{[job.name]}">
                                             {[ job.name | major_name ]}
                                         </a>
                                         <small>
@@ -159,11 +329,11 @@
                                     </td>
                                 </tr>
                             </tbody>
-                            <tbody ng-if="(jobs | filter:search_text).length == 0">
+                            <tbody ng-if="jobs.length == 0">
                                 <tr>
                                     <td colspan="{[fields.length]}">
                                         <h5>
-                                            No Datasets{% if username %} for user {{username}}{% endif %}
+                                            No Datasets
                                         </h5>
                                     </td>
                                 </tr>
@@ -177,99 +347,138 @@
                 <div class="well">
                     <div ng-controller="models_controller">
                         <div class="row">
-                            <div class="col-md-12" style="margin-bottom:15px">
-                                <div class="pull-right">
-                                    New Model
-                                    <ul class="nav nav-pills">
-                                        {% for category in new_model_options.keys()|sort %}
-                                        {% set options = new_model_options[category] %}
-                                        <li class="dropdown active">
-                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                                {{category}} <span class="caret"></span>
-                                            </a>
-                                            <ul class="dropdown-menu">
-                                                {% for id in options.keys()|sort %}
-                                                {% set option = options[id] %}
-                                                <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
-                                                {% endfor %}
-                                            </ul>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                                <h2>
-                                    {[title]}
-                                    <small>({[(jobs | filter:search_text).length]})</small>
-                                </h2>
-                            </div>
-                        </div>
-                        <div class="row">
                             <div class="col-md-4 pull-right">
-                                <form>
-                                    <div class="form-group">
-                                        <div class="input-group">
-                                            <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
-                                            <input type="text" class="form-control" placeholder="Filter" ng-model="search_text">
+                                <div class="row">
+                                    <div class="col-md-10">
+                                        <form>
+                                            <div class="form-group">
+                                                <div class="input-group">
+                                                    <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                                    <input type="text" class="form-control" placeholder="Filter" ng-model="search_text">
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <!-- output field options -->
+                                    <div class="col-md-2">
+                                        <div class="button-group">
+                                            <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                                                <span class="glyphicon glyphicon-cog"></span>
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu" ng-click="$event.stopPropagation()">
+                                                <li data-ng-repeat='field in storage.model_fields'>
+                                                    <label style="font-weight: normal !important;">
+                                                        <input type="checkbox" ng-model='field.show'>
+                                                        {[ field.name ]}
+                                                    </label>
+                                                </li>
+                                                <li data-ng-repeat='field in storage.model_output_fields'>
+                                                    <label style="font-weight: normal !important;">
+                                                        <input type="checkbox" ng-model='field.show'>
+                                                        {[ field.name ]}
+                                                    </label>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </div>
-                                </form>
+                                </div>
                             </div>
                             <div class="col-md-8">
-                                <a class="btn btn btn-danger" ng-click="delete_jobs();">Delete</a>
+                                <a class="btn btn-xs btn-danger"
+                                   ng-disabled="!any_selected()"
+                                   ng-click="delete_jobs();">
+                                    Delete
+                                </a>
                             </div>
                         </div>
-                        <table id="models-table" class="table table-bordered table-striped" width="100%">
-                            <col ng-repeat="width in widths track by $index" width="{[width]}">
+                        <table id="models-table"
+                               ng-mouseleave="mouseleave()"
+                               class="table table-bordered table-striped selectable"
+                               width="100%">
+                            <col ng-repeat="field in storage.model_fields | filter:show(true)"
+                                 ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
+                            <col ng-repeat="field in storage.model_output_fields | filter:show(true)"
+                                 ng-style="{'width':visualLength(field.name) + 'px'}">
                             <thead>
                                 <tr>
-                                    <th ng-repeat="field in fields">
-                                        <div ng-click="change_sorting(field, $event)">
+                                    <th ng-repeat="field in storage.model_fields | filter:show(true)">
+                                        <div ng-click="change_sorting(field.name, $event)">
                                             <small>
-                                                {[ field ]}
+                                                {[ field.name ]}
                                             </small>
                                             <i class="glyphicon" 
-                                               ng-class="get_icon(field)" style="width:14px">
+                                               ng-class="get_icon(field.name)" style="width:14px">
+                                            </i>
+                                        </div>
+                                    </th>
+                                    <th ng-repeat="field in storage.model_output_fields | filter:show(true)">
+                                        <div ng-click="change_sorting(field.name, $event)">
+                                            <small>
+                                                {[ field.name ]}
+                                            </small>
+                                            <i class="glyphicon" 
+                                               ng-class="get_icon(field.name)" style="width:14px">
                                             </i>
                                         </div>
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody ng-if="(jobs | filter:search_text).length">
-                                <tr ng-attr-id="{[ job.id ]}" ng-repeat="job in jobs | filter:search_text | orderBy:sort.active:sort.descending">
-                                    <td>
-                                        <a href="/models/{[ job.id ]}" title="{[job.name]}">
-                                            {[ job.name | major_name ]}
-                                        </a>
-                                        <small>
-                                            {[ job.name | minor_name ]}
-                                        </small>
+                            {[jobs = (jc.model_jobs | filter:search_text | orderBy:predicate2:sort.descending2 | orderBy:predicate1:sort.descending1 | empty_to_end:this);'']}
+                            {[set_jobs(jobs)]}
+                            <tbody ng-if="jobs.length">
+                                <tr ng-attr-id="{[ job.id ]}"
+                                    tabindex="0"
+                                    ng-mousedown="mousedown($index, $event)"
+                                    ng-mousemove="mousemove($index, $event)"
+                                    ng-mouseup="mouseup($index, $event)"
+                                    ng-click="click($index, $event)"
+                                    ng-keydown="keydown($event)"
+                                    ng-class="{selected:job.selected}"
+                                    ng-repeat="job in jobs">
+                                    <td ng-if="storage.model_fields[0].show">
+                                        <dg-name/>
                                     </td>
-                                    <td>
-                                        <span class="badge">{[ job.framework ]}</span>
+                                    <td ng-if="storage.model_fields[1].show">
+                                        {[ job.id ]}
                                     </td>
-                                    <td class="text-{[job.status_css]}">
+                                    <td ng-if="storage.model_fields[2].show">
+                                        <dg-framework/>
+                                    </td>
+                                    <td ng-if="storage.model_fields[3].show"
+                                        class="text-{[job.status_css]}">
                                         {[ job.status ]}
                                     </td>
-                                    <td start="{[job.elapsed]}">
+                                    <td ng-if="storage.model_fields[4].show"
+                                        start="{[job.elapsed]}">
                                         <small title="{[ print_time_diff(job.elapsed) ]}">
                                             {[ print_time_diff_terse(job.elapsed) ]}
                                         </small>
                                     </td>
-                                    <td start="{[job.submitted]}">
-                                        <small ng-if="!is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                    <td ng-if="storage.model_fields[5].show"
+                                        start="{[job.submitted]}">
+                                        <small ng-if="!is_today(job.submitted)"
+                                               title="{[ job.submitted * 1000 | date:'medium' ]}">
                                             {[ job.submitted * 1000 | date:'MMM d, yy' ]}
                                         </small>
-                                        <small ng-if="is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                        <small ng-if="is_today(job.submitted)"
+                                               title="{[ job.submitted * 1000 | date:'medium' ]}">
                                             {[ job.submitted * 1000 | date:'h:mm a' ]}
+                                        </small>
+                                    </td>
+
+                                    <td ng-repeat="field in storage.model_output_fields | filter:show(true)">
+                                        <small title="{[ job[field.name] ]}">
+                                            {[ job[field.name] | precision:2 ]}
                                         </small>
                                     </td>
                                 </tr>
                             </tbody>
-                            <tbody ng-if="(jobs | filter:search_text).length == 0">
+                            <tbody ng-if="jobs.length == 0">
                                 <tr>
                                     <td colspan="{[fields.length]}">
                                         <h5>
-                                            No Models{% if username %} for user {{username}}{% endif %}
+                                            No Models
                                         </h5>
                                     </td>
                                 </tr>

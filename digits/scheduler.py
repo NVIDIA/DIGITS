@@ -180,21 +180,11 @@ class Scheduler:
             from digits.webapp import app, socketio
             with app.app_context():
                 # send message to job_management room that the job is added
-                html = flask.render_template('job_row.html', job = job)
-
-                # Convert the html into a list for the jQuery
-                # DataTable.row.add() method.  This regex removes the <tr>
-                # and <td> tags, and splits the string into one element
-                # for each cell.
-                html = re.sub('<tr[^<]*>[\s\n\r]*<td[^<]*>[\s\n\r]*', '', html)
-                html = re.sub('[\s\n\r]*</td>[\s\n\r]*</tr>', '', html)
-                html = re.split('</td>[\s\n\r]*<td[^<]*>', html)
 
                 socketio.emit('job update',
                               {
                                   'update': 'added',
                                   'job_id': job.id(),
-                                  'html': html
                               },
                               namespace='/jobs',
                               room='job_management',
