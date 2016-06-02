@@ -11,9 +11,9 @@ then
 fi
 
 INSTALL_DIR=$1
-NUM_THREADS=${NUM_THREADS-4}
-CAFFE_URL=https://github.com/NVIDIA/caffe.git
-CAFFE_BRANCH=caffe-0.14
+NUM_THREADS=${NUM_THREADS:-4}
+CAFFE_FORK=${CAFFE_FORK:-"NVIDIA"}
+CAFFE_BRANCH=${CAFFE_BRANCH:-"caffe-0.14"}
 
 if [ -d "$INSTALL_DIR" ] && [ -e "$INSTALL_DIR/build/tools/caffe" ]; then
     echo "Using cached build at $INSTALL_DIR ..."
@@ -23,7 +23,7 @@ fi
 rm -rf $INSTALL_DIR
 
 # get source
-git clone --branch ${CAFFE_BRANCH} --depth 1 ${CAFFE_URL} ${INSTALL_DIR}
+git clone https://github.com/${CAFFE_FORK}/caffe.git ${INSTALL_DIR} --branch ${CAFFE_BRANCH} --depth 1
 
 # configure project
 mkdir -p ${INSTALL_DIR}/build
