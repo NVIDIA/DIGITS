@@ -111,11 +111,11 @@ class LmdbWriter(DbWriter):
     def array_to_datum(self, data, scalar_label, encoding):
         if data.ndim != 3:
             raise ValueError('Invalid number of dimensions: %d' % data.ndim)
-        if data.shape[0] == 3:
-            # RGB to BGR
-            # XXX see issue #59
-            data = data[[2, 1, 0], ...]
         if encoding == 'none':
+            if data.shape[0] == 3:
+                # RGB to BGR
+                # XXX see issue #59
+                data = data[[2, 1, 0], ...]
             datum = caffe.io.array_to_datum(data, scalar_label)
         else:
             # Transpose to (height, width, channel)
