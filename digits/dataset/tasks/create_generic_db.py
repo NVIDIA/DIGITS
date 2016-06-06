@@ -60,6 +60,14 @@ class CreateGenericDbTask(Task):
         # save job before spawning sub-process
         self.job.save()
 
+    def get_encoding(self, name):
+        if name == 'features':
+            return self.job.feature_encoding
+        elif name == 'labels':
+            return self.job.label_encoding
+        else:
+            raise ValueError("Unknown db: %s" % name)
+
     @override
     def process_output(self, line):
         self.create_db_log.write('%s\n' % line)

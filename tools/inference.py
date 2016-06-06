@@ -4,7 +4,6 @@
 import argparse
 import base64
 import h5py
-import lmdb
 import logging
 import numpy as np
 import PIL.Image
@@ -19,12 +18,10 @@ except ImportError:
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
 digits.config.load_config()
-from digits import frameworks
 from digits import utils, log
-from digits.dataset import GenericImageDatasetJob
-from digits.dataset import ImageClassificationDatasetJob
 from digits.inference.errors import InferenceError
 from digits.job import Job
+from digits.utils.lmdbreader import DbReader
 
 # must call digits.config.load_config() before caffe to set the path
 import caffe.io
@@ -32,31 +29,6 @@ import caffe_pb2
 
 logger = logging.getLogger('digits.tools.inference')
 
-class DbReader(object):
-    """
-    Reads a database
-    """
-
-    def __init__(self, location):
-        """
-        Arguments:
-        location -- where is the database
-        """
-        self._db = lmdb.open(location,
-                map_size=1024**3, # 1MB
-                readonly=True, lock=False)
-
-        with self._db.begin() as txn:
-            self.total_entries = txn.stat()['entries']
-
-    def entries(self):
-        """
-        Generator returning all entries in the DB
-        """
-        with self._db.begin() as txn:
-            cursor = txn.cursor()
-            for item in cursor:
-                yield item
 
 """
 Perform inference on a list of images using the specified model
