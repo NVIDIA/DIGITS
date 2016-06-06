@@ -24,8 +24,13 @@
             </dd>
             {% for name,path in task.dbs.iteritems() %}
                 <dt>{{ name }} DB</dt>
+                <dd>{{ job.path(path) }}</dd>
                 <dd>
-                {{ job.path(path) }}
+                    {% if task.status=='D' and task.get_encoding(name)!='none' %}
+                    <div>
+                        <a href="{{url_for('digits.dataset.generic.views.explore', job_id=job.id(), db=path)}}" class="btn btn-primary">Explore the db</a>
+                    </div>
+                    {% endif %}
                 </dd>
             {% endfor %}
         {% endif %}
