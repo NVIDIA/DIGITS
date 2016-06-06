@@ -64,9 +64,11 @@
 {% for task in job.create_db_tasks() %}
 <div class="row">
     <div class="col-sm-12">
-        <div id="{{task.html_id()}}" class="panel panel-default">
-            {{ print_create_db_task(task) }}
-        </div>
+        {% if task.status != 'D' or task.entry_count > 0 %}
+            <div id="{{task.html_id()}}" class="panel panel-default">
+                {{ print_create_db_task(task) }}
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endfor %}
