@@ -11,7 +11,6 @@ except ImportError:
 
 import caffe_pb2
 import flask
-import lmdb
 import PIL.Image
 
 from .forms import ImageClassificationDatasetForm
@@ -19,6 +18,7 @@ from .job import ImageClassificationDatasetJob
 from digits import utils
 from digits.dataset import tasks
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
+from digits.utils.lmdbreader import DbReader
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
@@ -342,32 +342,6 @@ def summary(job):
                                  dataset=job)
 
 
-class DbReader(object):
-    """
-    Reads a database
-    """
-
-    def __init__(self, location):
-        """
-        Arguments:
-        location -- where is the database
-        """
-        self._db = lmdb.open(location,
-                map_size=1024**3, # 1MB
-                readonly=True, lock=False)
-
-        with self._db.begin() as txn:
-            self.total_entries = txn.stat()['entries']
-
-    def entries(self):
-        """
-        Generator returning all entries in the DB
-        """
-        with self._db.begin() as txn:
-            cursor = txn.cursor()
-            for item in cursor:
-                yield item
-
 @blueprint.route('/explore', methods=['GET'])
 def explore():
     """
@@ -448,4 +422,4 @@ def explore():
         if len(imgs) >= size:
             break
 
-    return flask.render_template('datasets/images/classification/explore.html', page=page, size=size, job=job, imgs=imgs, labels=labels, pages=pages, label=label, total_entries=total_entries, db=db)
+    return flask.render_template('datasets/images/explore.html', page=page, size=size, job=job, imgs=imgs, labels=labels, pages=pages, label=label, total_entries=total_entries, db=db)

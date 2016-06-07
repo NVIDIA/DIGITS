@@ -231,6 +231,12 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
             )
         assert status == 200, 'failed with %s' % status
 
+    def test_explore_features(self):
+        # features DB is encoded by default
+        rv = self.app.get('/datasets/generic/explore?db=train_db%%2Ffeatures&job_id=%s' % self.dataset_id)
+        # just make sure this doesn't return an error
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+
 ################################################################################
 # Test classes
 ################################################################################
