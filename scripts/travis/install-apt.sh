@@ -12,6 +12,7 @@ sudo apt-get install -y --no-install-recommends \
     git \
     gfortran \
     graphviz \
+    libboost-filesystem-dev \
     libboost-python-dev \
     libboost-system-dev \
     libboost-thread-dev \
