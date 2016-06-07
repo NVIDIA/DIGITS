@@ -59,8 +59,8 @@ class DataIngestion(DataIngestionInterface):
 
         if self.resize_image_width is not None:
             # resize
-            resize_ratio_x = self.resize_image_width / self.padding_image_width
-            resize_ratio_y = self.resize_image_height / self.padding_image_height
+            resize_ratio_x = float(self.resize_image_width) / self.padding_image_width
+            resize_ratio_y = float(self.resize_image_height) / self.padding_image_height
             img = digits.utils.image.resize_image(
                 img,
                 self.resize_image_height,
