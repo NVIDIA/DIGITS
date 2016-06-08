@@ -54,11 +54,11 @@ local augmentHSV = function(im_rgb, augHSV)
         im_hsv[1] = im_hsv[1]+(1 + torch.normal(0, augHSV.S))
     end
     if augHSV.S >0 then
-        im_hsv[2] = im_hsv[2]+torch.normal(0, augHSV.S) 
+        im_hsv[2] = im_hsv[2]+torch.normal(0, augHSV.S)
         im_hsv[2].image.saturate(im_hsv[2]) -- bound saturation between 0 and 1
     end
     if augHSV.V >0 then
-        im_hsv[3] = im_hsv[3]+torch.normal(0, augHSV.V) 
+        im_hsv[3] = im_hsv[3]+torch.normal(0, augHSV.V)
         im_hsv[3].image.saturate(im_hsv[3]) -- bound value between 0 and 1
     end
     return image.hsv2rgb(im_hsv)
@@ -67,13 +67,13 @@ end
 -- Scale and Rotation augmentation (warping)
 -- Parameters:
 -- @param im (tensor): input image
--- @param augRot (float): extremes of random rotation, uniformly distributed between 
+-- @param augRot (float): extremes of random rotation, uniformly distributed between
 -- @param augScale (float): the standard deviation of the extra scaling factor
 local warp = function(im, augRot, augScale)
-    -- A nice function of scale is 0.05 (stddev of scale change), 
+    -- A nice function of scale is 0.05 (stddev of scale change),
     -- and a nice value for ration is a few degrees or more if your dataset allows for it
 
-    local width = im:size()[3] 
+    local width = im:size()[3]
     local height = im:size()[2]
 
     -- Scale <0=zoom in(+rand crop), >0=zoom out
@@ -173,7 +173,7 @@ end
 -- @param meanTensor (tensor): mean image that will be used for mean subtraction if supplied
 -- @param augOpt (table): structure containing several augmentation options.
 local PreProcess = function(im, train, meanTensor, augOpt)
-    
+
     -- Do the HSV augmentation on the [0 255] image
     if augOpt.augHSV then
         if (augOpt.augHSV.H > 0) or (augOpt.augHSV.S > 0)  or (augOpt.augHSV.V > 0) then
@@ -200,7 +200,7 @@ local PreProcess = function(im, train, meanTensor, augOpt)
     end
 
     if augOpt.augFlip then
-        if (augOpt.augFlip == 'fliplr' or  augOpt.augFlip == 'fliplrud') and torch.random(2)==1 then 
+        if (augOpt.augFlip == 'fliplr' or  augOpt.augFlip == 'fliplrud') and torch.random(2)==1 then
             im = image.hflip(im)
         end
         if (augOpt.augFlip == 'flipud' or  augOpt.augFlip == 'fliplrud') and torch.random(2)==1 then
@@ -371,19 +371,6 @@ function DBSource:new (backend, db_path, labels_db_path, meanTensor, isTrain, sh
         if labels_db_path~='' then
             self.lmdb_labels, total_labels = LMDBSource:new(self.lightningmdb, labels_db_path)
             assert(self.total == total_labels, "Number of records="..self.total.." does not match number of labels=" ..total_labels)
-            -- read first entry to check label dimensions
-            local v = self.lmdb_labels:get(self.keys[1])
-            if not v then
-                logmessage.display(2, 'thr-id=' .. __threadid .. ' failed to initialize label DB')
-                return nil
-            end
-            local msg = self.datum.Datum():Parse(v)
-            -- assume row vector 1xN labels
-            assert(msg.height == 1, "label height=" .. msg.height .. " not supported")
-            self.label_width = msg.width
-        else
-            -- assume scalar label (e.g. classification)
-            self.label_width = 1
         end
         -- LMDB-specific functions
         self.getSample = self.lmdb_getSample
@@ -399,8 +386,6 @@ function DBSource:new (backend, db_path, labels_db_path, meanTensor, isTrain, sh
         assert(classification, "hdf5 only supports classification yet")
         assert(labels_db_path == '', "hdf5 separate label DB not implemented yet")
         check_require('hdf5')
-        -- assume scalar label (e.g. classification)
-        self.label_width = 1
         -- list.txt contains list of HDF5 databases --
         logmessage.display(0,'opening HDF5 database: ' .. db_path)
         list_path = paths.concat(db_path, 'list.txt')
@@ -463,10 +448,6 @@ function DBSource:new (backend, db_path, labels_db_path, meanTensor, isTrain, sh
     self.augOpt.ConvertColor = 'none'
     self.augOpt.crop = {use=false, Y=-1, X=-1, len=-1}
 
-    if self.classification then
-        assert(self.label_width == 1, 'expect scalar labels for classification tasks')
-    end
-
     return self
 end
 
@@ -522,70 +503,73 @@ function DBSource:lmdb_getKeys ()
     return Keys
 end
 
+-- Decode a protobuf-encoded datum object
+-- Parameters:
+-- @param datum The object to decode
+-- @return t (decoded tensor), label (scalar label within datum)
+function DBSource:decodeDatum(datum)
+    local msg = self.datum.Datum():Parse(datum)
+    local t, label
+
+    if msg.float_data then
+        -- flat vector of floats
+        -- initialize tensor with data from msg.float_data table
+        t = torch.FloatTensor(msg.float_data)
+    else
+        -- create tensor to copy message data to.
+        -- note the 1 extra byte to copy null terminator
+        local x = torch.ByteTensor(#msg.data+1):contiguous()
+        ffi.copy(torch.data(x), msg.data)
+        if msg.encoded then
+            -- x is an encoded image (.png or .jpg)
+            t = image.decompress(x, msg.channels,'byte'):float()
+        else
+            -- x is an unencoded CHW matrix
+            -- drop null-terminator
+            x = x:narrow(1, 1, x:storage():size() - 1)
+            -- view as CHW matrix of floats
+            x = x:view(msg.channels, msg.height, msg.width):float()
+            -- is this an RGB image?
+            if self.ImageChannels == 3 then
+                -- unencoded color images are stored in BGR order => we need to swap blue and red channels (BGR->RGB)
+                t = torch.FloatTensor(msg.channels, msg.height, msg.width)
+                t[1] = x[3]
+                t[2] = x[2]
+                t[3] = x[1]
+            else
+                t = x
+            end
+        end
+    end
+
+    -- note: the scalar label is ignored if there is a dedicated DB for labels
+    label = msg.label
+
+    return t, label
+end
+
+
 -- Derived class method getSample (LMDB flavour)
 function DBSource:lmdb_getSample(shuffle, idx)
-    local label
-
     if shuffle then
         idx = math.max(1,torch.ceil(torch.rand(1)[1] * self.total))
     end
 
-    key = self.keys[idx]
-    v = self.lmdb_data:get(key)
+    local key = self.keys[idx]
+    local v = self.lmdb_data:get(key)
     assert(key~=nil, "lmdb read nil key at idx="..idx)
     assert(v~=nil, "lmdb read nil value at idx="..idx.." key="..key)
 
-    local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
-    -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
-    local x = torch.ByteTensor(total*2):contiguous() -- sometimes length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
-    local x_size = total * 2 -- This variable is just to avoid the calls to tensor's size() i.e., x:size(1)
-    local temp_ptr = torch.data(x) -- raw C pointer using torchffi
+    -- decode protobuf-encoded Datum object
+    local im, label = self:decodeDatum(v)
 
-
-    --local a = torch.Timer()
-    --local m = a:time().real
-    local msg = self.datum.Datum():Parse(v)
-
-    if not self.lmdb_labels then
-        -- read label from sample database
-        label = msg.label
-    else
+    if self.lmdb_labels then
         -- read label from label database
-        v = self.lmdb_labels:get(key)
-        local label_msg = self.datum.Datum():Parse(v)
-        label = torch.FloatTensor(label_msg.width):contiguous()
-        for x=1,label_msg.width do
-            label[x] = label_msg.float_data[x]
-        end
-    end
-
-    if #msg.data > x_size then
-        x:resize(#msg.data+1) -- 1 extra byte is required to copy zero terminator i.e., '\0', by ffi.copy()
-        x_size = #msg.data
-    end
-
-    ffi.copy(temp_ptr, msg.data)
-    --print(string.format("elapsed time1: %.6f\n", a:time().real - m))
-    --m = a:time().real
-
-    local im=nil
-    if msg.encoded==true then
-        im = image.decompress(x,msg.channels,'byte'):float()
-    else
-        x = x:narrow(1,1,total):view(msg.channels,msg.height,msg.width):float() -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that view() works fine without issues
-        if self.ImageChannels == 3 then
-            -- unencoded color images are stored in BGR order => we need to swap blue and red channels (BGR->RGB)
-            im = torch.FloatTensor(msg.channels,msg.height,msg.width)
-            im[1] = x[3]
-            im[2] = x[2]
-            im[3] = x[1]
-        else
-            im = x
-        end
+        local v = self.lmdb_labels:get(key)
+        label = self:decodeDatum(v)
     end
 
     return im, label
-
 end
 
 -- Derived class method getSample (HDF5 flavour)
@@ -625,39 +609,50 @@ end
 -- @param idx (int): Current index within database
 function DBSource:nextBatch (batchSize, idx)
 
-    local Images
-    if self.augOpt.crop.use then
-        Images = torch.Tensor(batchSize, self.ImageChannels, self.augOpt.crop.len, self.augOpt.crop.len)
-    else
-        Images = torch.Tensor(batchSize, self.ImageChannels, self.ImageSizeY, self.ImageSizeX)
+    local images, labels
+
+    -- this function creates a tensor that has similar
+    -- shape to that of the provided sample plus one
+    -- dimension (batch dimension)
+    local function createBatchTensor(sample, batchSize)
+        local t
+        if type(sample) == 'number' then
+            t = torch.Tensor(batchSize)
+        else
+            shape = sample:size():totable()
+            -- add 1 dimension (batchSize)
+            table.insert(shape, 1, batchSize)
+            t = torch.Tensor(torch.LongStorage(shape))
+        end
+        return t
     end
-
-    local Labels
-    if self.label_width == 1 then
-        Labels = torch.Tensor(batchSize)
-    else
-        Labels = torch.FloatTensor(batchSize, self.label_width)
-    end
-
-    local i=0
-
-    --local mean_ptr = torch.data(self.mean)
-    local image_ind = 0
 
     for i=1,batchSize do
         -- get next sample
-        im, label = self:getSample(self.shuffle, idx + i - 1)
+        local im, label = self:getSample(self.shuffle, idx + i - 1)
 
         if self.classification then
             -- label is index from array and Lua array indices are 1-based
             label = label + 1
         end
 
-        Images[i] = PreProcess(im, self.train, self.mean, self.augOpt)
+        -- preprocess
+        im = PreProcess(im, self.train, self.mean, self.augOpt)
 
-        Labels[i] = label
+
+        -- create batch tensors if not already done
+        if not images then
+            images = createBatchTensor(im, batchSize)
+        end
+        if not labels then
+            labels = createBatchTensor(label, batchSize)
+        end
+
+        images[i] = im
+        labels[i] = label
     end
-    return Images, Labels
+
+    return images, labels
 end
 
 -- Derived class method to reset cursor (HDF5 flavour)
