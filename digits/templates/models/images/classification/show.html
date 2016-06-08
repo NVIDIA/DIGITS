@@ -149,6 +149,16 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             Download Model
                         </button>
                     </div>
+                    <div class="col-sm-4">
+                        <button
+                            id="delete-snapshot"
+                            class="btn btn-danger"
+                            formaction="{{url_for('digits.model.views.delete', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data">
+                            Delete Model
+                        </button>
+                    </div>
                 </div>
                 {% if task.get_framework_id() in framework_ids %}
                 <div class="row">
@@ -248,4 +258,3 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
 </div>
 
 {% endblock %}
-

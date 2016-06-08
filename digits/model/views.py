@@ -7,8 +7,10 @@ import json
 import math
 import tarfile
 import zipfile
+import os
 
 import flask
+from flask import redirect, url_for
 import werkzeug.exceptions
 
 from . import images as model_images
@@ -30,6 +32,12 @@ def show(job_id):
         {id, name, directory, status, snapshots: [epoch,epoch,...]}
     """
     job = scheduler.get_job(job_id)
+
+    task = job.train_task()
+
+    # Update the snapshots
+    task.detect_snapshots()
+
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
@@ -224,6 +232,51 @@ def download(job_id, extension):
     response = flask.make_response(b.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)
     return response
+
+@blueprint.route('/<job_id>/delete',
+        methods=['POST'])
+def delete(job_id):
+    """
+    Delete a specific snapshot epoch from server
+    """
+    job = scheduler.get_job(job_id)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
+    epoch = -1
+    # POST ?snapshot_epoch=n (from form)
+    if 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+    else:
+        raise werkzeug.exceptions.BadRequest('Invalid epoch')
+
+    task = job.train_task()
+
+    snapshot_filename = None
+    if len(task.snapshots) == 1:
+        # if there is only 1 model left, do not allow deleting
+        raise werkzeug.exceptions.BadRequest('Cannot delete last model')
+
+    else:
+        for f, e in task.snapshots:
+            if e == epoch:
+                snapshot_filename = f
+                break
+    if not snapshot_filename:
+        raise werkzeug.exceptions.BadRequest('Invalid epoch')
+
+    # Get the name of last snapshot
+    last_snapshot, e = task.snapshots[-1]
+
+    # Deleting last snapshot is not allowed
+    if last_snapshot == snapshot_filename:
+        raise werkzeug.exceptions.BadRequest('Cannot delete last model')
+
+    # Delete the snaspshot
+    os.remove(snapshot_filename)
+
+    # redirect to the /models/<job_id> page
+    return redirect('/models/{0}'.format(job_id))
 
 class JobBasicInfo(object):
     def __init__(self, name, ID, status, time, framework_id):
