@@ -843,11 +843,23 @@ class CaffeTrainTask(TrainTask):
         """
         Helper to generate pycaffe Python script
         Returns a list of strings
+        Throws ValueError if self.solver_type is not recognized
 
         Arguments:
         gpu_id -- the GPU device id to use
         """
         # TODO: Remove this once caffe.exe works fine with Python Layer
+        solver_type_mapping = {            
+            'ADADELTA': 'AdaDeltaSolver',
+            'ADAGRAD' : 'AdaGradSolver',
+            'ADAM'    : 'AdamSolver',
+            'NESTEROV': 'NesterovSolver',
+            'RMSPROP' : 'RMSPropSolver',
+            'SGD'     : 'SGDSolver'}
+        try:
+            solver_type = solver_type_mapping[self.solver_type]
+        except KeyError:
+            raise ValueError("Unknown solver type {}.".format(self.solver_type))
         gpu_script = "caffe.set_device({id});".format(id=gpu_id) if gpu_id else ""
         if self.pretrained_model:
             weight_files = ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':')))
@@ -857,10 +869,11 @@ class CaffeTrainTask(TrainTask):
         command_script =\
             "import caffe;" \
             "{gpu_script}" \
-            "solv=caffe.{solver_type}Solver('{solver_file}');" \
+            "solv=caffe.{solver}('{solver_file}');" \
             "{loading_script}" \
             "solv.solve()" \
-            .format(gpu_script=gpu_script, solver_type=self.solver_type,
+            .format(gpu_script=gpu_script,
+                    solver=solver_type,
                     solver_file = self.solver_file, loading_script=loading_script)
         args = ['python -c '+ '\"' + command_script + '\"']
         return args
