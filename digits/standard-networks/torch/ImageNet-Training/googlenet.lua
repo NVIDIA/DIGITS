@@ -55,7 +55,7 @@ local function inception(input_size, config)
    return concat
 end
 
-function createModel(nGPU, nChannels, nClasses)
+function createModel(nChannels, nClasses)
    -- batch normalization added on top of convolutional layers in feature branch
    -- in order to help the network learn faster
    local features = nn.Sequential()
@@ -99,28 +99,10 @@ function createModel(nGPU, nChannels, nClasses)
    local splitter = nn.Concat(2)
    splitter:add(main_branch):add(aux_classifier)
    --local googlenet = nn.Sequential():add(features):add(splitter)
+
    local googlenet = nn.Sequential():add(features):add(main_branch)
 
-   local model
-   if nGPU>1 then
-      local gpus = torch.range(1, nGPU):totable()
-      local fastest, benchmark
-      local use_cudnn = cudnn ~= nil
-      if use_cudnn then
-        fastest, benchmark = cudnn.fastest, cudnn.benchmark
-      end
-      model = nn.DataParallelTable(1, true, true):add(googlenet,gpus):threads(function()
-            if use_cudnn then
-              local cudnn = require 'cudnn'
-              cudnn.fastest, cudnn.benchmark = fastest, benchmark
-            end
-      end)
-      model.gradInput = nil
-   else
-      model = googlenet
-   end
-
-   return model
+   return googlenet
 end
 
 -- return function that returns network definition
@@ -135,7 +117,7 @@ return function(params)
         assert(params.inputShape[2]==256 and params.inputShape[3]==256, 'Network expects 256x256 images')
     end
     return {
-        model = createModel(params.ngpus, channels, nclasses),
+        model = createModel(channels, nclasses),
         croplen = 224,
         trainBatchSize = 32,
         validationBatchSize = 16,
