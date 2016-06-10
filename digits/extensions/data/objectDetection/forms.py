@@ -121,3 +121,15 @@ class DatasetForm(Form):
                 "value in both dimensions. This only affects objects in "
                 "the validation set. Enter 0 to disable this threshold."
         )
+
+    custom_classes = utils.forms.StringField(
+        u'Custom classes',
+        validators=[
+            validators.Optional(),
+            ],
+        tooltip="Enter a comma-separated list of lower-case class names. "
+                "Class IDs are assigned sequentially, starting from 0. "
+                "Leave this field blank to use default class mappings. "
+                "See object detection extension documentation for more "
+                "information."
+        )

@@ -1,11 +1,14 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import numpy as np
+import csv
 import operator
 import os
-import PIL.Image
 import random
+import StringIO
+
+import numpy as np
+import PIL.Image
 
 import digits
 from digits.utils import subclass, override, constants
@@ -28,6 +31,15 @@ class DataIngestion(DataIngestionInterface):
 
         # this instance is automatically populated with form field
         # attributes by superclass constructor
+
+        if self.custom_classes != '':
+            s = StringIO.StringIO(self.custom_classes)
+            reader = csv.reader(s)
+            self.class_mappings = {}
+            for idx, name in enumerate(reader.next()):
+                self.class_mappings[name.strip()] = idx
+        else:
+            self.class_mappings = None
 
         if ((self.val_image_folder == '') ^ (self.val_label_folder == '')):
             raise ValueError("You must specify either both val_image_folder and val_label_folder or none")
@@ -194,7 +206,10 @@ class DataIngestion(DataIngestionInterface):
         """
         load ground truth from specified folder
         """
-        datasrc = GroundTruth(folder, min_box_size=min_box_size)
+        datasrc = GroundTruth(
+            folder,
+            min_box_size=min_box_size,
+            class_mappings=self.class_mappings)
         datasrc.load_gt_obj()
         self.datasrc_annotation_dict = datasrc.objects_all
 
