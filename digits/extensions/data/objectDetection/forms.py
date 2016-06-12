@@ -7,7 +7,7 @@ from wtforms import validators
 
 from digits import utils
 from digits.utils import subclass
-
+from digits.utils.forms import validate_required_if_set
 
 @subclass
 class DatasetForm(Form):
@@ -46,7 +46,7 @@ class DatasetForm(Form):
     val_image_folder = utils.forms.StringField(
         u'Validation image folder',
         validators=[
-            validators.Optional(),
+            validate_required_if_set('val_label_folder'),
             validate_folder_path,
             ],
         tooltip="Indicate a folder of images to use for training"
@@ -55,7 +55,7 @@ class DatasetForm(Form):
     val_label_folder = utils.forms.StringField(
         u'Validation label folder',
         validators=[
-            validators.Optional(),
+            validate_required_if_set('val_image_folder'),
             validate_folder_path,
             ],
         tooltip="Indicate a folder of validation labels"
@@ -64,7 +64,7 @@ class DatasetForm(Form):
     resize_image_width = utils.forms.IntegerField(
         u'Resize Image Width',
         validators=[
-            validators.Optional(),
+            validate_required_if_set('resize_image_height'),
             validators.NumberRange(min=1),
             ],
         tooltip="If specified, images will be resized to that dimension after padding"
@@ -73,7 +73,7 @@ class DatasetForm(Form):
     resize_image_height = utils.forms.IntegerField(
         u'Resize Image Height',
         validators=[
-            validators.Optional(),
+            validate_required_if_set('resize_image_width'),
             validators.NumberRange(min=1),
             ],
         tooltip="If specified, images will be resized to that dimension after padding"
@@ -83,20 +83,20 @@ class DatasetForm(Form):
         u'Padding Image Width',
         default=1248,
         validators=[
-            validators.DataRequired(),
+            validate_required_if_set('padding_image_height'),
             validators.NumberRange(min=1),
             ],
-        tooltip="Images will be padded to that dimension"
+        tooltip="If specified, images will be padded to that dimension"
         )
 
     padding_image_height = utils.forms.IntegerField(
         u'Padding Image Height',
         default=384,
         validators=[
-            validators.DataRequired(),
+            validate_required_if_set('padding_image_width'),
             validators.NumberRange(min=1),
             ],
-        tooltip="Images will be padded to that dimension"
+        tooltip="If specified, images will be padded to that dimension"
         )
 
     channel_conversion = utils.forms.SelectField(

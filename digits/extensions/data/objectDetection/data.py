@@ -15,7 +15,7 @@ from digits.utils import subclass, override, constants
 from ..interface import DataIngestionInterface
 from .forms import DatasetForm
 from .utils import GroundTruth, GroundTruthObj
-from .utils import bbox_to_array, resize_bbox_list
+from .utils import bbox_to_array, pad_image, resize_bbox_list
 
 TEMPLATE = "template.html"
 
@@ -41,12 +41,6 @@ class DataIngestion(DataIngestionInterface):
         else:
             self.class_mappings = None
 
-        if ((self.val_image_folder == '') ^ (self.val_label_folder == '')):
-            raise ValueError("You must specify either both val_image_folder and val_label_folder or none")
-
-        if ((self.resize_image_width is None) ^ (self.resize_image_height is None)):
-            raise ValueError("You must specify either both resize_image_width and resize_image_height or none")
-
         # this will be set when we know the phase we are encoding
         self.ground_truth = None
 
@@ -59,20 +53,26 @@ class DataIngestion(DataIngestionInterface):
 
         # (1) image part
 
-        # load from file
+        # load from file (this returns a PIL image)
         img = digits.utils.image.load_image(image_filename)
         if self.channel_conversion != 'none':
             if img.mode != self.channel_conversion:
                 # convert to different image mode if necessary
                 img = img.convert(self.channel_conversion)
 
-        # pad
-        img = self.pad_image(img)
+        # note: the form validator ensured that either none
+        # or both width/height were specified
+        if self.padding_image_width:
+            # pad image
+            img = pad_image(
+                img,
+                self.padding_image_height,
+                self.padding_image_width)
 
         if self.resize_image_width is not None:
-            # resize
-            resize_ratio_x = float(self.resize_image_width) / self.padding_image_width
-            resize_ratio_y = float(self.resize_image_height) / self.padding_image_height
+            resize_ratio_x = float(self.resize_image_width) / img.size[0]
+            resize_ratio_y = float(self.resize_image_height) / img.size[1]
+            # resize and convert to numpy HWC
             img = digits.utils.image.resize_image(
                 img,
                 self.resize_image_height,
@@ -234,25 +234,3 @@ class DataIngestion(DataIngestionInterface):
         # shuffle
         random.shuffle(image_files)
         return image_files
-
-    def pad_image(self, img):
-        """
-        pad a single image to the dimensions specified in form
-        """
-        src_width = img.size[0]
-        src_height = img.size[1]
-
-        if self.padding_image_width < src_width:
-            raise ValueError("Source image width %d is greater than padding width %d" % (src_width, self.padding_image_width))
-
-        if self.padding_image_height < src_height:
-            raise ValueError("Source image height %d is greater than padding height %d" % (src_height, self.padding_image_height))
-
-        padded_img = PIL.Image.new(
-            img.mode,
-            (self.padding_image_width, self.padding_image_height),
-            "black")
-
-        padded_img.paste(img, (0, 0))  # copy to top-left corner
-
-        return padded_img

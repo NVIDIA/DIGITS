@@ -1,8 +1,10 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 
 import csv
-import numpy as np
 import os
+
+import numpy as np
+import PIL.Image
 
 class ObjectType:
 
@@ -267,6 +269,29 @@ def bbox_overlap(abox, bbox):
     overlap_pix = xoverlap * yoverlap
 
     return overlap_pix, overlap_box
+
+
+def pad_image(img, padding_image_height, padding_image_width):
+    """
+    pad a single image to the specified dimensions
+    """
+    src_width = img.size[0]
+    src_height = img.size[1]
+
+    if padding_image_width < src_width:
+        raise ValueError("Source image width %d is greater than padding width %d" % (src_width, padding_image_width))
+
+    if padding_image_height < src_height:
+        raise ValueError("Source image height %d is greater than padding height %d" % (src_height, padding_image_height))
+
+    padded_img = PIL.Image.new(
+        img.mode,
+        (padding_image_width, padding_image_height),
+        "black")
+    padded_img.paste(img, (0, 0))  # copy to top-left corner
+
+    return padded_img
+
 
 def resize_bbox_list(bboxlist, rescale_x=1, rescale_y=1):
         # this is expecting x1,y1,w,h:
