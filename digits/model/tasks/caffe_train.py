@@ -860,7 +860,10 @@ class CaffeTrainTask(TrainTask):
             solver_type = solver_type_mapping[self.solver_type]
         except KeyError:
             raise ValueError("Unknown solver type {}.".format(self.solver_type))
-        gpu_script = "caffe.set_device({id});".format(id=gpu_id) if gpu_id else ""
+        if gpu_id is not None:
+            gpu_script = "caffe.set_device({id});caffe.set_mode_gpu();".format(id=gpu_id)
+        else:
+            gpu_script = "caffe.set_mode_cpu();"
         if self.pretrained_model:
             weight_files = ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':')))
             loading_script = "solv.net.copy_from('{weight}');".format(weight=weight_files)
@@ -875,7 +878,7 @@ class CaffeTrainTask(TrainTask):
             .format(gpu_script=gpu_script,
                     solver=solver_type,
                     solver_file = self.solver_file, loading_script=loading_script)
-        args = ['python -c '+ '\"' + command_script + '\"']
+        args = [sys.executable + ' -c '+ '\"' + command_script + '\"']
         return args
 
     @override
