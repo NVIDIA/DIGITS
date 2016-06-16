@@ -349,7 +349,6 @@ class MultiNumberRange(object):
     def __call__(self, form, field):
         fdata = field.data if isinstance(field.data, (list, tuple)) else [field.data]
         for data in fdata:
-            print 'checking', data, self.min
             flags = 0
             flags |= (data is None) << 0
             flags |= (self.min is not None and self.min_inclusive and data < self.min) << 1
