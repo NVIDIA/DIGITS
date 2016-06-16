@@ -32,25 +32,29 @@ class VisualizationInterface(object):
         """
         raise NotImplementedError
 
+    def get_header_template(self):
+        """
+        This returns the content to be rendered at the top of the result
+        page. This may include a summary of the job as well as utility
+        functions and scripts to use from "view" templates.
+        By default this method returns (None, None), an indication that there
+        is no header to display. This method may be overridden in sub-classes
+        to show more elaborate content.
+        Returns:
+        - (template, context) tuple
+          - template is a Jinja template to use for rendering the header,
+          or None if there is no header to display
+          - context is a dictionary of context variables to use for rendering
+          the form
+        """
+        return None, None
+
     @staticmethod
     def get_id():
         """
         Returns a unique ID
         """
         raise NotImplementedError
-
-    def get_summary_template(self):
-        """
-        This returns a summary of the job. This method is called after all
-        entries have been processed.
-        Returns:
-        - (template, context) tuple
-          - template is a Jinja template to use for rendering the summary,
-          or None if there is no summary to display
-          - context is a dictionary of context variables to use for rendering
-          the form
-        """
-        return None, None
 
     @staticmethod
     def get_title():
@@ -61,7 +65,9 @@ class VisualizationInterface(object):
 
     def get_view_template(self, data):
         """
-        The view template shows the visualization of one inference output
+        The view template shows the visualization of one inference output.
+        In the case of multiple inference, this method is called once per
+        input sample.
         Parameters:
         - data: the data returned by process_data()
         Returns:
