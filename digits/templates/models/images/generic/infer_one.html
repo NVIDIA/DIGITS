@@ -19,6 +19,12 @@
     </h1>
 </div>
 
+{% if header_html %}
+<div class="row">
+    {{header_html|safe}}
+</div>
+{% endif %}
+
 {% if image_src %}
 <div class="row">
     <h3>Source image</h3>

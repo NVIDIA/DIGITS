@@ -10,7 +10,7 @@ from .forms import ConfigForm
 from ..interface import VisualizationInterface
 
 CONFIG_TEMPLATE = "config_template.html"
-SUMMARY_TEMPLATE = "summary_template.html"
+HEADER_TEMPLATE = "header_template.html"
 VIEW_TEMPLATE = "view_template.html"
 
 
@@ -64,26 +64,19 @@ class Visualization(VisualizationInterface):
         context = {'form': form}
         return (template, context)
 
-    @staticmethod
-    def get_id():
-        return 'image-bounding-boxes'
-
     @override
-    def get_summary_template(self):
+    def get_header_template(self):
         """
-        This returns a summary of the job. This method is called after all
-        entries have been processed.
-        returns:
-        - (template, context) tuple
-          - template is a Jinja template to use for rendering the summary, or
-          None if there is no summary to display
-          - context is a dictionary of context variables to use for rendering
-          the form
+        Implements get_header_template() method from view extension interface
         """
         extension_dir = os.path.dirname(os.path.abspath(__file__))
         template = open(
-            os.path.join(extension_dir, SUMMARY_TEMPLATE), "r").read()
+            os.path.join(extension_dir, HEADER_TEMPLATE), "r").read()
         return template, {'image_count': self.image_count, 'bbox_count': self.bbox_count}
+
+    @staticmethod
+    def get_id():
+        return 'image-bounding-boxes'
 
     @staticmethod
     def get_title():
