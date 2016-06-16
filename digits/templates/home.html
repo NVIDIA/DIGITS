@@ -49,7 +49,7 @@
     <section ng-controller="tab_controller as tab">
         <div ng-controller="running_controller">
             <div ng-if="jc.running_jobs.length">
-                {[jobs = (jc.running_jobs | filter:search_text | orderBy:predicate2:sort.descending2 | orderBy:predicate1:sort.descending1 | empty_to_end:this);'']}
+                {[jobs = (jc.running_jobs | filter:search_text | sort_with_empty_at_end:this);'']}
                 {[set_jobs(jobs)]}
                 <h4>
                     Running Jobs
@@ -287,7 +287,7 @@
                                     </th>
                                 </tr>
                             </thead>
-                            {[jobs = (jc.dataset_jobs | filter:search_text | orderBy:predicate2:sort.descending2 | orderBy:predicate1:sort.descending1 | empty_to_end:this);'']}
+                            {[jobs = (jc.dataset_jobs | filter:search_text | sort_with_empty_at_end:this);'']}
                             {[set_jobs(jobs)]}
                             <tbody ng-if="jobs.length">
                                 <!-- Table -->
@@ -422,7 +422,7 @@
                                     </th>
                                 </tr>
                             </thead>
-                            {[jobs = (jc.model_jobs | filter:search_text | orderBy:predicate2:sort.descending2 | orderBy:predicate1:sort.descending1 | empty_to_end:this);'']}
+                            {[jobs = (jc.model_jobs | filter:search_text | sort_with_empty_at_end:this);'']}
                             {[set_jobs(jobs)]}
                             <tbody ng-if="jobs.length">
                                 <tr ng-attr-id="{[ job.id ]}"

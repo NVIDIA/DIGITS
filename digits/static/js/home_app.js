@@ -317,12 +317,6 @@
             active2: 'submitted',
             descending2: true,
         }
-        $scope.predicate1 = function(rows) {
-            return rows[$scope.sort.active1];
-        }
-        $scope.predicate2 = function(rows) {
-            return rows[$scope.sort.active2];
-        }
         $scope.jobs = [];
 
         $scope.set_jobs = function(jobs) {
@@ -545,16 +539,29 @@
             return match ? match[0] : ''
         }
     });
-    app.filter("empty_to_end", function () {
+    app.filter("sort_with_empty_at_end", function () {
         return function (array, scope) {
+            console.log(scope.sort.active1, scope.sort.active2);
             if (!angular.isArray(array)) return;
-            var present = array.filter(function (item) {
-                return item[scope.sort.active2];
-            });
-            var empty = array.filter(function (item) {
-                return !item[scope.sort.active2]
-            });
-            return present.concat(empty);
+            array.sort(
+                function(x, y)
+                {
+                    let x1 = x[scope.sort.active1];
+                    let y1 = y[scope.sort.active1];
+                    let x2 = x[scope.sort.active2];
+                    let y2 = y[scope.sort.active2];
+
+                    if (x1 == y1) {
+                        if (x2 === undefined) return true;
+                        if (y2 === undefined) return false;
+                        return (scope.sort.descending2 == x2 < y2);
+                    }
+                    if (x1 === undefined) return true;
+                    if (y1 === undefined) return false;
+                    return (scope.sort.descending1 == x1 < y1);
+                }
+            );
+            return array;
         };
     });
 
