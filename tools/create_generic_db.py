@@ -147,9 +147,11 @@ class LmdbWriter(DbWriter):
         datums = []
         for (feature, label) in batch:
             # restrict features to 3D data (Caffe Datum objects)
-            assert feature.ndim == 3, "LMDB/Caffe expect 3D data"
+            if feature.ndim != 3:
+                raise ValueError("LMDB/Caffe expect 3D data - ndim=%d" % feature.ndim)
             # restrict labels to 3D data (Caffe Datum objects) or scalars
-            assert label.ndim == 3 or label.size == 1, "LMDB/Caffe expect 3D or scalar label"
+            if not (label.ndim == 3 or label.size == 1):
+                raise ValueError("LMDB/Caffe expect 3D or scalar label - ndim=%d" % label.ndim)
             if label.size > 1:
                 label_datum = self.array_to_datum(
                     label,
@@ -245,12 +247,12 @@ class Encoder(threading.Thread):
                     if self.feature_shape is None:
                         self.feature_shape = feature.shape
                         self.feature_sum = np.zeros(self.feature_shape, np.float64)
-                    else:
-                        assert self.feature_shape == feature.shape
+                    elif self.feature_shape != feature.shape:
+                        raise ValueError("Feature shape mismatch (last:%s, previous:%s)" % (repr(feature.shape), repr(self.feature_shape)))
                     if self.label_shape is None:
                         self.label_shape = label.shape
-                    else:
-                        assert self.label_shape == label.shape
+                    elif self.label_shape != label.shape:
+                        raise ValueError("Label shape mismatch (last:%s, previous:%s)" % (repr(label.shape), repr(self.label_shape)))
 
                     # accumulate sum for mean file calculation
                     self.feature_sum += feature
@@ -316,6 +318,12 @@ class DbCreator(object):
             label_shape = None
             for encoder in encoders:
                 encoder.join()
+                # catch errors that may have occurred in reader thread
+                if not error_queue.empty():
+                    while not error_queue.empty():
+                        err = error_queue.get()
+                        logger.error(err)
+                    raise Exception(err)
                 if feature_sum is None:
                     feature_sum = encoder.feature_sum
                 elif encoder.feature_sum is not None:
@@ -324,12 +332,14 @@ class DbCreator(object):
                     feature_shape = encoder.feature_shape
                     logger.info('Feature shape for stage %s: %s' % (stage, repr(feature_shape)))
                 elif encoder.feature_shape is not None:
-                    assert feature_shape == encoder.feature_shape
+                    if feature_shape != encoder.feature_shape:
+                        raise ValueError("Feature shape mismatch (last:%s, previous:%s)" % (repr(feature_shape), repr(encoder.feature_shape)))
                 if label_shape is None:
                     label_shape = encoder.label_shape
                     logger.info('Label shape for stage %s: %s' % (stage, repr(label_shape)))
                 elif encoder.label_shape is not None:
-                    assert label_shape == encoder.label_shape
+                    if label_shape != encoder.label_shape:
+                        raise ValueError("Label shape mismatch (last:%s, previous:%s)" % (repr(label_shape), repr(encoder.label_shape)))
                 processed_count += encoder.processed_count
 
             # write mean file
@@ -339,13 +349,6 @@ class DbCreator(object):
             # wait for writer thread to complete
             writer.set_done()
             writer.join()
-
-            # catch errors that may have occurred in reader threads
-            if not error_queue.empty():
-                while not error_queue.empty():
-                    err = error_queue.get()
-                    logger.error(err)
-                raise Exception(err)
 
             if processed_count != entry_count:
                 # TODO: handle this more gracefully
@@ -392,7 +395,8 @@ def create_generic_db(jobs_dir, dataset_id, stage):
 
     # load dataset job
     dataset_dir = os.path.join(jobs_dir, dataset_id)
-    assert os.path.isdir(dataset_dir), "Dataset dir %s does not exist" % dataset_dir
+    if not os.path.isdir(dataset_dir):
+        raise IOError("Dataset dir %s does not exist" % dataset_dir)
     dataset = Job.load(dataset_dir)
 
     # create instance of extension
