@@ -37,6 +37,7 @@ sudo apt-get install -y --no-install-recommends \
     python-pil \
     python-pip \
     python-protobuf \
+    python-psutil \
     python-requests \
     python-scipy \
     python-six \
