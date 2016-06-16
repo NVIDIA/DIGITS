@@ -267,7 +267,7 @@ class ModelForm(Form):
             )
 
     custom_network_snapshot = utils.forms.TextField('Pretrained model(s)',
-                tooltip = "Colon delimited paths to pretrained model files. Only edit this field if you understand how fine-tuning works in caffe or torch."
+                tooltip = "Paths to pretrained model files, separated by '%s'. Only edit this field if you understand how fine-tuning works in caffe or torch." % os.path.pathsep
             )
 
 
