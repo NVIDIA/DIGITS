@@ -1,13 +1,22 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import caffe_pb2
 import flask
+import PIL.Image
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 from .forms import GenericDatasetForm
 from .job import GenericDatasetJob
 
 from digits import extensions, utils
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, job_from_request
+from digits.utils.lmdbreader import DbReader
 from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
@@ -121,6 +130,47 @@ def create(extension_id):
         if job:
             scheduler.delete_job(job)
         raise
+
+
+@blueprint.route('/explore', methods=['GET'])
+def explore():
+    """
+    Returns a gallery consisting of the images of one of the dbs
+    """
+    job = job_from_request()
+    # Get LMDB
+    db = job.path(flask.request.args.get('db'))
+    db_path = job.path(db)
+    labels = []
+
+    page = int(flask.request.args.get('page', 0))
+    size = int(flask.request.args.get('size', 25))
+
+    reader = DbReader(db_path)
+    count = 0
+    imgs = []
+
+    min_page = max(0, page - 5)
+    total_entries = reader.total_entries
+
+    max_page = min((total_entries-1) / size, page + 5)
+    pages = range(min_page, max_page + 1)
+    for key, value in reader.entries():
+        if count >= page*size:
+            datum = caffe_pb2.Datum()
+            datum.ParseFromString(value)
+            if not datum.encoded:
+                raise RuntimeError("Expected encoded database")
+            s = StringIO()
+            s.write(datum.data)
+            s.seek(0)
+            img = PIL.Image.open(s)
+            imgs.append({"label": None, "b64": utils.image.embed_image_html(img)})
+        count += 1
+        if len(imgs) >= size:
+            break
+
+    return flask.render_template('datasets/images/explore.html', page=page, size=size, job=job, imgs=imgs, labels=None, pages=pages, label=None, total_entries=total_entries, db=db)
 
 
 def show(job, related_jobs=None):
