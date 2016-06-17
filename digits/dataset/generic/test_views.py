@@ -2,12 +2,13 @@
 from __future__ import absolute_import
 
 import json
+import os
 
 from bs4 import BeautifulSoup
 
 import digits.test_views
-
 from digits import extensions
+from digits.utils import constants
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -108,6 +109,16 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         super(BaseViewsTestWithDataset, cls).setUpClass()
         cls.dataset_id = cls.create_dataset(json=True, **kwargs)
         assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+        # Save val DB path
+        json = cls.get_dataset_json()
+        for t in json['create_db_tasks']:
+            if t['stage'] == constants.VAL_DB:
+                if t['feature_db_path'] is not None:
+                    cls.val_db_path = os.path.join(
+                        json['directory'],
+                        t['feature_db_path'])
+                else:
+                    cls.val_db_path = None
 
 
 class GenericViewsTest(BaseViewsTest):
