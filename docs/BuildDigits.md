@@ -1,74 +1,50 @@
 # Building DIGITS
 
-The preferred installation method for DIGITS is via Deb packages ([instructions](UbuntuInstall.md)).
-If you need to use a newer version of DIGITS or a custom build of NVcaffe, then you can use the instructions below to build from source.
+The preferred installation method for DIGITS is using pre-built packages on Ubuntu 14.04 ([instructions](UbuntuInstall.md)).
 
-Please note that Ubuntu **14.04 is the only officially supported OS** at this time, although DIGITS has been successfully used on other Linux variants as well as on OSX.
-If you want to use DIGITS on an alternative OS, your main obstacle will be building Caffe.
-Please refer to BVLC's [installation docs](http://caffe.berkeleyvision.org/installation.html), [user group](https://groups.google.com/d/forum/caffe-users) and/or [GitHub issues](https://github.com/BVLC/caffe/issues).
+If those don't work for you for some reason, these instructions will walk you through building the latest version of DIGITS from source.
+**These instructions are for installation on Ubuntu 14.04 and 16.04.**
 
-## Prerequisites
+On other platforms, installation of DIGITS itself should be pretty simple since it is a pure Python project.
+The difficulty will come from installing and configuring Caffe and/or Torch7.
+Though other platforms are not supported officially, users have successfully installed DIGITS and Caffe on CentOS, OSX and even Windows (using the `windows` branch on BVLC/caffe).
 
-Unless you build Caffe and Torch without CUDA, you'll need an NVIDIA driver version 346 or later. You can get one from the [NVIDIA driver website](http://www.nvidia.com/Download/index.aspx).
+## Dependencies
 
-You'll also need a few basic packages:
+Install some dependencies with Deb packages:
 ```sh
-% sudo apt-get install python-dev python-pip graphviz
+sudo apt-get install --no-install-recommends git graphviz gunicorn python-dev python-flask python-flaskext.wtf python-gevent python-h5py python-numpy python-pil python-protobuf python-scipy
 ```
+
+Follow [these instructions](BuildCaffe.md) to build Caffe (**required**).
+
+Follow [these instructions](BuildTorch.md) to build Torch7 (*suggested*).
 
 ## Download source
+
 ```sh
-% cd $HOME
-% git clone https://github.com/NVIDIA/DIGITS.git digits
+# example location - can be customized
+DIGITS_HOME=~/digits
+git clone https://github.com/NVIDIA/DIGITS.git $DIGITS_HOME
 ```
 
-Throughout the docs, we'll refer to your install location as `DIGITS_HOME` (`$HOME/digits` in this case), though you don't need to actually set that environment variable.
+Throughout the docs, we'll refer to your install location as `DIGITS_HOME` (`~/digits` in this case), though you don't need to actually set that environment variable.
 
 ## Python packages
 
-Several PyPI packages need to be installed.
+Several PyPI packages need to be installed:
 ```sh
-% cd $DIGITS_HOME
-% sudo pip install -r requirements.txt
+sudo pip install -r $DIGITS_HOME/requirements.txt
 ```
-
-To speed up installation, you could install most of these via apt-get packages first.
-```sh
-% sudo apt-get install python-pil python-numpy python-scipy python-protobuf python-gevent python-flask python-flaskext.wtf gunicorn python-h5py
-```
-
-## Caffe
-
-DIGITS requires [NVIDIA's fork of Caffe](https://github.com/NVIDIA/caffe), which is sometimes referred to as either "NVcaffe" or "caffe-nv".
-
-If you don't need a new version or custom build of NVcaffe, you can still use Deb packages to install the latest release.
-Follow [these instructions](UbuntuInstall.md#repository-access) to gain access to the required repositories, and then use this command to install:
-```sh
-% sudo apt-get install caffe-nv python-caffe-nv
-```
-
-Otherwise, **follow [these instructions](BuildCaffe.md) to build from source**.
-
-## Torch
-
-With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caffe.
-
-> NOTE: Torch support is still experimental!
-
-As with Caffe, you can use Deb packages to install the latest release:
-```sh
-% sudo apt-get install torch7-nv
-```
-
-Otherwise, **follow [these instructions](BuildTorch.md) to build from source**.
 
 # Starting the server
 
 You can run DIGITS in two modes:
 
 ### Development mode
+
 ```sh
-% ./digits-devserver
+./digits-devserver
 ```
 
 Starts a development server (werkzeug backend) at `http://localhost:5000/`.
@@ -88,8 +64,9 @@ optional arguments:
 ```
 
 ### Production mode
+
 ```sh
-% ./digits-server
+./digits-server
 ```
 
 Starts a production server (gunicorn backend) at `http://localhost:34448`.
@@ -99,7 +76,7 @@ If you have installed the nginx.site to `/etc/nginx/sites-enabled/`, then you ca
 
 # Getting started
 
-Now that you're up and running, check out the [getting started guide](GettingStarted.md).
+Now that you're up and running, check out the [Getting Started Guide](GettingStarted.md).
 
 ## Troubleshooting
 

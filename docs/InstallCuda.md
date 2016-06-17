@@ -12,7 +12,7 @@ You will need an NVIDIA GPU if you want to use CUDA.
 To find out what the compute capability of your card is, check one of these websites:
 
 * https://developer.nvidia.com/cuda-gpus
-* https://en.wikipedia.org/wiki/CUDA#Supported_GPUs
+* https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 
 You can also use the DIGITS `device_query` tool to check for the compute `major` and `minor` versions:
 ```sh
