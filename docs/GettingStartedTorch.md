@@ -39,7 +39,7 @@ Where is torch installed?
 
 ## Selecting Torch7 when creating a model in DIGITS
 
-Select one of the "torch" tabs on the model creation page:
+Click on the "Torch" tab on the model creation page:
 
 ![Home page](images/torch-selection.png)
 

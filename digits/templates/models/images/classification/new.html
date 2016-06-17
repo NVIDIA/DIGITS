@@ -442,10 +442,8 @@ function setFramework(fwid)
     }
 
     if (fwid == 'torch'){
-        $("#torch-warning").show();
         editor.session.setMode(new LuaMode()); // Change editor syntax environment
     } else {
-        $("#torch-warning").hide();
         editor.session.setMode(new PythonMode()); // Change editor syntax environment
     }
     $('#stdnetRole a[href="'+"#"+fwid+"_standard"+'"]').tab('show');
@@ -461,13 +459,6 @@ function setFramework(fwid)
 }
             </script>
 
-            <div id="torch-warning" class="alert alert-warning" style="display:none;">
-                <b>NOTE:</b> Torch7 is currently supported as an experimental feature in DIGITS. The following limitation applies:
-                <ul>
-                    <li>Models don't automatically adjust to images with different sizes</li>
-                    <li>Fine tuning from multiple pre-trained models is not supported</li>
-                </ul>
-            </div>
             <ul class="nav nav-tabs" id="network-tabs">
                 <li class="active"><a href="#network-tab-standard" data-toggle="tab">Standard Networks</a></li>
                 <li><a href="#network-tab-previous" data-toggle="tab">Previous Networks</a></li>
