@@ -1,4 +1,5 @@
 # Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import flask
 import functools
@@ -42,7 +43,7 @@ def requires_login(f=None, redirect=True):
             if request_wants_json() or not redirect:
                 raise werkzeug.exceptions.Unauthorized()
             else:
-                return flask.redirect(flask.url_for('login', next=flask.request.path))
+                return flask.redirect(flask.url_for('digits.views.login', next=flask.request.path))
         try:
             # Validate username
             validate_username(username)
@@ -62,6 +63,9 @@ def has_permission(job, action, username=None):
     Keyword arguments:
     username -- the user in question (defaults to current user)
     """
+    if job.is_read_only():
+        return False
+
     if username is None:
         username = get_username()
 

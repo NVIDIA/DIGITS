@@ -1,17 +1,19 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 import re
 
-import digits
-from errors import BadNetworkError
-from framework import Framework
-from digits.model.tasks import CaffeTrainTask
-from digits.utils import subclass, override
-
-from google.protobuf import text_format
 import caffe.draw
 import caffe_pb2
+from google.protobuf import text_format
+
+from .errors import BadNetworkError
+from .framework import Framework
+import digits
+from digits.config import config_value
+from digits.model.tasks import CaffeTrainTask
+from digits.utils import subclass, override, parse_version
 
 @subclass
 class CaffeFramework(Framework):
@@ -31,6 +33,18 @@ class CaffeFramework(Framework):
 
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = False
+
+    if config_value('caffe_root')['flavor'] == 'NVIDIA':
+        if config_value('caffe_root')['version'] > parse_version('0.14.0-alpha'):
+            SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
+                                      'RMSPROP', 'ADADELTA', 'ADAM']
+        else:
+            SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD']
+    elif config_value('caffe_root')['flavor'] == 'BVLC':
+        SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
+                                  'RMSPROP', 'ADADELTA', 'ADAM']
+    else:
+        raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
 
     @override
     def __init__(self):
@@ -85,17 +99,20 @@ class CaffeFramework(Framework):
         return network
 
     @override
-    def get_network_from_previous(self, previous_network):
+    def get_network_from_previous(self, previous_network, use_same_dataset):
         """
         return new instance of network from previous network
         """
         network = caffe_pb2.NetParameter()
         network.CopyFrom(previous_network)
-        # Rename the final layer
-        # XXX making some assumptions about network architecture here
-        ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
-        if len(ip_layers) > 0:
-            ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
+
+        if not use_same_dataset:
+            # Rename the final layer
+            # XXX making some assumptions about network architecture here
+            ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
+            if len(ip_layers) > 0:
+                ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
+
         return network
 
     @override
@@ -109,4 +126,13 @@ class CaffeFramework(Framework):
         if not net.name:
             net.name = 'Network'
         return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
+
+    @override
+    def can_accumulate_gradients(self):
+        if config_value('caffe_root')['flavor'] == 'BVLC':
+            return True
+        elif config_value('caffe_root')['flavor'] == 'NVIDIA':
+            return config_value('caffe_root')['version'] > parse_version('0.14.0-alpha')
+        else:
+            raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
 

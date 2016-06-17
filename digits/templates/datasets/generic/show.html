@@ -1,0 +1,82 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "job.html" %}
+{% from "helper.html" import serve_file %}
+
+{% macro print_create_db_task(task) %}
+<div class="panel-heading">
+    <h4>{{task.name()}}</h4>
+</div>
+<div class="panel-body">
+    <dl>
+        <dt>Entry Count</dt>
+        <dd>
+        {{ task.entry_count }}
+        </dd>
+        {% if task.entry_count > 0 %}
+            <dt>Feature shape</dt>
+            <dd>
+            {{ task.feature_shape }}
+            </dd>
+            <dt>Label shape</dt>
+            <dd>
+            {{ task.label_shape }}
+            </dd>
+            {% for name,path in task.dbs.iteritems() %}
+                <dt>{{ name }} DB</dt>
+                <dd>{{ job.path(path) }}</dd>
+                <dd>
+                    {% if task.status=='D' and task.get_encoding(name)!='none' %}
+                    <div>
+                        <a href="{{url_for('digits.dataset.generic.views.explore', job_id=job.id(), db=path)}}" class="btn btn-primary">Explore the db</a>
+                    </div>
+                    {% endif %}
+                </dd>
+            {% endfor %}
+        {% endif %}
+        {% if task.create_db_log_file %}
+        <dt>DB create log file</dt>
+        <dd>{{serve_file(task, task.create_db_log_file)}}</dd>
+        {% endif %}
+        {% if task.mean_file %}
+        <dt>Mean file</dt>
+        <dd>{{serve_file(task, task.mean_file)}}</dd>
+        {% endif %}
+    </dl>
+</div>
+{% endmacro %}
+
+{% block job_content %}
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Job Information</h4>
+            </div>
+            <div class="panel-body">
+                <dl>
+                    <dt>Job Directory</dt>
+                    <dd>{{job.dir()}}</dd>
+                    <dt>Dataset size</dt>
+                    <dd>{{job.disk_size_fmt()}}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for task in job.create_db_tasks() %}
+<div class="row">
+    <div class="col-sm-12">
+        {% if task.status != 'D' or task.entry_count > 0 %}
+            <div id="{{task.html_id()}}" class="panel panel-default">
+                {{ print_create_db_task(task) }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+

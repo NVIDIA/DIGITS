@@ -1,9 +1,10 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
+from collections import OrderedDict
+import ConfigParser
 import os
 import platform
-import ConfigParser
-from collections import OrderedDict
 
 import digits
 
@@ -113,24 +114,7 @@ class ConfigFile(object):
             cfg.write(outfile)
 
 
-class SystemConfigFile(ConfigFile):
-    def __init__(self):
-        if platform.system() in ['Linux','Darwin']:
-            filename = '/etc/digits.cfg'
-        else:
-            filename = None
-        super(SystemConfigFile, self).__init__(filename)
-
-class UserConfigFile(ConfigFile):
-    def __init__(self):
-        if 'HOME' in os.environ:
-            filename = os.path.join(os.environ['HOME'], '.digits.cfg')
-        else:
-            filename = None
-        super(UserConfigFile, self).__init__(filename)
-
 class InstanceConfigFile(ConfigFile):
     def __init__(self):
         filename = os.path.join(os.path.dirname(digits.__file__), 'digits.cfg')
         super(InstanceConfigFile, self).__init__(filename)
-

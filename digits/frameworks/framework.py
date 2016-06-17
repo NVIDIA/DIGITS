@@ -1,4 +1,5 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from digits.inference.tasks import InferenceTask
 
 class Framework(object):
 
@@ -24,11 +25,26 @@ class Framework(object):
         """
         return self.CAN_SHUFFLE_DATA
 
+    def supports_solver_type(self, solver_type):
+        """
+        return whether framework supports this solver_type
+        """
+        if not hasattr(self, 'SUPPORTED_SOLVER_TYPES'):
+            raise NotImplementedError
+        assert isinstance(self.SUPPORTED_SOLVER_TYPES, list)
+        return solver_type in self.SUPPORTED_SOLVER_TYPES
+
     def validate_network(self, data):
         """
         validate a network (must be implemented in child class)
         """
         raise NotImplementedError('Please implement me')
+
+    def create_inference_task(self, **kwargs):
+        """
+        create inference task
+        """
+        return InferenceTask(**kwargs)
 
     def create_train_task(self, **kwargs):
         """
@@ -48,7 +64,7 @@ class Framework(object):
         """
         raise NotImplementedError('Please implement me')
 
-    def get_network_from_previous(self, previous_network):
+    def get_network_from_previous(self, previous_network, use_same_dataset):
         """
         return new instance of network from previous network
         """
@@ -60,7 +76,6 @@ class Framework(object):
         """
         raise NotImplementedError('Please implement me')
 
-
-
-
+    def can_accumulate_gradients(self):
+        return False
 

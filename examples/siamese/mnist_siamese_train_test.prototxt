@@ -276,7 +276,7 @@ layer {
     lr_mult: 1.0
   }
   param {
-    name: "ip2_right"
+    name: "ip2_b"
     lr_mult: 2.0
   }
   inner_product_param {
@@ -327,4 +327,5 @@ layer {
   contrastive_loss_param {
     margin: 1.0
   }
+  exclude { stage: "deploy" }
 }

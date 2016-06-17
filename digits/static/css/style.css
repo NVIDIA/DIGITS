@@ -75,3 +75,11 @@ a.active {
 ul.inline li {
 	display: inline-block;
 }
+
+#ace-editor {
+    position: relative;
+    height: 600px;
+    border-radius: 5px;
+    margin-top:10px;
+    margin-bottom:10px;
+}

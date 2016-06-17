@@ -1,23 +1,29 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
 
-import flask
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
-from digits import utils
-from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler
-from digits.dataset import tasks
-from forms import ImageClassificationDatasetForm
-from job import ImageClassificationDatasetJob
-
-import lmdb
-import PIL.Image
-from StringIO import StringIO
 import caffe_pb2
+import flask
+import PIL.Image
 
-NAMESPACE = '/datasets/images/classification'
+from .forms import ImageClassificationDatasetForm
+from .job import ImageClassificationDatasetJob
+from digits import utils
+from digits.dataset import tasks
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job
+from digits.utils.lmdbreader import DbReader
+from digits.utils.routing import request_wants_json, job_from_request
+from digits.webapp import scheduler
+
+
+blueprint = flask.Blueprint(__name__, __name__)
 
 def from_folders(job, form):
     """
@@ -253,9 +259,9 @@ def from_files(job, form):
                 )
 
 
-@app.route(NAMESPACE + '/new', methods=['GET'])
+@blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
-def image_classification_dataset_new():
+def new():
     """
     Returns a form for a new ImageClassificationDatasetJob
     """
@@ -266,10 +272,10 @@ def image_classification_dataset_new():
 
     return flask.render_template('datasets/images/classification/new.html', form=form)
 
-@app.route(NAMESPACE + '.json', methods=['POST'])
-@app.route(NAMESPACE, methods=['POST'])
+@blueprint.route('.json', methods=['POST'])
+@blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
-def image_classification_dataset_create():
+def create():
     """
     Creates a new ImageClassificationDatasetJob
 
@@ -315,56 +321,29 @@ def image_classification_dataset_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('datasets_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('digits.dataset.views.show', job_id=job.id()))
 
     except:
         if job:
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    return flask.render_template('datasets/images/classification/show.html', job=job)
+    return flask.render_template('datasets/images/classification/show.html', job=job, related_jobs=related_jobs)
 
-@app.route(NAMESPACE + '/summary', methods=['GET'])
-def image_classification_dataset_summary():
+def summary(job):
     """
-    Return a short HTML summary of a DatasetJob
+    Return a short HTML summary of an ImageClassificationDatasetJob
     """
-    job = job_from_request()
+    return flask.render_template('datasets/images/classification/summary.html',
+                                 dataset=job)
 
-    return flask.render_template('datasets/images/classification/summary.html', dataset=job)
 
-class DbReader(object):
-    """
-    Reads a database
-    """
-
-    def __init__(self, location):
-        """
-        Arguments:
-        location -- where is the database
-        """
-        self._db = lmdb.open(location,
-                map_size=1024**3, # 1MB
-                readonly=True, lock=False)
-
-        with self._db.begin() as txn:
-            self.total_entries = txn.stat()['entries']
-
-    def entries(self):
-        """
-        Generator returning all entries in the DB
-        """
-        with self._db.begin() as txn:
-            cursor = txn.cursor()
-            for item in cursor:
-                yield item
-
-@app.route(NAMESPACE + '/explore', methods=['GET'])
-def image_classification_dataset_explore():
+@blueprint.route('/explore', methods=['GET'])
+def explore():
     """
     Returns a gallery consisting of the images of one of the dbs
     """
@@ -443,4 +422,4 @@ def image_classification_dataset_explore():
         if len(imgs) >= size:
             break
 
-    return flask.render_template('datasets/images/classification/explore.html', page=page, size=size, job=job, imgs=imgs, labels=labels, pages=pages, label=label, total_entries=total_entries, db=db)
+    return flask.render_template('datasets/images/explore.html', page=page, size=size, job=job, imgs=imgs, labels=labels, pages=pages, label=label, total_entries=total_entries, db=db)

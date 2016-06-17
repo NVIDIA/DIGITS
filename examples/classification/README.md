@@ -1,12 +1,19 @@
 # Classification Example
 
 This example shows how to use python to consume a DIGITS model and classify images.
-You should see the exact same numerical answers between DIGITS and these scripts.
+You should see the exact same numerical answers between DIGITS and these scripts (but take note of the "Limitations" section).
 
 ## Limitations
 
-Rather than providing all of the functionality in `digits.utils.image.resize_image`, this example assumes that the DIGITS dataset was created by "squashing" images (instead of cropping them) when inserting them into the database.
-For other models, this example will not produce the same results that you get with classification in DIGITS.
+There are a few "gotchas" which can lead to discrepancies between DIGITS classifications and the output from this example.
+
+##### Image resizing
+This example resizes images using the `Squash` method.
+In DIGITS, the same method will be used as was originally used when creating your dataset (`Crop`, `Squash`, `Fill` or `HalfCrop`).
+
+##### Mean subtraction
+This example subtracts a mean pixel rather than the whole mean file.
+In DIGITS, the same method will be used as was originally used when training your model (`None`, `Image` or `Pixel`).
 
 ## Requirements
 

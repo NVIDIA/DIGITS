@@ -6,25 +6,25 @@ Table of Contents
 * [Using the webapp](#using-the-webapp)
     * [Creating a Dataset](#creating-a-dataset)
     * [Training a Model](#training-a-model)
-* [Getting Started With Torch7 in DIGITS](#getting-started-with-torch7-in-digits)
+* [More guides](#more-guides)
 
 ## Installation
 
-Follow [these instructions](UbuntuInstall.md) to install via deb packages.
+Follow [these instructions](UbuntuInstall.md) to install Deb packages for the latest major release on Ubuntu 14.04.
 
 Follow [these instructions](BuildDigits.md) to build from source.
 
 ## Using the Webapp
 
 Once you have installed and started DIGITS, open up a web browser and navigate to the home screen.
-The server should be at either `http://localhost/` (if installed from deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
+The server should be at either `http://localhost/` (if installed from Deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
 
 ![Home page](images/home-page-1.jpg)
 
 For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network.
 Both are generously made available by Yann LeCun on [his website](http://yann.lecun.com/).
 
-Use the following command to download the MNIST dataset (for deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
+Use the following command to download the MNIST dataset (for Deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
 ```
 $ tools/download_data/main.py mnist ~/mnist
 Downloading url=http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz ...
@@ -44,12 +44,19 @@ Done after 16.722807169 seconds.
 ```
 See [Standard Datasets](StandardDatasets.md) for more details.
 
+### Logging in
+
+In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification`.
+This will lead you to the login page:
+
+![Login](images/login.jpg)
+
 ### Creating a Dataset
 
-In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Dataset" page.
+After logging in, you will be brought to the "New Image Classification Dataset" page.
 
 * Type in the path to the MNIST training images
-  * You can also add the the folder of MNIST test images as a "Separate validation images folder", if you like. Don't use the "test images" fields - test images are not used for anything in DIGITS yet.
+  * You can also add the folder of MNIST test images as a "Separate validation images folder", if you like. Don't use the "test images" fields - test images are not used for anything in DIGITS yet.
 * Change the `Image Type` to `Grayscale`
 * Change the `Image size` to 28 x 28
 * Give the dataset a name
@@ -95,7 +102,16 @@ DIGITS also provides visualizations and statistics about the weights and activat
 
 ![Classified one image](images/classified-one-image.jpg)
 
-## Getting Started With Torch7 in DIGITS
+## More Guides
 
-Follow [these instructions](GettingStartedTorch.md) for information on getting started with Torch7 in DIGITS.
+Once you have finished this guide, take a look at some of the other documentation at [docs/](.) and [examples/](../examples/):
 
+* [Getting Started with Torch7](GettingStartedTorch.md)
+* [Fine-tune a pretrained model](../examples/fine-tuning/README.md)
+* [Train an autoencoder network](../examples/autoencoder/README.md)
+* [Train a regression network](../examples/regression/README.md)
+* [Train a Siamese network](../examples/siamese/README.md)
+* [Train a text classification network](../examples/text-classification/README.md)
+* [Learn more about weight initialization](../examples/weight-init/README.md)
+* [Use Python layers in your Caffe networks](../examples/python-layer/README.md)
+* [Download a model and use it to classify an image outside of DIGITS](../examples/classification/README.md)

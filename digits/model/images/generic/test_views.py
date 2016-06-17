@@ -1,29 +1,42 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import re
-import os
+import itertools
 import json
+import numpy as np
+import os
+import PIL.Image
+import re
 import shutil
 import tempfile
 import time
 import unittest
-import itertools
 import urllib
 
-import mock
-import flask
-from gevent import monkey
-monkey.patch_all()
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 from bs4 import BeautifulSoup
+import flask
+import mock
 import PIL.Image
 from urlparse import urlparse
-from cStringIO import StringIO
+
+from digits import extensions
+from digits.config import config_value
+import digits.dataset.images.generic.test_views
+import digits.dataset.generic.test_views
+import digits.test_views
+from digits.utils import constants
+import digits.webapp
+
+# Must import after importing digit.config
 import caffe_pb2
 
-import digits.webapp
-import digits.test_views
-import digits.dataset.images.generic.test_views
-from digits.config import config_value
+import numpy as np
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -58,11 +71,12 @@ layer {
   }
 }
 layer {
-  name: "train_loss"
+  name: "loss"
   type: "EuclideanLoss"
   bottom: "output"
   bottom: "label"
   top: "loss"
+  exclude { stage: "deploy" }
 }
 """
 
@@ -119,11 +133,12 @@ end
     def network(cls):
         return cls.TORCH_NETWORK if cls.FRAMEWORK=='torch' else cls.CAFFE_NETWORK
 
-
-class BaseViewsTestWithDataset(BaseViewsTest,
-        digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
+class BaseViewsTestWithAnyDataset(BaseViewsTest):
     """
     Provides a dataset
+    This is a common interface to work with either "images/generic"
+    datasets or "generic" datasets. The dataset type to use is chosen
+    further down in the class hierarchy, see e.g. BaseViewsTestWithDataset
     """
 
     # Inherited classes may want to override these attributes
@@ -134,7 +149,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
 
     @classmethod
     def setUpClass(cls):
-        super(BaseViewsTestWithDataset, cls).setUpClass()
+        super(BaseViewsTestWithAnyDataset, cls).setUpClass()
         cls.created_models = []
 
     @classmethod
@@ -142,7 +157,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         # delete any created datasets
         for job_id in cls.created_models:
             cls.delete_model(job_id)
-        super(BaseViewsTestWithDataset, cls).tearDownClass()
+        super(BaseViewsTestWithAnyDataset, cls).tearDownClass()
 
     @classmethod
     def create_model(cls, learning_rate=None, **kwargs):
@@ -185,7 +200,11 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             if rv.status_code != 200:
                 print json.loads(rv.data)
                 raise RuntimeError('Model creation failed with %s' % rv.status_code)
-            return json.loads(rv.data)['id']
+            data = json.loads(rv.data)
+            if 'jobs' in data.keys():
+                return [j['id'] for j in data['jobs']]
+            else:
+                return data['id']
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
@@ -193,9 +212,10 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
-                raise RuntimeError(div[0])
+                print div[0]
             else:
-                raise RuntimeError('Failed to create model')
+                print rv.data
+            raise RuntimeError('Failed to create dataset - status %s' % rv.status_code)
 
         job_id = cls.job_id_from_response(rv)
         assert cls.model_exists(job_id), 'model not found after successful creation'
@@ -203,14 +223,22 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         cls.created_models.append(job_id)
         return job_id
 
+class BaseViewsTestWithDataset(BaseViewsTestWithAnyDataset,
+        digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
+    """
+    This inherits from BaseViewsTestWithAnyDataset and
+    digits.dataset.images.generic.test_views.BaseViewsTestWithDataset
+    in order to provide an interface to test models on "images/generic" datasets
+    """
+    pass
 
-class BaseViewsTestWithModel(BaseViewsTestWithDataset):
+class BaseViewsTestWithModelWithAnyDataset(BaseViewsTestWithAnyDataset):
     """
     Provides a model
     """
     @classmethod
     def setUpClass(cls):
-        super(BaseViewsTestWithModel, cls).setUpClass()
+        super(BaseViewsTestWithModelWithAnyDataset, cls).setUpClass()
         cls.model_id = cls.create_model(json=True)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
@@ -225,6 +253,11 @@ class BaseTestViews(BaseViewsTest):
 
     def test_nonexistent_model(self):
         assert not self.model_exists('foo'), "model shouldn't exist"
+
+    def test_view_config(self):
+        extension = extensions.view.get_default_extension()
+        rv = self.app.get('/models/view-config/%s' % extension.get_id())
+        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
 
     def test_visualize_network(self):
         rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
@@ -457,7 +490,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
 
         assert (job1.form_data == job2.form_data), 'form content does not match'
 
-class BaseTestCreated(BaseViewsTestWithModel):
+class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
     """
     Tests on a model that has already been created
     """
@@ -484,11 +517,6 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 found = True
                 break
         assert found, 'model not found in list'
-
-    def test_models_page(self):
-        rv = self.app.get('/models', follow_redirects=True)
-        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        assert 'Models' in rv.data, 'unexpected page format'
 
     def test_model_json(self):
         rv = self.app.get('/models/%s.json' % self.model_id)
@@ -547,7 +575,8 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 'image regression result is wrong: %s' % data['outputs']['output']
 
     def test_infer_many(self):
-        textfile_images = '%s\n' % self.test_image
+        # use the same image twice to make a list of two images
+        textfile_images = '%s\n%s\n' % (self.test_image, self.test_image)
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
@@ -555,6 +584,39 @@ class BaseTestCreated(BaseViewsTestWithModel):
         rv = self.app.post(
                 '/models/images/generic/infer_many?job_id=%s' % self.model_id,
                 data = {'image_list': file_upload}
+                )
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        headers = s.select('table.table th')
+        assert headers is not None, 'unrecognized page format'
+
+    def test_infer_db(self):
+        rv = self.app.post(
+                '/models/images/generic/infer_db?job_id=%s' % self.model_id,
+                data = {'db_path': self.val_db_path}
+                )
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        headers = s.select('table.table th')
+        assert headers is not None, 'unrecognized page format'
+
+    def test_infer_many_from_folder(self):
+        textfile_images = '%s\n' % os.path.basename(self.test_image)
+
+        # StringIO wrapping is needed to simulate POST file upload.
+        file_upload = (StringIO(textfile_images), 'images.txt')
+
+        # try selecting the extension explicitly
+        extension = extensions.view.get_default_extension()
+        extension_id = extension.get_id()
+
+        rv = self.app.post(
+                '/models/images/generic/infer_many?job_id=%s' % self.model_id,
+                data = {'image_list': file_upload,
+                        'image_folder': os.path.dirname(self.test_image),
+                        'view_extension_id': extension_id}
                 )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
@@ -575,6 +637,53 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
         assert 'outputs' in data, 'invalid response'
+
+    def test_infer_db_json(self):
+        rv = self.app.post(
+                '/models/images/generic/infer_db.json?job_id=%s' % self.model_id,
+                data = {'db_path': self.val_db_path}
+                )
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+        data = json.loads(rv.data)
+        assert 'outputs' in data, 'invalid response'
+
+class BaseTestCreated(BaseTestCreatedWithAnyDataset,
+    digits.dataset.images.generic.test_views.BaseViewsTestWithDataset):
+    """
+    Tests on a model that has already been created with an "images/generic" dataset
+    """
+    pass
+
+class BaseTestCreatedWithGradientDataExtension(BaseTestCreatedWithAnyDataset,
+    digits.dataset.generic.test_views.BaseViewsTestWithDataset):
+    """
+    Tests on a model that has already been created with a "generic" dataset,
+    using the gradients extension in that instance
+    """
+    EXTENSION_ID = "image-gradients"
+
+    @classmethod
+    def setUpClass(cls):
+        super(BaseTestCreatedWithGradientDataExtension, cls).setUpClass()
+        if not hasattr(cls, 'imageset_folder'):
+            # Create test image
+            cls.imageset_folder = tempfile.mkdtemp()
+            image_size = 32
+            yy, xx = np.mgrid[:image_size,
+                              :image_size].astype('float')
+            xslope, yslope = 0.5, 0.5
+            a = xslope * 255 / image_size
+            b = yslope * 255 / image_size
+            test_image = a * (xx - image_size/2) + b * (yy - image_size/2) + 127.5
+            test_image = test_image.astype('uint8')
+            pil_img = PIL.Image.fromarray(test_image)
+            cls.test_image = os.path.join(cls.imageset_folder, 'test.png')
+            pil_img.save(cls.test_image)
+            # Save val DB path
+            json = cls.get_dataset_json()
+            cls.val_db_path = os.path.join(json["directory"], "val_db", "features")
+        cls.model_id = cls.create_model(json=True)
+        assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
 
 class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
@@ -686,11 +795,12 @@ layer {
   }
 }
 layer {
-  name: "train_loss"
+  name: "loss"
   type: "EuclideanLoss"
   bottom: "output"
   bottom: "label"
   top: "loss"
+  exclude { stage: "deploy" }
 }
 """
 
@@ -732,6 +842,9 @@ class TestCaffeCreation(BaseTestCreation):
 class TestCaffeCreated(BaseTestCreated):
     FRAMEWORK = 'caffe'
 
+class TestCaffeCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension):
+    FRAMEWORK = 'caffe'
+
 class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'caffe'
 
@@ -750,6 +863,9 @@ class TestTorchCreation(BaseTestCreation):
 class TestTorchCreated(BaseTestCreated):
     FRAMEWORK = 'torch'
 
+class TestTorchCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension):
+    FRAMEWORK = 'torch'
+
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'torch'
 
@@ -758,3 +874,167 @@ class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
 
 class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'torch'
+
+class TestTorchTableOutput(BaseTestCreated):
+    FRAMEWORK = 'torch'
+    TORCH_NETWORK = \
+"""
+return function(p)
+    -- same network as in class BaseTestCreated except that each gradient
+    -- is learnt separately: the input is fed into nn.ConcatTable and
+    -- each branch outputs one of the gradients
+    local nDim = 1
+    if p.inputShape then p.inputShape:apply(function(x) nDim=nDim*x end) end
+    local net = nn.Sequential()
+    net:add(nn.MulConstant(0.004))
+    net:add(nn.View(-1):setNumInputDims(3))  -- flatten
+    -- set all weights and biases to zero as this speeds learning up
+    -- for the type of problem we're trying to solve in this test
+    local linearLayer1 = nn.Linear(nDim, 1)
+    linearLayer1.weight:fill(0)
+    linearLayer1.bias:fill(0)
+    local linearLayer2 = nn.Linear(nDim, 1)
+    linearLayer2.weight:fill(0)
+    linearLayer2.bias:fill(0)
+    -- create concat table
+    local parallel = nn.ConcatTable()
+    parallel:add(linearLayer1):add(linearLayer2)
+    net:add(parallel)
+    -- create two MSE criteria to optimize each gradient separately
+    local mse1 = nn.MSECriterion()
+    local mse2 = nn.MSECriterion()
+    -- now create a criterion that takes as input each of the two criteria
+    local finalCriterion = nn.ParallelCriterion(false):add(mse1):add(mse2)
+    -- create label hook
+    function labelHook(input, dblabel)
+        -- split label alongside 2nd dimension
+        local labelTable = dblabel:split(1,2)
+        return labelTable
+    end
+    return {
+        model = net,
+        loss = finalCriterion,
+        labelHook = labelHook,
+    }
+end
+"""
+
+class TestTorchNDOutput(BaseTestCreated):
+    FRAMEWORK = 'torch'
+    CROP_SIZE = 8
+    TORCH_NETWORK = \
+"""
+return function(p)
+    -- this model just forwards the input as is
+    local net = nn.Sequential():add(nn.Identity())
+    -- create label hook
+    function labelHook(input, dblabel)
+        return input
+    end
+    return {
+        model = net,
+        loss = nn.AbsCriterion(),
+        labelHook = labelHook,
+    }
+end
+"""
+
+    def test_infer_one_json(self):
+
+        image_path = os.path.join(self.imageset_folder, self.test_image)
+        with open(image_path,'rb') as infile:
+            # StringIO wrapping is needed to simulate POST file upload.
+            image_upload = (StringIO(infile.read()), 'image.png')
+
+        rv = self.app.post(
+                '/models/images/generic/infer_one.json?job_id=%s' % self.model_id,
+                data = {
+                    'image_file': image_upload,
+                    }
+                )
+        assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        # make sure the shape of the output matches the shape of the input
+        data = json.loads(rv.data)
+        output = np.array(data['outputs']['output'][0])
+        assert output.shape == (1, self.CROP_SIZE, self.CROP_SIZE), \
+                'shape mismatch: %s' % str(output.shape)
+
+class TestSweepCreation(BaseViewsTestWithDataset):
+    FRAMEWORK = 'caffe'
+    """
+    Model creation tests
+    """
+    def test_sweep(self):
+        job_ids = self.create_model(json=True, learning_rate='[0.01, 0.02]', batch_size='[8, 10]')
+        for job_id in job_ids:
+            assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+            assert self.delete_model(job_id) == 200, 'delete failed'
+            assert not self.model_exists(job_id), 'model exists after delete'
+
+
+class TestAllInOneNetwork(BaseTestCreation, BaseTestCreated):
+    """
+    Test an all-in-one network
+    """
+    FRAMEWORK = 'caffe'
+    CAFFE_NETWORK = \
+"""
+layer {
+  name: "train_data"
+  type: "Data"
+  top: "scaled_data"
+  transform_param {
+    scale: 0.004
+  }
+  include { phase: TRAIN }
+}
+layer {
+  name: "train_label"
+  type: "Data"
+  top: "label"
+  include { phase: TRAIN }
+}
+layer {
+  name: "val_data"
+  type: "Data"
+  top: "scaled_data"
+  transform_param {
+    scale: 0.004
+  }
+  include { phase: TEST }
+}
+layer {
+  name: "val_label"
+  type: "Data"
+  top: "label"
+  include { phase: TEST }
+}
+layer {
+  name: "scale"
+  type: "Power"
+  bottom: "data"
+  top: "scaled_data"
+  power_param {
+    scale: 0.004
+  }
+  include { stage: "deploy" }
+}
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scaled_data"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+  exclude { stage: "deploy" }
+}
+"""
+

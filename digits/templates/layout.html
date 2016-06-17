@@ -18,6 +18,10 @@
     <script src="{{ url_for('static', filename='js/jquery.autocomplete.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/file_field.js') }}"></script>
 
+    <script src="{{ url_for('static', filename='js/ace/ace.js') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/ace/mode-python.js') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/ace/mode-lua.js') }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/ace/theme-chrome.js') }}" type="text/javascript" charset="utf-8"></script>
     {% block head %}
     {% endblock %}
 </head>
@@ -47,7 +51,9 @@
                 {% if server_name %}
                 <li><span class="navbar-text">Server: {{server_name}}</span></li>
                 {% endif %}
-                <li><span class="navbar-text">Version: {{server_version}}</span></li>
+                <li><span class="navbar-text">DIGITS version: <br> {{server_version}}</span></li>
+                <li><span class="navbar-text">Caffe version: <br> {{caffe_version}}</span><li>
+                <li><span class="navbar-text">Caffe flavor: <br> {{caffe_flavor}}</span><li>
             </ul>
         </ul>
     </div>
@@ -74,6 +80,13 @@ window.onload = function () {
         }
     });
     $(".autocomplete_path").removeAttr("autocomplete");
+    $(".autocomplete_path").on('keyup',function(e){
+      // If path is relative, enforce absolute
+      var isRelative = e.target.value[0] != '/' && e.target.value[0] != '\\';
+      if (e.target.value.length > 0 && isRelative) {
+        e.target.value = "/" + e.target.value;
+      }
+    });
 };
 
 </script>

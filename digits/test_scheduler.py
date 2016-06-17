@@ -1,18 +1,19 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-from gevent import monkey; monkey.patch_all()
-from nose.tools import assert_raises
 import mock
+from nose.tools import assert_raises
 
-from . import scheduler as _
-from config import config_value
-from job import Job
+from . import scheduler
+from .config import config_value
+from .job import Job
+from .webapp import app
 from digits.utils import subclass, override
 
 class TestScheduler():
 
     def get_scheduler(self):
-        return _.Scheduler(config_value('gpu_list'))
+        return scheduler.Scheduler(config_value('gpu_list'))
 
     def test_add_before_start(self):
         s = self.get_scheduler()
@@ -40,7 +41,7 @@ class TestSchedulerFlow():
 
     @classmethod
     def setUpClass(cls):
-        cls.s = _.Scheduler(config_value('gpu_list'))
+        cls.s = scheduler.Scheduler(config_value('gpu_list'))
         assert cls.s.start(), 'failed to start'
 
     @classmethod
@@ -48,9 +49,10 @@ class TestSchedulerFlow():
         assert cls.s.stop(), 'failed to stop'
 
     def test_add_remove_job(self):
-        job = JobForTesting(name='testsuite-job', username='digits-testsuite')
-        assert self.s.add_job(job), 'failed to add job'
-        assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
-        assert self.s.delete_job(job), 'failed to delete job'
-        assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
+        with app.test_request_context():
+            job = JobForTesting(name='testsuite-job', username='digits-testsuite')
+            assert self.s.add_job(job), 'failed to add job'
+            assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
+            assert self.s.delete_job(job), 'failed to delete job'
+            assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
 

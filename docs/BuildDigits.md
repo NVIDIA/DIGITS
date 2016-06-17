@@ -1,6 +1,6 @@
 # Building DIGITS
 
-The preferred installation method for DIGITS is via deb packages ([instructions](UbuntuInstall.md)).
+The preferred installation method for DIGITS is via Deb packages ([instructions](UbuntuInstall.md)).
 If you need to use a newer version of DIGITS or a custom build of NVcaffe, then you can use the instructions below to build from source.
 
 Please note that Ubuntu **14.04 is the only officially supported OS** at this time, although DIGITS has been successfully used on other Linux variants as well as on OSX.
@@ -34,14 +34,14 @@ Several PyPI packages need to be installed.
 
 To speed up installation, you could install most of these via apt-get packages first.
 ```sh
-% sudo apt-get install python-pil python-numpy python-scipy python-protobuf python-gevent python-Flask python-flaskext.wtf gunicorn python-h5py
+% sudo apt-get install python-pil python-numpy python-scipy python-protobuf python-gevent python-flask python-flaskext.wtf gunicorn python-h5py
 ```
 
 ## Caffe
 
 DIGITS requires [NVIDIA's fork of Caffe](https://github.com/NVIDIA/caffe), which is sometimes referred to as either "NVcaffe" or "caffe-nv".
 
-If you don't need a new version or custom build of NVcaffe, you can still use deb packages to install the latest release.
+If you don't need a new version or custom build of NVcaffe, you can still use Deb packages to install the latest release.
 Follow [these instructions](UbuntuInstall.md#repository-access) to gain access to the required repositories, and then use this command to install:
 ```sh
 % sudo apt-get install caffe-nv python-caffe-nv
@@ -55,7 +55,7 @@ With v3.0, DIGITS now supports Torch7 as an optional alternative backend to Caff
 
 > NOTE: Torch support is still experimental!
 
-As with Caffe, you can use deb packages to install the latest release:
+As with Caffe, you can use Deb packages to install the latest release:
 ```sh
 % sudo apt-get install torch7-nv
 ```

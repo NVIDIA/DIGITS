@@ -11,10 +11,10 @@ import argparse
 import os
 import time
 
-import PIL.Image
-import numpy as np
-import scipy.misc
 from google.protobuf import text_format
+import numpy as np
+import PIL.Image
+import scipy.misc
 
 os.environ['GLOG_minloglevel'] = '2' # Suppress most caffe output
 import caffe
@@ -106,7 +106,7 @@ def load_image(path, height, width, mode='RGB'):
     image = scipy.misc.imresize(image, (height, width), 'bilinear')
     return image
 
-def forward_pass(images, net, transformer, batch_size=1):
+def forward_pass(images, net, transformer, batch_size=None):
     """
     Returns scores for each image as an np.ndarray (nImages x nClasses)
 
@@ -119,14 +119,15 @@ def forward_pass(images, net, transformer, batch_size=1):
     batch_size -- how many images can be processed at once
         (a high value may result in out-of-memory errors)
     """
+    if batch_size is None:
+        batch_size = 1
+
     caffe_images = []
     for image in images:
         if image.ndim == 2:
             caffe_images.append(image[:,:,np.newaxis])
         else:
             caffe_images.append(image)
-
-    caffe_images = np.array(caffe_images)
 
     dims = transformer.inputs['data'][1:]
 
@@ -138,12 +139,14 @@ def forward_pass(images, net, transformer, batch_size=1):
         for index, image in enumerate(chunk):
             image_data = transformer.preprocess('data', image)
             net.blobs['data'].data[index] = image_data
+        start = time.time()
         output = net.forward()[net.outputs[-1]]
+        end = time.time()
         if scores is None:
             scores = np.copy(output)
         else:
             scores = np.vstack((scores, output))
-        print 'Processed %s/%s images ...' % (len(scores), len(caffe_images))
+        print 'Processed %s/%s images in %f seconds ...' % (len(scores), len(caffe_images), (end - start))
 
     return scores
 
@@ -168,7 +171,7 @@ def read_labels(labels_file):
     return labels
 
 def classify(caffemodel, deploy_file, image_files,
-        mean_file=None, labels_file=None, use_gpu=True):
+        mean_file=None, labels_file=None, batch_size=None, use_gpu=True):
     """
     Classify some images against a Caffe model and print the results
 
@@ -196,9 +199,7 @@ def classify(caffemodel, deploy_file, image_files,
     labels = read_labels(labels_file)
 
     # Classify the image
-    classify_start_time = time.time()
-    scores = forward_pass(images, net, transformer)
-    print 'Classification took %s seconds.' % (time.time() - classify_start_time,)
+    scores = forward_pass(images, net, transformer, batch_size=batch_size)
 
     ### Process the results
 
@@ -231,7 +232,9 @@ if __name__ == '__main__':
 
     parser.add_argument('caffemodel',   help='Path to a .caffemodel')
     parser.add_argument('deploy_file',  help='Path to the deploy file')
-    parser.add_argument('image',        help='Path to an image')
+    parser.add_argument('image_file',
+                        nargs='+',
+                        help='Path[s] to an image')
 
     ### Optional arguments
 
@@ -239,16 +242,16 @@ if __name__ == '__main__':
             help='Path to a mean file (*.npy)')
     parser.add_argument('-l', '--labels',
             help='Path to a labels file')
+    parser.add_argument('--batch-size',
+                        type=int)
     parser.add_argument('--nogpu',
             action='store_true',
             help="Don't use the GPU")
 
     args = vars(parser.parse_args())
 
-    image_files = [args['image']]
+    classify(args['caffemodel'], args['deploy_file'], args['image_file'],
+            args['mean'], args['labels'], args['batch_size'], not args['nogpu'])
 
-    classify(args['caffemodel'], args['deploy_file'], image_files,
-            args['mean'], args['labels'], not args['nogpu'])
-
-    print 'Script took %s seconds.' % (time.time() - script_start_time,)
+    print 'Script took %f seconds.' % (time.time() - script_start_time,)
 

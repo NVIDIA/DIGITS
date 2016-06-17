@@ -1,24 +1,32 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
+from collections import OrderedDict
+import copy
+import math
+import operator
 import os
 import re
-import time
-import math
 import subprocess
-import operator
 import sys
+import time
 
-import numpy as np
-import scipy
 from google.protobuf import text_format
-import caffe
-import caffe_pb2
+import numpy as np
+import platform
+import scipy
 
-from train import TrainTask
+from .train import TrainTask
+import digits
+from digits import utils
 from digits.config import config_value
 from digits.status import Status
-from digits import utils, dataset
 from digits.utils import subclass, override, constants
+from digits.utils.filesystem import tail
+
+# Must import after importing digit.config
+import caffe
+import caffe_pb2
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 3
@@ -28,6 +36,15 @@ CAFFE_SOLVER_FILE = 'solver.prototxt'
 CAFFE_TRAIN_VAL_FILE = 'train_val.prototxt'
 CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
+
+@subclass
+class Error(Exception):
+    pass
+
+@subclass
+class CaffeTrainSanityCheckError(Error):
+    """A sanity check failed"""
+    pass
 
 @subclass
 class CaffeTrainTask(TrainTask):
@@ -41,6 +58,14 @@ class CaffeTrainTask(TrainTask):
     def upgrade_network(network):
         #TODO
         pass
+
+    @staticmethod
+    def set_mode(gpu):
+        if gpu is not None:
+            caffe.set_device(gpu)
+            caffe.set_mode_gpu()
+        else:
+            caffe.set_mode_cpu()
 
     def __init__(self, **kwargs):
         """
@@ -107,9 +132,9 @@ class CaffeTrainTask(TrainTask):
     def before_run(self):
         super(CaffeTrainTask, self).before_run()
 
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
+        if isinstance(self.job, digits.model.images.classification.ImageClassificationModelJob):
             self.save_files_classification()
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
+        elif isinstance(self.job, digits.model.images.generic.GenericImageModelJob):
             self.save_files_generic()
         else:
             raise NotImplementedError
@@ -127,23 +152,13 @@ class CaffeTrainTask(TrainTask):
             blob = caffe_pb2.BlobProto()
             blob.MergeFromString(f.read())
 
-            if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-                mean_image = np.reshape(blob.data,
-                                        (
-                                            self.dataset.image_dims[2],
-                                            self.dataset.image_dims[0],
-                                            self.dataset.image_dims[1],
-                                        )
+            mean_image = np.reshape(blob.data,
+                                    (
+                                        self.dataset.get_feature_dims()[2],
+                                        self.dataset.get_feature_dims()[0],
+                                        self.dataset.get_feature_dims()[1],
                                     )
-            elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-                task = self.dataset.analyze_db_tasks()[0]
-                mean_image = np.reshape(blob.data,
-                                        (
-                                            task.image_channels,
-                                            task.image_height,
-                                            task.image_width,
-                                        )
-                                    )
+                                )
 
             # Resize the mean image if crop_size exists
             if mean_image is not None and resize:
@@ -209,78 +224,38 @@ class CaffeTrainTask(TrainTask):
         layer.transform_param.mean_file = mean_file
 
     # TODO merge these monolithic save_files functions
-    # TODO break them up into separate functions
     def save_files_classification(self):
         """
         Save solver, train_val and deploy files to disk
         """
-        has_val_set = self.dataset.val_db_task() is not None
-
-        ### Check what has been specified in self.network
-
-        tops = []
-        bottoms = {}
-        train_data_layer = None
-        val_data_layer = None
-        hidden_layers = caffe_pb2.NetParameter()
-        loss_layers = []
-        accuracy_layers = []
-        for layer in self.network.layer:
-            assert layer.type not in ['DummyData', 'ImageData', 'MemoryData', 'WindowData'], 'unsupported data layer type'
-            if layer.type in ['Data', 'HDF5Data']:
-                for rule in layer.include:
-                    if rule.phase == caffe_pb2.TRAIN:
-                        assert train_data_layer is None, 'cannot specify two train data layers'
-                        train_data_layer = layer
-                    elif rule.phase == caffe_pb2.TEST:
-                        assert val_data_layer is None, 'cannot specify two test data layers'
-                        val_data_layer = layer
-            elif layer.type == 'SoftmaxWithLoss':
-                loss_layers.append(layer)
-            elif layer.type == 'Accuracy':
-                addThis = True
-                if layer.accuracy_param.HasField('top_k'):
-                    if layer.accuracy_param.top_k >= len(self.get_labels()):
-                        self.logger.warning('Removing layer %s because top_k=%s while there are are only %s labels in this dataset' % (layer.name, layer.accuracy_param.top_k, len(self.get_labels())))
-                        addThis = False
-                if addThis:
-                    accuracy_layers.append(layer)
-            else:
-                hidden_layers.layer.add().CopyFrom(layer)
-                if len(layer.bottom) == 1 and len(layer.top) == 1 and layer.bottom[0] == layer.top[0]:
-                    pass
-                else:
-                    for top in layer.top:
-                        tops.append(top)
-                    for bottom in layer.bottom:
-                        bottoms[bottom] = True
-
-        if train_data_layer is None:
-            assert val_data_layer is None, 'cannot specify a test data layer without a train data layer'
-
-        assert len(loss_layers) > 0, 'must specify a loss layer'
-
-        network_outputs = []
-        for name in tops:
-            if name not in bottoms:
-                network_outputs.append(name)
-        assert len(network_outputs), 'network must have an output'
-
-        # Update num_output for any output InnerProduct layers automatically
-        for layer in hidden_layers.layer:
-            if layer.type == 'InnerProduct':
-                for top in layer.top:
-                    if top in network_outputs:
-                        layer.inner_product_param.num_output = len(self.get_labels())
-                        break
+        network = cleanedUpClassificationNetwork(self.network, len(self.get_labels()))
+        data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
 
         ### Write train_val file
 
         train_val_network = caffe_pb2.NetParameter()
 
-        dataset_backend = self.dataset.train_db_task().backend
+        # Data layers
+        # TODO clean this up
 
-        # data layers
+        train_data_layer = None
+        val_data_layer = None
+
+        for layer in data_layers.layer:
+            for rule in layer.include:
+                if rule.phase == caffe_pb2.TRAIN:
+                    assert train_data_layer is None, 'cannot specify two train data layers'
+                    train_data_layer = layer
+                elif rule.phase == caffe_pb2.TEST:
+                    assert val_data_layer is None, 'cannot specify two test data layers'
+                    val_data_layer = layer
+
+        if train_data_layer is None:
+            assert val_data_layer is None, 'cannot specify a test data layer without a train data layer'
+
+        dataset_backend = self.dataset.get_backend()
+        has_val_set = self.dataset.get_entry_count(constants.VAL_DB) > 0
+
         if train_data_layer is not None:
             if dataset_backend == 'lmdb':
                 assert train_data_layer.type == 'Data', 'expecting a Data layer'
@@ -291,7 +266,7 @@ class CaffeTrainTask(TrainTask):
                 assert not train_data_layer.data_param.HasField('backend'), "don't set the data_param.backend"
             if dataset_backend == 'hdf5' and train_data_layer.HasField('hdf5_data_param'):
                 assert not train_data_layer.hdf5_data_param.HasField('source'), "don't set the hdf5_data_param.source"
-            max_crop_size = min(self.dataset.image_dims[0], self.dataset.image_dims[1])
+            max_crop_size = min(self.dataset.get_feature_dims()[0], self.dataset.get_feature_dims()[1])
             if self.crop_size:
                 assert dataset_backend != 'hdf5', 'HDF5Data layer does not support cropping'
                 assert self.crop_size <= max_crop_size, 'crop_size is larger than the image size'
@@ -347,27 +322,27 @@ class CaffeTrainTask(TrainTask):
                 if self.crop_size:
                     val_data_layer.transform_param.crop_size = self.crop_size
         if dataset_backend == 'lmdb':
-            train_data_layer.data_param.source = self.dataset.path(self.dataset.train_db_task().db_name)
+            train_data_layer.data_param.source = self.dataset.get_feature_db_path(constants.TRAIN_DB)
             train_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
             if val_data_layer is not None and has_val_set:
-                val_data_layer.data_param.source = self.dataset.path(self.dataset.val_db_task().db_name)
+                val_data_layer.data_param.source = self.dataset.get_feature_db_path(constants.VAL_DB)
                 val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
         elif dataset_backend == 'hdf5':
-            train_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.train_db_task().textfile)
+            train_data_layer.hdf5_data_param.source = os.path.join(self.dataset.get_feature_db_path(constants.TRAIN_DB), 'list.txt')
             if val_data_layer is not None and has_val_set:
-                val_data_layer.hdf5_data_param.source = self.dataset.path(self.dataset.val_db_task().textfile)
+                val_data_layer.hdf5_data_param.source = os.path.join(self.dataset.get_feature_db_path(constants.VAL_DB), 'list.txt')
 
         if self.use_mean == 'pixel':
             assert dataset_backend != 'hdf5', 'HDF5Data layer does not support mean subtraction'
-            mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.train_db_task().mean_file))
+            mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
             self.set_mean_value(train_data_layer, mean_pixel)
             if val_data_layer is not None and has_val_set:
                 self.set_mean_value(val_data_layer, mean_pixel)
 
         elif self.use_mean == 'image':
-            self.set_mean_file(train_data_layer, self.dataset.path(self.dataset.train_db_task().mean_file))
+            self.set_mean_file(train_data_layer, self.dataset.path(self.dataset.get_mean_file()))
             if val_data_layer is not None and has_val_set:
-                self.set_mean_file(val_data_layer, self.dataset.path(self.dataset.train_db_task().mean_file))
+                self.set_mean_file(val_data_layer, self.dataset.path(self.dataset.get_mean_file()))
 
         if self.batch_size:
             if dataset_backend == 'lmdb':
@@ -390,45 +365,52 @@ class CaffeTrainTask(TrainTask):
                 if val_data_layer is not None and has_val_set and not val_data_layer.hdf5_data_param.HasField('batch_size'):
                     val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
-        # hidden layers
-        train_val_network.MergeFrom(hidden_layers)
+        # Non-data layers
+        train_val_network.MergeFrom(train_val_layers)
 
-        # output layers
-        train_val_network.layer.extend(loss_layers)
-        train_val_network.layer.extend(accuracy_layers)
-
+        # Write to file
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - train")
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
+        if has_val_set:
+            self.logger.debug("Network sanity check - val")
+            CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
 
         ### Write deploy file
 
         deploy_network = caffe_pb2.NetParameter()
 
-        # input
+        # Input
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
-        shape.dim.append(self.dataset.image_dims[2])
+        shape.dim.append(self.dataset.get_feature_dims()[2])
         if self.crop_size:
             shape.dim.append(self.crop_size)
             shape.dim.append(self.crop_size)
         else:
-            shape.dim.append(self.dataset.image_dims[0])
-            shape.dim.append(self.dataset.image_dims[1])
+            shape.dim.append(self.dataset.get_feature_dims()[0])
+            shape.dim.append(self.dataset.get_feature_dims()[1])
 
-        # hidden layers
-        deploy_network.MergeFrom(hidden_layers)
+        # Layers
+        deploy_network.MergeFrom(deploy_layers)
 
-        # output layers
-        if loss_layers[-1].type == 'SoftmaxWithLoss':
-            prob_layer = deploy_network.layer.add(
-                    type = 'Softmax',
-                    name = 'prob')
-            prob_layer.bottom.append(network_outputs[-1])
-            prob_layer.top.append('prob')
-
+        # Write to file
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - deploy")
+        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
+        found_softmax = False
+        for layer in deploy_network.layer:
+            if layer.type == 'Softmax':
+                found_softmax = True
+                break
+        assert found_softmax, 'Your deploy network is missing a Softmax layer! Read the documentation for custom networks and/or look at the standard networks for examples.'
 
         ### Write solver file
 
@@ -446,8 +428,13 @@ class CaffeTrainTask(TrainTask):
 
         solver.snapshot_prefix = self.snapshot_prefix
 
+        # Batch accumulation
+        from digits.frameworks import CaffeFramework
+        if self.batch_accumulation and CaffeFramework().can_accumulate_gradients():
+            solver.iter_size = self.batch_accumulation
+
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(self.dataset.train_db_task().entries_count) / train_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
@@ -458,7 +445,7 @@ class CaffeTrainTask(TrainTask):
             solver.snapshot = 0 # only take one snapshot at the end
 
         if has_val_set and self.val_interval:
-            solver.test_iter.append(int(math.ceil(float(self.dataset.val_db_task().entries_count) / val_data_layer.data_param.batch_size)))
+            solver.test_iter.append(int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) / val_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
                 solver.test_interval = 1 # don't round down
@@ -478,7 +465,7 @@ class CaffeTrainTask(TrainTask):
             solver.stepsize = int(math.ceil(float(self.lr_policy['stepsize']) * scale))
             solver.gamma = self.lr_policy['gamma']
         elif solver.lr_policy == 'multistep':
-            for value in self.lr_policy['stepvalue']:
+            for value in self.lr_policy['stepvalue'].split(','):
                 # stepvalue = stepvalue * scale
                 solver.stepvalue.append(int(math.ceil(float(value) * scale)))
             solver.gamma = self.lr_policy['gamma']
@@ -499,10 +486,16 @@ class CaffeTrainTask(TrainTask):
         else:
             raise Exception('Unknown lr_policy: "%s"' % solver.lr_policy)
 
-        # go with the suggested defaults
-        if solver.solver_type != solver.ADAGRAD:
+        # These solver types don't support momentum
+        unsupported = [solver.ADAGRAD]
+        try:
+            unsupported.append(solver.RMSPROP)
+        except AttributeError:
+            pass
+
+        if solver.solver_type not in unsupported:
             solver.momentum = 0.9
-        solver.weight_decay = 0.0005
+        solver.weight_decay = solver.base_lr / 100.0
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
@@ -519,119 +512,121 @@ class CaffeTrainTask(TrainTask):
 
         return True
 
-
     def save_files_generic(self):
         """
         Save solver, train_val and deploy files to disk
         """
-        train_image_db = None
-        train_labels_db = None
-        val_image_db = None
-        val_labels_db = None
-        for task in self.dataset.tasks:
-            if task.purpose == 'Training Images':
-                train_image_db = task
-            if task.purpose == 'Training Labels':
-                train_labels_db = task
-            if task.purpose == 'Validation Images':
-                val_image_db = task
-            if task.purpose == 'Validation Labels':
-                val_labels_db = task
+        train_feature_db_path = self.dataset.get_feature_db_path(constants.TRAIN_DB)
+        train_label_db_path = self.dataset.get_label_db_path(constants.TRAIN_DB)
+        val_feature_db_path = self.dataset.get_feature_db_path(constants.VAL_DB)
+        val_label_db_path = self.dataset.get_label_db_path(constants.VAL_DB)
 
-        assert train_image_db is not None, 'Training images are required'
+        assert train_feature_db_path is not None, 'Training images are required'
 
         ### Split up train_val and deploy layers
+
+        network = cleanedUpGenericNetwork(self.network)
+        data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
+
+        ### Write train_val file
+
+        train_val_network = caffe_pb2.NetParameter()
+
+        # Data layers
+        # TODO clean this up
 
         train_image_data_layer = None
         train_label_data_layer = None
         val_image_data_layer = None
         val_label_data_layer = None
 
-        train_val_layers = caffe_pb2.NetParameter()
-        deploy_layers = caffe_pb2.NetParameter()
-
-        for layer in self.network.layer:
-            assert layer.type not in ['MemoryData', 'HDF5Data', 'ImageData'], 'unsupported data layer type'
-            if layer.name.startswith('train_'):
-                train_val_layers.layer.add().CopyFrom(layer)
-                train_val_layers.layer[-1].name = train_val_layers.layer[-1].name[6:]
-            elif layer.name.startswith('deploy_'):
-                deploy_layers.layer.add().CopyFrom(layer)
-                deploy_layers.layer[-1].name = deploy_layers.layer[-1].name[7:]
-            elif layer.type == 'Data':
-                for rule in layer.include:
-                    if rule.phase == caffe_pb2.TRAIN:
-                        if 'data' in layer.top:
-                            assert train_image_data_layer is None, 'cannot specify two train image data layers'
+        # Find the existing Data layers
+        for layer in data_layers.layer:
+            for rule in layer.include:
+                if rule.phase == caffe_pb2.TRAIN:
+                    for top_name in layer.top:
+                        if 'data' in top_name:
+                            assert train_image_data_layer is None, \
+                                'cannot specify two train image data layers'
                             train_image_data_layer = layer
-                        elif 'label' in layer.top:
-                            assert train_label_data_layer is None, 'cannot specify two train label data layers'
+                        elif 'label' in top_name:
+                            assert train_label_data_layer is None, \
+                                'cannot specify two train label data layers'
                             train_label_data_layer = layer
-                    elif rule.phase == caffe_pb2.TEST:
-                        if 'data' in layer.top:
-                            assert val_image_data_layer is None, 'cannot specify two val image data layers'
+                elif rule.phase == caffe_pb2.TEST:
+                    for top_name in layer.top:
+                        if 'data' in top_name:
+                            assert val_image_data_layer is None, \
+                                'cannot specify two val image data layers'
                             val_image_data_layer = layer
-                        elif 'label' in layer.top:
-                            assert val_label_data_layer is None, 'cannot specify two val label data layers'
+                        elif 'label' in top_name:
+                            assert val_label_data_layer is None, \
+                                'cannot specify two val label data layers'
                             val_label_data_layer = layer
-            elif 'loss' in layer.type.lower():
-                # Don't add it to the deploy network
-                train_val_layers.layer.add().CopyFrom(layer)
-            elif 'accuracy' in layer.type.lower():
-                # Don't add it to the deploy network
-                train_val_layers.layer.add().CopyFrom(layer)
-            else:
-                train_val_layers.layer.add().CopyFrom(layer)
-                deploy_layers.layer.add().CopyFrom(layer)
 
-        ### Write train_val file
-
-        train_val_network = caffe_pb2.NetParameter()
-
-        # data layers
-        train_image_data_layer = self.make_generic_data_layer(train_image_db, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
+        # Create and add the Data layers
+        # (uses info from existing data layers, where possible)
+        train_image_data_layer = self.make_generic_data_layer(
+            train_feature_db_path, train_image_data_layer, 'data', 'data', caffe_pb2.TRAIN)
         if train_image_data_layer is not None:
             train_val_network.layer.add().CopyFrom(train_image_data_layer)
-        train_label_data_layer = self.make_generic_data_layer(train_labels_db, train_label_data_layer, 'label', 'label', caffe_pb2.TRAIN)
+
+        train_label_data_layer = self.make_generic_data_layer(
+            train_label_db_path, train_label_data_layer, 'label', 'label', caffe_pb2.TRAIN)
         if train_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(train_label_data_layer)
 
-        val_image_data_layer = self.make_generic_data_layer(val_image_db, val_image_data_layer, 'data', 'data', caffe_pb2.TEST)
+        val_image_data_layer = self.make_generic_data_layer(
+            val_feature_db_path, val_image_data_layer, 'data', 'data', caffe_pb2.TEST)
         if val_image_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_image_data_layer)
-        val_label_data_layer = self.make_generic_data_layer(val_labels_db, val_label_data_layer, 'label', 'label', caffe_pb2.TEST)
+
+        val_label_data_layer = self.make_generic_data_layer(
+            val_label_db_path, val_label_data_layer, 'label', 'label', caffe_pb2.TEST)
         if val_label_data_layer is not None:
             train_val_network.layer.add().CopyFrom(val_label_data_layer)
 
-        # hidden layers
+        # Add non-data layers
         train_val_network.MergeFrom(train_val_layers)
 
+        # Write to file
         with open(self.path(self.train_val_file), 'w') as outfile:
             text_format.PrintMessage(train_val_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - train")
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TRAIN)
+        self.logger.debug("Network sanity check - val")
+        CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
 
         ### Write deploy file
 
         deploy_network = caffe_pb2.NetParameter()
 
-        # input
+        # Input
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
-        shape.dim.append(train_image_db.image_channels)
+        shape.dim.append(self.dataset.get_feature_dims()[2]) # channels
         if train_image_data_layer.transform_param.HasField('crop_size'):
             shape.dim.append(
                     train_image_data_layer.transform_param.crop_size)
             shape.dim.append(
                     train_image_data_layer.transform_param.crop_size)
         else:
-            shape.dim.append(train_image_db.image_height)
-            shape.dim.append(train_image_db.image_width)
+            shape.dim.append(self.dataset.get_feature_dims()[0]) # height
+            shape.dim.append(self.dataset.get_feature_dims()[1]) # width
 
-        # hidden layers
+        # Layers
         deploy_network.MergeFrom(deploy_layers)
 
+        # Write to file
         with open(self.path(self.deploy_file), 'w') as outfile:
             text_format.PrintMessage(deploy_network, outfile)
+
+        # network sanity checks
+        self.logger.debug("Network sanity check - deploy")
+        CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
 
         ### Write solver file
 
@@ -649,8 +644,13 @@ class CaffeTrainTask(TrainTask):
 
         solver.snapshot_prefix = self.snapshot_prefix
 
+        # Batch accumulation
+        from digits.frameworks import CaffeFramework
+        if self.batch_accumulation and CaffeFramework().can_accumulate_gradients():
+            solver.iter_size = self.batch_accumulation
+
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(train_image_db.image_count) / train_image_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_image_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
@@ -661,7 +661,7 @@ class CaffeTrainTask(TrainTask):
             solver.snapshot = 0 # only take one snapshot at the end
 
         if val_image_data_layer:
-            solver.test_iter.append(int(math.ceil(float(val_image_db.image_count) / val_image_data_layer.data_param.batch_size)))
+            solver.test_iter.append(int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) / val_image_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
                 solver.test_interval = 1 # don't round down
@@ -681,7 +681,7 @@ class CaffeTrainTask(TrainTask):
             solver.stepsize = int(math.ceil(float(self.lr_policy['stepsize']) * scale))
             solver.gamma = self.lr_policy['gamma']
         elif solver.lr_policy == 'multistep':
-            for value in self.lr_policy['stepvalue']:
+            for value in self.lr_policy['stepvalue'].split(','):
                 # stepvalue = stepvalue * scale
                 solver.stepvalue.append(int(math.ceil(float(value) * scale)))
             solver.gamma = self.lr_policy['gamma']
@@ -702,10 +702,16 @@ class CaffeTrainTask(TrainTask):
         else:
             raise Exception('Unknown lr_policy: "%s"' % solver.lr_policy)
 
-        # go with the suggested defaults
-        if solver.solver_type != solver.ADAGRAD:
+        # These solver types don't support momentum
+        unsupported = [solver.ADAGRAD]
+        try:
+            unsupported.append(solver.RMSPROP)
+        except AttributeError:
+            pass
+
+        if solver.solver_type not in unsupported:
             solver.momentum = 0.9
-        solver.weight_decay = 0.0005
+        solver.weight_decay = solver.base_lr / 100.0
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
@@ -722,25 +728,25 @@ class CaffeTrainTask(TrainTask):
 
         return True
 
-    def make_generic_data_layer(self, db, orig_layer, name, top, phase):
+    def make_generic_data_layer(self, db_path, orig_layer, name, top, phase):
         """
         Utility within save_files_generic for creating a Data layer
         Returns a LayerParameter (or None)
 
         Arguments:
-        db -- an AnalyzeDbTask (or None)
+        db_path -- path to database (or None)
         orig_layer -- a LayerParameter supplied by the user (or None)
         """
-        if db is None:
+        if db_path is None:
             #TODO allow user to specify a standard data layer even if it doesn't exist in the dataset
             return None
         layer = caffe_pb2.LayerParameter()
         if orig_layer is not None:
             layer.CopyFrom(orig_layer)
         layer.type = 'Data'
-        layer.name = name
-        if top not in layer.top:
-            layer.ClearField('top')
+        if not layer.HasField('name'):
+            layer.name = name
+        if not len(layer.top):
             layer.top.append(top)
         layer.ClearField('include')
         layer.include.add(phase=phase)
@@ -748,7 +754,7 @@ class CaffeTrainTask(TrainTask):
         # source
         if layer.data_param.HasField('source'):
             self.logger.warning('Ignoring data_param.source ...')
-        layer.data_param.source = db.path(db.database)
+        layer.data_param.source = db_path
         if layer.data_param.HasField('backend'):
             self.logger.warning('Ignoring data_param.backend ...')
         layer.data_param.backend = caffe_pb2.DataParameter.LMDB
@@ -760,17 +766,17 @@ class CaffeTrainTask(TrainTask):
             layer.data_param.batch_size = self.batch_size
 
         # mean
-        if name == 'data' and self.dataset.mean_file:
+        if name == 'data' and self.dataset.get_mean_file():
             if self.use_mean == 'pixel':
-                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.mean_file))
+                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
                 ## remove any values that may already be in the network
                 self.set_mean_value(layer, mean_pixel)
             elif self.use_mean == 'image':
-                self.set_mean_file(layer, self.dataset.path(self.dataset.mean_file))
+                self.set_mean_file(layer, self.dataset.path(self.dataset.get_mean_file()))
 
         # crop size
         if name == 'data' and self.crop_size:
-            max_crop_size = min(db.image_width, db.image_height)
+            max_crop_size = min(self.dataset.get_feature_dims()[0], self.dataset.get_feature_dims()[1])
             assert self.crop_size <= max_crop_size, 'crop_size is larger than the image size'
             layer.transform_param.crop_size = self.crop_size
         return layer
@@ -780,6 +786,32 @@ class CaffeTrainTask(TrainTask):
 
     @override
     def task_arguments(self, resources, env):
+        """
+        Generate Caffe command line options or, in certain cases, pycaffe Python script
+        Returns a list of strings
+
+        Arguments:
+        resources -- dict of available task resources
+        env -- dict of environment variables
+        """
+        if platform.system() == 'Windows':
+            if any([layer.type == 'Python' for layer in self.network.layer]):
+                # Arriving here because the network includes Python Layer and we are running inside Windows.
+                # We can not invoke caffe.exe and need to fallback to pycaffe
+                # https://github.com/Microsoft/caffe/issues/87
+                # TODO: Remove this once caffe.exe works fine with Python Layer
+                win_python_layer_gpu_id = None
+                if 'gpus' in resources:
+                    n_gpus = len(resources['gpus'])
+                    if n_gpus > 1:
+                        raise Exception('Please select single GPU when running in Windows with Python layer.')
+                    elif n_gpus == 1:
+                        win_python_layer_gpu_id = resources['gpus'][0][0]
+                # We know which GPU to use, call helper to create the script
+                return self._pycaffe_args(win_python_layer_gpu_id)
+
+        # Not in Windows, or in Windows but no Python Layer
+        # This is the normal path
         args = [config_value('caffe_root')['executable'],
                 'train',
                 '--solver=%s' % self.path(self.solver_file),
@@ -792,14 +824,61 @@ class CaffeTrainTask(TrainTask):
             if len(identifiers) == 1:
                 args.append('--gpu=%s' % identifiers[0])
             elif len(identifiers) > 1:
-                if config_value('caffe_root')['version'] < utils.parse_version('0.14.0-alpha'):
-                    # Prior to version 0.14, NVcaffe used the --gpus switch
-                    args.append('--gpus=%s' % ','.join(identifiers))
-                else:
+                if config_value('caffe_root')['flavor'] == 'NVIDIA':
+                    if config_value('caffe_root')['version'] < utils.parse_version('0.14.0-alpha'):
+                        # Prior to version 0.14, NVcaffe used the --gpus switch
+                        args.append('--gpus=%s' % ','.join(identifiers))
+                    else:
+                        args.append('--gpu=%s' % ','.join(identifiers))
+                elif config_value('caffe_root')['flavor'] == 'BVLC':
                     args.append('--gpu=%s' % ','.join(identifiers))
+                else:
+                    raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
         if self.pretrained_model:
             args.append('--weights=%s' % ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':'))))
+        return args
 
+
+    def _pycaffe_args(self, gpu_id):
+        """
+        Helper to generate pycaffe Python script
+        Returns a list of strings
+        Throws ValueError if self.solver_type is not recognized
+
+        Arguments:
+        gpu_id -- the GPU device id to use
+        """
+        # TODO: Remove this once caffe.exe works fine with Python Layer
+        solver_type_mapping = {            
+            'ADADELTA': 'AdaDeltaSolver',
+            'ADAGRAD' : 'AdaGradSolver',
+            'ADAM'    : 'AdamSolver',
+            'NESTEROV': 'NesterovSolver',
+            'RMSPROP' : 'RMSPropSolver',
+            'SGD'     : 'SGDSolver'}
+        try:
+            solver_type = solver_type_mapping[self.solver_type]
+        except KeyError:
+            raise ValueError("Unknown solver type {}.".format(self.solver_type))
+        if gpu_id is not None:
+            gpu_script = "caffe.set_device({id});caffe.set_mode_gpu();".format(id=gpu_id)
+        else:
+            gpu_script = "caffe.set_mode_cpu();"
+        if self.pretrained_model:
+            weight_files = ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':')))
+            loading_script = "solv.net.copy_from('{weight}');".format(weight=weight_files)
+        else:
+            loading_script = ""
+        command_script =\
+            "import caffe;" \
+            "{gpu_script}" \
+            "solv=caffe.{solver}('{solver_file}');" \
+            "{loading_script}" \
+            "solv.solve()" \
+            .format(gpu_script=gpu_script,
+                    solver=solver_type,
+                    solver_file = self.solver_file, loading_script=loading_script)
+        args = [sys.executable + ' -c '+ '\"' + command_script + '\"']
         return args
 
     @override
@@ -935,7 +1014,7 @@ class CaffeTrainTask(TrainTask):
     @override
     def after_runtime_error(self):
         if os.path.exists(self.path(self.CAFFE_LOG)):
-            output = subprocess.check_output(['tail', '-n40', self.path(self.CAFFE_LOG)])
+            output = tail(self.path(self.CAFFE_LOG), 40)
             lines = []
             for line in output.split('\n'):
                 # parse caffe header
@@ -1006,71 +1085,18 @@ class CaffeTrainTask(TrainTask):
         return False
 
     @override
-    def can_infer_one(self):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return True
-        return False
+    def infer_one(self, data, snapshot_epoch=None, layers=None, gpu=None):
+        return self.infer_one_image(data,
+                snapshot_epoch=snapshot_epoch,
+                layers=layers,
+                gpu=gpu,
+                )
 
-    @override
-    def infer_one(self, data, snapshot_epoch=None, layers=None):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return self.classify_one(data,
-                    snapshot_epoch=snapshot_epoch,
-                    layers=layers,
-                    )
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_one_generic(data,
-                    snapshot_epoch=snapshot_epoch,
-                    layers=layers,
-                    )
-        raise NotImplementedError()
-
-    def classify_one(self, image, snapshot_epoch=None, layers=None):
-        """
-        Classify an image
-        Returns (predictions, visualizations)
-            predictions -- an array of [ (label, confidence), ...] for each label, sorted by confidence
-            visualizations -- a list of dicts for the specified layers
-        Returns (None, None) if something goes wrong
-
-        Arguments:
-        image -- a np.array
-
-        Keyword arguments:
-        snapshot_epoch -- which snapshot to use
-        layers -- which layer activation[s] and weight[s] to visualize
-        """
-        labels = self.get_labels()
-        net = self.get_net(snapshot_epoch)
-
-        # process image
-        if image.ndim == 2:
-            image = image[:,:,np.newaxis]
-        preprocessed = self.get_transformer().preprocess(
-                'data', image)
-
-        # reshape net input (if necessary)
-        test_shape = (1,) + preprocessed.shape
-        if net.blobs['data'].data.shape != test_shape:
-            net.blobs['data'].reshape(*test_shape)
-
-        # run inference
-        net.blobs['data'].data[...] = preprocessed
-        output = net.forward()
-        scores = output[net.outputs[-1]].flatten()
-        indices = (-scores).argsort()
-        predictions = []
-        for i in indices:
-            predictions.append( (labels[i], scores[i]) )
-
-        visualizations = self.get_layer_visualizations(net, layers)
-        return (predictions, visualizations)
-
-    def infer_one_generic(self, image, snapshot_epoch=None, layers=None):
+    def infer_one_image(self, image, snapshot_epoch=None, layers=None, gpu=None):
         """
         Run inference on one image for a generic model
         Returns (output, visualizations)
-            output -- an dict of string -> np.ndarray
+            output -- an OrderedDict of string -> np.ndarray
             visualizations -- a list of dicts for the specified layers
         Returns (None, None) if something goes wrong
 
@@ -1081,7 +1107,7 @@ class CaffeTrainTask(TrainTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        net = self.get_net(snapshot_epoch)
+        net = self.get_net(snapshot_epoch, gpu=gpu)
 
         # process image
         if image.ndim == 2:
@@ -1096,7 +1122,13 @@ class CaffeTrainTask(TrainTask):
 
         # run inference
         net.blobs['data'].data[...] = preprocessed
-        output = net.forward()
+        o = net.forward()
+
+        # order outputs in prototxt order
+        output = OrderedDict()
+        for blob in net.blobs.keys():
+            if blob in o:
+                output[blob] = o[blob]
 
         visualizations = self.get_layer_visualizations(net, layers)
         return (output, visualizations)
@@ -1111,18 +1143,18 @@ class CaffeTrainTask(TrainTask):
             if layers == 'all':
                 added_activations = []
                 for layer in self.network.layer:
-                    print 'Computing visualizations for "%s" ...' % layer.name
                     for bottom in layer.bottom:
                         if bottom in net.blobs and bottom not in added_activations:
                             data = net.blobs[bottom].data[0]
                             vis = utils.image.get_layer_vis_square(data,
-                                    allow_heatmap=bool(bottom != 'data'))
+                                    allow_heatmap=bool(bottom != 'data'),
+                                    channel_order = 'BGR')
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
                                     {
                                         'name': str(bottom),
                                         'vis_type': 'Activation',
-                                        'image_html': utils.image.embed_image_html(vis),
+                                        'vis': vis,
                                         'data_stats': {
                                             'shape': data.shape,
                                             'mean': mean,
@@ -1135,7 +1167,7 @@ class CaffeTrainTask(TrainTask):
                     if layer.name in net.params:
                         data = net.params[layer.name][0].data
                         if layer.type not in ['InnerProduct']:
-                            vis = utils.image.get_layer_vis_square(data)
+                            vis = utils.image.get_layer_vis_square(data, channel_order = 'BGR')
                         else:
                             vis = None
                         mean, std, hist = self.get_layer_statistics(data)
@@ -1152,9 +1184,9 @@ class CaffeTrainTask(TrainTask):
                                     'vis_type': 'Weights',
                                     'layer_type': layer.type,
                                     'param_count': parameter_count,
-                                    'image_html': utils.image.embed_image_html(vis),
+                                    'vis': vis,
                                     'data_stats': {
-                                        'shape':data.shape,
+                                        'shape': data.shape,
                                         'mean': mean,
                                         'stddev': std,
                                         'histogram': hist,
@@ -1170,13 +1202,14 @@ class CaffeTrainTask(TrainTask):
                                 normalize = False
                             vis = utils.image.get_layer_vis_square(data,
                                     normalize = normalize,
-                                    allow_heatmap = bool(top != 'data'))
+                                    allow_heatmap = bool(top != 'data'),
+                                    channel_order = 'BGR')
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
                                     {
                                         'name': str(top),
                                         'vis_type': 'Activation',
-                                        'image_html': utils.image.embed_image_html(vis),
+                                        'vis': vis,
                                         'data_stats': {
                                             'shape': data.shape,
                                             'mean': mean,
@@ -1201,39 +1234,22 @@ class CaffeTrainTask(TrainTask):
         data -- a np.ndarray
         """
         # XXX These calculations can be super slow
-        mean = np.mean(data)
-        std = np.std(data)
+        mean = np.mean(data).astype(np.float32)
+        std = np.std(data).astype(np.float32)
         y, x = np.histogram(data, bins=20)
-        y = list(y)
+        y = list(y.astype(np.float32))
         ticks = x[[0,len(x)/2,-1]]
-        x = [(x[i]+x[i+1])/2.0 for i in xrange(len(x)-1)]
-        ticks = list(ticks)
+        x = [((x[i]+x[i+1])/2.0).astype(np.float32) for i in xrange(len(x)-1)]
+        ticks = list(ticks.astype(np.float32))
         return (mean, std, [y, x, ticks])
 
     @override
-    def can_infer_many(self):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return True
-        return False
+    def infer_many(self, data, snapshot_epoch=None, gpu=None):
+        return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
 
-    @override
-    def infer_many(self, data, snapshot_epoch=None):
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            return self.classify_many(data, snapshot_epoch=snapshot_epoch)
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            return self.infer_many_generic(data, snapshot_epoch=snapshot_epoch)
-        raise NotImplementedError()
-
-    def classify_many(self, images, snapshot_epoch=None):
+    def infer_many_images(self, images, snapshot_epoch=None, gpu=None):
         """
-        Returns (labels, results):
-        labels -- an array of strings
-        results -- a 2D np array:
-            [
-                [image0_label0_confidence, image0_label1_confidence, ...],
-                [image1_label0_confidence, image1_label1_confidence, ...],
-                ...
-            ]
+        Returns a list of OrderedDict, one for each image
 
         Arguments:
         images -- a list of np.arrays
@@ -1241,8 +1257,7 @@ class CaffeTrainTask(TrainTask):
         Keyword arguments:
         snapshot_epoch -- which snapshot to use
         """
-        labels = self.get_labels()
-        net = self.get_net(snapshot_epoch)
+        net = self.get_net(snapshot_epoch, gpu=gpu)
 
         caffe_images = []
         for image in images:
@@ -1250,54 +1265,6 @@ class CaffeTrainTask(TrainTask):
                 caffe_images.append(image[:,:,np.newaxis])
             else:
                 caffe_images.append(image)
-
-        caffe_images = np.array(caffe_images)
-
-        data_shape = tuple(self.get_transformer().inputs['data'])[1:]
-
-        if self.batch_size:
-            data_shape = (self.batch_size,) + data_shape
-        # TODO: grab batch_size from the TEST phase in train_val network
-        else:
-            data_shape = (constants.DEFAULT_BATCH_SIZE,) + data_shape
-
-        scores = None
-        for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
-            new_shape = (len(chunk),) + data_shape[1:]
-            if net.blobs['data'].data.shape != new_shape:
-                net.blobs['data'].reshape(*new_shape)
-            for index, image in enumerate(chunk):
-                net.blobs['data'].data[index] = self.get_transformer().preprocess(
-                        'data', image)
-            output = net.forward()[net.outputs[-1]]
-            if scores is None:
-                scores = np.copy(output)
-            else:
-                scores = np.vstack((scores, output))
-            print 'Processed %s/%s images' % (len(scores), len(caffe_images))
-
-        return (labels, scores)
-
-    def infer_many_generic(self, images, snapshot_epoch=None):
-        """
-        Returns a list of np.ndarrays, one for each image
-
-        Arguments:
-        images -- a list of np.arrays
-
-        Keyword arguments:
-        snapshot_epoch -- which snapshot to use
-        """
-        net = self.get_net(snapshot_epoch)
-
-        caffe_images = []
-        for image in images:
-            if image.ndim == 2:
-                caffe_images.append(image[:,:,np.newaxis])
-            else:
-                caffe_images.append(image)
-
-        caffe_images = np.array(caffe_images)
 
         data_shape = tuple(self.get_transformer().inputs['data'])[1:]
 
@@ -1316,10 +1283,17 @@ class CaffeTrainTask(TrainTask):
                 net.blobs['data'].data[index] = self.get_transformer().preprocess(
                         'data', image)
             o = net.forward()
+
+            # order output in prototxt order
+            output = OrderedDict()
+            for blob in net.blobs.keys():
+                if blob in o:
+                    output[blob] = o[blob]
+
             if outputs is None:
-                outputs = o
+                outputs = copy.deepcopy(output)
             else:
-                for name,blob in o.iteritems():
+                for name,blob in output.iteritems():
                     outputs[name] = np.vstack((outputs[name], blob))
             print 'Processed %s/%s images' % (len(outputs[outputs.keys()[0]]), len(caffe_images))
 
@@ -1331,7 +1305,7 @@ class CaffeTrainTask(TrainTask):
         """
         return len(self.snapshots) > 0
 
-    def get_net(self, epoch=None):
+    def get_net(self, epoch=None, gpu=-1):
         """
         Returns an instance of caffe.Net
 
@@ -1359,9 +1333,7 @@ class CaffeTrainTask(TrainTask):
                 and hasattr(self, '_caffe_net') and self._caffe_net is not None:
             return self._caffe_net
 
-        if config_value('caffe_root')['cuda_enabled'] and\
-                config_value('gpu_list'):
-            caffe.set_mode_gpu()
+        CaffeTrainTask.set_mode(gpu)
 
         # Add job_dir to PATH to pick up any python layers used by the model
         sys.path.append(self.job_dir)
@@ -1410,29 +1382,16 @@ class CaffeTrainTask(TrainTask):
         else:
             data_shape = network.input_dim[:4]
 
-        if isinstance(self.dataset, dataset.ImageClassificationDatasetJob):
-            if self.dataset.image_dims[2] == 3 and \
-                    self.dataset.train_db_task().image_channel_order == 'BGR':
-                # XXX see issue #59
-                channel_swap = (2,1,0)
+        if self.dataset.get_feature_dims()[2] == 3:
+            # BGR when there are three channels
+            # XXX see issue #59
+            channel_swap = (2,1,0)
 
+        if self.dataset.get_mean_file():
             if self.use_mean == 'pixel':
-                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.train_db_task().mean_file))
+                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
             elif self.use_mean == 'image':
-                mean_image = self.get_mean_image(self.dataset.path(self.dataset.train_db_task().mean_file), True)
-
-        elif isinstance(self.dataset, dataset.GenericImageDatasetJob):
-            task = self.dataset.analyze_db_tasks()[0]
-
-            if task.image_channels == 3:
-                # XXX see issue #59
-                channel_swap = (2,1,0)
-
-            if self.dataset.mean_file:
-                if self.use_mean == 'pixel':
-                    mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.mean_file))
-                elif self.use_mean == 'image':
-                    mean_image = self.get_mean_image(self.dataset.path(self.dataset.mean_file), True)
+                mean_image = self.get_mean_image(self.dataset.path(self.dataset.get_mean_file()), True)
 
         t = caffe.io.Transformer(
                 inputs = {'data': tuple(data_shape)}
@@ -1473,3 +1432,220 @@ class CaffeTrainTask(TrainTask):
         return text description of model
         """
         return text_format.MessageToString(self.network)
+
+    @staticmethod
+    def net_sanity_check(net, phase):
+        """
+        Perform various sanity checks on the network, including:
+        - check that all layer bottoms are included at the specified stage
+        """
+        assert phase == caffe_pb2.TRAIN or phase == caffe_pb2.TEST, "Unknown phase: %s" % repr(phase)
+        # work out which layers and tops are included at the specified phase
+        layers = []
+        tops = []
+        for layer in net.layer:
+            if len(layer.include)>0:
+                mask = 0 # include none by default
+                for rule in layer.include:
+                    mask = mask | (1<<rule.phase)
+            elif len(layer.exclude)>0:
+                # include and exclude rules are mutually exclusive as per Caffe spec
+                mask = (1<<caffe_pb2.TRAIN) | (1<<caffe_pb2.TEST) # include all by default
+                for rule in layer.exclude:
+                    mask = mask & ~(1<<rule.phase)
+            else:
+                mask = (1<<caffe_pb2.TRAIN) | (1<<caffe_pb2.TEST)
+            if mask & (1<<phase):
+                # layer will be included at this stage
+                layers.append(layer)
+                tops.extend(layer.top)
+        # add inputs
+        tops.extend(net.input)
+        # now make sure all bottoms are present at this stage
+        for layer in layers:
+            for bottom in layer.bottom:
+                if bottom not in tops:
+                    raise CaffeTrainSanityCheckError("Layer '%s' references bottom '%s' at the %s stage however " \
+                                                     "this blob is not included at that stage. Please consider " \
+                                                     "using an include directive to limit the scope of this layer." % (
+                                                       layer.name, bottom, "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"))
+
+
+def cleanedUpClassificationNetwork(original_network, num_categories):
+    """
+    Perform a few cleanup routines on a classification network
+    Returns a new NetParameter
+    """
+    network = caffe_pb2.NetParameter()
+    network.CopyFrom(original_network)
+
+    for i, layer in enumerate(network.layer):
+        if 'Data' in layer.type:
+            assert layer.type in ['Data', 'HDF5Data'], \
+                'Unsupported data layer type %s' % layer.type
+
+        elif layer.type == 'Input':
+            # DIGITS handles the deploy file for you
+            del network.layer[i]
+
+        elif layer.type == 'Accuracy':
+            # Check to see if top_k > num_categories
+            if ( layer.accuracy_param.HasField('top_k') and
+                    layer.accuracy_param.top_k > num_categories ):
+                del network.layer[i]
+
+        elif layer.type == 'InnerProduct':
+            # Check to see if num_output is unset
+            if not layer.inner_product_param.HasField('num_output'):
+                layer.inner_product_param.num_output = num_categories
+
+    return network
+
+
+def cleanedUpGenericNetwork(original_network):
+    """
+    Perform a few cleanup routines on a generic network
+    Returns a new NetParameter
+    """
+    network = caffe_pb2.NetParameter()
+    network.CopyFrom(original_network)
+
+    for i, layer in enumerate(network.layer):
+        if 'Data' in layer.type:
+            assert layer.type in ['Data'], \
+                'Unsupported data layer type %s' % layer.type
+
+        elif layer.type == 'Input':
+            # DIGITS handles the deploy file for you
+            del network.layer[i]
+
+        elif layer.type == 'InnerProduct':
+            # Check to see if num_output is unset
+            assert layer.inner_product_param.HasField('num_output'), \
+                "Don't leave inner_product_param.num_output unset for generic networks (layer %s)" % layer.name
+
+    return network
+
+
+def filterLayersByState(network):
+    """
+    Splits up a network into data, train_val and deploy layers
+    """
+    # The net has a NetState when in use
+    train_state = caffe_pb2.NetState()
+    text_format.Merge('phase: TRAIN stage: "train"', train_state)
+    val_state = caffe_pb2.NetState()
+    text_format.Merge('phase: TEST stage: "val"', val_state)
+    deploy_state = caffe_pb2.NetState()
+    text_format.Merge('phase: TEST stage: "deploy"', deploy_state)
+
+    # Each layer can have several NetStateRules
+    train_rule = caffe_pb2.NetStateRule()
+    text_format.Merge('phase: TRAIN', train_rule)
+    val_rule = caffe_pb2.NetStateRule()
+    text_format.Merge('phase: TEST', val_rule)
+
+    # Return three NetParameters
+    data_layers = caffe_pb2.NetParameter()
+    train_val_layers = caffe_pb2.NetParameter()
+    deploy_layers = caffe_pb2.NetParameter()
+
+    for layer in network.layer:
+        included_train = _layerIncludedInState(layer, train_state)
+        included_val = _layerIncludedInState(layer, val_state)
+        included_deploy = _layerIncludedInState(layer, deploy_state)
+
+        # Treat data layers differently (more processing done later)
+        if 'Data' in layer.type:
+            data_layers.layer.add().CopyFrom(layer)
+            rule = None
+            if not included_train:
+                # Exclude from train
+                rule = val_rule
+            elif not included_val:
+                # Exclude from val
+                rule = train_rule
+            _setLayerRule(data_layers.layer[-1], rule)
+
+        # Non-data layers
+        else:
+            if included_train or included_val:
+                # Add to train_val
+                train_val_layers.layer.add().CopyFrom(layer)
+                rule = None
+                if not included_train:
+                    # Exclude from train
+                    rule = val_rule
+                elif not included_val:
+                    # Exclude from val
+                    rule = train_rule
+                _setLayerRule(train_val_layers.layer[-1], rule)
+
+            if included_deploy:
+                # Add to deploy
+                deploy_layers.layer.add().CopyFrom(layer)
+                _setLayerRule(deploy_layers.layer[-1], None)
+
+    return (data_layers, train_val_layers, deploy_layers)
+
+
+def _layerIncludedInState(layer, state):
+    """
+    Returns True if this layer will be included in the given state
+    Logic copied from Caffe's Net::FilterNet()
+    """
+    # If no include rules are specified, the layer is included by default and
+    # only excluded if it meets one of the exclude rules.
+    layer_included = len(layer.include) == 0
+
+    for exclude_rule in layer.exclude:
+        if _stateMeetsRule(state, exclude_rule):
+            layer_included = False
+            break
+
+    for include_rule in layer.include:
+        if _stateMeetsRule(state, include_rule):
+            layer_included = True
+            break
+
+    return layer_included
+
+
+def _stateMeetsRule(state, rule):
+    """
+    Returns True if the given state meets the given rule
+    Logic copied from Caffe's Net::StateMeetsRule()
+    """
+    if rule.HasField('phase'):
+        if rule.phase != state.phase:
+            return False
+
+    if rule.HasField('min_level'):
+        if state.level < rule.min_level:
+            return False
+
+    if rule.HasField('max_level'):
+        if state.level > rule.max_level:
+            return False
+
+    # The state must contain ALL of the rule's stages
+    for stage in rule.stage:
+        if stage not in state.stage:
+            return False
+
+    # The state must contain NONE of the rule's not_stages
+    for stage in rule.not_stage:
+        if stage in state.stage:
+            return False
+
+    return True
+
+def _setLayerRule(layer, rule=None):
+    """
+    Set a new include rule for this layer
+    If rule is None, the layer will always be included
+    """
+    layer.ClearField('include')
+    layer.ClearField('exclude')
+    if rule is not None:
+        layer.include.add().CopyFrom(rule)

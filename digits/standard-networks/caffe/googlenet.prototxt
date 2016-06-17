@@ -1,35 +1,32 @@
+# GoogLeNet
 name: "GoogleNet"
 layer {
-  name: "data"
+  name: "train-data"
   type: "Data"
   top: "data"
   top: "label"
-  include {
-    phase: TRAIN
-  }
   transform_param {
     mirror: true
     crop_size: 224
   }
   data_param {
-    batch_size: 24
+    batch_size: 32
   }
+  include { stage: "train" }
 }
 layer {
-  name: "data"
+  name: "val-data"
   type: "Data"
   top: "data"
   top: "label"
-  include {
-    phase: TEST
-  }
   transform_param {
     mirror: false
     crop_size: 224
   }
   data_param {
-    batch_size: 24
+    batch_size: 16
   }
+  include { stage: "val" }
 }
 layer {
   name: "conv1/7x7_s2"
@@ -840,6 +837,7 @@ layer {
     kernel_size: 5
     stride: 3
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/conv"
@@ -866,12 +864,14 @@ layer {
       value: 0.2
     }
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/relu_conv"
   type: "ReLU"
   bottom: "loss1/conv"
   top: "loss1/conv"
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/fc"
@@ -897,12 +897,14 @@ layer {
       value: 0.2
     }
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/relu_fc"
   type: "ReLU"
   bottom: "loss1/fc"
   top: "loss1/fc"
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/drop_fc"
@@ -912,6 +914,7 @@ layer {
   dropout_param {
     dropout_ratio: 0.7
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/classifier"
@@ -927,6 +930,10 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 1000
     weight_filler {
       type: "xavier"
       std: 0.0009765625
@@ -936,6 +943,7 @@ layer {
       value: 0
     }
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/loss"
@@ -944,6 +952,7 @@ layer {
   bottom: "label"
   top: "loss1/loss"
   loss_weight: 0.3
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss1/top-1"
@@ -951,9 +960,7 @@ layer {
   bottom: "loss1/classifier"
   bottom: "label"
   top: "loss1/accuracy"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
 }
 layer {
   name: "loss1/top-5"
@@ -961,9 +968,7 @@ layer {
   bottom: "loss1/classifier"
   bottom: "label"
   top: "loss1/accuracy-top5"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
   accuracy_param {
     top_k: 5
   }
@@ -1623,6 +1628,7 @@ layer {
     kernel_size: 5
     stride: 3
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/conv"
@@ -1649,12 +1655,14 @@ layer {
       value: 0.2
     }
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/relu_conv"
   type: "ReLU"
   bottom: "loss2/conv"
   top: "loss2/conv"
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/fc"
@@ -1680,12 +1688,14 @@ layer {
       value: 0.2
     }
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/relu_fc"
   type: "ReLU"
   bottom: "loss2/fc"
   top: "loss2/fc"
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/drop_fc"
@@ -1695,6 +1705,7 @@ layer {
   dropout_param {
     dropout_ratio: 0.7
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/classifier"
@@ -1710,6 +1721,10 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 1000
     weight_filler {
       type: "xavier"
       std: 0.0009765625
@@ -1719,6 +1734,7 @@ layer {
       value: 0
     }
   }
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/loss"
@@ -1727,6 +1743,7 @@ layer {
   bottom: "label"
   top: "loss2/loss"
   loss_weight: 0.3
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss2/top-1"
@@ -1734,9 +1751,7 @@ layer {
   bottom: "loss2/classifier"
   bottom: "label"
   top: "loss2/accuracy"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
 }
 layer {
   name: "loss2/top-5"
@@ -1744,9 +1759,7 @@ layer {
   bottom: "loss2/classifier"
   bottom: "label"
   top: "loss2/accuracy-top5"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
   accuracy_param {
     top_k: 5
   }
@@ -2441,6 +2454,10 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
+    # Since num_output is unset, DIGITS will automatically set it to the
+    #   number of classes in your dataset.
+    # Uncomment this line to set it explicitly:
+    #num_output: 1000
     weight_filler {
       type: "xavier"
     }
@@ -2457,6 +2474,7 @@ layer {
   bottom: "label"
   top: "loss"
   loss_weight: 1
+  exclude { stage: "deploy" }
 }
 layer {
   name: "loss3/top-1"
@@ -2464,9 +2482,7 @@ layer {
   bottom: "loss3/classifier"
   bottom: "label"
   top: "accuracy"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
 }
 layer {
   name: "loss3/top-5"
@@ -2474,10 +2490,15 @@ layer {
   bottom: "loss3/classifier"
   bottom: "label"
   top: "accuracy-top5"
-  include {
-    phase: TEST
-  }
+  include { stage: "val" }
   accuracy_param {
     top_k: 5
   }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "loss3/classifier"
+  top: "softmax"
+  include { stage: "deploy" }
 }

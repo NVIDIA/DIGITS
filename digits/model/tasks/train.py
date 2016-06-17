@@ -1,11 +1,12 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import time
-import os.path
 from collections import OrderedDict, namedtuple
+import os.path
+import time
 
-import gevent
 import flask
+import gevent
 
 from digits import device_query
 from digits.task import Task
@@ -23,9 +24,10 @@ class TrainTask(Task):
     Defines required methods for child classes
     """
 
-    def __init__(self, dataset, train_epochs, snapshot_interval, learning_rate, lr_policy, **kwargs):
+    def __init__(self, job, dataset, train_epochs, snapshot_interval, learning_rate, lr_policy, **kwargs):
         """
         Arguments:
+        job -- model job
         dataset -- a DatasetJob containing the dataset for this model
         train_epochs -- how many epochs of training data to train on
         snapshot_interval -- how many epochs between taking a snapshot
@@ -36,6 +38,7 @@ class TrainTask(Task):
         gpu_count -- how many GPUs to use for training (integer)
         selected_gpus -- a list of GPU indexes to be used for training
         batch_size -- if set, override any network specific batch_size with this value
+        batch_accumulation -- accumulate gradients over multiple batches
         val_interval -- how many epochs between validating the model with an epoch of validation data
         pretrained_model -- filename for a model to use for fine-tuning
         crop_size -- crop each image down to a square of this size
@@ -45,6 +48,7 @@ class TrainTask(Task):
         self.gpu_count = kwargs.pop('gpu_count', None)
         self.selected_gpus = kwargs.pop('selected_gpus', None)
         self.batch_size = kwargs.pop('batch_size', None)
+        self.batch_accumulation = kwargs.pop('batch_accumulation', None)
         self.val_interval = kwargs.pop('val_interval', None)
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.crop_size = kwargs.pop('crop_size', None)
@@ -55,9 +59,10 @@ class TrainTask(Task):
         self.network = kwargs.pop('network', None)
         self.framework_id = kwargs.pop('framework_id', None)
 
-        super(TrainTask, self).__init__(**kwargs)
+        super(TrainTask, self).__init__(job_dir = job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION
 
+        self.job = job
         self.dataset = dataset
         self.train_epochs = train_epochs
         self.snapshot_interval = snapshot_interval
@@ -376,12 +381,6 @@ class TrainTask(Task):
         """
         return None
 
-    def can_infer_one(self):
-        """
-        Returns True if this Task can run inference on one input
-        """
-        raise NotImplementedError()
-
     def can_view_activations(self):
         """
         Returns True if this Task can visualize the activations of a model after inference
@@ -484,11 +483,15 @@ class TrainTask(Task):
                     col_id = '%s-train' % name
                     data['xs'][col_id] = 'train_epochs'
                     data['names'][col_id] = '%s (train)' % name
-                    if 'accuracy' in output.kind.lower():
-                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                    if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
+                        data['columns'].append([col_id] + [
+                            (100*x if x is not None else 'none')
+                            for x in output.data[::stride]])
                         data['axes'][col_id] = 'y2'
                     else:
-                        data['columns'].append([col_id] + output.data[::stride])
+                        data['columns'].append([col_id] + [
+                            (x if x is not None else 'none')
+                            for x in output.data[::stride]])
                     added_train_data = True
         if added_train_data:
             data['columns'].append(['train_epochs'] + self.train_outputs['epoch'].data[::stride])
@@ -505,11 +508,15 @@ class TrainTask(Task):
                     col_id = '%s-val' % name
                     data['xs'][col_id] = 'val_epochs'
                     data['names'][col_id] = '%s (val)' % name
-                    if 'accuracy' in output.kind.lower():
-                        data['columns'].append([col_id] + [100*x for x in output.data[::stride]])
+                    if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
+                        data['columns'].append([col_id] + [
+                            (100*x if x is not None else 'none')
+                            for x in output.data[::stride]])
                         data['axes'][col_id] = 'y2'
                     else:
-                        data['columns'].append([col_id] + output.data[::stride])
+                        data['columns'].append([col_id] + [
+                            (x if x is not None else 'none')
+                            for x in output.data[::stride]])
                     added_val_data = True
         if added_val_data:
             data['columns'].append(['val_epochs'] + self.val_outputs['epoch'].data[::stride])
@@ -522,8 +529,10 @@ class TrainTask(Task):
             return None
 
     # return id of framework used for training
-    @override
     def get_framework_id(self):
+        """
+        Returns a string
+        """
         return self.framework_id
 
     def get_model_files(self):

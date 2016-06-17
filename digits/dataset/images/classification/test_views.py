@@ -1,23 +1,27 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
+import itertools
 import json
 import os
 import shutil
 import tempfile
 import time
 import unittest
-import itertools
 import urllib
 
-from gevent import monkey
-monkey.patch_all()
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 from bs4 import BeautifulSoup
 import PIL.Image
 from urlparse import urlparse
-from cStringIO import StringIO
 
+from .test_imageset_creator import create_classification_imageset, IMAGE_SIZE as DUMMY_IMAGE_SIZE, IMAGE_COUNT as DUMMY_IMAGE_COUNT
 import digits.test_views
-from test_imageset_creator import create_classification_imageset, IMAGE_SIZE as DUMMY_IMAGE_SIZE, IMAGE_COUNT as DUMMY_IMAGE_COUNT
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -130,9 +134,10 @@ class BaseViewsTestWithImageset(BaseViewsTest):
             s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
-                raise RuntimeError(div[0])
+                print div[0]
             else:
-                raise RuntimeError('Failed to create dataset')
+                print rv.data
+            raise RuntimeError('Failed to create dataset - status %s' % rv.status_code)
 
         job_id = cls.job_id_from_response(rv)
 
@@ -467,11 +472,13 @@ class TestCreated(BaseViewsTestWithDataset):
         assert pil_image.size == (self.IMAGE_WIDTH, self.IMAGE_HEIGHT), 'image size is %s' % (pil_image.size,)
 
     def test_edit_name(self):
-        status = self.edit_job(
-                self.dataset_id,
-                name='new name'
-                )
+        status = self.edit_job(self.dataset_id,
+                               name='new name'
+                               )
         assert status == 200, 'failed with %s' % status
+        rv = self.app.get('/datasets/summary?job_id=%s' % self.dataset_id)
+        assert rv.status_code == 200
+        assert 'new name' in rv.data
 
     def test_edit_notes(self):
         status = self.edit_job(

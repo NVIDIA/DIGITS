@@ -1,26 +1,28 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import json
-import traceback
 import glob
+import json
 import platform
+import traceback
+import os
 
 import flask
+from flask.ext.socketio import join_room, leave_room
 from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
-from flask.ext.socketio import join_room, leave_room
 
+from .config import config_value
+from .webapp import app, socketio, scheduler
 import digits
-from digits import dataset, model, utils
-from config import config_value
-from webapp import app, socketio, scheduler
-import dataset.views
-import model.views
-from digits.utils.routing import request_wants_json
+from digits import dataset, extensions, model, utils
 from digits.log import logger
+from digits.utils.routing import request_wants_json
 
-@app.route('/index.json', methods=['GET'])
-@app.route('/', methods=['GET'])
+blueprint = flask.Blueprint(__name__, __name__)
+
+@blueprint.route('/index.json', methods=['GET'])
+@blueprint.route('/', methods=['GET'])
 def home():
     """
     DIGITS home page
@@ -50,45 +52,164 @@ def home():
             data['server_name'] = config_value('server_name')
         return flask.jsonify(data)
     else:
-        new_dataset_options = [
-                ('Images', [
-                    {
-                        'title': 'Classification',
-                        'id': 'image-classification',
-                        'url': flask.url_for('image_classification_dataset_new'),
-                        },
-                    {
-                        'title': 'Other',
-                        'id': 'image-generic',
-                        'url': flask.url_for('generic_image_dataset_new'),
-                        },
-                    ])
-                ]
-        new_model_options = [
-                ('Images', [
-                    {
-                        'title': 'Classification',
-                        'id': 'image-classification',
-                        'url': flask.url_for('image_classification_model_new'),
-                        },
-                    {
-                        'title': 'Other',
-                        'id': 'image-generic',
-                        'url': flask.url_for('generic_image_model_new'),
-                        },
-                    ])
-                ]
+        new_dataset_options = {
+            'Images': {
+                'image-classification': {
+                    'title': 'Classification',
+                    'url': flask.url_for(
+                        'digits.dataset.images.classification.views.new'),
+                    },
+                'image-other': {
+                    'title': 'Other',
+                    'url': flask.url_for(
+                        'digits.dataset.images.generic.views.new'),
+                    },
+                },
+            }
 
-        return flask.render_template('home.html',
-                new_dataset_options = new_dataset_options,
-                running_datasets    = running_datasets,
-                completed_datasets  = completed_datasets,
-                new_model_options   = new_model_options,
-                running_models      = running_models,
-                completed_models    = completed_models,
-                total_gpu_count     = len(scheduler.resources['gpus']),
-                remaining_gpu_count = sum(r.remaining() for r in scheduler.resources['gpus']),
-                )
+        new_model_options = {
+            'Images': {
+                'image-classification': {
+                    'title': 'Classification',
+                    'url': flask.url_for(
+                        'digits.model.images.classification.views.new'),
+                    },
+                'image-other': {
+                    'title': 'Other',
+                    'url': flask.url_for(
+                        'digits.model.images.generic.views.new'),
+                    },
+                },
+            }
+
+        # add dataset options for known dataset extensions
+        data_extensions = config_value('data_extension_list')
+        for extension in data_extensions:
+            ext_category = extension.get_category()
+            ext_title = extension.get_title()
+            ext_id = extension.get_id()
+            if ext_category not in new_dataset_options:
+                new_dataset_options[ext_category] = {}
+            new_dataset_options[ext_category][ext_id] = {
+                'title': ext_title,
+                'url': flask.url_for(
+                    'digits.dataset.generic.views.new',
+                    extension_id=ext_id),
+                }
+            if ext_category not in new_model_options:
+                new_model_options[ext_category] = {}
+            new_model_options[ext_category][ext_id] = {
+                'title': ext_title,
+                'url': flask.url_for(
+                    'digits.model.images.generic.views.new',
+                    extension_id=ext_id),
+                }
+
+        return flask.render_template(
+            'home.html',
+            new_dataset_options=new_dataset_options,
+            running_datasets=running_datasets,
+            completed_datasets=completed_datasets,
+            new_model_options=new_model_options,
+            running_models=running_models,
+            completed_models=completed_models,
+            total_gpu_count=len(scheduler.resources['gpus']),
+            remaining_gpu_count=sum(r.remaining()
+                                    for r in scheduler.resources['gpus']),
+            )
+
+
+def json_dict(job, model_output_fields):
+    d = {
+        'id': job.id(),
+        'name': job.name(),
+        'status': job.status_of_tasks().name,
+        'status_css': job.status_of_tasks().css,
+        'submitted': job.status_history[0][1],
+        'elapsed': job.runtime_of_tasks(),
+    }
+
+    if 'train_db_task' in dir(job):
+        d.update({
+            'backend': job.train_db_task().backend,
+        })
+
+    if 'train_task' in dir(job):
+        d.update({
+            'framework': job.train_task().get_framework_id(),
+        })
+
+        for prefix, outputs in (('train', job.train_task().train_outputs),
+                               ('val', job.train_task().val_outputs)):
+            for key in outputs.keys():
+                data = outputs[key].data
+                if len(data) > 0:
+                    key = '%s (%s) ' % (key, prefix)
+                    model_output_fields.add(key + 'last')
+                    model_output_fields.add(key + 'min')
+                    model_output_fields.add(key + 'max')
+                    d.update({key + 'last': data[-1]})
+                    d.update({key + 'min': min(data)})
+                    d.update({key + 'max': max(data)})
+
+        if (job.train_task().combined_graph_data() and
+            'columns' in job.train_task().combined_graph_data()):
+            d.update({
+                'sparkline': job.train_task().combined_graph_data()['columns'][0][1:],
+            })
+
+    if 'get_progress' in dir(job):
+        d.update({
+            'progress': int(round(100*job.get_progress())),
+        })
+
+    if hasattr(job, 'dataset_id'):
+        d.update({
+            'dataset_id': job.dataset_id,
+        })
+
+    if isinstance(job, dataset.DatasetJob):
+        d.update({ 'type': 'dataset' })
+    if isinstance(job, model.ModelJob):
+        d.update({ 'type': 'model' })
+
+    return d
+
+@blueprint.route('/completed_jobs.json', methods=['GET'])
+def completed_jobs():
+    """
+    Returns JSON
+        {
+            datasets: [{id, name, status, status_css, submitted, elapsed, badge}],
+            models:   [{id, name, status, status_css, submitted, elapsed, badge}],
+        }
+    """
+    completed_datasets  = get_job_list(dataset.DatasetJob, False)
+    completed_models    = get_job_list(model.ModelJob, False)
+    running_datasets  = get_job_list(dataset.DatasetJob, True)
+    running_models    = get_job_list(model.ModelJob, True)
+
+    model_output_fields = set()
+    data = {
+        'running': [json_dict(j, model_output_fields) for j in running_datasets + running_models],
+        'datasets': [json_dict(j, model_output_fields) for j in completed_datasets],
+        'models': [json_dict(j, model_output_fields) for j in completed_models],
+        'model_output_fields': sorted(list(model_output_fields)),
+    }
+
+    return flask.jsonify(data)
+
+@blueprint.route('/jobs/<job_id>/table_data.json', methods=['GET'])
+def job_table_data(job_id):
+    """
+    Get the job data for the front page tables
+    """
+    job = scheduler.get_job(job_id)
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
+    model_output_fields = set()
+    return flask.jsonify({'job': json_dict(job, model_output_fields)})
 
 def get_job_list(cls, running):
     return sorted(
@@ -100,7 +221,7 @@ def get_job_list(cls, running):
 
 ### Authentication/login
 
-@app.route('/login', methods=['GET','POST'])
+@blueprint.route('/login', methods=['GET','POST'])
 def login():
     """
     Ask for a username (no password required)
@@ -108,7 +229,7 @@ def login():
     """
     # Get the URL to redirect to after logging in
     next_url = utils.routing.get_request_arg('next') or \
-            flask.request.referrer or flask.url_for('home')
+            flask.request.referrer or flask.url_for('.home')
 
     if flask.request.method == 'GET':
         return flask.render_template('login.html', next=next_url)
@@ -127,13 +248,13 @@ def login():
     response.set_cookie('username', username)
     return response
 
-@app.route('/logout', methods=['GET','POST'])
+@blueprint.route('/logout', methods=['GET','POST'])
 def logout():
     """
     Unset the username cookie
     """
     next_url = utils.routing.get_request_arg('next') or \
-            flask.request.referrer or flask.url_for('home')
+            flask.request.referrer or flask.url_for('.home')
 
     response = flask.make_response(flask.redirect(next_url))
     response.set_cookie('username', '', expires=0)
@@ -142,7 +263,7 @@ def logout():
 
 ### Jobs routes
 
-@app.route('/jobs/<job_id>', methods=['GET'])
+@blueprint.route('/jobs/<job_id>', methods=['GET'])
 def show_job(job_id):
     """
     Redirects to the appropriate /datasets/ or /models/ page
@@ -152,13 +273,13 @@ def show_job(job_id):
         raise werkzeug.exceptions.NotFound('Job not found')
 
     if isinstance(job, dataset.DatasetJob):
-        return flask.redirect(flask.url_for('datasets_show', job_id=job_id))
+        return flask.redirect(flask.url_for('digits.dataset.views.show', job_id=job_id))
     if isinstance(job, model.ModelJob):
-        return flask.redirect(flask.url_for('models_show', job_id=job_id))
+        return flask.redirect(flask.url_for('digits.model.views.show', job_id=job_id))
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
-@app.route('/jobs/<job_id>', methods=['PUT'])
+@blueprint.route('/jobs/<job_id>', methods=['PUT'])
 @utils.auth.requires_login(redirect=False)
 def edit_job(job_id):
     """
@@ -177,6 +298,14 @@ def edit_job(job_id):
         if not name:
             raise werkzeug.exceptions.BadRequest('name cannot be blank')
         job._name = name
+        # update form data so updated name gets used when cloning job
+        if 'form.dataset_name.data' in job.form_data:
+            job.form_data['form.dataset_name.data'] = name
+        elif 'form.model_name.data' in job.form_data:
+            job.form_data['form.model_name.data'] = name
+        else:
+            # we are utterly confused
+            raise werkzeug.exceptions.BadRequest('Unable to edit job type %s' % job.job_type())
         logger.info('Set name to "%s".' % job.name(), job_id=job.id())
 
     # Edit notes
@@ -189,9 +318,9 @@ def edit_job(job_id):
 
     return '%s updated.' % job.job_type()
 
-@app.route('/datasets/<job_id>/status', methods=['GET'])
-@app.route('/models/<job_id>/status', methods=['GET'])
-@app.route('/jobs/<job_id>/status', methods=['GET'])
+@blueprint.route('/datasets/<job_id>/status', methods=['GET'])
+@blueprint.route('/models/<job_id>/status', methods=['GET'])
+@blueprint.route('/jobs/<job_id>/status', methods=['GET'])
 def job_status(job_id):
     """
     Returns a JSON objecting representing the status of a job
@@ -207,9 +336,9 @@ def job_status(job_id):
         result['type'] = job.job_type()
     return json.dumps(result)
 
-@app.route('/datasets/<job_id>', methods=['DELETE'])
-@app.route('/models/<job_id>', methods=['DELETE'])
-@app.route('/jobs/<job_id>', methods=['DELETE'])
+@blueprint.route('/datasets/<job_id>', methods=['DELETE'])
+@blueprint.route('/models/<job_id>', methods=['DELETE'])
+@blueprint.route('/jobs/<job_id>', methods=['DELETE'])
 @utils.auth.requires_login(redirect=False)
 def delete_job(job_id):
     """
@@ -230,9 +359,102 @@ def delete_job(job_id):
     except utils.errors.DeleteError as e:
         raise werkzeug.exceptions.Forbidden(str(e))
 
-@app.route('/datasets/<job_id>/abort', methods=['POST'])
-@app.route('/models/<job_id>/abort', methods=['POST'])
-@app.route('/jobs/<job_id>/abort', methods=['POST'])
+@blueprint.route('/jobs', methods=['DELETE'])
+@utils.auth.requires_login(redirect=False)
+def delete_jobs():
+    """
+    Deletes a list of jobs
+    """
+    not_found = 0
+    forbidden = 0
+    failed = 0
+    job_ids = flask.request.form.getlist('job_ids[]')
+    error = []
+    for job_id in job_ids:
+
+        try:
+            job = scheduler.get_job(job_id)
+            if job is None:
+                not_found += 1
+                continue
+
+            if not utils.auth.has_permission(job, 'delete'):
+                forbidden += 1
+                continue
+
+            if not scheduler.delete_job(job_id):
+                failed += 1
+                continue
+        except Exception as e:
+            error.append(str(e))
+            pass
+
+    if not_found:
+        error.append('%d job%s not found.' % (not_found, '' if not_found == 1 else 's'))
+
+    if forbidden:
+        error.append('%d job%s not permitted to be deleted.' % (forbidden, '' if forbidden == 1 else 's'))
+
+    if failed:
+        error.append('%d job%s failed to delete.' % (failed, '' if failed == 1 else 's'))
+
+    if len(error) > 0:
+        error = ' '.join(error)
+        raise werkzeug.exceptions.BadRequest(error)
+
+    return 'Jobs deleted.'
+
+@blueprint.route('/abort_jobs', methods=['POST'])
+@utils.auth.requires_login(redirect=False)
+def abort_jobs():
+    """
+    Aborts a list of jobs
+    """
+    not_found = 0
+    forbidden = 0
+    failed = 0
+    job_ids = flask.request.form.getlist('job_ids[]')
+    print job_ids
+    for job_id in job_ids:
+        print job_id
+
+        try:
+            job = scheduler.get_job(job_id)
+            if job is None:
+                not_found += 1
+                continue
+
+            if not utils.auth.has_permission(job, 'abort'):
+                forbidden += 1
+                continue
+
+            if not scheduler.abort_job(job_id):
+                failed += 1
+                continue
+
+        except Exception as e:
+            error.append(e)
+            pass
+
+    error = []
+    if not_found:
+        error.append('%d job%s not found.' % (not_found, '' if not_found == 1 else 's'))
+
+    if forbidden:
+        error.append('%d job%s not permitted to be aborted.' % (forbidden, '' if forbidden == 1 else 's'))
+
+    if failed:
+        error.append('%d job%s failed to abort.' % (failed, '' if failed == 1 else 's'))
+
+    if len(error) > 0:
+        error = ' '.join(error)
+        raise werkzeug.exceptions.BadRequest(error)
+
+    return 'Jobs aborted.'
+
+@blueprint.route('/datasets/<job_id>/abort', methods=['POST'])
+@blueprint.route('/models/<job_id>/abort', methods=['POST'])
+@blueprint.route('/jobs/<job_id>/abort', methods=['POST'])
 @utils.auth.requires_login(redirect=False)
 def abort_job(job_id):
     """
@@ -247,7 +469,7 @@ def abort_job(job_id):
     else:
         raise werkzeug.exceptions.Forbidden('Job not aborted')
 
-@app.route('/clone/<clone>', methods=['POST', 'GET'])
+@blueprint.route('/clone/<clone>', methods=['POST', 'GET'])
 @utils.auth.requires_login
 def clone_job(clone):
     """
@@ -260,14 +482,16 @@ def clone_job(clone):
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
+    if isinstance(job, dataset.GenericDatasetJob):
+        return flask.redirect(flask.url_for('digits.dataset.generic.views.new', extension_id=job.extension_id) + '?clone=' + clone)
     if isinstance(job, dataset.ImageClassificationDatasetJob):
-        return flask.redirect(flask.url_for('image_classification_dataset_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.dataset.images.classification.views.new') + '?clone=' + clone)
     if isinstance(job, dataset.GenericImageDatasetJob):
-        return flask.redirect(flask.url_for('generic_image_dataset_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.dataset.images.generic.views.new') + '?clone=' + clone)
     if isinstance(job, model.ImageClassificationModelJob):
-        return flask.redirect(flask.url_for('image_classification_model_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.model.images.classification.views.new') + '?clone=' + clone)
     if isinstance(job, model.GenericImageModelJob):
-        return flask.redirect(flask.url_for('generic_image_model_new') + '?clone=' + clone)
+        return flask.redirect(flask.url_for('digits.model.images.generic.views.new') + '?clone=' + clone)
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
@@ -315,7 +539,7 @@ for code in HTTP_STATUS_CODES:
 
 ### File serving
 
-@app.route('/files/<path:path>', methods=['GET'])
+@blueprint.route('/files/<path:path>', methods=['GET'])
 def serve_file(path):
     """
     Return a file in the jobs directory
@@ -328,20 +552,25 @@ def serve_file(path):
 
 ### Path Completion
 
-@app.route('/autocomplete/path', methods=['GET'])
+@blueprint.route('/autocomplete/path', methods=['GET'])
 def path_autocomplete():
     """
     Return a list of paths matching the specified preamble
 
     """
     path = flask.request.args.get('query','')
+
+    if not os.path.isabs(path) :
+        # Only allow absolute paths by prepending forward slash
+        path = os.path.sep + path
+
     suggestions = glob.glob(path+"*")
     if platform.system() == 'Windows':
         # on windows, convert backslashes with forward slashes
         suggestions = [p.replace('\\', '/') for p in suggestions]
 
     result = {
-        "suggestions": suggestions
+        "suggestions": sorted(suggestions)
     }
 
     return json.dumps(result)

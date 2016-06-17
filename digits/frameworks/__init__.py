@@ -1,8 +1,9 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-from framework import Framework
-from caffe_framework import CaffeFramework
-from torch_framework import TorchFramework
+from .caffe_framework import CaffeFramework
+from .framework import Framework
+from .torch_framework import TorchFramework
 from digits.config import config_value
 
 #

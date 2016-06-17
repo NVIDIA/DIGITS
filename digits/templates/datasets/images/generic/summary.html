@@ -1,7 +1,7 @@
 {# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
 
 <h4>
-    <a href="{{url_for('show_job', job_id=dataset.id())}}" target="_blank">
+    <a href="{{url_for('digits.views.show_job', job_id=dataset.id())}}" target="_blank">
         {{dataset.name()}}
     </a>
 </h4>
@@ -14,7 +14,7 @@
 {% endif %}
 </p>
 <ul>
-    <li>DB backend: {{dataset.train_db_task().backend}}</li>
+    <li>DB backend: {{dataset.get_backend()}}</li>
     {% for task in dataset.analyze_db_tasks() %}
     <li>{{task.name()}}</li>
     <ul>

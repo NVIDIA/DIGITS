@@ -1,87 +1,28 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
+from datetime import timedelta
 import io
 import json
 import math
 import tarfile
 import zipfile
-from datetime import timedelta
 
 import flask
 import werkzeug.exceptions
 
-
-import digits
-from digits.webapp import app, scheduler
+from . import images as model_images
+from . import ModelJob
+from digits import frameworks, extensions
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
-from . import ModelJob
-import forms
-import images.views
-import images as model_images
+from digits.webapp import scheduler
 
-from digits import frameworks
+blueprint = flask.Blueprint(__name__, __name__)
 
-NAMESPACE = '/models/'
-
-@app.route(NAMESPACE, methods=['GET'])
-def models_index():
-    column_attrs = list(get_column_attrs())
-    raw_jobs = [j for j in scheduler.jobs.values() if isinstance(j, ModelJob)]
-
-    column_types = [
-        ColumnType('latest', False, lambda outs: outs[-1]),
-        ColumnType('max', True, lambda outs: max(outs)),
-        ColumnType('min', True, lambda outs: min(outs))
-    ]
-
-    jobs = []
-    for rjob in raw_jobs:
-        train_outs = rjob.train_task().train_outputs
-        val_outs = rjob.train_task().val_outputs
-        history = rjob.status_history
-
-        # update column attribute set
-        keys = set(train_outs.keys() + val_outs.keys())
-
-        # build job dict
-        job_info = JobBasicInfo(
-            rjob.name(),
-            rjob.id(),
-            rjob.status,
-            time_filters.print_time_diff_nosuffixes(history[-1][1] - history[0][1]),
-            rjob.train_task().framework_id
-        )
-
-        # build a dictionary of each attribute of a job. If an attribute is
-        # present, add all different column types.
-        job_attrs = {}
-        for cattr in column_attrs:
-            if cattr in train_outs:
-                out_list = train_outs[cattr].data
-            elif cattr in val_outs:
-                out_list = val_outs[cattr].data
-            else:
-                continue
-
-            job_attrs[cattr] = {ctype.name: ctype.find_from_list(out_list)
-                for ctype in column_types}
-
-        job = (job_info, job_attrs)
-        jobs.append(job)
-
-    attrs_and_labels = []
-    for cattr in column_attrs:
-        for ctype in column_types:
-            attrs_and_labels.append((cattr, ctype, ctype.label(cattr)))
-
-    return flask.render_template('models/index.html',
-        jobs=jobs,
-        attrs_and_labels=attrs_and_labels)
-
-@app.route(NAMESPACE + '<job_id>.json', methods=['GET'])
-@app.route(NAMESPACE + '<job_id>', methods=['GET'])
-def models_show(job_id):
+@blueprint.route('/<job_id>.json', methods=['GET'])
+@blueprint.route('/<job_id>', methods=['GET'])
+def show(job_id):
     """
     Show a ModelJob
 
@@ -92,19 +33,21 @@ def models_show(job_id):
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
+    related_jobs = scheduler.get_related_jobs(job)
+
     if request_wants_json():
         return flask.jsonify(job.json_dict(True))
     else:
         if isinstance(job, model_images.ImageClassificationModelJob):
-            return model_images.classification.views.show(job)
+            return model_images.classification.views.show(job, related_jobs=related_jobs)
         elif isinstance(job, model_images.GenericImageModelJob):
-            return model_images.generic.views.show(job)
+            return model_images.generic.views.show(job, related_jobs=related_jobs)
         else:
             raise werkzeug.exceptions.BadRequest(
                     'Invalid job type')
 
-@app.route(NAMESPACE + 'customize', methods=['POST'])
-def models_customize():
+@blueprint.route('/customize', methods=['POST'])
+def customize():
     """
     Returns a customized file for the ModelJob based on completed form fields
     """
@@ -126,8 +69,7 @@ def models_customize():
         raise werkzeug.exceptions.NotFound('Job not found')
 
     snapshot = None
-    epoch = int(flask.request.form.get('snapshot_epoch', 0))
-    print 'epoch:',epoch
+    epoch = float(flask.request.form.get('snapshot_epoch', 0))
     if epoch == 0:
         pass
     elif epoch == -1:
@@ -143,8 +85,22 @@ def models_customize():
             'snapshot': snapshot
             })
 
-@app.route(NAMESPACE + 'visualize-network', methods=['POST'])
-def models_visualize_network():
+
+@blueprint.route('/view-config/<extension_id>', methods=['GET'])
+def view_config(extension_id):
+    """
+    Returns a rendering of a view extension configuration template
+    """
+    extension = extensions.view.get_extension(extension_id)
+    if extension is None:
+        raise ValueError("Unknown extension '%s'" % extension_id)
+    config_form = extension.get_config_form()
+    template, context = extension.get_config_template(config_form)
+    return flask.render_template_string(template, **context)
+
+
+@blueprint.route('/visualize-network', methods=['POST'])
+def visualize_network():
     """
     Returns a visualization of the custom network as a string of PNG data
     """
@@ -157,17 +113,18 @@ def models_visualize_network():
 
     return ret
 
-@app.route(NAMESPACE + 'visualize-lr', methods=['POST'])
-def models_visualize_lr():
+@blueprint.route('/visualize-lr', methods=['POST'])
+def visualize_lr():
     """
     Returns a JSON object of data used to create the learning rate graph
     """
     policy = flask.request.form['lr_policy']
-    lr = float(flask.request.form['learning_rate'])
+	# There may be multiple lrs if the learning_rate is swept
+    lrs = map(float, flask.request.form['learning_rate'].split(','))
     if policy == 'fixed':
         pass
     elif policy == 'step':
-        step = int(flask.request.form['lr_step_size'])
+        step = float(flask.request.form['lr_step_size'])
         gamma = float(flask.request.form['lr_step_gamma'])
     elif policy == 'multistep':
         steps = [float(s) for s in flask.request.form['lr_multistep_values'].split(',')]
@@ -186,33 +143,36 @@ def models_visualize_lr():
     else:
         raise werkzeug.exceptions.BadRequest('Invalid policy')
 
-    data = ['Learning Rate']
-    for i in xrange(101):
-        if policy == 'fixed':
-            data.append(lr)
-        elif policy == 'step':
-            data.append(lr * math.pow(gamma, math.floor(float(i)/step)))
-        elif policy == 'multistep':
-            if current_step < len(steps) and i >= steps[current_step]:
-                current_step += 1
-            data.append(lr * math.pow(gamma, current_step))
-        elif policy == 'exp':
-            data.append(lr * math.pow(gamma, i))
-        elif policy == 'inv':
-            data.append(lr * math.pow(1.0 + gamma * i, -power))
-        elif policy == 'poly':
-            data.append(lr * math.pow(1.0 - float(i)/100, power))
-        elif policy == 'sigmoid':
-            data.append(lr / (1.0 + math.exp(gamma * (i - step))))
+    datalist = []
+    for j, lr in enumerate(lrs):
+        data = ['Learning Rate %d' % j]
+        for i in xrange(101):
+            if policy == 'fixed':
+                data.append(lr)
+            elif policy == 'step':
+                data.append(lr * math.pow(gamma, math.floor(float(i)/step)))
+            elif policy == 'multistep':
+                if current_step < len(steps) and i >= steps[current_step]:
+                    current_step += 1
+                data.append(lr * math.pow(gamma, current_step))
+            elif policy == 'exp':
+                data.append(lr * math.pow(gamma, i))
+            elif policy == 'inv':
+                data.append(lr * math.pow(1.0 + gamma * i, -power))
+            elif policy == 'poly':
+                data.append(lr * math.pow(1.0 - float(i)/100, power))
+            elif policy == 'sigmoid':
+                data.append(lr / (1.0 + math.exp(gamma * (i - step))))
+        datalist.append(data)
 
-    return json.dumps({'data': {'columns': [data]}})
+    return json.dumps({'data': {'columns': datalist}})
 
-@app.route(NAMESPACE + '<job_id>/download',
+@blueprint.route('/<job_id>/download',
         methods=['GET', 'POST'],
         defaults={'extension': 'tar.gz'})
-@app.route(NAMESPACE + '<job_id>/download.<extension>',
+@blueprint.route('/<job_id>/download.<extension>',
         methods=['GET', 'POST'])
-def models_download(job_id, extension):
+def download(job_id, extension):
     """
     Return a tarball of all files required to run the model
     """

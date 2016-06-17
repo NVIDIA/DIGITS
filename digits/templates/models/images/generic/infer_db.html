@@ -1,0 +1,61 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
+{% extends "job.html" %}
+
+{% block nav %}
+<li><a href="{{url_for('digits.model.views.show', job_id=model_job.id())}}">{{model_job.name()}}</a></li>
+<li class="active"><a>Test Many</a></li>
+{% endblock %}
+
+{% block job_content %}
+
+<div class="page-header">
+    <h1>
+        {{model_job.name()}}
+        <small>
+            {{job.job_type()}}
+        </small>
+    </h1>
+</div>
+
+{% if not keys %}
+<div class="alert alert-danger">
+    <p>Inference failed, see job log</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block job_content_details %}
+
+{% if header_html %}
+<div class="row">
+    <h3>Summary</h3>
+    {{header_html|safe}}
+</div>
+{% endif %}
+
+{% if inference_views_html %}
+<div class="row">
+    <h3>Visualizations</h3>
+    <table class="table">
+        <tr>
+            <th>Index</th>
+            <th>Key</th>
+            <th>Data</th>
+        </tr>
+        {% for key in keys %}
+        <tr>
+            <td>{{loop.index}}</td>
+            <td>{{key}}</td>
+            <td>
+                {% set index=loop.index0 %}
+                {{ inference_views_html[index]|safe }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
+

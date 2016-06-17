@@ -11,7 +11,7 @@ New Image Classification Model
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{url_for('image_classification_model_new')}}">New Model</a></li>
+<li class="active"><a href="{{url_for('digits.model.images.classification.views.new')}}">New Model</a></li>
 {% endblock %}
 
 {% block content %}
@@ -19,7 +19,14 @@ New Image Classification Model
     <h1>New Image Classification Model</h1>
 </div>
 
-<form id="model-form" action="{{url_for('image_classification_model_create')}}" enctype="multipart/form-data" method="post">
+<script>
+function syncAceEditor(){
+    // Syncs (copies) the ace editor's contents to the custom_network flask container
+    $("textarea#custom_network").val(editor.getValue());
+}
+</script>
+
+<form onsubmit="syncAceEditor();" id="model-form" action="{{url_for('digits.model.images.classification.views.create')}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
     {{ print_errors(form) }}
@@ -31,15 +38,15 @@ New Image Classification Model
                     {{form.dataset.label}}
                     {{form.dataset.tooltip}}
                     {{form.dataset(class='form-control', size=5)}}
+                    <div id="dataset-summary"></div>
                 </div>
             </div>
 
             <div class="col">
                 <div class="well">
-                    <label for="{{form.python_layer_from_client.name}}">
-                        {{form.python_layer_from_client}}
-                        {{form.python_layer_from_client.label}}
-                    </label>
+                    <h4 style="display:inline-block;">Python Layers</h4>
+                    {{form.python_layer_from_client.explanation(file='/models/python_layer_explanation.html')}}
+                    <br>
                     <div class="form-group{{' has-error' if form.python_layer_client_file.errors}} python-layer-client-side-file">
                         {{form.python_layer_client_file.label}}
                         {{form.python_layer_client_file.tooltip}}
@@ -50,6 +57,10 @@ New Image Classification Model
                         {{form.python_layer_server_file.tooltip}}
                         {{form.python_layer_server_file(class='form-control autocomplete_path')}}
                     </div>
+                    <label for="{{form.python_layer_from_client.name}}">
+                        {{form.python_layer_from_client}}
+                        {{form.python_layer_from_client.label}}
+                    </label>
                 </div>
             </div>
         </div>
@@ -74,7 +85,8 @@ New Image Classification Model
          python_layer_file_state();
 
 $("#dataset").change(function() {
-        $.ajax("/datasets/images/classification/summary?job_id=" + $(this).val(),
+    if ($(this).val()) {
+        $.ajax("/datasets/summary?job_id=" + $(this).val(),
             {
                 type: "GET",
                 }
@@ -86,32 +98,11 @@ $("#dataset").change(function() {
             $("#dataset-summary").html("");
             errorAlert(data);
             });
-        });
+        }
+    });
+$("#dataset").change();
         </script>
-        <div class="col-sm-4">
-            <div id="dataset-summary">
-            </div>
-        </div>
-        <div class="col-sm-4">
-            <div class="well">
-                <h4>Data Transformations</h4>
-                <div class="form-group{{mark_errors([form.crop_size])}}">
-                    {{form.crop_size.label}}
-                    {{form.crop_size.tooltip}}
-                    {{form.crop_size(class='form-control', placeholder='none')}}
-                </div>
-                <div class="form-group{{mark_errors([form.use_mean])}}">
-                    {{form.use_mean.label}}
-                    {{form.use_mean.tooltip}}
-                    {{form.use_mean(class='form-control')}}
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <hr>
-
-    <div class="row">
         <div class="col-sm-4">
             <div class="well">
                 <h4>Solver Options</h4>
@@ -149,7 +140,16 @@ $("#dataset").change(function() {
                 <div class="form-group{{mark_errors([form.batch_size])}}">
                     {{form.batch_size.label}}
                     {{form.batch_size.tooltip}}
+                    <small class="pull-right">
+                        {{form.batch_size.small_text}}
+                    </small>
                     {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
+                </div>
+                <div class="form-group{{mark_errors([form.batch_accumulation])}}"
+                    id="batch-accumulation-option" style="display:none;">
+                    {{form.batch_accumulation.label}}
+                    {{form.batch_accumulation.tooltip}}
+                    {{form.batch_accumulation(class='form-control')}}
                 </div>
                 <div class="form-group{{mark_errors([form.solver_type])}}">
                     {{form.solver_type.label}}
@@ -159,6 +159,9 @@ $("#dataset").change(function() {
                 <div class="form-group{{mark_errors([form.learning_rate])}}">
                     {{form.learning_rate.label}}
                     {{form.learning_rate.tooltip}}
+                    <small class="pull-right">
+                        {{form.learning_rate.small_text}}
+                    </small>
                     {{form.learning_rate(class='form-control learning-rate-option')}}
                 </div>
 
@@ -169,6 +172,14 @@ $("#dataset").change(function() {
                 </label>
                 </p>
                 <script>
+{% for choice in form.solver_type.choices %}
+{% for fw in frameworks %}
+{% if fw.supports_solver_type(choice[0]) %}
+$("select[name=solver_type] > option[value={{choice[0]}}]").addClass("{{fw.get_id()}}");
+{% endif %}
+{% endfor %}
+{% endfor %}
+
 function showHideAdvancedLROptions() {
     if ($("#show-advanced-lr-options").prop("checked")) {
         $("#advanced-lr-options").show();
@@ -313,7 +324,7 @@ showHideAdvancedLROptions();
                             }));
                         }
                         function getLRGraph() {
-                            $.ajax("{{url_for('models_visualize_lr')}}",
+                            $.ajax("{{url_for('digits.model.views.visualize_lr')}}",
                             {
                                 type: "POST",
                                 data: $(".learning-rate-option").serialize()
@@ -341,14 +352,35 @@ showHideAdvancedLROptions();
                 </div>
             </div>
         </div>
-        <div class="col-sm-8">
+
+        <div class="col-sm-4">
+            <div class="well">
+                <h4>Data Transformations</h4>
+                <div class="form-group{{mark_errors([form.crop_size])}}">
+                    {{form.crop_size.label}}
+                    {{form.crop_size.tooltip}}
+                    {{form.crop_size(class='form-control', placeholder='none')}}
+                </div>
+                <div class="form-group{{mark_errors([form.use_mean])}}">
+                    {{form.use_mean.label}}
+                    {{form.use_mean.tooltip}}
+                    {{form.use_mean(class='form-control')}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-sm-12">
             <script>
 function customizeNetwork(network, snapshot_list, framework) {
     function fillCustomTab(network, snapshot_list, framework) {
         data = null;
         if (snapshot_list)
             data = {'snapshot_epoch': $('#'+snapshot_list).val()};
-        $.ajax("{{url_for('models_customize')}}?network=" + network+"&framework="+framework,
+        $.ajax("{{url_for('digits.model.views.customize')}}?network=" + network+"&framework="+framework,
                 {
                     type: "POST",
                     data: data
@@ -356,14 +388,16 @@ function customizeNetwork(network, snapshot_list, framework) {
               )
         .done(function(data) {
                 data = $.parseJSON(data);
-                $('textarea[name=custom_network]').val(data['network']);
+                editor.setValue(data['network']);
+                editor.selection.moveTo(0, 0);
                 if (data['snapshot'])
                     $('input[name=custom_network_snapshot]').val(data['snapshot']);
                 else
                     $('input[name=custom_network_snapshot]').val('');
                 })
         .fail(function(data) {
-                $('textarea[name=custom_network]').val('');
+                editor.setValue('');
+                editor.selection.moveTo(0, 0);
                 $('input[name=custom_network_snapshot]').val('');
                 errorAlert(data);
                 });
@@ -373,7 +407,7 @@ function customizeNetwork(network, snapshot_list, framework) {
     if (!framework)
         var $tab = $('#stdnetRole'), $active = $tab.find('.active'), framework = $active.attr('id');
 
-    if ($('textarea[name=custom_network]').val() != "") {
+    if (editor.getValue() != "") {
         bootbox.confirm(
                 'This will overwrite data in the Custom Network tab. Continue?',
                 function(result) { if (result) fillCustomTab(network, snapshot_list, framework); }
@@ -387,7 +421,8 @@ var frameworks = {};
 {% for fw in frameworks %}
 framework = {
     name : '{{ fw.get_name() }}',
-    can_shuffle : '{{ fw.can_shuffle_data() }}'=='True'
+    can_shuffle : '{{ fw.can_shuffle_data() }}'=='True',
+    can_accumulate_gradients : '{{ fw.can_accumulate_gradients() }}'=='True',
     };
 frameworks['{{ fw.get_id() }}'] = framework;
 {% endfor %}
@@ -399,20 +434,38 @@ function setFramework(fwid)
         $("#shuffle-data").show();
     else
         $("#shuffle-data").hide();
-    if (fwid == 'torch')
+
+    $("select[name=solver_type] > option." + fwid).prop('disabled', false);
+    $("select[name=solver_type] > option").not("." + fwid).prop('disabled', true);
+    if (! $("select[name=solver_type] > option:selected").hasClass(fwid)) {
+        $("select[name=solver_type] > option:selected").prop("selected", false);
+    }
+
+    if (fwid == 'torch'){
         $("#torch-warning").show();
-    else
+        editor.session.setMode(new LuaMode()); // Change editor syntax environment
+    } else {
         $("#torch-warning").hide();
+        editor.session.setMode(new PythonMode()); // Change editor syntax environment
+    }
     $('#stdnetRole a[href="'+"#"+fwid+"_standard"+'"]').tab('show');
     $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
+
+    if (frameworks[fwid].can_accumulate_gradients) {
+        $('#batch_accumulation').prop('disabled', false);
+        $('#batch-accumulation-option').show();
+    } else {
+        $('#batch-accumulation-option').hide();
+        $('#batch_accumulation').prop('disabled', true);
+    }
 }
             </script>
 
             <div id="torch-warning" class="alert alert-warning" style="display:none;">
-                <b>NOTE:</b> Torch7 is currently supported as an experimental feature in DIGITS. The following limitations apply:
+                <b>NOTE:</b> Torch7 is currently supported as an experimental feature in DIGITS. The following limitation applies:
                 <ul>
                     <li>Models don't automatically adjust to images with different sizes</li>
-                    <li>Model fine tuning is not supported</li>
+                    <li>Fine tuning from multiple pre-trained models is not supported</li>
                 </ul>
             </div>
             <ul class="nav nav-tabs" id="network-tabs">
@@ -501,7 +554,7 @@ function setFramework(fwid)
                                     <td>
                                         {{network}}
                                         {{network.label}}
-                                        <a href="{{url_for("models_show", job_id=network.data)}}" target="_blank">View</a>
+                                        <a href="{{url_for('digits.model.views.show', job_id=network.data)}}" target="_blank">View</a>
                                         <span class="badge">{{previous_job.train_task().get_framework_id()}}</span>
                                     </td>
                                     <td>
@@ -597,7 +650,8 @@ function setFramework(fwid)
 
 function visualizeNetwork() {
     framework = $('#framework').val();
-    $.ajax("{{url_for('models_visualize_network')}}?framework="+framework,
+    syncAceEditor(); // Sync ace editor to custom_network editor
+    $.ajax("{{url_for('digits.model.views.visualize_network')}}?framework="+framework,
         {
             type: "POST",
             data: $('#custom_network').serialize()
@@ -620,12 +674,25 @@ function visualizeNetwork() {
                                 <div class="form-group{{mark_errors([form.custom_network])}}">
                                     {{form.custom_network.label}}
                                     {{form.custom_network.explanation(file='/models/images/classification/custom_network_explanation.html')}}
-                                    <div class="pull-right">
-                                        <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
-                                    </div>
-                                    {{form.custom_network(class='form-control', rows=10)}}
+                                    <div style="display: none;">{{form.custom_network(class='form-control', rows=10)}}</div>
+                                    <a href=# class="btn btn-info" onClick="return visualizeNetwork();">Visualize</a>
                                 </div>
                         </div>
+                        <div id="ace-editor"></div>
+                        <script>
+                            var editor = ace.edit("ace-editor");
+                            editor.$blockScrolling = Infinity;
+                            editor.setTheme("ace/theme/chrome");
+                            editor.session.setFoldStyle('manual');
+                            editor.setShowPrintMargin(false);
+                            var PythonMode = ace.require("ace/mode/python").Mode;
+                            var LuaMode = ace.require("ace/mode/lua").Mode;
+                            $( document ).ready(function() {
+                                editor.setValue($('textarea#custom_network').val());
+                                editor.selection.moveTo(0, 0);
+                            });
+                        </script>
+
                         <script>$(this).addClass('active');
                             $('#custom_textareas div:first').addClass('tab-pane active') // Select first tab
                         </script>
@@ -703,7 +770,8 @@ if($("input:radio[name=previous_networks]").is(":checked")) {
 
 //Below two lines are required to show the same tab (that was selected before submitting the form) after the page validation fails i.e., preserving the status of window even after page validation fails.
 framework = $('#framework').val();
-$('#customFramework a[href="'+"#"+framework+"_custom"+'"]').tab('show');
+setFramework("{{form.framework.data}}");
+
 </script>
 
 {% endblock %}

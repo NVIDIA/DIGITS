@@ -1,21 +1,21 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import os.path
-import re
-import time
 import logging
-import subprocess
+import os.path
+import platform
+import re
 import signal
+import subprocess
+import time
 
 import flask
 import gevent.event
 
 from . import utils
+from .config import config_value
+from .status import Status, StatusCls
 import digits.log
-from config import config_value
-from status import Status, StatusCls
-
-import platform
 
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 1
@@ -76,12 +76,6 @@ class Task(StatusCls):
         """
         raise NotImplementedError
 
-    def get_framework_id(self):
-        """
-        Returns a string
-        """
-        raise NotImplementedError('Please implement me')
-
     def html_id(self):
         """
         Returns a string
@@ -116,6 +110,11 @@ class Task(StatusCls):
                 room=self.job_id,
                 )
 
+        from digits.webapp import scheduler
+        job = scheduler.get_job(self.job_id)
+        if job:
+            job.on_status_update()
+
     def path(self, filename, relative=False):
         """
         Returns a path to the given file
@@ -133,8 +132,8 @@ class Task(StatusCls):
             path = filename
         else:
             path = os.path.join(self.job_dir, filename)
-        if relative:
-            path = os.path.relpath(path, config_value('jobs_dir'))
+            if relative:
+                path = os.path.relpath(path, config_value('jobs_dir'))
         return str(path).replace("\\","/")
 
     def ready_to_queue(self):
@@ -185,7 +184,7 @@ class Task(StatusCls):
         self.before_run()
 
         env = os.environ.copy()
-        args = self.task_arguments(resources, env )
+        args = self.task_arguments(resources, env)
         if not args:
             self.logger.error('Could not create the arguments for Popen')
             self.status = Status.ERROR
@@ -200,6 +199,12 @@ class Task(StatusCls):
 
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
+
+        #https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
+        if platform.system() == 'Windows':
+            args = ' '.join(args)
+        self.logger.info('Task subprocess args: {}'.format(args))
+
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -330,7 +335,7 @@ class Task(StatusCls):
 
     def emit_progress_update(self):
         """
-        Call socketio.emit for task progess update, and trigger job progress update.
+        Call socketio.emit for task progress update, and trigger job progress update.
         """
         from digits.webapp import socketio
         socketio.emit('task update',

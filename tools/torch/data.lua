@@ -11,6 +11,8 @@ package.path = debug.getinfo(1, "S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua
 require 'logmessage'
 local ffi = require 'ffi'
 
+local tdsIsInstalled, tds = pcall(function() return check_require 'tds' end)
+
 -- enable shared serialization to speed up Tensor passing between threads
 threads.Threads.serialization('threads.sharedserialize')
 
@@ -28,7 +30,8 @@ end
 local function all_keys(cursor_,key_,op_)
     return coroutine.wrap(
         function()
-            local k = key_,v
+            local k = key_
+            local v
             repeat
                 k,v = cursor_:get(k,op_ or MDB.NEXT)
                 if k then
@@ -275,7 +278,7 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, meanTensor, isT
         end
     end
 
-    logmessage.display(0,'Image channels are ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeY .. ' and Image height is ' .. self.ImageSizeX)
+    logmessage.display(0,'Image channels are ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeX .. ' and Image height is ' .. self.ImageSizeY)
 
     self.mirror = mirror
     self.train = isTrain
@@ -319,7 +322,14 @@ end
 
 -- Derived class method lmdb_getKeys
 function DBSource:lmdb_getKeys ()
-    local Keys = {}
+    local Keys
+    if tdsIsInstalled then
+        -- use tds.Vec() to allocate memory outside of Lua heap
+        Keys = tds.Vec()
+    else
+        -- if tds is not installed, use regular table (and Lua memory allocator)
+        Keys = {}
+    end
     local i=0
     local key=nil
     for k,v in all_keys(self.lmdb_data.c,nil,self.lightningmdb.MDB_NEXT) do
@@ -344,8 +354,8 @@ function DBSource:lmdb_getSample(shuffle, idx)
     assert(v~=nil, "lmdb read nil value at idx="..idx.." key="..key)
 
     local total = self.ImageChannels*self.ImageSizeY*self.ImageSizeX
-    -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outiside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
-    local x = torch.ByteTensor(total*2):contiguous() -- some times length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
+    -- Tensor allocations inside loop consumes little more execution time. So allocated "x" outside with double size of an image and inside loop if any encoded image is encountered with bytes size more than Tensor size, then the Tensor is resized appropriately.
+    local x = torch.ByteTensor(total*2):contiguous() -- sometimes length of JPEG files are more than total size. So, "x" is allocated with more size to ensure that data is not truncated while copying.
     local x_size = total * 2 -- This variable is just to avoid the calls to tensor's size() i.e., x:size(1)
     local temp_ptr = torch.data(x) -- raw C pointer using torchffi
 
@@ -607,12 +617,12 @@ end
 
 -- wait until next data loader job completes
 function DataLoader:waitNext()
+    -- wait for next data loader job to complete
+    self.threadPool:dojob()
     -- check for errors in loader threads
     if self.threadPool:haserror() then -- check for errors
         self.threadPool:synchronize() -- finish everything and throw error
     end
-    -- wait for next data loader job to complete
-    self.threadPool:dojob()
 end
 
 -- free data loader resources

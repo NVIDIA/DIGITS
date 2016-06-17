@@ -2,7 +2,7 @@
 
 DIGITS requires [NVIDIA's fork of Caffe](https://github.com/NVIDIA/caffe), which is sometimes referred to as either "NVcaffe" or "caffe-nv".
 
-If you don't need a new version or custom build of NVcaffe, you can still use deb packages to install the latest release.
+If you don't need a new version or custom build of NVcaffe, you can still use Deb packages to install the latest release.
 Follow [these instructions](UbuntuInstall.md#repository-access) to gain access to the required repositories, and then use this command to install:
 ```sh
 % sudo apt-get install caffe-nv python-caffe-nv
@@ -40,19 +40,25 @@ If you are, simply install these aptitude packages:
 
 ### CUDA toolkit
 
-To install the CUDA toolkit, first get access to the required repositories by following [these instructions](UbuntuInstall.md#repository-access).
-Then install the toolkit with this command:
+To install the CUDA toolkit with Deb packages, first get access to the required repositories by following [these instructions](UbuntuInstall.md#repository-access).
+Then, install your toolkit (any version >= 6.5 is fine):
 ```sh
+# If you already have a driver installed
 % sudo apt-get install cuda-toolkit-7-5
+
+# If you need a driver
+% sudo apt-get install cuda-7-5
 ```
-Any CUDA toolkit >= 6.5 should work.
+For more information, see [InstallCuda.md](InstallCuda.md).
 
 ### cuDNN
 
-You can also install cuDNN via deb packages:
+You can also install cuDNN 4 with a Deb package:
 ```sh
 % sudo apt-get install libcudnn4-dev
 ```
+Older versions of cuDNN can be found on the [cuDNN website](https://developer.nvidia.com/cudnn).
+The NVcaffe [release notes](https://github.com/NVIDIA/caffe/releases) contain information about which version of cuDNN is required for different versions of NVcaffe.
 
 ### Python dependencies
 

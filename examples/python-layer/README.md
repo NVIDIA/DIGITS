@@ -4,7 +4,7 @@ Caffe gives users the ability to [define custom layer types in Python](https://g
 This can be a very useful feature, but it is poorly documented and tricky to implement correctly.
 This walkthrough will show you how to get started with Python layers in DIGITS.
 
-> NOTE: This feature is included automatically if you are building Caffe with CMake or installing the deb package. If you are building with Make, you will need to uncomment "WITH_PYTHON_LAYER := 1" in your `Makefile.config` to enable it.
+> NOTE: This feature is included automatically if you are building Caffe with CMake or installing the Deb package. If you are building with Make, you will need to uncomment "WITH_PYTHON_LAYER := 1" in your `Makefile.config` to enable it.
 
 ## Adding Occlusions to MNIST
 
@@ -73,8 +73,8 @@ Find those layers (a few lines from the top) and insert this snippet of prototxt
 layer {
   name: "blank_square"
   type: "Python"
-  bottom: "scale"
-  top: "scale"
+  bottom: "scaled"
+  top: "scaled"
   python_param {
     module: "digits_python_layers"
     layer: "BlankSquareLayer"
@@ -89,12 +89,16 @@ Then simply give your model a name and click `Create`.
 You should see your model training session start.
 If you're paying attention, you'll notice that this model reaches a lower accuracy than the default LeNet network. Why is that?
 
+> NOTE: The current version of Caffe doesn't allow multi-GPU for networks with Python layers.
+If you want to use a Python layer, you need to use a single GPU for training.
+See https://github.com/BVLC/caffe/issues/2936.
+
 ### Testing the Model
 
 Now for the fun part.
 Find an image in the MNIST test set and upload it to `Test a single image` (at the bottom of the page).
 Don't forget to click on `Show  visualizations and statistics`!
-The original image is displayed on the top left, next to the the predicted class.
+The original image is displayed on the top left, next to the predicted class.
 In the `Visualization` column, you'll see the result of subtracting the mean image as the `data` activation.
 Just below it, you'll see the result of down-scaling the image from `[0 - 255]` to `[-1 - 1]`.
 You'll also see that a random fourth of the image has been removed - that's thanks to our Python layer!

@@ -44,7 +44,7 @@ Run this:
 
     $ python tools/download_data/main.py mnist ~/data/mnist
 
-And these folders and files will be created for you (images and temporary files ommitted):
+And these folders and files will be created for you (images and temporary files omitted):
 ```
 mnist/
 ├── train/
@@ -83,7 +83,7 @@ Run this:
 ```sh
 $ python tools/download_data/main.py cifar10 ~/data/cifar10
 ```
-And these folders and files will be created for you (images and temporary files ommitted):
+And these folders and files will be created for you (images and temporary files omitted):
 ```
 cifar10
 ├── train/
@@ -117,7 +117,7 @@ Run this:
 ```sh
 $ python tools/download_data/main.py cifar100 ~/data/cifar100
 ```
-And these folders and files will be created for you (images and temporary files ommitted):
+And these folders and files will be created for you (images and temporary files omitted):
 ```
 cifar100/
 ├── coarse/

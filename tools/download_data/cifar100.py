@@ -1,8 +1,9 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 
+import cPickle
 import os
 import tarfile
-import cPickle
+
 import PIL.Image
 
 from downloader import DataDownloader
@@ -117,7 +118,7 @@ class Cifar100Downloader(DataDownloader):
         for fine, coarse in fine_to_coarse.iteritems():
             self.mkdir(os.path.join(coarse_dirname, coarse))
             os.symlink(
-                    os.path.join(fine_dirname, fine),
-                    os.path.join(coarse_dirname, coarse, fine)
-                    )
-
+                # Create relative symlinks for portability
+                os.path.join('..', '..', '..', 'fine', phase, fine),
+                os.path.join(coarse_dirname, coarse, fine)
+            )

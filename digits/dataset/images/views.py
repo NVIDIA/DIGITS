@@ -1,7 +1,13 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os.path
-from cStringIO import StringIO
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import flask
 import PIL.Image
@@ -9,13 +15,11 @@ import PIL.Image
 import digits
 from digits import utils
 from digits.webapp import app
-import classification.views
-import generic.views
 
-NAMESPACE = '/datasets/images'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE + '/resize-example', methods=['POST'])
-def image_dataset_resize_example():
+@blueprint.route('/resize-example', methods=['POST'])
+def resize_example():
     """
     Resizes the example image, and returns it as a string of png data
     """

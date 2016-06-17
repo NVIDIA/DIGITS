@@ -18,8 +18,6 @@ else
 end
 
 function createModel(nGPU, channels, nClasses)
-   assert(nGPU == 1 or nGPU == 2, '1-GPU or 2-GPU supported for AlexNet')
-   
    -- this is alexnet as presented in Krizhevsky et al., 2012
    local features = nn.Sequential()
    features:add(convLayer(channels,96,11,11,4,4,2,2))       -- 224 ->  55
@@ -49,12 +47,18 @@ function createModel(nGPU, channels, nClasses)
 
    local model
    if nGPU>1 then
-      local parallel_features = nn.DataParallelTable(1)  -- Split along first (batch) dimension
-      for i = 1, nGPU do
-         cutorch.setDevice(i)
-         parallel_features:add(features:clone(), i)  -- Use the ith GPU
+      local gpus = torch.range(1, nGPU):totable()
+      local fastest, benchmark
+      local use_cudnn = cudnn ~= nil
+      if use_cudnn then
+        fastest, benchmark = cudnn.fastest, cudnn.benchmark
       end
-      cutorch.setDevice(1)  -- This is the 'primary' GPU
+      local parallel_features = nn.DataParallelTable(1, true, true):add(features,gpus):threads(function()
+            if use_cudnn then
+              local cudnn = require 'cudnn'
+              cudnn.fastest, cudnn.benchmark = fastest, benchmark
+            end
+      end)
       parallel_features.gradInput = nil
       model = nn.Sequential():add(parallel_features):add(classifier)
    else
@@ -79,8 +83,8 @@ return function(params)
     return {
         model = createModel(params.ngpus, channels, nclasses),
         croplen = 224,
-        trainBatchSize = 100,
-        validationBatchSize = 100,
+        trainBatchSize = 128,
+        validationBatchSize = 32,
     }
 end
 

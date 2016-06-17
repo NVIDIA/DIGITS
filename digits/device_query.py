@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import argparse
 import ctypes
@@ -108,27 +109,52 @@ def get_library(name):
     Returns a ctypes.CDLL or None
     """
     try:
-        if platform.system() == 'Linux':
-            return ctypes.cdll.LoadLibrary('%s.so' % name)
-        elif platform.system() == 'Darwin':
-            return ctypes.cdll.LoadLibrary('%s.dylib' % name)
-        elif platform.system() == 'Windows':
-            return ctypes.windll.LoadLibrary('%s.dll' % name)
+        if platform.system() == 'Windows':
+            return ctypes.windll.LoadLibrary(name)
+        else:
+            return ctypes.cdll.LoadLibrary(name)
     except OSError:
         pass
     return None
 
-devices = None
-
 def get_cudart():
-    if not platform.system() == 'Windows':
-        return get_library('libcudart')
+    """
+    Return the ctypes.DLL object for cudart or None
+    """
+    if platform.system() == 'Windows':
+        arch = platform.architecture()[0]
+        for ver in range(90,50,-5):
+            cudart = get_library('cudart%s_%d.dll' % (arch[:2], ver))
+            if cudart is not None:
+                return cudart
+    else:
+        for name in (
+                'libcudart.so.7.0',
+                'libcudart.so.7.5',
+                'libcudart.so.8.0',
+                'libcudart.so'):
+            cudart = get_library(name)
+            if cudart is not None:
+                return cudart
+    return None
 
-    arch = platform.architecture()[0]
-    for ver in range(90,50,-5):
-        cudart = get_library('cudart%s_%d' % (arch[:2], ver))
-        if cudart is not None:
-            return cudart
+def get_nvml():
+    """
+    Return the ctypes.DLL object for cudart or None
+    """
+    if platform.system() == 'Windows':
+        return get_library('nvml.dll')
+    else:
+        for name in (
+                'libnvidia-ml.so.1',
+                'libnvidia-ml.so',
+                'nvml.so'):
+            nvml = get_library(name)
+            if nvml is not None:
+                return nvml
+    return None
+
+devices = None
 
 def get_devices(force_reload=False):
     """
@@ -160,7 +186,10 @@ def get_devices(force_reload=False):
 
     # get number of devices
     num_devices = ctypes.c_int()
-    cudart.cudaGetDeviceCount(ctypes.byref(num_devices))
+    rc = cudart.cudaGetDeviceCount(ctypes.byref(num_devices))
+    if rc != 0:
+        print 'cudaGetDeviceCount() failed with error #%s' % rc
+        return []
 
     # query devices
     for x in xrange(num_devices.value):
@@ -173,6 +202,8 @@ def get_devices(force_reload=False):
             if rc == 0:
                 properties.pciBusID_str = pciBusID_str
             devices.append(properties)
+        else:
+            print 'cudaGetDeviceProperties() failed with error #%s' % rc
         del properties
     return devices
 
@@ -191,11 +222,9 @@ def get_nvml_info(device_id):
     if device is None:
         return None
 
-    nvml = get_library('libnvidia-ml')
+    nvml = get_nvml()
     if nvml is None:
-        nvml = get_library('nvml')
-        if nvml is None:
-            return None
+        return None
 
     rc = nvml.nvmlInit()
     if rc != 0:

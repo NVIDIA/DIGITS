@@ -1,8 +1,9 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import tempfile
 
-from . import config_file as _
+from . import config_file
 
 class TestConfigFile():
     def test_write_and_read(self):
@@ -18,14 +19,14 @@ class TestConfigFile():
         filename = None
         with tempfile.NamedTemporaryFile(suffix='cfg') as tmp:
             filename = tmp.name
-        cf1 = _.ConfigFile(filename)
+        cf1 = config_file.ConfigFile(filename)
         assert not cf1.exists(), 'tempfile already exists'
         assert cf1.can_write(), "can't write to tempfile"
 
         cf1.set(name, value)
         cf1.save()
 
-        cf2 = _.ConfigFile(filename)
+        cf2 = config_file.ConfigFile(filename)
         assert cf2.exists(), "tempfile doesn't exist"
         assert cf2.can_read(), "can't read from tempfile"
 

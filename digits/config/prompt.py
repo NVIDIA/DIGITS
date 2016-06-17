@@ -1,14 +1,14 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
-
 """
 Classes and functions relating to prompting a user for configuration options
 """
+from __future__ import absolute_import
 
-import sys
 import os.path
 import readline
+import sys
 
-import config_option
+from . import config_option
 
 def print_section_header(title):
     """

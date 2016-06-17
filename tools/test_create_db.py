@@ -1,21 +1,25 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
-import os.path
-import tempfile
-import shutil
-from cStringIO import StringIO
-import unittest
-import platform
-import Queue
 from collections import Counter
+import os.path
+import platform
 import shutil
+import tempfile
+import unittest
+import Queue
 
-import nose.tools
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 import mock
-import PIL.Image
+import nose.tools
 import numpy as np
+import PIL.Image
 
-from . import create_db as _
+from . import create_db
 
 class BaseTest():
     """
@@ -70,7 +74,7 @@ class TestFillLoadQueue(BaseTest):
 
     def check_valid_file(self, shuffle):
         queue = Queue.Queue()
-        result = _._fill_load_queue(self.good_file[1], queue, shuffle)
+        result = create_db._fill_load_queue(self.good_file[1], queue, shuffle)
         assert result == self.image_count, 'lines not added'
         assert queue.qsize() == self.image_count, 'queue not full'
 
@@ -81,8 +85,8 @@ class TestFillLoadQueue(BaseTest):
     def check_empty_file(self, shuffle):
         queue = Queue.Queue()
         nose.tools.assert_raises(
-                _.BadInputFileError,
-                _._fill_load_queue,
+                create_db.BadInputFileError,
+                create_db._fill_load_queue,
                 self.empty_file[1], queue, shuffle)
 
 class TestParseLine():
@@ -99,7 +103,7 @@ class TestParseLine():
 
     def check_good_line(self, line, label):
         c = Counter()
-        p, l = _._parse_line(line, c)
+        p, l = create_db._parse_line(line, c)
         assert l == label, 'parsed label wrong'
         assert c[l] == 1, 'distribution is wrong'
 
@@ -113,8 +117,8 @@ class TestParseLine():
 
     def check_bad_line(self, line):
         nose.tools.assert_raises(
-                _.ParseLineError,
-                _._parse_line,
+                create_db.ParseLineError,
+                create_db._parse_line,
                 line, Counter()
                 )
 
@@ -130,7 +134,7 @@ class TestCalculateBatchSize():
             yield self.check, count, batch_size
 
     def check(self, count, batch_size):
-        assert _._calculate_batch_size(count) == batch_size
+        assert create_db._calculate_batch_size(count) == batch_size
 
 
 class TestCalculateNumThreads():
@@ -147,18 +151,18 @@ class TestCalculateNumThreads():
             yield self.check, batch_size, shuffle, num
 
     def check(self, batch_size, shuffle, num):
-        assert _._calculate_num_threads(
+        assert create_db._calculate_num_threads(
                 batch_size, shuffle) == num
 
 
 class TestInitialImageSum():
     def test_color(self):
-        s = _._initial_image_sum(10, 10, 3)
+        s = create_db._initial_image_sum(10, 10, 3)
         assert s.shape == (10, 10, 3)
         assert s.dtype == 'float64'
 
     def test_grayscale(self):
-        s = _._initial_image_sum(10, 10, 1)
+        s = create_db._initial_image_sum(10, 10, 1)
         assert s.shape == (10, 10)
         assert s.dtype == 'float64'
 
@@ -170,14 +174,14 @@ class TestImageToDatum(BaseTest):
             yield self.check_grayscale, compression
 
     def check_color(self, compression):
-        d = _._array_to_datum(self.numpy_image_color, 1, compression)
+        d = create_db._array_to_datum(self.numpy_image_color, 1, compression)
         assert d.height == self.numpy_image_color.shape[0]
         assert d.width == self.numpy_image_color.shape[1]
         assert d.channels == 3
         assert d.encoded == bool(compression)
 
     def check_grayscale(self, compression):
-        d = _._array_to_datum(self.numpy_image_gray, 1, compression)
+        d = create_db._array_to_datum(self.numpy_image_gray, 1, compression)
         assert d.height == self.numpy_image_gray.shape[0]
         assert d.width == self.numpy_image_gray.shape[1]
         assert d.channels == 1
@@ -198,7 +202,7 @@ class TestSaveMeans():
         else:
             s = np.ones((8,10),dtype='float64')
 
-        _._save_means(s, 2, [filename])
+        create_db._save_means(s, 2, [filename])
         assert os.path.exists(filename)
 
 class BaseCreationTest(BaseTest):
@@ -209,18 +213,18 @@ class BaseCreationTest(BaseTest):
                 yield self.check_image_sizes, width, channels, False
 
     def check_image_sizes(self, width, channels, shuffle):
-        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+        create_db.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
                 width, 10, channels, self.BACKEND)
 
     def test_no_shuffle(self):
-        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+        create_db.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
                 10, 10, 1, self.BACKEND, shuffle=False)
 
     def test_means(self):
         mean_files = []
         for suffix in 'jpg','npy','png','binaryproto':
             mean_files.append(os.path.join(self.empty_dir, 'mean.%s' % suffix))
-        _.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
+        create_db.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
                 10, 10, 1, self.BACKEND, mean_files=mean_files)
 
 class TestLmdbCreation(BaseCreationTest):
@@ -231,7 +235,7 @@ class TestHdf5Creation(BaseCreationTest):
 
     def test_dset_limit(self):
         db_dir = os.path.join(self.empty_dir, 'db')
-        _.create_db(self.good_file[1], db_dir,
+        create_db.create_db(self.good_file[1], db_dir,
                 10, 10, 1, 'hdf5', hdf5_dset_limit=10*10)
         with open(os.path.join(db_dir, 'list.txt')) as infile:
             lines = infile.readlines()

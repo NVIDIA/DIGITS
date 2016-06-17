@@ -7,10 +7,10 @@ Classify an image using a model archive file
 
 import argparse
 import os
-import time
-import zipfile
 import tarfile
 import tempfile
+import time
+import zipfile
 
 from example import classify
 
@@ -22,6 +22,8 @@ def unzip_archive(archive):
     Arguments:
     archive -- the path to an archive file
     """
+    assert os.path.exists(archive), 'File not found - %s' % archive
+
     tmpdir = os.path.join(tempfile.gettempdir(),
             os.path.basename(archive))
     assert tmpdir != archive # That wouldn't work out
@@ -43,7 +45,7 @@ def unzip_archive(archive):
     return tmpdir
 
 
-def classify_with_archive(archive, image_files, use_gpu=True):
+def classify_with_archive(archive, image_files, batch_size=None, use_gpu=True):
     """
     """
     tmpdir = unzip_archive(archive)
@@ -68,7 +70,8 @@ def classify_with_archive(archive, image_files, use_gpu=True):
     assert deploy_file is not None, 'Deploy file not found'
 
     classify(caffemodel, deploy_file, image_files,
-            mean_file=mean_file, labels_file=labels_file, use_gpu=use_gpu)
+             mean_file=mean_file, labels_file=labels_file,
+             batch_size=batch_size, use_gpu=use_gpu)
 
 
 if __name__ == '__main__':
@@ -78,20 +81,25 @@ if __name__ == '__main__':
 
     ### Positional arguments
 
-    parser.add_argument('archive',  help='Path to a DIGITS model archive')
-    parser.add_argument('image',    help='Path to an image')
+    parser.add_argument('archive', help='Path to a DIGITS model archive')
+    parser.add_argument('image_file',
+                        nargs='+',
+                        help='Path[s] to an image')
 
     ### Optional arguments
 
+    parser.add_argument('--batch-size',
+                        type=int)
     parser.add_argument('--nogpu',
             action='store_true',
             help="Don't use the GPU")
 
     args = vars(parser.parse_args())
 
-    image_files = [args['image']]
+    classify_with_archive(args['archive'], args['image_file'],
+                          batch_size=args['batch_size'],
+                          use_gpu=(not args['nogpu']),
+                          )
 
-    classify_with_archive(args['archive'], image_files, not args['nogpu'])
-
-    print 'Script took %s seconds.' % (time.time() - script_start_time,)
+    print 'Script took %f seconds.' % (time.time() - script_start_time,)
 

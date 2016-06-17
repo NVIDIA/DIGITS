@@ -1,9 +1,10 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import math
 
-import config_option
-import prompt
+from . import config_option
+from . import prompt
 import digits.device_query
 
 class GpuListOption(config_option.Option):
@@ -39,7 +40,7 @@ class GpuListOption(config_option.Option):
             return []
 
     @classmethod
-    def visibility(self):
+    def visibility(cls):
         if len(digits.device_query.get_devices()) == 0:
             # Nothing to see here
             return config_option.Visibility.NEVER

@@ -1,18 +1,29 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
-import sys
-import os
-import time
 import argparse
+from collections import Counter
 import logging
+import math
+import os
+import Queue
+import random
 import re
 import shutil
-import math
-import random
-from collections import Counter
+import sys
 import threading
-import Queue
+import time
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+import h5py
+import lmdb
+import numpy as np
+import PIL.Image
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,11 +31,6 @@ import digits.config
 digits.config.load_config()
 from digits import utils, log
 
-import numpy as np
-import PIL.Image
-import lmdb
-import h5py
-from cStringIO import StringIO
 # must call digits.config.load_config() before caffe to set the path
 import caffe.io
 import caffe_pb2

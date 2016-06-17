@@ -1,13 +1,19 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import os.path
-
-import requests
-import cStringIO
-import PIL.Image
-import numpy as np
-import scipy.misc
 import math
+import os.path
+import requests
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+import numpy as np
+import PIL.Image
+import scipy.misc
 
 from . import is_url, HTTP_TIMEOUT, errors
 
@@ -45,7 +51,7 @@ def load_image(path):
                     allow_redirects=False,
                     timeout=HTTP_TIMEOUT)
             r.raise_for_status()
-            stream = cStringIO.StringIO(r.content)
+            stream = StringIO(r.content)
             image = PIL.Image.open(stream)
         except requests.exceptions.RequestException as e:
             raise errors.LoadImageError, e.message
@@ -278,16 +284,53 @@ def embed_image_html(image):
     else:
         fmt = fmt.lower()
 
-    string_buf = cStringIO.StringIO()
+    string_buf = StringIO()
     image.save(string_buf, format=fmt)
     data = string_buf.getvalue().encode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)
+
+def add_bboxes_to_image(image, bboxes, color='red', width=1):
+    """
+    Draw rectangles on the image for the bounding boxes
+    Returns a PIL.Image
+
+    Arguments:
+    image -- input image
+    bboxes -- bounding boxes in the [((l, t), (r, b)), ...] format
+
+    Keyword arguments:
+    color -- color to draw the rectangles
+    width -- line width of the rectangles
+
+    Example:
+    image = Image.open(filename)
+    add_bboxes_to_image(image, bboxes[filename], width=2, color='#FF7700')
+    image.show()
+    """
+    def expanded_bbox(bbox, n):
+        """
+        Grow the bounding box by n pixels
+        """
+        l = min(bbox[0][0], bbox[1][0])
+        r = max(bbox[0][0], bbox[1][0])
+        t = min(bbox[0][1], bbox[1][1])
+        b = max(bbox[0][1], bbox[1][1])
+        return ((l - n, t - n), (r + n, b + n))
+
+    from PIL import Image, ImageDraw
+    draw = ImageDraw.Draw(image)
+    for bbox in bboxes:
+        for n in xrange(width):
+            draw.rectangle(expanded_bbox(bbox, n), outline = color)
+
+    return image
 
 def get_layer_vis_square(data,
         allow_heatmap = True,
         normalize = True,
         min_img_dim = 100,
         max_width = 1200,
+        channel_order = 'RGB',
         ):
     """
     Returns a vis_square for the given layer data
@@ -300,6 +343,8 @@ def get_layer_vis_square(data,
     normalize -- whether to normalize the data when visualizing
     max_width -- maximum width for the vis_square
     """
+    if channel_order not in ['RGB', 'BGR']:
+        raise ValueError('Unsupported channel_order %s' % channel_order)
     if data.ndim == 1:
         # interpret as 1x1 grayscale images
         # (N, 1, 1)
@@ -312,7 +357,8 @@ def get_layer_vis_square(data,
         if data.shape[0] == 3:
             # interpret as a color image
             # (1, H, W,3)
-            data = data[[2,1,0],...] # BGR to RGB (see issue #59)
+            if channel_order == 'BGR':
+                data = data[[2,1,0],...] # BGR to RGB (see issue #59)
             data = data.transpose(1,2,0)
             data = data[np.newaxis,...]
         else:
@@ -324,12 +370,14 @@ def get_layer_vis_square(data,
             # interpret as HxW color images
             # (N, H, W, 3)
             data = data.transpose(1,2,3,0)
-            data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
+            if channel_order == 'BGR':
+                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
         elif data.shape[1] == 3:
             # interpret as HxW color images
             # (N, H, W, 3)
             data = data.transpose(0,2,3,1)
-            data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
+            if channel_order == 'BGR':
+                data = data[:,:,:,[2,1,0]] # BGR to RGB (see issue #59)
         else:
             # interpret as HxW grayscale images
             # (N, H, W)
@@ -383,7 +431,7 @@ def vis_square(images,
     Keyword arguments:
     padsize -- how many pixels go inbetween the tiles
     normalize -- if true, scales (min, max) across all images out to (0, 1)
-    colormap -- a string representing one of the suppoted colormaps
+    colormap -- a string representing one of the supported colormaps
     """
     assert 3 <= images.ndim <= 4, 'images.ndim must be 3 or 4'
     # convert to float since we're going to do some math

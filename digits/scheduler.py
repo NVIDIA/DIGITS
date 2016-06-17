@@ -1,26 +1,33 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import os
-import time
-import shutil
-import traceback
-import signal
 from collections import OrderedDict
+import os
 import re
+import shutil
+import signal
+import time
+import traceback
 
 import flask
 import gevent
 import gevent.event
 import gevent.queue
 
-from config import config_value
 from . import utils
-from status import Status
-from job import Job
-from dataset import DatasetJob
-from model import ModelJob
+from .config import config_value
+from .dataset import DatasetJob
+from .job import Job
+from .log import logger
+from .model import ModelJob
+from .status import Status
 from digits.utils import errors
-from log import logger
+
+"""
+This constant configures how long to wait before automatically
+deleting completed non-persistent jobs
+"""
+NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = 3600
 
 class Resource(object):
     """
@@ -100,6 +107,7 @@ class Scheduler:
                 'parse_folder_task_pool': [Resource()],
                 'create_db_task_pool': [Resource(max_value=2)],
                 'analyze_db_task_pool': [Resource(max_value=4)],
+                'inference_task_pool': [Resource(max_value=4)],
                 'gpus': [Resource(identifier=index)
                     for index in gpu_list.split(',')] if gpu_list else [],
                 }
@@ -147,7 +155,7 @@ class Scheduler:
                     job.load_dataset()
                     self.jobs[job.id()] = job
                 except Exception as e:
-                    failed_jobs.append((job.id(), e))
+                    failed_jobs.append((dir_name, e))
 
         logger.info('Loaded %d jobs.' % len(self.jobs))
 
@@ -172,21 +180,11 @@ class Scheduler:
             from digits.webapp import app, socketio
             with app.app_context():
                 # send message to job_management room that the job is added
-                html = flask.render_template('job_row.html', job = job)
-
-                # Convert the html into a list for the jQuery
-                # DataTable.row.add() method.  This regex removes the <tr>
-                # and <td> tags, and splits the string into one element
-                # for each cell.
-                html = re.sub('<tr[^<]*>[\s\n\r]*<td[^<]*>[\s\n\r]*', '', html)
-                html = re.sub('[\s\n\r]*</td>[\s\n\r]*</tr>', '', html)
-                html = re.split('</td>[\s\n\r]*<td[^<]*>', html)
 
                 socketio.emit('job update',
                               {
                                   'update': 'added',
                                   'job_id': job.id(),
-                                  'html': html
                               },
                               namespace='/jobs',
                               room='job_management',
@@ -205,6 +203,29 @@ class Scheduler:
         if job_id is None:
             return None
         return self.jobs.get(job_id, None)
+
+    def get_related_jobs(self, job):
+        """
+        Look through self.jobs to try to find the Jobs
+        whose parent contains job
+        """
+        related_jobs = []
+
+        if isinstance(job, ModelJob):
+            datajob = job.dataset
+            related_jobs.append(datajob)
+        elif isinstance(job, DatasetJob):
+            datajob = job
+        else:
+            raise ValueError("Unhandled job type %s" % job.job_type())
+
+        for j in self.jobs.values():
+            # Any model that shares (this/the same) dataset should be added too:
+            if isinstance(j, ModelJob):
+                if datajob == j.train_task().dataset and j.id() != job.id():
+                    related_jobs.append(j)
+
+        return related_jobs
 
     def abort_job(self, job_id):
         """
@@ -386,7 +407,7 @@ class Scheduler:
                                 # job is done
                                 pass
                             elif task.status == Status.ERROR:
-                                # propogate error status up to job
+                                # propagate error status up to job
                                 job.status = Status.ERROR
                                 alldone = False
                                 break
@@ -401,10 +422,16 @@ class Scheduler:
                 if not last_saved or time.time()-last_saved > 15:
                     for job in self.jobs.values():
                         if job.status.is_running():
-                            job.save()
+                            if job.is_persistent():
+                                job.save()
+                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS):
+                            # job has been unclaimed for far too long => proceed to garbage collection
+                            self.delete_job(job)
                     last_saved = time.time()
-
-                time.sleep(utils.wait_time())
+                if 'DIGITS_MODE_TEST' not in os.environ:
+                    time.sleep(utils.wait_time())
+                else:
+                    time.sleep(0.05)
         except KeyboardInterrupt:
             pass
 
@@ -485,7 +512,7 @@ class Scheduler:
 
     def emit_gpus_available(self):
         """
-        Call socketio.emit gpu availablity
+        Call socketio.emit gpu availability
         """
         from digits.webapp import scheduler, socketio
         socketio.emit('server update',

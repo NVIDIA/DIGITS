@@ -1,8 +1,9 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import sys
 import logging
 import logging.handlers
+import sys
 
 from digits.config import config_value
 
@@ -32,7 +33,7 @@ class JobIdLoggerAdapter(logging.LoggerAdapter):
         1. On class initialization
             adapter = JobIdLoggerAdapter(logger, {'job_id': job_id})
             adapter.debug(msg)
-        2. On method invokation
+        2. On method invocation
             adapter = JobIdLoggerAdapter(logger, {})
             adapter.debug(msg, job_id=id)
     """

@@ -4,14 +4,14 @@ import os.path
 import shutil
 import tempfile
 
+import caffe.io
 import lmdb
 import numpy as np
 
-from . import analyze_db as _
+from . import analyze_db
 
-import caffe.io
+# Must import after importing digits.config
 import caffe_pb2
-
 
 class BaseTestWithDB(object):
     SAME_SHAPE = True
@@ -46,10 +46,10 @@ class BaseTestWithDB(object):
         return caffe.io.array_to_datum(image)
 
     def test_defaults(self):
-        assert _.analyze_db(self.db.path()) == self.PASS_DEFAULTS
+        assert analyze_db.analyze_db(self.db.path()) == self.PASS_DEFAULTS
 
     def test_force_shape(self):
-        assert _.analyze_db(self.db.path(), force_same_shape=True) == self.PASS_FORCE
+        assert analyze_db.analyze_db(self.db.path(), force_same_shape=True) == self.PASS_FORCE
 
 class TestSameShape(BaseTestWithDB):
     pass

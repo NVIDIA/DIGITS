@@ -1,7 +1,8 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import config_option
-import prompt
+from . import config_option
+from . import prompt
 
 class LogLevelOption(config_option.Option):
     @staticmethod
@@ -17,7 +18,7 @@ class LogLevelOption(config_option.Option):
         return 'What is the minimum log level that you want to save to your logfile? [error/warning/info/debug]'
 
     @classmethod
-    def visibility(self):
+    def visibility(cls):
         return config_option.Visibility.HIDDEN
 
     def suggestions(self):

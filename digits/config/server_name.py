@@ -1,9 +1,10 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import platform
 
-import config_option
-import prompt
+from . import config_option
+from . import prompt
 
 class ServerNameOption(config_option.Option):
     @staticmethod
@@ -15,7 +16,7 @@ class ServerNameOption(config_option.Option):
         return 'Server Name'
 
     @classmethod
-    def visibility(self):
+    def visibility(cls):
         return config_option.Visibility.HIDDEN
 
     def optional(self):

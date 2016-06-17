@@ -1,8 +1,10 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import nose
 import pkg_resources
 import unittest
+
+import nose
 
 from . import parse_version
 

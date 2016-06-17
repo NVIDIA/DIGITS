@@ -1,19 +1,21 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os
-import digits
 import re
 import subprocess
 import time
 import tempfile
+
 import flask
 
-from framework import Framework
+from .errors import Error, NetworkVisualizationError, BadNetworkError
+from .framework import Framework
+import digits
 from digits import utils
 from digits.config import config_value
 from digits.model.tasks import TorchTrainTask
 from digits.utils import subclass, override
-from errors import Error, NetworkVisualizationError, BadNetworkError
 
 @subclass
 class TorchFramework(Framework):
@@ -30,6 +32,9 @@ class TorchFramework(Framework):
 
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = True
+
+    SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
+                              'RMSPROP', 'ADADELTA', 'ADAM']
 
     def __init__(self):
         super(TorchFramework, self).__init__()
@@ -74,11 +79,18 @@ class TorchFramework(Framework):
         return network_desc
 
     @override
-    def get_network_from_previous(self, previous_network):
+    def get_network_from_previous(self, previous_network, use_same_dataset):
         """
         return new instance of network from previous network
         """
-        # return the same string
+        # note: use_same_dataset is ignored here because for Torch, DIGITS
+        # does not change the number of outputs of the last linear layer
+        # to match the number of classes in the case of a classification
+        # network. In order to write a flexible network description that
+        # accounts for the number of classes, the `nClasses` external
+        # parameter must be used, see documentation.
+
+        # return the same network description
         return previous_network
 
     @override
@@ -131,7 +143,7 @@ class TorchFramework(Framework):
             while p.poll() is None:
                 for line in utils.nonblocking_readlines(p.stdout):
                     if line is not None:
-                        # Remove whitespace and color codes. color codes are appended to begining and end of line by torch binary i.e., 'th'. Check the below link for more information
+                        # Remove whitespace and color codes. color codes are appended to beginning and end of line by torch binary i.e., 'th'. Check the below link for more information
                         # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
                         line = regex.sub('', line)
                         timestamp, level, message = TorchTrainTask.preprocess_output_torch(line.strip())

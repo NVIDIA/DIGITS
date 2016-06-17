@@ -1,20 +1,21 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import flask
 
+from .forms import GenericImageDatasetForm
+from .job import GenericImageDatasetJob
 from digits import utils
+from digits.dataset import tasks
+from digits.webapp import scheduler
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler
-from digits.dataset import tasks
-from forms import GenericImageDatasetForm
-from job import GenericImageDatasetJob
 
-NAMESPACE = '/datasets/images/generic'
+blueprint = flask.Blueprint(__name__, __name__)
 
-@app.route(NAMESPACE + '/new', methods=['GET'])
+@blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
-def generic_image_dataset_new():
+def new():
     """
     Returns a form for a new GenericImageDatasetJob
     """
@@ -25,10 +26,10 @@ def generic_image_dataset_new():
 
     return flask.render_template('datasets/images/generic/new.html', form=form)
 
-@app.route(NAMESPACE + '.json', methods=['POST'])
-@app.route(NAMESPACE, methods=['POST'])
+@blueprint.route('.json', methods=['POST'])
+@blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
-def generic_image_dataset_create():
+def create():
     """
     Creates a new GenericImageDatasetJob
 
@@ -106,25 +107,23 @@ def generic_image_dataset_create():
         if request_wants_json():
             return flask.jsonify(job.json_dict())
         else:
-            return flask.redirect(flask.url_for('datasets_show', job_id=job.id()))
+            return flask.redirect(flask.url_for('digits.dataset.views.show', job_id=job.id()))
 
     except:
         if job:
             scheduler.delete_job(job)
         raise
 
-def show(job):
+def show(job, related_jobs=None):
     """
     Called from digits.dataset.views.datasets_show()
     """
-    return flask.render_template('datasets/images/generic/show.html', job=job)
+    return flask.render_template('datasets/images/generic/show.html', job=job, related_jobs=related_jobs)
 
-@app.route(NAMESPACE + '/summary', methods=['GET'])
-def generic_image_dataset_summary():
+
+def summary(job):
     """
-    Return a short HTML summary of a DatasetJob
+    Return a short HTML summary of a GenericImageDatasetJob
     """
-    job = job_from_request()
-
-    return flask.render_template('datasets/images/generic/summary.html', dataset=job)
-
+    return flask.render_template('datasets/images/generic/summary.html',
+                                 dataset=job)

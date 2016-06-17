@@ -1,13 +1,13 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
-import time
 import json
+import time
 import urllib
 
-from gevent import monkey; monkey.patch_all()
 from urlparse import urlparse
 
-import webapp
+from . import webapp
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)
@@ -121,6 +121,19 @@ class BaseViewsTest(object):
         while True:
             status = cls.job_status(job_id, job_type=job_type)
             if status in ['Done', 'Abort', 'Error']:
+                # make sure job appears in completed jobs
+                url = '/completed_jobs.json'
+                rv = cls.app.get(url)
+                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+                info = json.loads(rv.data)
+                dataset_ids = [job['id'] for job in info['datasets']]
+                model_ids = [job['id'] for job in info['models']]
+                assert job_id in dataset_ids or job_id in model_ids, "job %s not found in completed jobs" % job_id
+                # make sure job can be shown without error
+                url = '/jobs/%s' % job_id
+                rv = cls.app.get(url, follow_redirects=True)
+                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+                assert job_id in rv.data
                 return status
             assert (time.time() - start) < timeout, 'Job took more than %s seconds' % timeout
             time.sleep(polling_period)
@@ -173,9 +186,3 @@ class TestViews(BaseViewsTest):
         assert rv.status_code == 200
         status = json.loads(rv.data)
         assert 'suggestions' in status
-
-    def test_models_page(self):
-        rv = self.app.get('/models', follow_redirects=True)
-        assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        assert 'Models' in rv.data, 'unexpected page format'
-

@@ -45,9 +45,47 @@
     {% endif %}
 {% endmacro %}
 
+{% macro print_combined_errors(errors, warnings) %}
+    {% if errors %}
+        <div class="alert alert-danger">
+            {% for field_name, field in errors.iteritems() %}
+                <li><label>{{ field_name }}</label>
+                    <ul>
+                        {% for e in field %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if warnings %}
+        <div class="alert alert-warning">
+            {% for field_name, field in warnings.iteritems() %}
+                <li><label>{{ field.label.text }}</label>
+                    <ul>
+                        {% for e in field %}
+                            <li>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}
+
 {% macro mark_errors(list) %}
     {% for form in list %}
         {{ ' has-error' if form.errors else '' }}
         {{ ' has-warning' if form.warnings else '' }}
     {% endfor %}
+{% endmacro %}
+
+{% macro serve_file(obj, path) %}
+    {% if path[0] == '/' %}
+        {# Absolute path - don't serve file for security reasons #}
+        {{path}}
+    {% else %}
+        <a href="{{url_for('digits.views.serve_file', path=obj.path(path, relative=True))}}">{{path}}</a>
+    {% endif %}
 {% endmacro %}

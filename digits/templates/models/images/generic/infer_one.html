@@ -1,37 +1,51 @@
 {# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
-{% extends "layout.html" %}
+{% extends "job.html" %}
 
 {% block nav %}
-<li><a href="{{url_for('models_show', job_id=job.id())}}">{{job.name()}}</a></li>
+<li><a href="{{url_for('digits.model.views.show', job_id=model_job.id())}}">{{model_job.name()}}</a></li>
 <li class="active"><a>Test One</a></li>
 {% endblock %}
 
-{% block content %}
+{% block job_content %}
 
 <script src="{{ url_for('static', filename='js/jquery.elevateZoom.min.js') }}"></script>
 
 <div class="page-header">
     <h1>
-        {{job.name()}}
+        {{model_job.name()}}
         <small>
-            {{job.job_type()}}
+            {{model_job.job_type()}}
         </small>
     </h1>
 </div>
 
-
+{% if header_html %}
 <div class="row">
-    <div class="col-sm-6">
-        <img src="{{image_src}}" style="max-width:100%;" />
-    </div>
+    {{header_html|safe}}
+</div>
+{% endif %}
 
-    <div class="col-sm-6">
-        {% for name, blob in network_outputs.iteritems() %}
-        <h4>{{name}}</h4>
-        {{blob}}
-        {% endfor %}
+{% if image_src %}
+<div class="row">
+    <h3>Source image</h3>
+    <img src="{{image_src}}" style="max-width:100%;" />
+</div>
+<div class="row">
+    <h3>Inference visualization</h3>
+    {{ inference_view_html|safe }}
+</div>
+{% else %}
+<div class="row">
+    <div class="alert alert-danger">
+        <p>Inference failed, see job log</p>
     </div>
 </div>
+{% endif %}
+
+{% endblock %}
+
+{% block job_content_details %}
+
 <script type="text/javascript">
     function drawHistogram(id, data) {
         c3.generate({

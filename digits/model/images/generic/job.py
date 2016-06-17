@@ -1,9 +1,10 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os.path
 
-from digits.utils import subclass, override
 from ..job import ImageModelJob
+from digits.utils import subclass, override
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
@@ -43,10 +44,10 @@ class GenericImageModelJob(ImageModelJob):
         download_files = [(self.path(filename), os.path.basename(filename))
                           for filename in model_files.values()]
 
-        if task.dataset.mean_file:
+        if task.dataset.get_mean_file():
             download_files.append((
-                task.dataset.path(task.dataset.mean_file),
-                os.path.basename(task.dataset.mean_file)))
+                task.dataset.path(task.dataset.get_mean_file()),
+                os.path.basename(task.dataset.get_mean_file())))
 
         # add snapshot
         download_files.append((snapshot_filename,

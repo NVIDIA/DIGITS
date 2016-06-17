@@ -1,6 +1,7 @@
 {# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% extends "job.html" %}
+{% from "helper.html" import serve_file %}
 
 {% macro print_job_information() %}
 <div class="panel-heading">
@@ -13,17 +14,17 @@
     </dl>
     <dl>
         <dt>Image Dimensions</dt>
-        <dd>{{job.image_dims[1]}}x{{job.image_dims[0]}}</dd>
+        <dd>{{job.image_dims[1]}}x{{job.image_dims[0]}} (Width x Height)</dd>
         <dt>Image Type</dt>
         <dd>{{'Color' if job.image_dims[2] == 3 else 'Grayscale'}}</dd>
         <dt>Resize Transformation</dt>
         <dd>{{ job.resize_mode_name() }}</dd>
         <dt>DB Backend</dt>
-        <dd>{{job.train_db_task().backend}}</dd>
+        <dd>{{job.get_backend()}}</dd>
         <dt>Image Encoding</dt>
-        <dd>{{job.train_db_task().encoding}}</dd>
+        <dd>{{job.get_encoding()}}</dd>
         <dt>DB Compression</dt>
-        <dd>{{job.train_db_task().compression}}</dd>
+        <dd>{{job.get_compression()}}</dd>
     </dl>
     <dl>
         <dt>Dataset size</dt>
@@ -66,6 +67,7 @@
         {% if task.percent_test != 0 and task.percent_test != 100 %}
         ({{task.percent_test}}%)
         {% endif %}
+        </dd>
         {% endif %}
     </dl>
 </div>
@@ -78,10 +80,10 @@
 <div class="panel-body">
     <dl>
         <dt>Input File{{' (before shuffling)' if task.shuffle }}</dt>
-        <dd><a href="{{url_for('serve_file', path=task.path(task.input_file, relative=True))}}">{{task.input_file}}</a></dd>
+        <dd>{{serve_file(task, task.input_file)}}</dd>
         {% if task.create_db_log_file %}
         <dt>DB Creation log file</dt>
-        <dd><a href="{{url_for('serve_file', path=task.path(task.create_db_log_file, relative=True))}}">{{task.create_db_log_file}}</a></dd>
+        <dd>{{serve_file(task, task.create_db_log_file)}}</dd>
         {% endif %}
         {% if task.entries_count %}
         <dt>DB Entries</dt>
@@ -109,14 +111,14 @@
     {% if task.status=='D' and task.mean_file %}
         <script>
             displayMeanImage("{{task.html_id()}}",
-                "{{url_for('serve_file', path=task.path('mean.jpg', relative=True))}}");
+                "{{url_for('digits.views.serve_file', path=task.path('mean.jpg', relative=True))}}");
         </script>
     {% endif %}
 
     {# Exploration #}
     {% if task.backend=='lmdb' %}
         <div class="exploration" style="display:none;">
-            <a href="{{url_for('image_classification_dataset_explore', job_id=job.id(), db=task.db_name.lower())}}" class="btn btn-primary">Explore the db</a>
+            <a href="{{url_for('digits.dataset.images.classification.views.explore', job_id=job.id(), db=task.db_name.lower())}}" class="btn btn-primary">Explore the db</a>
         </div>
         {% if task.status=='D' %}
             <script>

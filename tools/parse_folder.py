@@ -1,16 +1,15 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
-import sys
-import os
-import re
 import argparse
-import time
 import logging
+import os
 import random
-import urllib
-
 import requests
+import re
+import sys
+import time
+import urllib
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -282,7 +281,7 @@ def parse_folder(folder, labels_file,
         ):
     """
     Parses a folder of images into three textfiles
-    Returns True on sucess
+    Returns True on success
 
     Arguments:
     folder -- a folder containing folders of images (can be a filesystem path or a url)

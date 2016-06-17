@@ -1,4 +1,5 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 import os.path
 import requests
@@ -65,8 +66,11 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 return True
         else:
             # make sure the filesystem path exists
+            # and make sure the filesystem path is absolute
             if not os.path.exists(field.data) or not os.path.isdir(field.data):
                 raise validators.ValidationError('Folder does not exist')
+            elif not os.path.isabs(field.data):
+                raise validators.ValidationError('Filesystem path is not absolute')
             else:
                 return True
 

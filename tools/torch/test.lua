@@ -15,9 +15,6 @@ end
 
 require 'utils'
 check_require 'hdf5'
-
-package.path = debug.getinfo(1,"S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
-
 require 'logmessage'
 require 'Optimizer'
 ----------------------------------------------------------------------
@@ -25,13 +22,10 @@ require 'Optimizer'
 --print 'processing options'
 
 opt = lapp[[
--m,--resizeMode (default squash) Resize mode (squash/crop/fill/half_crop) for the input test image, if it's dimensions differs from those of Train DB images.
 -t,--threads (default 8) number of threads
 -p,--type (default cuda) float or cuda
 -d,--devid (default 1) device ID (if using CUDA)
--o,--load (string) directory that contains trained model weights
 -n,--network (string) Pretrained Model to be loaded
--e,--epoch (default -1) weight file of the epoch to be loaded
 -i,--image (string) the value to this parameter depends on "testMany" parameter. If testMany is 'no' then this parameter specifies single image that needs to be classified or else this parameter specifies the location of file which contains paths of multiple images that needs to be classified. Provide full path, if the image (or) images file is in different directory.
 -s,--mean (default '') train images mean (saved as .jpg file)
 -y,--ccn2 (default no) should be 'yes' if ccn2 is used in network. Default : false
@@ -41,7 +35,7 @@ opt = lapp[[
 --testUntil (default -1) specifies how many images in the "image" file to be tested. This parameter is only valid when testMany is set to "yes"
 --subtractMean (default 'image') Select mean subtraction method. Possible values are 'image', 'pixel' or 'none'.
 --labels (default '') file contains label definitions
---snapshotPrefix (default '') prefix of the weights/snapshots
+--snapshot (string) Path to snapshot to load
 --networkDirectory (default '') directory in which network exists
 --allPredictions (default no) If 'yes', displays all the predictions of an image instead of formatted topN results
 --visualization (default no) Create HDF5 database with layers weights and activations. Depends on --testMany~=yes
@@ -69,14 +63,6 @@ else
     opt.croplen = nil
 end
 
-local snapshot_prefix = ''
-
-if opt.snapshotPrefix ~= '' then
-    snapshot_prefix = opt.snapshotPrefix
-else
-    snapshot_prefix = opt.network
-end
-
 local utils = require 'utils'
 
 local data = require 'data'
@@ -93,28 +79,6 @@ if opt.subtractMean ~= 'none' then
     assert(opt.mean ~= '', 'subtractMean parameter not set to "none" yet mean image path is unset')
     logmessage.display(0,'Loading mean tensor from '.. opt.mean ..' file')
     meanTensor = data.loadMean(opt.mean, opt.subtractMean == 'pixel')
-end
-
--- If epoch for the trained model is not provided then select the latest trained model.
-if opt.epoch == -1 then
-    dir_name = paths.concat(opt.load)
-    for file in lfs.dir(dir_name) do
-        file_name = paths.concat(dir_name,file)
-        if lfs.attributes(file_name,"mode") == "file" then
-            if string.match(file, snapshot_prefix .. '_.*_Weights[.]t7') then
-                parts=string.split(file,"_")
-                value = tonumber(parts[#parts-1])
-                if (opt.epoch < value) then
-                    opt.epoch = value
-                end
-            end
-        end
-    end
-end
-
-if opt.epoch == -1 then
-    logmessage.display(2,'There are no pretrained model weights to test in this directory - ' .. paths.concat(opt.networkDirectory))
-    os.exit(-1)
 end
 
 -- returns shape of input tensor (adjusting to desired crop length if specified)
@@ -142,15 +106,37 @@ function loadNetwork(dir, name, labels, weightsFile, tensorType, inputTensorShap
         nclasses = (labels ~= nil) and #labels or nil,
         inputShape = inputTensorShape,
     }
+    if nn.DataParallelTable then
+        -- set number of GPUs to use when deserializing model
+        nn.DataParallelTable.deserializeNGPUs = parameters.ngpus
+    end
     local network = require (name)(parameters)
-    local model = network.model
 
-    -- load parameters from snapshot
-    local weights, gradients = model:getParameters()
+    local model
+    if (string.find(weightsFile, '_Weights')) then
+        -- snapshot was created by dumping learnable weights/bias into a file
+        -- this means other parameters such as those used for batch normalization
+        -- could be missing, which could lead to incorrect predictions
+        model = network.model
 
-    logmessage.display(0, 'Loading ' .. weightsFile)
-    local savedWeights = torch.load(weightsFile)
-    weights:copy(savedWeights)
+        -- allow user to fine tune model (we need to do this *before* loading weights)
+        if network.fineTuneHook then
+            logmessage.display(0,'Calling user-defined fine tuning hook...')
+            model = network.fineTuneHook(model)
+        end
+
+        -- load parameters from snapshot
+        local weights, gradients = model:getParameters()
+
+        logmessage.display(0, 'Loading ' .. weightsFile)
+        local savedWeights = torch.load(weightsFile)
+        weights:copy(savedWeights)
+    else
+        -- the full model was saved
+        assert(string.find(weightsFile, '_Model'))
+        model = torch.load(weightsFile)
+        network.model = model
+    end
 
     if tensorType =='cuda' then
         model:cuda()
@@ -179,7 +165,7 @@ if ccn2 ~= nil then
     using_ccn2 = 'yes'
 end
 
-local weights_filename = paths.concat(opt.load, snapshot_prefix .. '_' .. opt.epoch .. '_Weights.t7')
+local weights_filename = opt.snapshot
 
 -- loads an image from specified path (file system or URL)
 local function loadImage(img_path)
@@ -217,7 +203,7 @@ local function preprocess(im, mean, croplen)
     -- crop to match network expected input dimensions
     if croplen then
         image_size = image_preprocessed:size()
-        assert(image_size[2] == image_size[3], "Expected square image")
+        assert(image_size[2] >= croplen and image_size[3] >= croplen, "Image must be larger than crop length in all spatial dimensions")
         c = (image_size[2]-croplen)/2 + 1
         image_preprocessed = data.PreProcess(image_preprocessed, -- input image
                                              nil, -- no mean subtraction (this was done before)
@@ -254,36 +240,41 @@ local function predictBatch(inputs, model)
     elseif opt.type =='cuda' then
         predictions = model:forward(inputs:cuda())
     end
-    -- sort the outputs of SoftMax layer in decreasing order
+
     for i=1,counter do
+        local prediction
         index = index + 1
-        if predictions:nDimension() == 1 then
-            -- some networks drop the batch dimension when fed with only one training example
-            assert(counter == 1, "Expect only one sample when prediction has dimensionality of 1 - counter=" .. counter)
-            val = predictions
+
+        if type(predictions) == 'table' then
+            prediction = {}
+            for j=1,#predictions do
+                prediction[j] = predictions[j][i]
+            end
         else
-            val = predictions[i]
+            assert(torch.isTensor(predictions))
+            if predictions:nDimension() == 1 then
+                -- some networks drop the batch dimension when fed with only one training example
+                assert(counter == 1, "Expect only one sample when prediction has dimensionality of 1 - counter=" .. counter)
+                prediction = predictions
+            else
+                prediction = predictions[i]
+            end
         end
+
+        if class_labels then
+            -- assume logSoftMax and convert to probabilities
+            prediction:exp()
+        end
+
         if opt.allPredictions == 'no' then
             --display topN predictions of each image
-            val,classes = val:float():sort(true)
+            prediction,classes = prediction:float():sort(true)
             for j=1,topN do
                 -- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
-                logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. math.exp(val[j]))
+                logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. prediction[j])
             end
         else
-            allPredictions = ''
-            -- flatten predictions for 'pretty' printing
-            val = val:view(-1)
-            for j=1,val:size(1) do
-                if class_labels then
-                    -- classification
-                    allPredictions = allPredictions .. ' ' .. math.exp(val[j])
-                else
-                    -- generic regression
-                    allPredictions = allPredictions .. ' ' .. val[j]
-                end
-            end
+            allPredictions = utils.dataToJson(prediction)
             logmessage.display(0,'Predictions for image ' .. index ..': '..allPredictions)
         end
     end
@@ -359,6 +350,7 @@ else
         local filename = paths.concat(opt.save, 'vis.h5')
         logmessage.display(0,'Saving visualization to ' .. filename)
         local vis_db = hdf5.open(filename, 'w')
+        local layer_id = 1
         for i,layer in ipairs(model:listModules()) do
             local activations = layer.output
             local weights = layer.weight
@@ -366,17 +358,25 @@ else
             name = tostring(layer)
             -- convert 'name' string to Tensor as torch.hdf5 only
             -- accepts Tensor objects
-            tname = torch.CharTensor(string.len(name))
-            for j=1,string.len(name) do
-                tname[j] = string.byte(name,j)
-            end
-            vis_db:write('/layers/'..i..'/name', tname )
-            vis_db:write('/layers/'..i..'/activations', activations:float())
+            tname = utils.stringToTensor(name)
             if weights ~= nil then
-                vis_db:write('/layers/'..i..'/weights', weights:float())
+                vis_db:write('/layers/'..layer_id..'/weights', weights:float())
             end
             if bias ~= nil then
-                vis_db:write('/layers/'..i..'/bias', bias:float())
+                vis_db:write('/layers/'..layer_id..'/bias', bias:float())
+            end
+            if type(activations) == 'table' then
+                for k=1,#activations do
+                    name_activation = name..'.'..k
+                    tname_activation = utils.stringToTensor(name_activation)
+                    vis_db:write('/layers/'..layer_id..'/name', tname_activation )
+                    vis_db:write('/layers/'..layer_id..'/activations', activations[k]:float())
+                    layer_id = layer_id + 1
+                end
+            else
+                vis_db:write('/layers/'..layer_id..'/name', tname )
+                vis_db:write('/layers/'..layer_id..'/activations', activations:float())
+                layer_id = layer_id + 1
             end
         end
         vis_db:close()

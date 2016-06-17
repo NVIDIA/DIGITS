@@ -1,4 +1,5 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+from __future__ import absolute_import
 
 from digits.utils import subclass
 
@@ -28,14 +29,4 @@ class NetworkVisualizationError(Error):
     def __str__(self):
         return repr(self.message)
 
-@subclass
-class InferenceError(Error):
-    """
-    Errors that occur during inference
-    """
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return repr(self.message)
 
