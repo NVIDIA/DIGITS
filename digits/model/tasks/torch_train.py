@@ -250,7 +250,10 @@ class TorchTrainTask(TrainTask):
             args.append('--type=float')
 
         if self.pretrained_model:
-            args.append('--weights=%s' % self.path(self.pretrained_model))
+            filenames = self.pretrained_model.split(os.path.pathsep)
+            if len(filenames) > 1:
+                raise ValueError('Torch does not support multiple pretrained model files')
+            args.append('--weights=%s' % self.path(filenames[0]))
 
         return args
 
