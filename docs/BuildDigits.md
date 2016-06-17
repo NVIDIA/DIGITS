@@ -2,12 +2,15 @@
 
 The preferred installation method for DIGITS is using pre-built packages on Ubuntu 14.04 ([instructions](UbuntuInstall.md)).
 
-If those don't work for you for some reason, these instructions will walk you through building the latest version of DIGITS from source.
+If those don't work for you for some reason, the following instructions will walk you through building the latest version of DIGITS from source.
 **These instructions are for installation on Ubuntu 14.04 and 16.04.**
 
-On other platforms, installation of DIGITS itself should be pretty simple since it is a pure Python project.
-The difficulty will come from installing and configuring Caffe and/or Torch7.
-Though other platforms are not supported officially, users have successfully installed DIGITS and Caffe on CentOS, OSX and even Windows (using the `windows` branch on BVLC/caffe).
+Alternatively, see [this guide](BuildDigitsWindows.md) for setting up DIGITS and Caffe on Windows machines.
+
+Other platforms are not officially supported, but users have successfully installed DIGITS on Ubuntu 12.04, CentOS, OSX, and possibly more.
+Since DIGITS itself is a pure Python project, installation is usually pretty trivial regardless of the platform.
+The difficulty comes from installing all the required dependencies for Caffe and/or Torch7 and configuring the builds.
+Doing so is your own adventure.
 
 ## Dependencies
 
