@@ -77,16 +77,10 @@ window.onload = function () {
                return base;
             }
             return baseName(suggestion.value);
-        }
+        },
+        minChars: 0
     });
     $(".autocomplete_path").removeAttr("autocomplete");
-    $(".autocomplete_path").on('keyup',function(e){
-      // If path is relative, enforce absolute
-      var isRelative = e.target.value[0] != '/' && e.target.value[0] != '\\';
-      if (e.target.value.length > 0 && isRelative) {
-        e.target.value = "/" + e.target.value;
-      }
-    });
 };
 
 </script>
