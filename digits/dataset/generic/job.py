@@ -108,3 +108,18 @@ class GenericDatasetJob(DatasetJob):
     @override
     def job_type(self):
         return 'Generic Dataset'
+
+    @override
+    def json_dict(self, verbose=False):
+        d = super(GenericDatasetJob, self).json_dict(verbose)
+        if verbose:
+            d.update({
+                'create_db_tasks': [{
+                    "name": t.name(),
+                    "stage": t.stage,
+                    "entry_count": t.entry_count,
+                    "feature_db_path": t.dbs['features'],
+                    "label_db_path": t.dbs['labels'],
+                    } for t in self.create_db_tasks()],
+                'feature_dims': self.get_feature_dims()})
+        return d
