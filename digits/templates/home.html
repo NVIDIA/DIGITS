@@ -36,6 +36,9 @@
  .dropdown-menu {
      width: 200px !important;
  }
+ .input-group {
+     width: 300px;
+ }
 </style>
 <span id="ruler"></span>
 <div class="row"
@@ -477,7 +480,8 @@
                             </tbody>
                             <tbody ng-if="jobs.length == 0">
                                 <tr>
-                                    <td colspan="{[fields.length]}">
+                                    {[ colspan = (storage.model_fields | filter:show(true)).length + (storage.model_output_fields | filter:show(true)).length;'' ]}
+                                    <td colspan="{[colspan]}">
                                         <h5>
                                             No Models
                                         </h5>
