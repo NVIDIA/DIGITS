@@ -864,11 +864,11 @@ class CaffeTrainTask(TrainTask):
             gpu_script = "caffe.set_device({id});caffe.set_mode_gpu();".format(id=gpu_id)
         else:
             gpu_script = "caffe.set_mode_cpu();"
+        loading_script = ""
         if self.pretrained_model:
-            weight_files = ','.join(map(lambda x: self.path(x), self.pretrained_model.split(os.path.pathsep)))
-            loading_script = "solv.net.copy_from('{weight}');".format(weight=weight_files)
-        else:
-            loading_script = ""
+            weight_files = map(lambda x: self.path(x), self.pretrained_model.split(os.path.pathsep))
+            for weight_file in weight_files:
+                loading_script = loading_script + "solv.net.copy_from('{weight}');".format(weight=weight_file)
         command_script =\
             "import caffe;" \
             "{gpu_script}" \
