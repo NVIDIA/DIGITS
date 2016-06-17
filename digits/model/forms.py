@@ -273,9 +273,9 @@ class ModelForm(Form):
 
     def validate_custom_network_snapshot(form, field):
         if form.method.data == 'custom':
-            snapshot = field.data.strip()
+            snapshot = ':'.join(map(lambda x: x.strip(), field.data.split(os.path.pathsep)))
             if snapshot:
-                if not os.path.exists(snapshot):
+                if not all(map(lambda x: os.path.exists(x), snapshot.split(os.path.pathsep))):
                     raise validators.ValidationError('File does not exist')
 
     # Select one of several GPUs
