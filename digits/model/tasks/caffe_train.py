@@ -835,7 +835,7 @@ class CaffeTrainTask(TrainTask):
                 else:
                     raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
         if self.pretrained_model:
-            args.append('--weights=%s' % ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':'))))
+            args.append('--weights=%s' % ','.join(map(lambda x: self.path(x), self.pretrained_model.split(os.path.pathsep))))
         return args
 
 
@@ -865,7 +865,7 @@ class CaffeTrainTask(TrainTask):
         else:
             gpu_script = "caffe.set_mode_cpu();"
         if self.pretrained_model:
-            weight_files = ','.join(map(lambda x: self.path(x), self.pretrained_model.split(':')))
+            weight_files = ','.join(map(lambda x: self.path(x), self.pretrained_model.split(os.path.pathsep)))
             loading_script = "solv.net.copy_from('{weight}');".format(weight=weight_files)
         else:
             loading_script = ""
