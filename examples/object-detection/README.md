@@ -39,18 +39,18 @@ There needs to be one of the above set of directories for each of the training a
 
 On the DIGITS home page, select the `Datasets` tab then click `New Dataset > Images > Object Detection`:
 
-![select dataset](select-object-detection-dataset.png)
+![select dataset](select-object-detection-dataset.jpg)
 
 On the dataset creation page, specify the paths to the image and label folders for each of the training and validation sets.
 Other fields can be left to their default value.
 Finally, give your dataset a name and click `Create`:
 
-![dataset form](form-object-detection-dataset.png)
+![dataset form](form-object-detection-dataset.jpg)
 
 After you have created your dataset you may review data properties by visiting the dataset page.
 In the below example there are 5984 images in the training set and 1496 images in the validation set:
 
-![dataset form](dataset-review.png)
+![dataset form](dataset-review.jpg)
 
 ## Model creation
 
@@ -69,7 +69,7 @@ A suitable pre-trained GoogLeNet `.caffemodel` may be found on this [page](https
 
 On the DIGITS home page, select the `Models` tab then click `New Model > Images > Object Detection`:
 
-![select dataset](select-object-detection-model.png)
+![select dataset](select-object-detection-model.jpg)
 
 On the model creation page:
 - Select the dataset that was created in the previous section.
@@ -82,25 +82,25 @@ On the model creation page:
 
 You may click `Visualize` to review the network topology:
 
-![click](click-visualize.png)
+![click](click-visualize.jpg)
 
-![detectnet](detectnet.png)
+![detectnet](detectnet.jpg)
 
 > NOTE: this instance of DetectNet requires at least 12GB of GPU memory.
 If you have less memory on your GPU[s], you may want to decrease the batch size.
 On a 4GB card, you can set the batch size to 2 and the batch accumulation to 5, for an effective batch of 10, and that should fit on your card.
 
-TODO - image of batchsize+accumulation changes
+![batch-accumulation](batch-accumulation.jpg)
 
 Finally, select the number of GPUs to train on, give your model a name then click `Create`:
 
-![select GPUs](select-gpus.png)
+![select GPUs](select-gpus.jpg)
 
 After training the model for 30 epochs the training curves may look like below.
 Make good note of the purple curve which is showing the `mAP` (mean Average Precision).
 The `mAP` is the main indicator of the network accuracy:
 
-![training loss](training-loss.png)
+![training loss](training-loss.jpg)
 
 ### Verification
 
@@ -108,15 +108,15 @@ To assess the model accuracy we can verify how the model performs on test images
 The network output is better visualized by drawing bounding rectangles around detected objects.
 To this avail, select `Bounding Boxes` in `Select Visualization Method`:
 
-![select-visualization](select-visualization.png)
+![select-visualization](select-visualization.jpg)
 
 To test an image, in `Test a single Image`, specify the path to an image then click `Test One`.
 The output may be rendered as below:
 
-![test one](test-one.png)
+![test one](test-one.jpg)
 
 You may also test multiple images at once by specifying the image paths in a text file (one line per image path).
 To that end, in `Test a list of Images`, upload an image list.
 The output may be rendered as below:
 
-![test one](test-many.png)
+![test one](test-many.jpg)
