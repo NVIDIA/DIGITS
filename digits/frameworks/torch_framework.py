@@ -25,7 +25,7 @@ class TorchFramework(Framework):
     """
 
     # short descriptive name
-    NAME = 'Torch (experimental)'
+    NAME = 'Torch'
 
     # identifier of framework class
     CLASS = 'torch'

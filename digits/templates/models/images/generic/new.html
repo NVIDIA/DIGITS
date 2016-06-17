@@ -436,10 +436,8 @@ function setFramework(fwid)
     }
 
     if (fwid == 'torch'){
-        $("#torch-warning").show();
         editor.session.setMode(new LuaMode()); // Change editor syntax environment
     } else {
-        $("#torch-warning").hide();
         editor.session.setMode(new PythonMode()); // Change editor syntax environment
     }
     $('#customFramework a[href="'+"#"+fwid+"_custom"+'"]').tab('show');
