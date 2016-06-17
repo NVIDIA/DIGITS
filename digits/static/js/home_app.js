@@ -541,7 +541,6 @@
     });
     app.filter("sort_with_empty_at_end", function () {
         return function (array, scope) {
-            console.log(scope.sort.active1, scope.sort.active2);
             if (!angular.isArray(array)) return;
             array.sort(
                 function(x, y)
