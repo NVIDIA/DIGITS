@@ -1,32 +1,16 @@
 # Getting Started
 
-Table of Contents
-=================
-* [Installation](#installation)
-* [Using the webapp](#using-the-webapp)
-    * [Creating a Dataset](#creating-a-dataset)
-    * [Training a Model](#training-a-model)
-* [More guides](#more-guides)
-
-## Installation
-
-Follow [these instructions](UbuntuInstall.md) to install Deb packages for the latest major release on Ubuntu 14.04.
-
-Follow [these instructions](BuildDigits.md) to build from source.
-
-## Using the Webapp
-
-Once you have installed and started DIGITS, open up a web browser and navigate to the home screen.
-The server should be at either `http://localhost/` (if installed from Deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
-
-![Home page](images/home-page-1.jpg)
-
-For the example in this document, we will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network.
+Now that you have successfully installed DIGITS, this guide will teach you the basics of how to use it.
+By the end, you will have trained a Caffe model to recognize hand-written digits.
+We will be using the [MNIST handwritten digit database](http://yann.lecun.com/exdb/mnist) as our dataset and [LeNet-5](http://yann.lecun.com/exdb/lenet/) for our network.
 Both are generously made available by Yann LeCun on [his website](http://yann.lecun.com/).
 
-Use the following command to download the MNIST dataset (for Deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
-```
-$ tools/download_data/main.py mnist ~/mnist
+## Download the data
+
+Use the following command to download the MNIST dataset onto your server
+(for Deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
+```sh
+$ $DIGITS_HOME/tools/download_data/main.py mnist ~/mnist
 Downloading url=http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz ...
 Downloading url=http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz ...
 Downloading url=http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz ...
@@ -42,12 +26,23 @@ Reading images from /home/username/mnist/test-images.bin ...
 Dataset directory is created successfully at '/home/username/mnist'
 Done after 16.722807169 seconds.
 ```
-See [Standard Datasets](StandardDatasets.md) for more details.
+
+See [Standard Datasets](StandardDatasets.md) for details about this script.
+
+## Using the Webapp
+
+Open up a web browser and navigate to the home screen of DIGITS.
+The server should be at either `http://localhost/` (if installed from Deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
+
+![Home page](images/home-page-1.jpg)
 
 ### Logging in
 
-In the Datasets section on the left side of the page, click on the blue `Images` button and select `Classification`.
+Click on `New Dataset > Images > Classification`.
 This will lead you to the login page:
+
+> NOTE: there is no authentication - you don't even need a password.
+This is a utility feature, not a security feature.
 
 ![Login](images/login.jpg)
 
@@ -69,13 +64,17 @@ While the job is running, you should see the expected completion time on the rig
 ![Creating dataset](images/creating-dataset.jpg)
 
 When the job is finished, go back to the home page by clicking `DIGITS` in the top left hand part of the page.
+Then click on the "Datasets" tab.
 You should now see your dataset listed.
 
 ![Home page with dataset](images/home-page-2.jpg)
 
 ### Training a Model
 
-In the Models section on the right side of the page, click on the blue `Images` button and select `Classification` which will take you to the "New Image Classification Model" page.  For this example, do the following:
+Click on `New Model > Images > Classification`.
+This will lead you to the "New Image Classification Model" page.
+
+For this example, do the following:
 * Choose the "MNIST" dataset in the `Select Dataset` field
 * Choose the `LeNet` network in the `Standard Networks` tab
 * Give the model a name
