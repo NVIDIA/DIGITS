@@ -42,7 +42,7 @@ http://yann.lecun.com/exdb/mnist/
 
 Run this:
 
-    $ python tools/download_data/main.py mnist ~/data/mnist
+    $ python tools/download_data/main.py mnist ~/mnist
 
 And these folders and files will be created for you (images and temporary files omitted):
 ```
@@ -68,7 +68,7 @@ mnist/
     └── train.txt
 ```
 
-Then, you can use `mnist/train` for your training images and `mnist/test` for your validation or test images.
+Then, you can use `~/mnist/train` for your training images and `~/mnist/test` for your validation or test images.
 
 ## CIFAR
 
@@ -81,7 +81,7 @@ http://www.cs.toronto.edu/~kriz/cifar.html
 
 Run this:
 ```sh
-$ python tools/download_data/main.py cifar10 ~/data/cifar10
+$ python tools/download_data/main.py cifar10 ~/cifar10
 ```
 And these folders and files will be created for you (images and temporary files omitted):
 ```
@@ -107,7 +107,7 @@ cifar10
     └── train.txt
 ```
 
-Then, you can use `cifar10/train` for your training images and `cifar10/test` for your validation or test images.
+Then, you can use `~/cifar10/train` for your training images and `~/cifar10/test` for your validation or test images.
 
 ### CIFAR100
 
@@ -115,7 +115,7 @@ Then, you can use `cifar10/train` for your training images and `cifar10/test` fo
 
 Run this:
 ```sh
-$ python tools/download_data/main.py cifar100 ~/data/cifar100
+$ python tools/download_data/main.py cifar100 ~/cifar100
 ```
 And these folders and files will be created for you (images and temporary files omitted):
 ```
@@ -138,6 +138,6 @@ cifar100/
     └── train.txt
 ```
 
-If you want to use the coarse dataset (10 classes), use `cifar100/coarse/train` and `cifar100/coarse/test`.
+If you want to use the coarse dataset (10 classes), use `~/cifar100/coarse/train` and `~/cifar100/coarse/test`.
 
-If you want to use the fine dataset (100 classes), use `cifar100/fine/train` and `cifar100/fine/test`.
+If you want to use the fine dataset (100 classes), use `~/cifar100/fine/train` and `~/cifar100/fine/test`.
