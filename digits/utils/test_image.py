@@ -187,14 +187,3 @@ class TestResizeImage():
         resize_mode=%s
         image_type=%s
         shape=%s""" % args
-
-
-class TestBBoxes():
-
-    def test_add_bboxes(self):
-        np_color = np.random.randint(0, 100, (10,10,3)).astype('uint8')
-        pil_color = PIL.Image.fromarray(np_color)
-        pil_color = image_utils.add_bboxes_to_image(pil_color, [((4, 4), (7, 7))], color='red')
-        pixelMap = pil_color.load()
-        assert pixelMap[4, 4] == (255, 0, 0)
-        assert pixelMap[7, 7] == (255, 0, 0)

@@ -49,6 +49,32 @@ class VisualizationInterface(object):
         """
         return None, None
 
+    def get_ng_templates(self):
+        """
+        This returns the angularjs content defining the app and maybe a
+        large scope controller. By default this method returns None,
+        an indication that there is no angular header. This method
+        may be overridden in sub-classes to implement the app and controller.
+
+        This header html protion will likely be of the form:
+        <script>
+        ...
+        </script>
+        <div ng-app="my_app">
+            <div ng-controller="my_controller">
+
+        and the footer needs to close any open divs:
+            </div>
+        </div>
+        Returns:
+        - (header, footer) tuple
+          - header is the html text defining the angular app and adding the ng-app div,
+          or None if there is no angular app defined
+          - footer is the html text closing any open divs from the header
+          or None if there is no angular app defined
+        """
+        return None, None
+
     @staticmethod
     def get_id():
         """

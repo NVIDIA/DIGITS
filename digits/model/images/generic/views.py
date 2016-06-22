@@ -368,7 +368,7 @@ def infer_one():
 
     if inputs is not None and len(inputs['data']) == 1:
         image = utils.image.embed_image_html(inputs['data'][0])
-        visualizations, header_html = get_inference_visualizations(
+        visualizations, header_html, app_begin_html, app_end_html = get_inference_visualizations(
             model_job.dataset,
             inputs,
             outputs)
@@ -377,6 +377,8 @@ def infer_one():
         image = None
         inference_view_html = None
         header_html = None
+        app_begin_html = None
+        app_end_html = None
 
     if request_wants_json():
         return flask.jsonify({'outputs': dict((name, blob.tolist())
@@ -389,6 +391,8 @@ def infer_one():
             image_src=image,
             inference_view_html=inference_view_html,
             header_html=header_html,
+            app_begin_html=app_begin_html,
+            app_end_html=app_end_html,
             visualizations=model_visualization,
             total_parameters=sum(v['param_count'] for v in model_visualization
                                  if v['vis_type'] == 'Weights'),
@@ -452,7 +456,7 @@ def infer_db():
 
     if inputs is not None:
         keys = [str(idx) for idx in inputs['ids']]
-        inference_views_html, header_html = get_inference_visualizations(
+        inference_views_html, header_html, app_begin_html, app_end_html = get_inference_visualizations(
             model_job.dataset,
             inputs,
             outputs)
@@ -460,6 +464,8 @@ def infer_db():
         inference_views_html = None
         header_html = None
         keys = None
+        app_begin_html = None
+        app_end_html = None
 
     if request_wants_json():
         result = {}
@@ -474,6 +480,8 @@ def infer_db():
             keys=keys,
             inference_views_html=inference_views_html,
             header_html=header_html,
+            app_begin_html=app_begin_html,
+            app_end_html=app_end_html,
             ), status_code
 
 
@@ -564,13 +572,15 @@ def infer_many():
 
     if inputs is not None:
         paths = [paths[idx] for idx in inputs['ids']]
-        inference_views_html, header_html = get_inference_visualizations(
+        inference_views_html, header_html, app_begin_html, app_end_html = get_inference_visualizations(
             model_job.dataset,
             inputs,
             outputs)
     else:
         inference_views_html = None
         header_html = None
+        app_begin_html = None
+        app_end_html = None
 
     if request_wants_json():
         result = {}
@@ -585,6 +595,8 @@ def infer_many():
             paths=paths,
             inference_views_html=inference_views_html,
             header_html=header_html,
+            app_begin_html=app_begin_html,
+            app_end_html=app_end_html,
             ), status_code
 
 
@@ -639,7 +651,8 @@ def get_inference_visualizations(dataset, inputs, outputs):
     # get header
     template, context = extension.get_header_template()
     header = flask.render_template_string(template, **context) if template else None
-    return visualizations, header
+    app_begin, app_end = extension.get_ng_templates()
+    return visualizations, header, app_begin, app_end
 
 
 def get_previous_networks():

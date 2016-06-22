@@ -1,13 +1,17 @@
 {# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
 {% extends "job.html" %}
 
+{% block head %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ngStorage.min.js') }}"></script>
+{% endblock %}
+
 {% block nav %}
 <li><a href="{{url_for('digits.model.views.show', job_id=model_job.id())}}">{{model_job.name()}}</a></li>
 <li class="active"><a>Test Many</a></li>
 {% endblock %}
 
 {% block job_content %}
-
 <div class="page-header">
     <h1>
         {{model_job.name()}}
@@ -34,6 +38,10 @@
 </div>
 {% endif %}
 
+{% if app_begin_html %}
+{{app_begin_html|safe}}
+{% endif %}
+
 {% if paths %}
 <div class="row">
     <h3>Visualizations</h3>
@@ -53,6 +61,10 @@
         {% endfor %}
     </table>
 </div>
+{% endif %}
+
+{% if app_end_html %}
+{{app_end_html|safe}}
 {% endif %}
 
 {% endblock %}

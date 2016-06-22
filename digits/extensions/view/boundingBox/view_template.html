@@ -1,3 +1,25 @@
 {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+<script>
+ // For each image, setup one angularjs controller derived from bbox_controller
+ app.controller('bbox_controller_{{index}}', function($scope, $controller) {
+     $controller('bbox_controller', {$scope: $scope});
+     $scope.canvas_id = 'image-canvas-{{index}}';
+     $scope.bboxes = {{bboxes}};
+     $scope.image = "{{image}}";
+     $scope.draw_bboxes_and_image();
+ });
+</script>
 
-<img src="{{image}}" style="max-width:100%;" />
+<div ng-controller="bbox_controller_{{index}}">
+    <canvas id="image-canvas-{{index}}"
+            style="max-width:100%;"
+            resize></canvas>
+    <p align="center">
+        <span ng-repeat="(key, boxes) in bboxes">
+            <span ng-if="boxes.length > 0" style="display:inline-block;">
+                <span style="display:inline-block; width:10px;height:10px;border:1px solid #000; background-color: {[get_color($index)]}"></span>
+                <span style="display:inline-block; padding-right:10px">{[key]}</span>
+            </span>
+        </span>
+    </p>
+</div>
