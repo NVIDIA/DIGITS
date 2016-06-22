@@ -74,3 +74,9 @@
     {{ form.val_min_box_size.tooltip }}
     {{ form.val_min_box_size(class='form-control')}}
 </div>
+
+<div class="form-group{{mark_errors([form.custom_classes])}}">
+    {{ form.custom_classes.label }}
+    {{ form.custom_classes.tooltip }}
+    {{ form.custom_classes(class='form-control')}}
+</div>

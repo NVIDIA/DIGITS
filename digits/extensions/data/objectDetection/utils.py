@@ -39,9 +39,7 @@ class GroundTruthObj:
 
         #Values    Name      Description
         ----------------------------------------------------------------------------
-        1    type         Describes the type of object: 'Car', 'Van', 'Truck',
-                          'Pedestrian', 'Person_sitting', 'Cyclist', 'Tram',
-                          'Misc' or 'DontCare'
+        1    type         Class ID
         1    truncated    Float from 0 (non-truncated) to 1 (truncated), where
                           truncated refers to the object leaving image boundaries.
                           -1 corresponds to a don't care region.
@@ -61,6 +59,24 @@ class GroundTruthObj:
         for example because they have been too far away from the laser scanner.
     """
 
+    # default class mappings
+    OBJECT_TYPES = {
+        'bus': ObjectType.Bus,
+        'car': ObjectType.Car,
+        'cyclist': ObjectType.Cyclist,
+        'pedestrian': ObjectType.Person,
+        'people': ObjectType.People,
+        'person': ObjectType.Person,
+        'person_sitting': ObjectType.Person_Sitting,
+        'person-fa': ObjectType.Person_fa,
+        'person?': ObjectType.Person_unsure,
+        'pickup': ObjectType.Pickup,
+        'misc': ObjectType.Misc,
+        'special-vehicle': ObjectType.SpecialVehicle,
+        'tram': ObjectType.Tram,
+        'truck': ObjectType.Truck,
+        'van': ObjectType.Van,
+        'vehicle-with-trailer': ObjectType.VehicleWithTrailer}
 
     def __init__(self):
         self.stype = ''
@@ -119,38 +135,28 @@ class GroundTruthObj:
         return result
 
     def set_type(self):
-        object_types = {
-            'bus': ObjectType.Bus,
-            'car': ObjectType.Car,
-            'cyclist': ObjectType.Cyclist,
-            'pedestrian': ObjectType.Person,
-            'people': ObjectType.People,
-            'person': ObjectType.Person,
-            'person_sitting': ObjectType.Person_Sitting,
-            'person-fa': ObjectType.Person_fa,
-            'person?': ObjectType.Person_unsure,
-            'pickup': ObjectType.Pickup,
-            'misc': ObjectType.Misc,
-            'special-vehicle': ObjectType.SpecialVehicle,
-            'tram': ObjectType.Tram,
-            'truck': ObjectType.Truck,
-            'van': ObjectType.Van,
-            'vehicle-with-trailer': ObjectType.VehicleWithTrailer
-        }
-        self.object = object_types.get(self.stype, ObjectType.Dontcare)
+        self.object = self.OBJECT_TYPES.get(self.stype, ObjectType.Dontcare)
 
 
 class GroundTruth:
-
-    """ this class load the ground truth
+    """
+    this class loads the ground truth
     """
 
-    def __init__(self, label_dir, label_ext='.txt', label_delimiter=' ', min_box_size=None):
+    def __init__(self,
+                 label_dir,
+                 label_ext='.txt',
+                 label_delimiter=' ',
+                 min_box_size=None,
+                 class_mappings=None):
         self.label_dir = label_dir
         self.label_ext = label_ext  # extension of label files
         self.label_delimiter = label_delimiter  # space is used as delimiter in label files
         self._objects_all = dict()  # positive bboxes across images
         self.min_box_size = min_box_size
+
+        if class_mappings is not None:
+            GroundTruthObj.OBJECT_TYPES = class_mappings
 
     def update_objects_all(self, _key, _bboxes):
         if _bboxes:
