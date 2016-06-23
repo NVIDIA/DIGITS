@@ -22,7 +22,9 @@ During inference, object detection will be materialized by drawing bounding rect
 ### Preparing the data
 
 This walk-through was tested using images and labels from the **Car** Object Detection track of the KITTI Vision benchmark.
-Other similar datasets may be used though you may prefer to download the KITTI dataset from their web site if you wish to replicate the results from this example.
+Other similar datasets may be used though you may prefer to download the KITTI dataset [from their web site](http://www.cvlibs.net/datasets/kitti/eval_object.php) if you wish to replicate the results from this example.
+
+To get the KITTI dataset used in this example you will want to download the left color images of object data (12 GB) and their corresponding training labels (5 MB).
 
 Optionally you may split the dataset into a training set and a (usually much smaller) validation set.
 Doing so is strongly recommended to assess the quality of the neural network.
