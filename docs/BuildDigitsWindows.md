@@ -3,7 +3,7 @@
 ## Prerequisites
 - Python2
 - CUDA 7.5
-- CuDNN 4
+- CuDNN 5.1
 - Caffe
 - Graphviz
 
@@ -43,8 +43,9 @@ At this moment, do not install gevent yet.  We need to install it after installi
 CUDA 7.5 can be obtained at NVIDIA CUDA (https://developer.nvidia.com/cuda-downloads).
 Please select Windows 7 to download.
 
-### CuDNN 4
-Download CuDNN 4 at NVIDIA website (https://developer.nvidia.com/cudnn).
+### CuDNN 5.1
+Download CuDNN 5.1 at NVIDIA website (https://developer.nvidia.com/cudnn).
+Please select CuDNN 5.1 for CUDA 7.5.
 
 ### Caffe
 Caffe can be obtained at (https://github.com/bvlc/caffe/tree/windows).
