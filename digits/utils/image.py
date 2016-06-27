@@ -66,7 +66,7 @@ def load_image(path):
     else:
         raise errors.LoadImageError, '"%s" not found' % path
 
-    if image.mode in ['L', 'RGB']:
+    if image.mode in ['L', 'RGB', 'I']:
         # No conversion necessary
         return image
     elif image.mode in ['1']:
@@ -136,21 +136,23 @@ def resize_image(image, height, width,
         # Convert image mode (channels)
         if channels is None:
             image_mode = image.mode
-            if image_mode == 'L':
+            if image_mode in 'LI':
                 channels = 1
             elif image_mode == 'RGB':
                 channels = 3
             else:
                 raise ValueError('unknown image mode "%s"' % image_mode)
         elif channels == 1:
-            # 8-bit pixels, black and white
-            image_mode = 'L'
+            image_mode = image.mode if image.mode == 'L' else 'F'  # 8-bit pixels, black and white
         elif channels == 3:
             # 3x8-bit pixels, true color
             image_mode = 'RGB'
-        if image.mode != image_mode:
+        if image.mode not in image_mode:
             image = image.convert(image_mode)
-        image = np.array(image)
+        if image_mode == 'F':
+            image = np.array(image).astype(np.float)
+        else:
+            image = np.array(image)
     elif isinstance(image, np.ndarray):
         if image.dtype != np.uint8:
             image = image.astype(np.uint8)
@@ -185,11 +187,10 @@ def resize_image(image, height, width,
 
     ### Resize
     interp = 'bilinear'
-
     width_ratio = float(image.shape[1]) / width
     height_ratio = float(image.shape[0]) / height
     if resize_mode == 'squash' or width_ratio == height_ratio:
-        return scipy.misc.imresize(image, (height, width), interp=interp)
+        return _resize_helper(image, (height, width), mode=image_mode, interp=interp)
     elif resize_mode == 'crop':
         # resize to smallest of ratios (relatively larger image), keeping aspect ratio
         if width_ratio > height_ratio:
@@ -198,7 +199,7 @@ def resize_image(image, height, width,
         else:
             resize_width = width
             resize_height = int(round(image.shape[0] / width_ratio))
-        image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+        image = _resize_helper(image, (resize_height, resize_width), mode=image_mode, interp=interp)
 
         # chop off ends of dimension that is still too long
         if width_ratio > height_ratio:
@@ -220,7 +221,7 @@ def resize_image(image, height, width,
                 resize_width = int(round(image.shape[1] / height_ratio))
                 if (width - resize_width) % 2 == 1:
                     resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = _resize_helper(image, (resize_height, resize_width), mode=image_mode, interp=interp)
         elif resize_mode == 'half_crop':
             # resize to average ratio keeping aspect ratio
             new_ratio = (width_ratio + height_ratio) / 2.0
@@ -230,7 +231,7 @@ def resize_image(image, height, width,
                 resize_height += 1
             elif width_ratio < height_ratio and (width - resize_width) % 2 == 1:
                 resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = _resize_helper(image, (resize_height, resize_width), mode=image_mode, interp=interp)
             # chop off ends of dimension that is still too long
             if width_ratio > height_ratio:
                 start = int(round((resize_width-width)/2.0))
@@ -242,22 +243,34 @@ def resize_image(image, height, width,
             raise Exception('unrecognized resize_mode "%s"' % resize_mode)
 
         # fill ends of dimension that is too short with random noise
+        if image_mode == 'F':
+            final_type = np.float
+            max_value = 65536
+        else:
+            final_type = np.uint8
+            max_value = 256
+
         if width_ratio > height_ratio:
             padding = (height - resize_height)/2
             noise_size = (padding, width)
-            if channels > 1:
-                noise_size += (channels,)
-            noise = np.random.randint(0, 255, noise_size).astype('uint8')
-            image = np.concatenate((noise, image, noise), axis=0)
+            axis = 0
         else:
             padding = (width - resize_width)/2
             noise_size = (height, padding)
-            if channels > 1:
-                noise_size += (channels,)
-            noise = np.random.randint(0, 255, noise_size).astype('uint8')
-            image = np.concatenate((noise, image, noise), axis=1)
-
+            axis = 1
+        if channels > 1:
+            noise_size += (channels,)
+        noise = np.random.randint(0, max_value, noise_size).astype(final_type)
+        image = np.concatenate((noise, image, noise), axis=axis)
         return image
+
+
+def _resize_helper(image, shape, mode, interp):
+    if mode == 'F':
+        return scipy.misc.imresize(image, shape, mode=mode, interp=interp).astype(np.float)
+    else:
+        return scipy.misc.imresize(image, shape, interp=interp)
+
 
 def embed_image_html(image):
     """
@@ -283,7 +296,8 @@ def embed_image_html(image):
         fmt = 'jpeg'
     else:
         fmt = fmt.lower()
-
+    if image.mode == 'F':
+        image = PIL.Image.fromarray(np.asarray(image)/256).convert('L')
     string_buf = StringIO()
     image.save(string_buf, format=fmt)
     data = string_buf.getvalue().encode('base64').replace('\n', '')

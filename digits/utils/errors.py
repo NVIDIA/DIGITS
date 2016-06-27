@@ -23,3 +23,4 @@ class UnsupportedPlatformError(DigitsError):
     Errors that occur while performing tasks in unsupported platforms
     """
     pass
+
