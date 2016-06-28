@@ -144,7 +144,6 @@ def _write_to_lmdb(db, key, value):
             # double the map_size
             curr_limit = db.info()['map_size']
             new_limit = curr_limit*2
-            print '>>> Doubling LMDB map size to %sMB ...' % (new_limit>>20,)
             db.set_mapsize(new_limit) # double it
 
 def _save_mean(mean, filename):
