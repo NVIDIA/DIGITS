@@ -58,6 +58,7 @@ class TrainTask(Task):
         self.shuffle = kwargs.pop('shuffle', None)
         self.network = kwargs.pop('network', None)
         self.framework_id = kwargs.pop('framework_id', None)
+        self.mean_path = kwargs.pop('mean_path', None)
 
         super(TrainTask, self).__init__(job_dir = job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION
