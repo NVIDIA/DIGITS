@@ -4,7 +4,7 @@ Table of Contents
 =================
 * [Introduction](#introduction)
 * [Dataset creation](#dataset-creation)
-    * [Preparing the data](#preparing-the-data)
+    * [Downloading and preparing the KITTI data](#downloading-and-preparing-the-kitti-data)
     * [Loading the data into DIGITS](#loading-the-data-into-digits)
 * [Model creation](#model-creation)
     * [DetectNet](#detectnet)
@@ -19,21 +19,45 @@ During inference, object detection will be materialized by drawing bounding rect
 
 ## Dataset creation
 
-### Preparing the data
+In this example, we will be using data from the Object Detection track of the KITTI Vision Benchmark Suite.
+You can of course use any other data you like, but DIGITS expects object detection data to be labelled in the style of KITTI data.
 
-This walk-through was tested using images and labels from the **Car** Object Detection track of the KITTI Vision benchmark.
-Other similar datasets may be used though you may prefer to download the KITTI dataset from their web site if you wish to replicate the results from this example.
+If you do want to use your own dataset instead of KITTI, read [digits/extensions/data/objectDetection/README.md](../../digits/extensions/data/objectDetection/README.md) to format your data properly and then skip the next section.
 
-Optionally you may split the dataset into a training set and a (usually much smaller) validation set.
-Doing so is strongly recommended to assess the quality of the neural network.
+### Downloading and preparing the KITTI data
 
-The data need to be structured in the following way:
-- An image folder contains supported images (.png, .jpg, .jpeg, .bmp, .ppm).
-- A label folder contains .txt files in KITTI format that define the ground truth.
-Note that for each image in the image folder there must be a corresponding text file in the label folder.
+We are unable to provide download links to the KITTI data like we can for MNIST and CIFAR, so you'll have to download a few large files yourself.
+Go to http://www.cvlibs.net/datasets/kitti/eval_object.php and download these files:
+
+ | Filename | Size
+------------ | ------------- | ------------- | -------------
+Left color images of object data set | `data_object_image_2.zip` | **12GB**
+Training labels of object data set | `data_object_label_2.zip` | 5MB
+Object development kit | `devkit_object.zip` | 1MB
+
+Copy those files into `$DIGITS_HOME/examples/object-detection/`.
+
+Then, use the `prepare_kitti_data.py` script to create a train/val split of the labelled images.
+This will take a few minutes, spent mostly on unpacking the large zipfiles.
+```
+$ ./prepare_kitti_data.py
+Extracting zipfiles ...
+Unzipping data_object_label_2.zip ...
+Unzipping data_object_image_2.zip ...
+Unzipping devkit_object.zip ...
+Calculating image to video mapping ...
+Splitting images by video ...
+Creating train/val split ...
+Done.
+```
+
+At the end you will have your data at `$DIGITS_HOME/examples/object-detection/kitti-data/{train,val}/`.
+
+The data is structured in the following way:
+- An image folder containing supported images (`.png`, `.jpg`, etc.).
+- A label folder containing `.txt` files in KITTI format that define the ground truth.
+For each image in the image folder there must be a corresponding text file in the label folder.
 For example if the image folder includes an image named `foo.png` then the label folder needs to include a file named `foo.txt`.
-
-There needs to be one of the above set of directories for each of the training and validation sets.
 
 ### Loading the data into DIGITS
 
@@ -60,7 +84,7 @@ In this example we will use **DetectNet**.
 DetectNet is a GoogLeNet-derived network that is specifically tuned for Object Detection.
 
 In order to train DetectNet, [NVcaffe](https://github.com/NVIDIA/caffe) version [0.15.1](https://github.com/NVIDIA/caffe/tree/v0.15.1) or later is required.
-The [model description for DetectNet](https://github.com/NVIDIA/caffe/tree/caffe-0.15/examples/kitti) may be found in the NV-Caffe repository.
+The model description for DetectNet can be found at `$CAFFE_HOME/examples/kitti/detectnet_network.prototxt` ([raw link](https://raw.githubusercontent.com/NVIDIA/caffe/caffe-0.15/examples/kitti/detectnet_network.prototxt)).
 
 Since DetectNet is derived from GoogLeNet it is strongly recommended to use pre-trained weights from an ImageNet-trained GoogLeNet as this will help speed training up significantly.
 A suitable pre-trained GoogLeNet `.caffemodel` may be found on this [page](https://github.com/BVLC/caffe/tree/rc3/models/bvlc_googlenet).
