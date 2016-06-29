@@ -693,6 +693,11 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
                 $("#select_gpu_count").change(function(){ $("#select_gpus").val(null);});
             </script>
             {% endif %}
+            <div class="form-group{{mark_errors([form.group_name])}}">
+                {{form.group_name.label}}
+                {{form.group_name.tooltip}}
+                {{form.group_name(class='form-control')}}
+            </div>
             <div class="form-group{{mark_errors([form.model_name])}}">
                 {{form.model_name.label}}
                 {{form.model_name.tooltip}}

@@ -98,6 +98,10 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
 
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
+            <div class="form-group{{mark_errors([form.group_name])}}">
+                {{ form.group_name.label }}
+                {{ form.group_name(class='form-control') }}
+            </div>
             <div class="form-group{{mark_errors([form.dataset_name])}}">
                 {{ form.dataset_name.label }}
                 {{ form.dataset_name(class='form-control') }}

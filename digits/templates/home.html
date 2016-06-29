@@ -7,6 +7,7 @@
 {% block head %}
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.time_filters.js', ver=dir_hash) }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ui-bootstrap-tpls-1.3.2.min.js', ver=dir_hash) }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/ngStorage.min.js', ver=dir_hash) }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.sparkline.min.js', ver=dir_hash) }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/home_app.js', ver=dir_hash) }}"></script>
@@ -48,13 +49,16 @@
      ng-click="deselect_all();">
     {[jc.running_jobs = (jobs | filter:is_running);'']}
     {[jc.dataset_jobs = (jobs | filter:is_dataset);'']}
-    {[jc.model_jobs   = (jobs | filter:is_model);'']}
-    {[jc.pretrained_model_jobs   = (jobs | filter:is_pretrained_model);'']}
+    {[jc.model_jobs = (jobs | filter:is_model);'']}
+    {[jc.pretrained_model_jobs = (jobs | filter:is_pretrained_model);'']}
     <section ng-controller="tab_controller as tab" ng-init="init({{request.args['tab']}})">
-        <div ng-controller="running_controller">
+        <label>Group Jobs:
+            <input type="checkbox"
+                   ng-model="jc.storage.show_groups">
+        </label>
+        <div ng-controller="running_controller as c">
             <div ng-if="jc.running_jobs.length">
-                {[jobs = (jc.running_jobs | filter:search_text | sort_with_empty_at_end:this);'']}
-                {[set_jobs(jobs)]}
+                {[jobs = (jc.running_jobs | filter:search_text | sort_with_empty_at_end:this:jc.storage.show_groups);'']}
                 <h4>
                     Running Jobs
                     <small>
@@ -87,8 +91,14 @@
                                    ng-click="abort_jobs();">
                                     Abort
                                 </a>
+                                <a class="btn btn-xs btn-primary"
+                                   ng-disabled="!enabled"
+                                   ng-click="group_jobs();">
+                                    Group
+                                </a>
                             </div>
                         </div>
+                        <!-- Table -->
                         <table id="running-table"
                                ng-mouseleave="mouseleave()"
                                class="table table-bordered table-striped list-group selectable"
@@ -110,15 +120,32 @@
                                 </tr>
                             </thead>
                             <tbody ng-if="jobs.length">
-                                <!-- Table -->
+                                <tr ng-repeat-start="job in jobs"
+                                    ng-hide="true">
+                                </tr>
+                                
+                                <!-- group bar -->
+                                <tr class="unselectable group-bar"
+                                    ng-if="jc.storage.show_groups && ($first || jobs[$index-1].group != job.group)">
+                                    <td colspan="{[ fields.length ]}" style="background-color:#cccccc">
+                                        <div ng-click="c.hideRows[job.group] = !c.hideRows[job.group];">
+                                            <span class="glyphicon"
+                                                  ng-class="c.hideRows[job.group] ? 'glyphicon-triangle-right' : 'glyphicon-triangle-bottom'">
+                                            </span>
+                                            <strong>{[ job.group ? job.group : 'Ungrouped' ]}</strong>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- job rows -->
                                 <tr ng-attr-id="{[ job.id ]}"
+                                    ng-hide="c.hideRows[job.group]"
                                     ng-mousedown="mousedown($index, $event)"
                                     ng-mousemove="mousemove($index, $event)"
                                     ng-mouseup="mouseup($index, $event)"
                                     ng-click="click($index, $event)"
                                     ng-keydown="keydown($event)"
-                                    ng-class="{selected:job.selected}"
-                                    ng-repeat="job in jobs">
+                                    ng-class="{selected:job.selected}">
                                     <td>
                                         <a href="/jobs/{[ job.id ]}" title="{[job.name]}">
                                             {[ job.name | major_name ]}
@@ -154,6 +181,9 @@
                                             </div>
                                         </div>
                                     </td>
+                                </tr>
+                                <tr ng-repeat-end
+                                    ng-hide="true">
                                 </tr>
                             </tbody>
                             <tbody ng-if="jobs.length == 0">

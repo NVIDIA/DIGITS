@@ -174,6 +174,7 @@ class BaseViewsTestWithAnyDataset(BaseViewsTest):
             learning_rate = cls.LEARNING_RATE
         data = {
                 'model_name':       'test_model',
+                'group_name':       'test_group',
                 'dataset':          cls.dataset_id,
                 'method':           'custom',
                 'custom_network':   cls.network(),

@@ -103,6 +103,7 @@ def create(extension_id):
         job = GenericDatasetJob(
             username=utils.auth.get_username(),
             name=form.dataset_name.data,
+            group=form.group_name.data,
             backend=form.dsopts_backend.data,
             feature_encoding=form.dsopts_feature_encoding.data,
             label_encoding=form.dsopts_label_encoding.data,

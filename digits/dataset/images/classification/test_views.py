@@ -105,6 +105,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         """
         data = {
                 'dataset_name':     'test_dataset',
+                'group_name':       'test_group',
                 'method':           'folder',
                 'folder_train':     cls.imageset_folder,
                 'resize_channels':  cls.IMAGE_CHANNELS,

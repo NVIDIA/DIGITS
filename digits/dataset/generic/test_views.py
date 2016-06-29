@@ -71,6 +71,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         """
         data = {
             'dataset_name': 'test_dataset',
+            'group_name': 'test_group',
             }
         data.update(kwargs)
 
