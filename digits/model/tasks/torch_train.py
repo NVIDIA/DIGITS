@@ -112,7 +112,7 @@ class TorchTrainTask(TrainTask):
         filename = os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE)
         # don't recreate file if it already exists
         if not os.path.exists(filename):
-            mean_file = self.dataset.get_mean_file()
+            mean_file = self.get_mean_path()
             assert mean_file != None and mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
             blob = caffe_pb2.BlobProto()
             with open(self.dataset.path(mean_file),'rb') as infile:
@@ -516,7 +516,7 @@ class TorchTrainTask(TrainTask):
 
         if self.use_mean != 'none':
             filename = self.create_mean_file()
-            args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+            args.append('--mean=%s' % filename)
 
         if self.use_mean == 'pixel':
             args.append('--subtractMean=pixel')
@@ -820,7 +820,7 @@ class TorchTrainTask(TrainTask):
 
             if self.use_mean != 'none':
                 filename = self.create_mean_file()
-                args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+                args.append('--mean=%s' % filename)
 
             if self.use_mean == 'pixel':
                 args.append('--subtractMean=pixel')
