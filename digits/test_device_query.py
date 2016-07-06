@@ -31,7 +31,7 @@ class TestGetNvmlInfo():
     """
     @classmethod
     def setUpClass(cls):
-        if device_query.get_library('libnvidia-ml') is None:
+        if device_query.get_nvml() is None:
             raise unittest.SkipTest('NVML not found')
 
     @unittest.skipIf(len(device_query.get_devices(True)) == 0,
