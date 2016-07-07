@@ -405,6 +405,35 @@ class TrainTask(Task):
         """
         return None
 
+    def get_snapshot(self, epoch=-1):
+        """
+        return snapshot file for specified epoch
+        """
+        snapshot_filename = None
+
+        if len(self.snapshots) == 0:
+            return "no snapshots"
+
+        if epoch == -1 or not epoch:
+            epoch = self.snapshots[-1][1]
+            snapshot_filename = self.snapshots[-1][0]
+        else:
+            for f, e in self.snapshots:
+                if e == epoch:
+                    snapshot_filename = f
+                    break
+        if not snapshot_filename:
+            raise ValueError('Invalid epoch')
+
+        return snapshot_filename
+
+    def get_snapshot_filename(self,epoch=-1):
+        """
+        Return the filename for the specified epoch
+        """
+        path, name = os.path.split(self.get_snapshot(epoch))
+        return name
+
     def get_labels(self):
         """
         Read labels from labels_file and return them in a list
@@ -547,3 +576,8 @@ class TrainTask(Task):
         """
         raise NotImplementedError()
 
+    def get_task_stats(self,epoch=-1):
+        """
+        return a dictionary of task statistics
+        """
+        raise NotImplementedError()

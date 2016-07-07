@@ -64,6 +64,8 @@ class TorchTrainTask(TrainTask):
         self.snapshot_prefix = TORCH_SNAPSHOT_PREFIX
         self.log_file = self.TORCH_LOG
 
+        self.digits_version = digits.__version__
+
     def __getstate__(self):
         state = super(TorchTrainTask, self).__getstate__()
 
@@ -926,23 +928,29 @@ class TorchTrainTask(TrainTask):
             desc = infile.read()
         return desc
 
-    def get_snapshot(self, epoch):
+    @override
+    def get_task_stats(self,epoch=-1):
         """
-        return snapshot file for specified epoch
+        return a dictionary of task statistics
         """
-        file_to_load = None
 
-        if not epoch:
-            epoch = self.snapshots[-1][1]
-            file_to_load = self.snapshots[-1][0]
-        else:
-            for snapshot_file, snapshot_epoch in self.snapshots:
-                if snapshot_epoch == epoch:
-                    file_to_load = snapshot_file
-                    break
-        if file_to_load is None:
-            raise Exception('snapshot not found for epoch "%s"' % epoch)
+        loc, mean_file = os.path.split(self.dataset.get_mean_file())
 
-        return file_to_load
+        stats = {
+            "image dimensions": self.dataset.get_feature_dims(),
+            "mean file": mean_file,
+            "snapshot file": self.get_snapshot_filename(epoch),
+            "model file": self.model_file,
+            "framework": "torch"
+        }
 
+        if hasattr(self,"digits_version"):
+            stats.update({"digits version": self.digits_version})
 
+        if hasattr(self.dataset,"resize_mode"):
+            stats.update({"image resize mode": self.dataset.resize_mode})
+
+        if hasattr(self.dataset,"labels_file"):
+            stats.update({"labels file": self.dataset.labels_file})
+
+        return stats

@@ -6,6 +6,7 @@ import io
 import json
 import math
 import tarfile
+import tempfile
 import zipfile
 
 import flask
@@ -176,7 +177,9 @@ def download(job_id, extension):
     """
     Return a tarball of all files required to run the model
     """
+
     job = scheduler.get_job(job_id)
+
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
 
@@ -189,19 +192,16 @@ def download(job_id, extension):
     elif 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
 
-    task = job.train_task()
+    # Write the stats of the job to json,
+    # and store in tempfile (for archive)
+    info = json.dumps(job.json_dict(verbose=False,epoch=epoch), sort_keys=True, indent=4, separators=(',', ': '))
+    temp = tempfile.NamedTemporaryFile()
+    temp.write(info)
+    temp.seek(0)
 
+    task = job.train_task()
     snapshot_filename = None
-    if epoch == -1 and len(task.snapshots):
-        epoch = task.snapshots[-1][1]
-        snapshot_filename = task.snapshots[-1][0]
-    else:
-        for f, e in task.snapshots:
-            if e == epoch:
-                snapshot_filename = f
-                break
-    if not snapshot_filename:
-        raise werkzeug.exceptions.BadRequest('Invalid epoch')
+    snapshot_filename = task.get_snapshot(epoch)
 
     b = io.BytesIO()
     if extension in ['tar', 'tar.gz', 'tgz', 'tar.bz2']:
@@ -214,12 +214,17 @@ def download(job_id, extension):
         with tarfile.open(fileobj=b, mode='w:%s' % mode) as tf:
             for path, name in job.download_files(epoch):
                 tf.add(path, arcname=name)
+            tf.add(temp.name,arcname="info.json")
     elif extension in ['zip']:
         with zipfile.ZipFile(b, 'w') as zf:
             for path, name in job.download_files(epoch):
                 zf.write(path, arcname=name)
+            zf.write(temp.name,arcname="info.json")
     else:
         raise werkzeug.exceptions.BadRequest('Invalid extension')
+
+    # Close and delete temporary file
+    temp.close()
 
     response = flask.make_response(b.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)

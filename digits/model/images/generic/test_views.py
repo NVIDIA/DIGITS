@@ -483,6 +483,11 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         content2.pop('id')
         content1.pop('directory')
         content2.pop('directory')
+        content1.pop('creation time')
+        content2.pop('creation time')
+        content1.pop('job id')
+        content2.pop('job id')
+
         assert (content1 == content2), 'job content does not match'
 
         job1 = digits.webapp.scheduler.get_job(job1_id)
@@ -497,6 +502,15 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
     def test_save(self):
         job = digits.webapp.scheduler.get_job(self.model_id)
         assert job.save(), 'Job failed to save'
+
+    def test_get_snapshot(self):
+        job  = digits.webapp.scheduler.get_job(self.model_id)
+        task = job.train_task()
+        f = task.get_snapshot(-1)
+
+        assert f, "Failed to load snapshot"
+        filename = task.get_snapshot_filename(-1)
+        assert filename, "Failed to get filename"
 
     def test_download(self):
         for extension in ['tar', 'zip', 'tar.gz', 'tar.bz2']:
@@ -1050,4 +1064,3 @@ layer {
   exclude { stage: "deploy" }
 }
 """
-
