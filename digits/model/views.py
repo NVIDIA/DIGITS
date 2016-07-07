@@ -14,6 +14,7 @@ import werkzeug.exceptions
 
 from . import images as model_images
 from . import ModelJob
+from digits.pretrained_model.job import PretrainedModelJob
 from digits import frameworks, extensions
 from digits.utils import time_filters
 from digits.utils.routing import request_wants_json
@@ -76,13 +77,21 @@ def customize():
     elif epoch == -1:
         snapshot = job.train_task().pretrained_model
     else:
+
         for filename, e in job.train_task().snapshots:
             if e == epoch:
                 snapshot = job.path(filename)
                 break
 
+    if isinstance(job,PretrainedModelJob):
+        model_def = open(job.get_model_def_path(),'r')
+        network = model_def.read()
+        snapshot = job.get_weights_path()
+    else:
+        network = job.train_task().get_network_desc()
+
     return json.dumps({
-            'network': job.train_task().get_network_desc(),
+            'network': network,
             'snapshot': snapshot
             })
 

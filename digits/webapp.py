@@ -57,6 +57,8 @@ import digits.model.images.classification.views
 app.register_blueprint(digits.model.images.classification.views.blueprint, url_prefix='/models/images/classification')
 import digits.model.images.generic.views
 app.register_blueprint(digits.model.images.generic.views.blueprint, url_prefix='/models/images/generic')
+import digits.pretrained_model.views
+app.register_blueprint(digits.pretrained_model.views.blueprint, url_prefix='/pretrained_models')
 
 def username_decorator(f):
     from functools import wraps

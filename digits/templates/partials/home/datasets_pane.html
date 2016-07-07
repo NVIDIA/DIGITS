@@ -1,0 +1,102 @@
+<!-- Datasets -->
+<div class="col-md-12" ng-show="tab.isSet(1)">
+    <div class="well">
+        <div ng-controller="datasets_controller">
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- Filter -->
+                    <div class="pull-right">
+                        <form>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                    <input type="text" class="form-control" placeholder="Filter" ng-model="search_text">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Delete Button -->
+                    <a class="btn btn-xs btn-danger"
+                       ng-disabled="!any_selected()"
+                       ng-click="delete_jobs();">
+                        Delete
+                    </a>
+                </div>
+            </div>
+            <table id="datasets-table"
+                   ng-mouseleave="mouseleave()"
+                   class="table table-bordered table-striped list-group selectable"
+                   width="100%">
+                <col ng-repeat="field in fields"
+                     ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
+                <thead>
+                    <tr>
+                        <th ng-repeat="field in fields">
+                            <div ng-click="change_sorting(field.name, $event)">
+                                <small>
+                                    {[ field.name ]}
+                                </small>
+                                <i class="glyphicon"
+                                   ng-class="get_icon(field.name)" style="width:14px">
+                                </i>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                {[jobs = (jc.dataset_jobs | filter:search_text | sort_with_empty_at_end:this);'']}
+                {[set_jobs(jobs)]}
+                <tbody ng-if="jobs.length">
+                    <!-- Table -->
+                    <tr ng-attr-id="{[ job.id ]}"
+                        ng-mousedown="mousedown($index, $event)"
+                        ng-mousemove="mousemove($index, $event)"
+                        ng-mouseup="mouseup($index, $event)"
+                        ng-click="click($index, $event)"
+                        ng-keydown="keydown($event)"
+                        ng-class="{selected:job.selected}"
+                        ng-repeat="job in jobs">
+                        <td>
+                            <a href="/jobs/{[ job.id ]}" title="{[job.name]}">
+                                {[ job.name | major_name ]}
+                            </a>
+                            <small>
+                                {[ job.name | minor_name ]}
+                            </small>
+                        </td>
+                        <td>
+                            {[ job.refs | positive ]}
+                        </td>
+                        <td>
+                            <span class="badge">{[ job.backend ]}</span>
+                        </td>
+                        <td class="text-{[job.status_css]}">
+                            {[ job.status ]}
+                        </td>
+                        <td start="{[job.elapsed]}">
+                            <small title="{[ print_time_diff(job.elapsed) ]}">
+                                {[ print_time_diff_terse(job.elapsed) ]}
+                            </small>
+                        </td>
+                        <td start="{[job.submitted]}">
+                            <small ng-if="!is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                {[ job.submitted * 1000 | date:'MMM d, yy' ]}
+                            </small>
+                            <small ng-if="is_today(job.submitted)" title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                {[ job.submitted * 1000 | date:'h:mm a' ]}
+                            </small>
+                        </td>
+                    </tr>
+                </tbody>
+                <tbody ng-if="jobs.length == 0">
+                    <tr>
+                        <td colspan="{[fields.length]}">
+                            <h5>
+                                No Datasets
+                            </h5>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

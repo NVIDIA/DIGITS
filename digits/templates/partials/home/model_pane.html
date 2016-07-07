@@ -1,0 +1,142 @@
+<!-- Models -->
+<div class="col-md-12" ng-show="tab.isSet(2)">
+    <div class="well">
+        <div ng-controller="models_controller">
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- Output Field Options -->
+                    <div class="button-group pull-right">
+                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-cog"></span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" ng-click="$event.stopPropagation()">
+                            <li data-ng-repeat='field in storage.model_fields'>
+                                <label style="font-weight: normal !important;">
+                                    <input type="checkbox" ng-model='field.show'>
+                                    {[ field.name ]}
+                                </label>
+                            </li>
+                            <li data-ng-repeat='field in storage.model_output_fields'>
+                                <label style="font-weight: normal !important;">
+                                    <input type="checkbox" ng-model='field.show'>
+                                    {[ field.name ]}
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Filter -->
+                    <div class="pull-right">
+                        <form>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                    <input type="text" class="form-control" placeholder="Filter" ng-model="search_text">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Delete Button -->
+                    <a class="btn btn-xs btn-danger"
+                       ng-disabled="!any_selected()"
+                       ng-click="delete_jobs();">
+                        Delete
+                    </a>
+                </div>
+            </div>
+            <table id="models-table"
+                   ng-mouseleave="mouseleave()"
+                   class="table table-bordered table-striped selectable"
+                   width="100%">
+                <col ng-repeat="field in storage.model_fields | filter:show(true)"
+                     ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
+                <col ng-repeat="field in storage.model_output_fields | filter:show(true)"
+                     ng-style="{'width':visualLength(field.name) + 'px'}">
+                <thead>
+                    <tr>
+                        <th ng-repeat="field in storage.model_fields | filter:show(true)">
+                            <div ng-click="change_sorting(field.name, $event)">
+                                <small>
+                                    {[ field.name ]}
+                                </small>
+                                <i class="glyphicon"
+                                   ng-class="get_icon(field.name)" style="width:14px">
+                                </i>
+                            </div>
+                        </th>
+                        <th ng-repeat="field in storage.model_output_fields | filter:show(true)">
+                            <div ng-click="change_sorting(field.name, $event)">
+                                <small>
+                                    {[ field.name ]}
+                                </small>
+                                <i class="glyphicon"
+                                   ng-class="get_icon(field.name)" style="width:14px">
+                                </i>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                {[jobs = (jc.model_jobs | filter:search_text | sort_with_empty_at_end:this);'']}
+                {[set_jobs(jobs)]}
+                <tbody ng-if="jobs.length">
+                    <tr ng-attr-id="{[ job.id ]}"
+                        tabindex="0"
+                        ng-mousedown="mousedown($index, $event)"
+                        ng-mousemove="mousemove($index, $event)"
+                        ng-mouseup="mouseup($index, $event)"
+                        ng-click="click($index, $event)"
+                        ng-keydown="keydown($event)"
+                        ng-class="{selected:job.selected}"
+                        ng-repeat="job in jobs">
+                        <td ng-if="storage.model_fields[0].show">
+                            <dg-name/>
+                        </td>
+                        <td ng-if="storage.model_fields[1].show">
+                            {[ job.id ]}
+                        </td>
+                        <td ng-if="storage.model_fields[2].show">
+                            <dg-framework/>
+                        </td>
+                        <td ng-if="storage.model_fields[3].show"
+                            class="text-{[job.status_css]}">
+                            {[ job.status ]}
+                        </td>
+                        <td ng-if="storage.model_fields[4].show"
+                            start="{[job.elapsed]}">
+                            <small title="{[ print_time_diff(job.elapsed) ]}">
+                                {[ print_time_diff_terse(job.elapsed) ]}
+                            </small>
+                        </td>
+                        <td ng-if="storage.model_fields[5].show"
+                            start="{[job.submitted]}">
+                            <small ng-if="!is_today(job.submitted)"
+                                   title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                {[ job.submitted * 1000 | date:'MMM d, yy' ]}
+                            </small>
+                            <small ng-if="is_today(job.submitted)"
+                                   title="{[ job.submitted * 1000 | date:'medium' ]}">
+                                {[ job.submitted * 1000 | date:'h:mm a' ]}
+                            </small>
+                        </td>
+
+                        <td ng-repeat="field in storage.model_output_fields | filter:show(true)">
+                            <small title="{[ job[field.name] ]}">
+                                {[ job[field.name] | precision:2 ]}
+                            </small>
+                        </td>
+                    </tr>
+                </tbody>
+                <tbody ng-if="jobs.length == 0">
+                    <tr>
+                        {[ colspan = (storage.model_fields | filter:show(true)).length + (storage.model_output_fields | filter:show(true)).length;'' ]}
+                        <td colspan="{[colspan]}">
+                            <h5>
+                                No Models
+                            </h5>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

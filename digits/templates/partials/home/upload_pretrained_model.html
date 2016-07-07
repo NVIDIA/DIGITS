@@ -1,0 +1,72 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/components/PretrainedModel.js') }}"></script>
+
+{% set size = 600 %}
+{% set url  = "/pretrained_models/new" %}
+
+<style>
+.closeButton {
+  color: "white";
+  position: relative;
+  z-index: 1;
+}
+
+.modalBody {
+  height: {{size}}px;
+  width: {{size}}px;
+  top: 50%;
+  margin: -{{size/2}}px auto;
+  position: relative;
+}
+
+.modalHeader {
+  position: relative;
+  top: -10px;
+  margin: 0px;
+  font-size: 16px;
+}
+.modalOuter {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  z-index: 1030;
+}
+.modalLabel: {font-size: 13px;}
+
+</style>
+
+<div class="modalOuter closeModal" style="display: none;">
+    <!-- Content -->
+    <form class="panel panel-default modalBody" id="pretrainedModelContent" action="{{url}}" method="post" enctype="multipart/form-data">
+    </form>
+</div>
+
+<script>
+
+function closeModal(){
+  d3.select(".modalOuter").style("display","none");
+}
+
+$(document).ready(function(){
+
+  window.pretrainedModel = new PretrainedModel({selector:"#pretrainedModelContent", size: {{size}} });
+
+  $("#uploadPretrainedModel").on("click",function(e){
+    e.preventDefault();
+    d3.select(".modalOuter").style("display","block");
+    pretrainedModel.render();
+  });
+
+  d3.select(".modalBody").on("click", function(){
+    d3.event.stopPropagation();
+  });
+
+  d3.select(".closeModal").on("click", function(){
+    closeModal();
+  });
+
+
+});
+</script>

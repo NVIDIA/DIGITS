@@ -119,6 +119,18 @@ class CaffeFramework(Framework):
         return network
 
     @override
+    def get_network_from_path(self, path):
+        """
+        return network object from a file path
+        """
+        network = caffe_pb2.NetParameter()
+
+        with open(path) as infile:
+            text_format.Merge(infile.read(), network)
+
+        return network
+
+    @override
     def get_network_visualization(self, desc):
         """
         return visualization of network
@@ -138,4 +150,3 @@ class CaffeFramework(Framework):
             return config_value('caffe_root')['version'] > parse_version('0.14.0-alpha')
         else:
             raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
-

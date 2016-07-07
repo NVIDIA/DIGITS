@@ -228,6 +228,7 @@ class ModelForm(Form):
             choices = [
                 ('standard', 'Standard network'),
                 ('previous', 'Previous network'),
+                ('pretrained', 'Pretrained network'),
                 ('custom', 'Custom network'),
                 ],
             default='standard',
@@ -255,6 +256,14 @@ class ModelForm(Form):
             choices = [],
             validators = [
                 validate_required_iff(method='previous'),
+                selection_exists_in_choices,
+                ],
+            )
+
+    pretrained_networks = wtforms.RadioField('Pretrained Networks',
+            choices = [],
+            validators = [
+                validate_required_iff(method='pretrained'),
                 selection_exists_in_choices,
                 ],
             )
@@ -345,4 +354,3 @@ class ModelForm(Form):
                                        default = True,
                                        tooltip = 'For every epoch, shuffle the data before training.'
             )
-
