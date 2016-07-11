@@ -36,7 +36,7 @@ class ImageModelForm(ModelForm):
 
     # The mean_path is the file path pointing to the a protoblob of the mean image which is to be used instead of the
     #  dataset's protoblob. If it is left empty, then the protoblob from the dataset will be used instead.
-    mean_path = utils.forms.StringField('Mean Image Protoblob file',
+    custom_mean_path = utils.forms.StringField('Custom Mean Image Protoblob File',
                                         validators = [
                                             validators.Optional()
                                             ],

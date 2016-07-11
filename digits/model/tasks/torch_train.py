@@ -111,8 +111,8 @@ class TorchTrainTask(TrainTask):
     def create_mean_file(self):
         filename = os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE)
         # don't recreate file if it already exists, unless user has specified a non-db mean path
-        if not os.path.exists(filename) or self.mean_path is not None:
-            mean_file = self.get_mean_path()
+        if not os.path.exists(filename):
+            mean_file = self.job.get_mean_path()
             assert mean_file != None and mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
             blob = caffe_pb2.BlobProto()
             with open(self.dataset.path(mean_file),'rb') as infile:

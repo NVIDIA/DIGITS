@@ -1,6 +1,8 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+from os import path
+
 from . import tasks
 from digits.job import Job
 from digits.utils import override
@@ -20,6 +22,8 @@ class ModelJob(Job):
         """
         super(ModelJob, self).__init__(**kwargs)
         self.pickver_job_dataset = PICKLE_VERSION
+
+        self.custom_mean_path = None
 
         self.dataset_id = dataset_id
         self.load_dataset()
@@ -63,3 +67,28 @@ class ModelJob(Job):
         These files get added to an archive when this job is downloaded
         """
         return NotImplementedError()
+
+    def set_custom_mean_path(self, custom_mean_path):
+        """
+        Set the path to a custom mean image protoblob to be used by the model job. If the custom mean path is None, it
+        should be assumed that the mean image will be that of the dataset.
+        returns: True if the custom_mean_path was successfully set, False otherwise
+        """
+        if custom_mean_path != '' and path.isfile(custom_mean_path) is True:
+            self.custom_mean_path = custom_mean_path
+            return True
+        else:
+            return False
+
+    def get_mean_path(self):
+        """
+        returns the file path to the mean image protoblob\jpg\file, which is either the dataset's (default) or some
+        user specified path
+        """
+
+        if self.custom_mean_path is None:
+            # The user never set the mean path, so the dataset's mean path should be used
+            return self.dataset.path(self.dataset.get_mean_file())
+        else:
+            # The user has specified the file path to use
+            return self.dataset.path(self.custom_mean_path)
