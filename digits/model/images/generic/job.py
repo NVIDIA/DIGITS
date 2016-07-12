@@ -27,17 +27,7 @@ class GenericImageModelJob(ImageModelJob):
     def download_files(self, epoch=-1):
         task = self.train_task()
 
-        snapshot_filename = None
-        if epoch == -1 and len(task.snapshots):
-            epoch = task.snapshots[-1][1]
-            snapshot_filename = task.snapshots[-1][0]
-        else:
-            for f, e in task.snapshots:
-                if e == epoch:
-                    snapshot_filename = f
-                    break
-        if not snapshot_filename:
-            raise ValueError('Invalid epoch')
+        snapshot_filename = task.get_snapshot(epoch)
 
         # get model files
         model_files = task.get_model_files()
