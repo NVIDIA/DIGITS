@@ -86,6 +86,9 @@ class ModelJob(Job):
         user specified path
         """
 
+        if self.dataset is None:
+            self.load_dataset()
+
         if self.custom_mean_path is None:
             # The user never set the mean path, so the dataset's mean path should be used
             return self.dataset.path(self.dataset.get_mean_file())
