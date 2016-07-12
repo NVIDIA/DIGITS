@@ -7,6 +7,7 @@ from gevent import monkey; monkey.patch_all()
 
 from .config import config_value
 from digits import utils
+from digits.utils import filesystem as fs
 import digits.scheduler
 
 ### Create Flask, Scheduler and SocketIO objects
@@ -27,6 +28,7 @@ app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.globals['server_version'] = digits.__version__
 app.jinja_env.globals['caffe_version'] = config_value('caffe_root')['ver_str']
 app.jinja_env.globals['caffe_flavor'] = config_value('caffe_root')['flavor']
+app.jinja_env.globals['dir_hash'] = fs.dir_hash('digits/static')
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time
 app.jinja_env.filters['print_time_diff'] = utils.time_filters.print_time_diff
 app.jinja_env.filters['print_time_since'] = utils.time_filters.print_time_since

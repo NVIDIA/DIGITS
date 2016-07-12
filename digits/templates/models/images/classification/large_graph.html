@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block head %}
-<script src="{{ url_for('static', filename='js/model-graphs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/model-graphs.js', ver=dir_hash) }}"></script>
 {% endblock %}
 
 {% block nav %}

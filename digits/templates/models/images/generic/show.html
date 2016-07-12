@@ -5,7 +5,7 @@
 
 {% block job_content %}
 
-<script src="{{ url_for('static', filename='js/model-graphs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/model-graphs.js', ver=dir_hash) }}"></script>
 
 {% set task = job.train_task() %}
 
