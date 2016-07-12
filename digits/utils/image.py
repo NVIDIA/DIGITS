@@ -143,7 +143,7 @@ def resize_image(image, height, width,
             else:
                 raise ValueError('unknown image mode "%s"' % image_mode)
         elif channels == 1:
-            image_mode = image.mode if image.mode == 'L' else 'F'  # 8-bit pixels, black and white
+            image_mode = 'L' if image.mode != 'I' else 'F'  # 8-bit or floating pixels, black and white
         elif channels == 3:
             # 3x8-bit pixels, true color
             image_mode = 'RGB'
@@ -154,8 +154,12 @@ def resize_image(image, height, width,
         else:
             image = np.array(image)
     elif isinstance(image, np.ndarray):
+        image_mode = 'L'
         if image.dtype != np.uint8:
-            image = image.astype(np.uint8)
+            if image.dtype == np.int32:
+                image_mode = 'F'
+            else:
+                image = image.astype(np.uint8)
         if image.ndim == 3 and image.shape[2] == 1:
             image = image.reshape(image.shape[:2])
         if channels is None:
@@ -260,7 +264,7 @@ def resize_image(image, height, width,
             axis = 1
         if channels > 1:
             noise_size += (channels,)
-        noise = np.random.randint(0, max_value, noise_size).astype(final_type)
+        noise = np.random.randint(max_value, size=noise_size).astype(final_type)
         image = np.concatenate((noise, image, noise), axis=axis)
         return image
 
