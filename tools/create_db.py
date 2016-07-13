@@ -653,7 +653,6 @@ def _write_batch_lmdb(db, batch, image_count):
         # double the map_size
         curr_limit = db.info()['map_size']
         new_limit = curr_limit*2
-        logger.debug('Doubling LMDB map size to %sMB ...' % (new_limit>>20,))
         try:
             db.set_mapsize(new_limit) # double it
         except AttributeError as e:
