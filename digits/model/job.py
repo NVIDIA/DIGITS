@@ -74,9 +74,12 @@ class ModelJob(Job):
         should be assumed that the mean image will be that of the dataset.
         returns: True if the custom_mean_path was successfully set, False otherwise
         """
-        if custom_mean_path != '' and path.isfile(custom_mean_path) is True:
-            self.custom_mean_path = custom_mean_path
-            return True
+        if custom_mean_path != '' and custom_mean_path is not None:
+            if path.isfile(custom_mean_path) is True:
+                self.custom_mean_path = custom_mean_path
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -86,12 +89,14 @@ class ModelJob(Job):
         user specified path
         """
 
-        if self.dataset is None:
-            self.load_dataset()
-
-        if self.custom_mean_path is None:
-            # The user never set the mean path, so the dataset's mean path should be used
-            return self.dataset.path(self.dataset.get_mean_file())
-        else:
+        if self.custom_mean_path is not None:
             # The user has specified the file path to use
-            return self.dataset.path(self.custom_mean_path)
+            return self.custom_mean_path
+
+        if self.dataset is None:
+            # Cannot retrieve the mean path, as it isn't loaded anymore
+            return None
+        else:
+            # The user never set the mean path, so the dataset's mean path should be used
+            if self.custom_mean_path is None:
+                return self.dataset.path(self.dataset.get_mean_file())

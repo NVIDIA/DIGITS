@@ -334,15 +334,15 @@ class CaffeTrainTask(TrainTask):
 
         if self.use_mean == 'pixel':
             assert dataset_backend != 'hdf5', 'HDF5Data layer does not support mean subtraction'
-            mean_pixel = self.get_mean_pixel(self.job.get_mean_path())
+            mean_pixel = self.get_mean_pixel(self.get_mean_path())
             self.set_mean_value(train_data_layer, mean_pixel)
             if val_data_layer is not None and has_val_set:
                 self.set_mean_value(val_data_layer, mean_pixel)
 
         elif self.use_mean == 'image':
-            self.set_mean_file(train_data_layer, self.job.get_mean_path())
+            self.set_mean_file(train_data_layer, self.get_mean_path())
             if val_data_layer is not None and has_val_set:
-                self.set_mean_file(val_data_layer, self.job.get_mean_path())
+                self.set_mean_file(val_data_layer, self.get_mean_path())
 
         if self.batch_size:
             if dataset_backend == 'lmdb':
@@ -767,7 +767,7 @@ class CaffeTrainTask(TrainTask):
             layer.data_param.batch_size = self.batch_size
 
         # mean
-        if name == 'data' and self.get_mean_path():
+        if name == 'data' and self.job.get_mean_path():
             if self.use_mean == 'pixel':
                 mean_pixel = self.get_mean_pixel(self.job.get_mean_path())
                 ## remove any values that may already be in the network
