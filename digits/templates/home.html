@@ -5,12 +5,12 @@
 {% extends "layout.html" %}
 
 {% block head %}
-<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.time_filters.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/ngStorage.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.sparkline.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/home_app.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/table_selection.css') }}">
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.time_filters.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ngStorage.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.sparkline.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/home_app.js', ver=dir_hash) }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/table_selection.css', ver=dir_hash) }}">
 
 {% with namespace = "/jobs" %}
     {% set room = "job_management" %}

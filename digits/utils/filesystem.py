@@ -1,9 +1,11 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import hashlib
 import os.path
-import shutil
 import platform
+import re
+import shutil
 
 def get_tree_size(start_path):
     """
@@ -57,3 +59,27 @@ def tail(file, n=40):
                     tailing_lines.popleft()
         output = ''.join(tailing_lines)
     return output
+
+def dir_hash(dir_name):
+    """
+    Return a hash for the files in a directory tree, excluding hidden
+    files and directoies. If any files are renamed, added, removed, or
+    modified the hash will change.
+    """
+    if not os.path.isdir(dir_name):
+        raise TypeError('{} is not a directory.'.format(dir_name))
+
+    md5 = hashlib.md5()
+    for root, dirs, files in os.walk(dir_name, topdown=True):
+        # Skip if the root has a hidden directory in its path
+        if not re.search(r'/\.', root):
+            for f in files:
+                # Skip if the file is hidden
+                if not f.startswith('.') and not re.search(r'/\.', f):
+                    # Change the hash if the file name changes
+                    file_name = os.path.join(root, f)
+                    md5.update(hashlib.md5(file_name).hexdigest())
+                    # Change the hash if the file content changes
+                    data = open(file_name, 'rb').read()
+                    md5.update(hashlib.md5(data).hexdigest())
+    return md5.hexdigest()
