@@ -15,11 +15,11 @@ When preparing your own data for ingestion into a dataset, you must follow the s
 
 You should have one folder containing images, and another folder containing labels.
 
-* Image filenames are formatted like `IDENTIFIER.EXTENSION` (e.g. `000001.png` or `foo.jpg`).
-* Label filenames are formatted like `IDENTIFIER.txt` (e.g. `000001.txt` or `foo.txt`).
+* Image filenames are formatted like `IDENTIFIER.EXTENSION` (e.g. `000001.png` or `2.jpg`).
+* Label filenames are formatted like `IDENTIFIER.txt` (e.g. `000001.txt` or `2.txt`).
 
 These identifiers need to match.
-So, if you have a `foo.png` in your image directory, there must to be a corresponding `foo.txt` in your labels directory.
+So, if you have a `1.png` in your image directory, there must to be a corresponding `1.txt` in your labels directory.
 
 If you want to include validation data, then you need separate folders for validation images and validation labels.
 A typical folder layout would look something like this:
