@@ -15,7 +15,6 @@ env:
         - CAFFE_FORK=NVIDIA CAFFE_BRANCH=caffe-0.14
 
 cache:
-    timeout: 604800  # 1 week
     apt: true
     directories:
         - ~/caffe
