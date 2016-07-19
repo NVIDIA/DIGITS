@@ -154,24 +154,21 @@ class CaffeOption(config_option.FrameworkOption):
         supported_platforms = ['Windows', 'Linux', 'Darwin']
         version_string = None
         if platform.system() in supported_platforms:
-            if platform.system() == 'Darwin':
-                version_string = '0.11.0'
+            p = subprocess.Popen([executable, '-version'],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+            if p.wait():
+                raise config_option.BadValue(p.stderr.read().strip())
             else:
-                p = subprocess.Popen([executable, '-version'],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-                if p.wait():
-                    raise config_option.BadValue(p.stderr.read().strip())
-                else:
-                    pattern = 'version'
-                    for line in p.stdout:
-                        if pattern in line:
-                            version_string = line[line.find(pattern) + len(pattern)+1:].rstrip()
-                            break
-                    try:
-                        parse_version(version_string)
-                    except ValueError: #version_string is either ill-formatted or 'CAFFE_VERSION'
-                        version_string = None
+                pattern = 'version'
+                for line in p.stdout:
+                    if pattern in line:
+                        version_string = line[line.find(pattern) + len(pattern)+1:].rstrip()
+                        break
+                try:
+                    parse_version(version_string)
+                except ValueError: #version_string is either ill-formatted or 'CAFFE_VERSION'
+                    version_string = None
             return version_string
         else:
             raise UnsupportedPlatformError('platform "%s" not supported' % platform.system())
@@ -238,7 +235,7 @@ class CaffeOption(config_option.FrameworkOption):
         """
 
         version_string = CaffeOption.get_executable_version_string(executable)
-        if not version_string and platform.system() in ['Linux', 'Darwin']:
+        if not version_string and platform.system() == 'Linux':
             version_string = CaffeOption.get_linked_library_version_string(executable)
         return version_string
 
