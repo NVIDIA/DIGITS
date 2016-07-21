@@ -70,6 +70,14 @@ class Visualization(VisualizationInterface):
         return (template, context)
 
     @staticmethod
+    def get_default_visibility():
+        """
+        Return whether to show extension in GUI (can be overridden through
+        DIGITS configuration options)
+        """
+        return False
+
+    @staticmethod
     def get_id():
         return digits.extensions.data.imageGradients.data.DataIngestion.get_id()
 
