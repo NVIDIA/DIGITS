@@ -46,6 +46,14 @@ class DataIngestion(DataIngestionInterface):
         return "Images"
 
     @staticmethod
+    def get_default_visibility():
+        """
+        Return whether to show extension in GUI (can be overwridden through
+        DIGITS configuration options)
+        """
+        return False
+
+    @staticmethod
     @override
     def get_id():
         return "image-gradients"

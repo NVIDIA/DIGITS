@@ -32,6 +32,14 @@ class VisualizationInterface(object):
         """
         raise NotImplementedError
 
+    @staticmethod
+    def get_default_visibility():
+        """
+        Return whether to show extension in GUI (can be overridden through
+        DIGITS configuration options)
+        """
+        return True
+
     def get_header_template(self):
         """
         This returns the content to be rendered at the top of the result
