@@ -195,9 +195,8 @@ def download(job_id, extension):
     # Write the stats of the job to json,
     # and store in tempfile (for archive)
     info = json.dumps(job.json_dict(verbose=False,epoch=epoch), sort_keys=True, indent=4, separators=(',', ': '))
-    temp = tempfile.NamedTemporaryFile()
-    temp.write(info)
-    temp.seek(0)
+    info_io = io.BytesIO()
+    info_io.write(info)
 
     task = job.train_task()
     snapshot_filename = None
@@ -214,17 +213,17 @@ def download(job_id, extension):
         with tarfile.open(fileobj=b, mode='w:%s' % mode) as tf:
             for path, name in job.download_files(epoch):
                 tf.add(path, arcname=name)
-            tf.add(temp.name,arcname="info.json")
+            tf_info = tarfile.TarInfo("info.json")
+            tf_info.size = len(info_io.getvalue())
+            info_io.seek(0)
+            tf.addfile(tf_info, info_io)
     elif extension in ['zip']:
         with zipfile.ZipFile(b, 'w') as zf:
             for path, name in job.download_files(epoch):
                 zf.write(path, arcname=name)
-            zf.write(temp.name,arcname="info.json")
+            zf.writestr("info.json", info_io.getvalue())
     else:
         raise werkzeug.exceptions.BadRequest('Invalid extension')
-
-    # Close and delete temporary file
-    temp.close()
 
     response = flask.make_response(b.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)
