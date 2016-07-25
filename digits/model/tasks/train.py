@@ -58,11 +58,14 @@ class TrainTask(Task):
         self.shuffle = kwargs.pop('shuffle', None)
         self.network = kwargs.pop('network', None)
         self.framework_id = kwargs.pop('framework_id', None)
+        temp_custom_mean_path = kwargs.pop('custom_mean_path', None)
 
         super(TrainTask, self).__init__(job_dir = job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION
 
         self.job = job
+        self.job.set_custom_mean_path(temp_custom_mean_path)
+
         self.dataset = dataset
         self.train_epochs = train_epochs
         self.snapshot_interval = snapshot_interval
@@ -581,3 +584,15 @@ class TrainTask(Task):
         return a dictionary of task statistics
         """
         raise NotImplementedError()
+
+    def get_mean_path(self):
+        """
+        return the path to the mean protoblob image to use. Defers to the model job, unless that returns false
+        (typically because the dataset for the job has been cleared) after which the Task dataset's mean path is used
+        """
+        mean_path = self.job.get_mean_path()
+
+        if mean_path is None:
+            return self.dataset.path(self.dataset.get_mean_file())
+        else:
+            return mean_path

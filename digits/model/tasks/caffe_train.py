@@ -344,15 +344,15 @@ class CaffeTrainTask(TrainTask):
 
         if self.use_mean == 'pixel':
             assert dataset_backend != 'hdf5', 'HDF5Data layer does not support mean subtraction'
-            mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
+            mean_pixel = self.get_mean_pixel(self.get_mean_path())
             self.set_mean_value(train_data_layer, mean_pixel)
             if val_data_layer is not None and has_val_set:
                 self.set_mean_value(val_data_layer, mean_pixel)
 
         elif self.use_mean == 'image':
-            self.set_mean_file(train_data_layer, self.dataset.path(self.dataset.get_mean_file()))
+            self.set_mean_file(train_data_layer, self.get_mean_path())
             if val_data_layer is not None and has_val_set:
-                self.set_mean_file(val_data_layer, self.dataset.path(self.dataset.get_mean_file()))
+                self.set_mean_file(val_data_layer, self.get_mean_path())
 
         if self.batch_size:
             if dataset_backend == 'lmdb':
@@ -781,13 +781,13 @@ class CaffeTrainTask(TrainTask):
             layer.data_param.batch_size = self.batch_size
 
         # mean
-        if name == 'data' and self.dataset.get_mean_file():
+        if name == 'data' and self.job.get_mean_path():
             if self.use_mean == 'pixel':
-                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
+                mean_pixel = self.get_mean_pixel(self.job.get_mean_path())
                 ## remove any values that may already be in the network
                 self.set_mean_value(layer, mean_pixel)
             elif self.use_mean == 'image':
-                self.set_mean_file(layer, self.dataset.path(self.dataset.get_mean_file()))
+                self.set_mean_file(layer, self.job.get_mean_path())
 
         # crop size
         if name == 'data' and self.crop_size:
@@ -1426,11 +1426,12 @@ class CaffeTrainTask(TrainTask):
             # XXX see issue #59
             channel_swap = (2,1,0)
 
-        if self.dataset.get_mean_file():
+        if self.job.get_mean_path():
+
             if self.use_mean == 'pixel':
-                mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
+                mean_pixel = self.get_mean_pixel(self.job.get_mean_path())
             elif self.use_mean == 'image':
-                mean_image = self.get_mean_image(self.dataset.path(self.dataset.get_mean_file()), True)
+                mean_image = self.get_mean_image(self.job.get_mean_path(), True)
 
         t = caffe.io.Transformer(
                 inputs = {'data': tuple(data_shape)}

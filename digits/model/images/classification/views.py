@@ -267,6 +267,7 @@ def create():
                         pretrained_model = pretrained_model,
                         crop_size = form.crop_size.data,
                         use_mean = form.use_mean.data,
+                        custom_mean_path = form.custom_mean_path.data,
                         network = network,
                         random_seed = form.random_seed.data,
                         solver_type = form.solver_type.data,
