@@ -29,7 +29,7 @@ import caffe
 import caffe_pb2
 
 # NOTE: Increment this everytime the pickled object changes
-PICKLE_VERSION = 3
+PICKLE_VERSION = 4
 
 # Constants
 CAFFE_SOLVER_FILE = 'solver.prototxt'
@@ -119,6 +119,27 @@ class CaffeTrainTask(TrainTask):
             else:
                 self.log_file = None
             self.framework_id = 'caffe'
+        if state['pickver_task_caffe_train'] <= 3:
+            try:
+                import caffe.proto.caffe_pb2
+                if isinstance(self.network, caffe.proto.caffe_pb2.NetParameter):
+                    # Convert from NetParameter to string back to NetParameter
+                    #   to avoid this error:
+                    # TypeError: Parameter to MergeFrom() must be instance of
+                    #   same class: expected caffe_pb2.NetParameter got
+                    #   caffe.proto.caffe_pb2.NetParameter.
+                    fixed = caffe_pb2.NetParameter()
+                    text_format.Merge(
+                        text_format.MessageToString(self.network),
+                        fixed,
+                    )
+                    self.network = fixed
+            except ImportError:
+                # If caffe.proto.caffe_pb2 can't be imported, then you're
+                # probably on a platform where that was never possible.
+                # So you can't need this upgrade and we can ignore the error.
+                pass
+
         self.pickver_task_caffe_train = PICKLE_VERSION
 
         # Make changes to self
