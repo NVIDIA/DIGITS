@@ -21,6 +21,7 @@ mkdir -p $INSTALL_DIR
 
 # install Torch7
 # instructions from: http://torch.ch/docs/getting-started.html
+pushd .
 git clone https://github.com/torch/distro.git $INSTALL_DIR --recursive
 cd $INSTALL_DIR
 ./install-deps
@@ -31,3 +32,9 @@ ${INSTALL_DIR}/install/bin/luarocks install tds
 ${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
 ${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
 ${INSTALL_DIR}/install/bin/luarocks install lightningmdb 0.9.18.1-1 LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
+
+# mark cache
+popd
+WEEK=`date +%Y-%W`
+echo $WEEK > ${INSTALL_DIR}/cache-version.txt
+
