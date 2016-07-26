@@ -270,6 +270,9 @@ def create_db(input_file, output_dir,
     write_queue = Queue.Queue(2*batch_size)
     summary_queue = Queue.Queue()
 
+    # Init helper function for notification between threads
+    _notification(set_flag=False)
+
     for _ in xrange(num_threads):
         p = threading.Thread(target=_load_thread,
                 args=(load_queue, write_queue, summary_queue,
@@ -297,6 +300,15 @@ def create_db(input_file, output_dir,
 
     logger.info('Database created after %d seconds.' % (time.time() - start))
 
+
+def _notification(set_flag=None):
+    if set_flag is None:
+        return _notification.flag
+    elif set_flag:
+        _notification.flag = True
+    else:
+        _notification.flag = False
+
 def _create_lmdb(image_count, write_queue, batch_size, output_dir,
         summary_queue, num_threads,
         mean_files      = None,
@@ -318,6 +330,7 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
     batch = []
     compute_mean = bool(mean_files)
 
+
     db = lmdb.open(output_dir,
             map_size=lmdb_map_size,
             map_async=True,
@@ -331,6 +344,9 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
             wait_time = time.time()
 
         processed_something = False
+
+        if _notification():
+            break
 
         if not summary_queue.empty():
             result_count, result_sum = summary_queue.get()
@@ -360,6 +376,9 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
     if len(batch) > 0:
         _write_batch_lmdb(db, batch, images_written)
         images_written += len(batch)
+
+    if _notification():
+        raise WriteError('Encoding should be None for 16-bit images')
 
     if images_loaded == 0:
         raise LoadError('no images loaded from input file')
@@ -413,6 +432,9 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
 
         processed_something = False
 
+        if _notification():
+            break
+
         if not summary_queue.empty():
             result_count, result_sum = summary_queue.get()
             images_loaded += result_count
@@ -442,6 +464,9 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
         images_written += len(batch)
 
     assert images_written == writer.count()
+
+    if _notification():
+        raise WriteError('Encoding should be None for 16-bit images')
 
     if images_loaded == 0:
         raise LoadError('no images loaded from input file')
@@ -580,11 +605,15 @@ def _load_thread(load_queue, write_queue, summary_queue,
         if compute_mean:
             image_sum += image
 
-        if backend == 'lmdb':
-            datum = _array_to_datum(image, label, encoding)
-            write_queue.put(datum)
-        else:
-            write_queue.put((image, label))
+        try:
+            if backend == 'lmdb':
+                datum = _array_to_datum(image, label, encoding)
+                write_queue.put(datum)
+            else:
+                write_queue.put((image, label))
+        except IOError:  # try to store png/jpg for 16-bit images
+            _notification(True)
+            break
 
         images_added += 1
 
@@ -778,4 +807,3 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))
         raise
-
