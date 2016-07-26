@@ -26,9 +26,16 @@ rm -rf $INSTALL_DIR
 git clone https://github.com/${CAFFE_FORK}/caffe.git ${INSTALL_DIR} --branch ${CAFFE_BRANCH} --depth 1
 
 # configure project
+pushd .
 mkdir -p ${INSTALL_DIR}/build
 cd ${INSTALL_DIR}/build
 cmake .. -DCPU_ONLY=On -DBLAS=Open
 
 # build
 make --jobs=$NUM_THREADS
+
+# mark cache
+popd
+WEEK=`date +%Y-%W`
+echo $WEEK > ${INSTALL_DIR}/cache-version.txt
+

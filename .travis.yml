@@ -35,6 +35,9 @@ install:
     # apt packages
     - ./scripts/travis/install-apt.sh
 
+    # bust build caches
+    - ./scripts/travis/bust-cache.sh ~/caffe ~/torch
+
     # build caffe
     - ./scripts/travis/install-caffe.sh ~/caffe
 
