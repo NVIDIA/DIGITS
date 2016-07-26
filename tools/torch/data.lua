@@ -4,14 +4,14 @@ require 'nn' -- provides a normalization operator
 require 'utils' -- various utility functions
 require 'hdf5' -- import HDF5 now as it is unsafe to do it from a worker thread
 local threads = require 'threads' -- for multi-threaded data loader
-check_require 'image' -- for color transforms
+check_require('image') -- for color transforms
 
 package.path = debug.getinfo(1, "S").source:match[[^@?(.*[\/])[^\/]-$]] .."?.lua;".. package.path
 
 require 'logmessage'
 local ffi = require 'ffi'
 
-local tdsIsInstalled, tds = pcall(function() return check_require 'tds' end)
+local tdsIsInstalled, tds = pcall(function() return check_require('tds') end)
 
 -- enable shared serialization to speed up Tensor passing between threads
 threads.Threads.serialization('threads.sharedserialize')
@@ -41,33 +41,203 @@ local function all_keys(cursor_,key_,op_)
         end)
 end
 
-local PreProcess = function(y, meanTensor, mirror, crop, train, cropY, cropX, croplen)
-    if meanTensor then
-        for i=1,meanTensor:size(1) do
-            y[i]:add(-meanTensor[i])
-        end
+-- HSV Augmentation
+-- Parameters:
+-- @param im (tensor): input image
+-- @param augHSV (table): standard deviations under {H,S,V} keys with float values.
+local augmentHSV = function(im_rgb, augHSV)
+    -- Fair augHSV standard deviation values are {H=0.02,S=0.04,V=0.08}
+    local im_hsv = image.rgb2hsv(im_rgb)
+    if augHSV.H >0 then
+        -- We do not need to account for overflow because every number wraps around (1.1=2.1=3.1,etc)
+        -- We add a round value (+ 1) to prevent an underflow bug (<0 becomes glitchy)
+        im_hsv[1] = im_hsv[1]+(1 + torch.normal(0, augHSV.S))
     end
-    if mirror and torch.FloatTensor.torch.uniform() > 0.49 then
-        y = image.hflip(y)
+    if augHSV.S >0 then
+        im_hsv[2] = im_hsv[2]+torch.normal(0, augHSV.S) 
+        im_hsv[2].image.saturate(im_hsv[2]) -- bound saturation between 0 and 1
     end
-    if crop then
-
-        if train == true then
-            --During training we will crop randomly
-            local valueY = math.ceil(torch.FloatTensor.torch.uniform()*cropY)
-            local valueX = math.ceil(torch.FloatTensor.torch.uniform()*cropX)
-            y = image.crop(y, valueX-1, valueY-1, valueX+croplen-1, valueY+croplen-1)
-
-        else
-            --for validation we will crop at center
-            y = image.crop(y, cropX-1, cropY-1, cropX+croplen-1, cropY+croplen-1)
-        end
+    if augHSV.V >0 then
+        im_hsv[3] = im_hsv[3]+torch.normal(0, augHSV.V) 
+        im_hsv[3].image.saturate(im_hsv[3]) -- bound value between 0 and 1
     end
-    return y
+    return image.hsv2rgb(im_hsv)
 end
 
---Loading label definitions
+-- Scale and Rotation augmentation (warping)
+-- Parameters:
+-- @param im (tensor): input image
+-- @param augRot (float): extremes of random rotation, uniformly distributed between 
+-- @param augScale (float): the standard deviation of the extra scaling factor
+local warp = function(im, augRot, augScale)
+    -- A nice function of scale is 0.05 (stddev of scale change), 
+    -- and a nice value for ration is a few degrees or more if your dataset allows for it
 
+    local width = im:size()[3] 
+    local height = im:size()[2]
+
+    -- Scale <0=zoom in(+rand crop), >0=zoom out
+    local scale_x = 0
+    local scale_y = 0
+    local move_x = 0
+    local move_y = 0
+    if augScale > 0 then
+        scale_x = torch.normal(0, augScale) -- normal distribution
+        -- Given a zoom in or out, we move around our canvas.
+        scale_y = scale_x -- keep aspect ratio the same
+        move_x = torch.uniform(-scale_x, scale_x)
+        move_y = torch.uniform(-scale_y, scale_y)
+    end
+
+    -- Angle of rotation
+    local rot_angle = torch.uniform(-augRot,augRot) -- (degrees) uniform distribution [-augRot : augRot)
+
+    -- x/y grids
+    local grid_x = torch.ger( torch.ones(height), torch.linspace(-1-scale_x,1+scale_x,width) )
+    local grid_y = torch.ger( torch.linspace(-1-scale_y,1+scale_y,height), torch.ones(width) )
+
+    local flow = torch.FloatTensor()
+    flow:resize(2,height,width)
+    flow:zero()
+
+    -- Apply scale
+    flow_scale = torch.FloatTensor()
+    flow_scale:resize(2,height,width)
+    flow_scale[1] = grid_y
+    flow_scale[2] = grid_x
+    flow_scale[1]:add(1+move_y):mul(0.5) -- move ~[-1 1] to ~[0 1]
+    flow_scale[2]:add(1+move_x):mul(0.5) -- move ~[-1 1] to ~[0 1]
+    flow_scale[1]:mul(height-1)
+    flow_scale[2]:mul(width-1)
+    flow:add(flow_scale)
+
+    if augRot > 0 then
+        -- Apply rotation through rotation matrix
+        local flow_rot = torch.FloatTensor()
+        flow_rot:resize(2,height,width)
+        flow_rot[1] = grid_y * ((height-1)/2) * -1
+        flow_rot[2] = grid_x * ((width-1)/2) * -1
+        view = flow_rot:reshape(2,height*width)
+        function rmat(deg)
+          local r = deg/180*math.pi
+          return torch.FloatTensor{{math.cos(r), -math.sin(r)}, {math.sin(r), math.cos(r)}}
+        end
+
+        local rotmat = rmat(rot_angle)
+        local flow_rotr = torch.mm(rotmat, view)
+        flow_rot = flow_rot - flow_rotr:reshape( 2, height, width )
+        flow:add(flow_rot)
+    end
+
+    return image.warp(im, flow, 'bilinear', false)
+end
+
+-- Adds noise to the image
+-- Parameters:
+-- @param im (tensor): input image
+-- @param augNoise (float): the standard deviation of the white noise
+local addNoise = function(im, augNoise)
+    -- AWGN:
+    -- torch.randn makes noise with mean 0 and variance 1 (=stddev 1)
+    --  so we multiply the tensor with our augNoise factor, that has a linear relation with
+    --  the standard deviation (but the variance will be increased quadratically).
+    return torch.add(im, torch.randn(im:size()):float()*augNoise)
+end
+
+-- Quadrilateral rotation (through flipping and/or transposing)
+-- Parameters:
+-- @param im (tensor): input image
+-- @param rotFlag (int): rotation indices (0 1 2 3)=(0,90CW,270CW,180CW)
+local rot90 = function(im, rotFlag)
+    local rot
+    if rotFlag == 2 then
+        rot = im:transpose(2,3) --switch X and Y dimentions
+        rot = image.vflip(rot)
+        return rot
+    elseif rotFlag == 3 then
+        rot = im:transpose(2,3) --switch X and Y dimentions
+        rot = image.hflip(rot)
+        return rot
+    elseif rotFlag == 4 then -- vflip+hflip=180 deg rotation
+        rot = image.hflip(im)
+        rot = image.vflip(rot)
+        return rot
+    end
+    return im -- no rotation: return in place
+end
+
+-- PreProcessing of a single image
+-- Parameters:
+-- @param im (tensor): input image
+-- @param train (boolean): distinguishes training phase from testing phase
+-- @param meanTensor (tensor): mean image that will be used for mean subtraction if supplied
+-- @param augOpt (table): structure containing several augmentation options.
+local PreProcess = function(im, train, meanTensor, augOpt)
+    
+    -- Do the HSV augmentation on the [0 255] image
+    if augOpt.augHSV then
+        if (augOpt.augHSV.H > 0) or (augOpt.augHSV.S > 0)  or (augOpt.augHSV.V > 0) then
+            assert(im:size(1)==3, 'Cannot mix HSV augmentation without the image having 3 channels.')
+            im:div(255) -- HSV augmentation requires a [0:1] range
+            im = augmentHSV(im, augOpt.augHSV)
+            im:mul(255)
+            -- Note: an RGB-spaced image is returned (as was the input)
+        end
+    end
+
+    -- Noise addition
+    if augOpt.augNoise and (augOpt.augNoise > 0) then
+        -- Note: augNoise is multiplied by 255 because the input assumes [0 1] image range
+        --  and our current range is [0 255]
+        im = addNoise(im, augOpt.augNoise*255)
+    end
+
+    -- Note :do any augmentation that directly changes pixel values before mean subtraction
+    if meanTensor then
+        for i=1,meanTensor:size(1) do
+            im[i]:add(-meanTensor[i])
+        end
+    end
+
+    if augOpt.augFlip then
+        if (augOpt.augFlip == 'fliplr' or  augOpt.augFlip == 'fliplrud') and torch.random(2)==1 then 
+            im = image.hflip(im)
+        end
+        if (augOpt.augFlip == 'flipud' or  augOpt.augFlip == 'fliplrud') and torch.random(2)==1 then
+            im = image.vflip(im)
+        end
+    end
+
+    if augOpt.augQuadRot then
+        if augOpt.augQuadRot == 'rot90' then -- (0, 90 or 270)
+            im = rot90(im, torch.random(3))
+        elseif augOpt.augQuadRot == 'rot180' and torch.random(2)==1 then -- (0 or 180)
+            im = rot90(im, 4)
+        elseif augOpt.augQuadRot == 'rotall' then -- (0, 90, 180 or 270)
+            im = rot90(im,  torch.random(4))
+        end
+    end
+
+    if augOpt.augRot and augOpt.augScale and ((augOpt.augRot >0) or (augOpt.augScale > 0)) then
+        im = warp(im, augOpt.augRot, augOpt.augScale)
+    end
+
+    if augOpt.crop and augOpt.crop.use then
+        if train == true then
+            --During training we will crop randomly
+            local valueY = math.ceil(torch.FloatTensor.torch.uniform() * augOpt.crop.Y)
+            local valueX = math.ceil(torch.FloatTensor.torch.uniform() * augOpt.crop.X)
+            im = image.crop(im, valueX-1, valueY-1, valueX + augOpt.crop.len-1, valueY + augOpt.crop.len-1)
+        else
+            --for validation we will crop at center
+            im = image.crop(im, augOpt.crop.X-1, augOpt.crop.Y-1, augOpt.crop.X + augOpt.crop.len-1, augOpt.crop.Y + augOpt.crop.len-1)
+        end
+    end
+
+    return im
+end
+
+-- Loading label definitions
 local loadLabels = function(labels_file)
     local Classes = {}
     i=0
@@ -87,7 +257,7 @@ local loadLabels = function(labels_file)
     end
 end
 
---loading mean tensor
+-- Loading mean tensor
 local loadMean = function(mean_file, use_mean_pixel)
     local meanTensor
     local mean_im = image.load(mean_file,nil,'byte'):type('torch.FloatTensor'):contiguous()
@@ -169,21 +339,20 @@ end
 
 -- Meta class
 DBSource = {mean = nil, ImageChannels = 0, ImageSizeY = 0, ImageSizeX = 0, total=0,
-            mirror=false, crop=false, croplen=0, cropY=0, cropX=0, subtractMean=true,
+            augOpt={}, subtractMean=true,
             train=false, classification=false}
 
 -- Derived class method new
 -- Creates a new instance of a database
 -- Parameters:
---  backend (string): 'lmdb' or 'hdf5'
---  db_path (string): path to database
---  labels_db_path (string): path to labels database, or nil
---  mirror (boolean): whether samples must be mirrored
---  meanTensor (tensor): mean tensor to use for mean subtraction
---  isTrain (boolean): whether this is a training database (e.g. mirroring not applied to validation database)
---  shuffle (boolean): whether samples should be shuffled
---  classification (boolean): whether this is a classification task
-function DBSource:new (backend, db_path, labels_db_path, mirror, meanTensor, isTrain, shuffle, classification)
+-- @param backend (string): 'lmdb' or 'hdf5'
+-- @param db_path (string): path to database
+-- @param labels_db_path (string): path to labels database, or nil
+-- @param meanTensor (tensor): mean tensor to use for mean subtraction
+-- @param isTrain (boolean): whether this is a training database (e.g. mirroring not applied to validation database)
+-- @param shuffle (boolean): whether samples should be shuffled
+-- @param classification (boolean): whether this is a classification task
+function DBSource:new (backend, db_path, labels_db_path, meanTensor, isTrain, shuffle, classification)
     local self = copy(DBSource)
     local paths = require('paths')
 
@@ -280,10 +449,19 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, meanTensor, isT
 
     logmessage.display(0,'Image channels are ' .. self.ImageChannels .. ', Image width is ' .. self.ImageSizeX .. ' and Image height is ' .. self.ImageSizeY)
 
-    self.mirror = mirror
     self.train = isTrain
     self.shuffle = shuffle
     self.classification = classification
+
+    -- Initialize with no dataset augmentation
+    self.augOpt.augFlip = 'none'
+    self.augOpt.augQuadRot = 'none'
+    self.augOpt.augRot = 0
+    self.augOpt.augScale = 0
+    self.augOpt.augNoise = 0
+    self.augOpt.augHSV = {H=0, S=0, V=0}
+    self.augOpt.ConvertColor = 'none'
+    self.augOpt.crop = {use=false, Y=-1, X=-1, len=-1}
 
     if self.classification then
         assert(self.label_width == 1, 'expect scalar labels for classification tasks')
@@ -292,20 +470,24 @@ function DBSource:new (backend, db_path, labels_db_path, mirror, meanTensor, isT
     return self
 end
 
--- Derived class method setCropLen
--- This method may be called in two cases:
--- * when the crop command-line parameter is used
--- * when the network definition defines a preferred crop length
-function DBSource:setCropLen(croplen)
-    self.crop = true
-    self.croplen = croplen
-
+-- Derived class method setDataAugmentation
+-- Parameters:
+-- @param augOpt (table): structure containing several augmentation options. Processing differs between train and test state.
+function DBSource:setDataAugmentation(augOpt)
     if self.train == true then
-        self.cropY = self.ImageSizeY - croplen + 1
-        self.cropX = self.ImageSizeX - croplen + 1
-    else
-        self.cropY = math.floor((self.ImageSizeY - croplen)/2) + 1
-        self.cropX = math.floor((self.ImageSizeX - croplen)/2) + 1
+        self.augOpt = augOpt -- Copy all augmentation options
+        if self.augOpt.crop.use then
+            self.augOpt.crop.Y = self.ImageSizeY - self.augOpt.crop.len + 1
+            self.augOpt.crop.X = self.ImageSizeX - self.augOpt.crop.len + 1
+        end
+    else -- Validation:
+        -- For validation, only copy certain options (constructor default is no augmentation)
+        -- So we are doing very selective copying of the augmentation options
+        if augOpt.crop.use then
+            self.augOpt.crop = augOpt.crop
+            self.augOpt.crop.Y = math.floor((self.ImageSizeY - self.augOpt.crop.len)/2) + 1
+            self.augOpt.crop.X = math.floor((self.ImageSizeX - self.augOpt.crop.len)/2) + 1
+        end
     end
 end
 
@@ -386,23 +568,23 @@ function DBSource:lmdb_getSample(shuffle, idx)
     --print(string.format("elapsed time1: %.6f\n", a:time().real - m))
     --m = a:time().real
 
-    local y=nil
+    local im=nil
     if msg.encoded==true then
-        y = image.decompress(x,msg.channels,'byte'):float()
+        im = image.decompress(x,msg.channels,'byte'):float()
     else
         x = x:narrow(1,1,total):view(msg.channels,msg.height,msg.width):float() -- using narrow() returning the reference to x tensor with the size exactly equal to total image byte size, so that view() works fine without issues
         if self.ImageChannels == 3 then
             -- unencoded color images are stored in BGR order => we need to swap blue and red channels (BGR->RGB)
-            y = torch.FloatTensor(msg.channels,msg.height,msg.width)
-            y[1] = x[3]
-            y[2] = x[2]
-            y[3] = x[1]
+            im = torch.FloatTensor(msg.channels,msg.height,msg.width)
+            im[1] = x[3]
+            im[2] = x[2]
+            im[3] = x[1]
         else
-            y = x
+            im = x
         end
     end
 
-    return y, label
+    return im, label
 
 end
 
@@ -430,30 +612,31 @@ function DBSource:hdf5_getSample(shuffle)
     else
         idx = self.cursor
     end
-    y = self.hdf5_data[idx]
-    channels = y:size()[1]
+    local im = self.hdf5_data[idx]
+    channels = im:size()[1]
     label = self.hdf5_labels[idx]
     self.cursor = self.cursor + 1
-    return y, label
+    return im, label
 end
 
 -- Derived class method nextBatch
--- @parameter batchSize Number of samples to load
--- @parameter idx Current index within database
-function DBSource:nextBatch (batchsize, idx)
+-- Parameters:
+-- @param batchSize (int): Number of samples to load
+-- @param idx (int): Current index within database
+function DBSource:nextBatch (batchSize, idx)
 
     local Images
-    if self.crop then
-        Images = torch.Tensor(batchsize, self.ImageChannels, self.croplen, self.croplen)
+    if self.augOpt.crop.use then
+        Images = torch.Tensor(batchSize, self.ImageChannels, self.augOpt.crop.len, self.augOpt.crop.len)
     else
-        Images = torch.Tensor(batchsize, self.ImageChannels, self.ImageSizeY, self.ImageSizeX)
+        Images = torch.Tensor(batchSize, self.ImageChannels, self.ImageSizeY, self.ImageSizeX)
     end
 
     local Labels
     if self.label_width == 1 then
-        Labels = torch.Tensor(batchsize)
+        Labels = torch.Tensor(batchSize)
     else
-        Labels = torch.FloatTensor(batchsize, self.label_width)
+        Labels = torch.FloatTensor(batchSize, self.label_width)
     end
 
     local i=0
@@ -461,16 +644,16 @@ function DBSource:nextBatch (batchsize, idx)
     --local mean_ptr = torch.data(self.mean)
     local image_ind = 0
 
-    for i=1,batchsize do
+    for i=1,batchSize do
         -- get next sample
-        y, label = self:getSample(self.shuffle, idx + i - 1)
+        im, label = self:getSample(self.shuffle, idx + i - 1)
 
         if self.classification then
             -- label is index from array and Lua array indices are 1-based
             label = label + 1
         end
 
-        Images[i] = PreProcess(y, self.mean, self.mirror, self.crop, self.train, self.cropY, self.cropX, self.croplen)
+        Images[i] = PreProcess(im, self.train, self.mean, self.augOpt)
 
         Labels[i] = label
     end
@@ -489,7 +672,7 @@ function DBSource:totalRecords ()
 end
 
 -- Derived class method close (LMDB flavour)
-function DBSource:lmdb_close (batchsize)
+function DBSource:lmdb_close ()
     self.lmdb_data:close()
     if self.lmdb_labels then
         self.lmdb_labels:close()
@@ -497,7 +680,7 @@ function DBSource:lmdb_close (batchsize)
 end
 
 -- Derived class method close (HDF5 flavour)
-function DBSource:hdf5_close (batchsize)
+function DBSource:hdf5_close ()
 end
 
 -- Meta class
@@ -505,18 +688,17 @@ DataLoader = {}
 
 -- Derived class method new
 -- Creates a new instance of a database
--- @param numThreads (int) number of reader threads to create
--- @package_path (string) caller package path
--- @param backend (string) 'lmdb' or 'hdf5'
--- @param db_path (string) path to database
--- @param labels_db_path (string) path to labels database, or nil
--- @param mirror (boolean) whether samples must be mirrored
--- @param mean (Tensor) mean tensor for mean image
--- @param subtractMean (boolean) whether mean image should be subtracted from samples
--- @param isTrain (boolean) whether this is a training database (e.g. mirroring not applied to validation database)
--- @param shuffle (boolean) whether samples should be shuffled
--- @param classification (boolean) whether this is a classification task
-function DataLoader:new (numThreads, package_path, backend, db_path, labels_db_path, mirror, mean, isTrain, shuffle, classification)
+-- Parameters:
+-- @param numThreads (int): number of reader threads to create
+-- @param package_path (string): caller package path
+-- @param backend (string): 'lmdb' or 'hdf5'
+-- @param db_path (string):  path to database
+-- @param labels_db_path (string): path to labels database, or nil
+-- @param mean (Tensor): mean tensor for mean image
+-- @param isTrain (boolean): whether this is a training database (e.g. mirroring not applied to validation database)
+-- @param shuffle (boolean): whether samples should be shuffled
+-- @param classification (boolean): whether this is a classification task
+function DataLoader:new (numThreads, package_path, backend, db_path, labels_db_path, mean, isTrain, shuffle, classification)
     local self = copy(DataLoader)
     self.backend = backend
     if self.backend == 'hdf5' then
@@ -533,7 +715,7 @@ function DataLoader:new (numThreads, package_path, backend, db_path, labels_db_p
             require('data')
             -- executes in reader thread, variables are local to this thread
             db = DBSource:new(backend, db_path, labels_db_path,
-                              mirror, mean,
+                              mean,
                               isTrain,
                               shuffle,
                               classification
@@ -581,10 +763,11 @@ function DataLoader:getInfo()
     return datasetSize, inputTensorShape
 end
 
--- schedule next data loader batch
--- @param batchSize (int) Number of samples to load
--- @param dataIdx (int) Current index in database
--- @param dataTable (table) Table to store data into
+-- Schedule next data loader batch
+-- Parameters:
+-- @param batchSize (int): Number of samples to load
+-- @param dataIdx (int): Current index in database
+-- @param dataTable (table): Table to store data into
 function DataLoader:scheduleNextBatch(batchSize, dataIdx, dataTable)
     -- send reader thread a request to load a batch from the training DB
     local backend = self.backend
@@ -643,16 +826,18 @@ function DataLoader:close()
     self.threadPool:specific(false)
 end
 
--- set crop length (calls setCropLen() method of all DB intances)
-function DataLoader:setCropLen(croplen)
-    -- switch to specific mode so we can specify which thread to add job to
+-- Set dataset augmentation parameters (calls setDataAugmentation() method of all DB intances)
+-- Parameters:
+-- @param augOpt (table): structure containing several augmentation options.
+function DataLoader:setDataAugmentation(augOpt)
+    -- Switch to specific mode so we can specify which thread to add job to
     self.threadPool:specific(true)
     for i=1,self.numThreads do
         self.threadPool:addjob(
                     i,
                     function()
                         if db then
-                            db:setCropLen(croplen)
+                            db:setDataAugmentation(augOpt)
                         end
                     end
                 )

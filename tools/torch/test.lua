@@ -192,12 +192,10 @@ end
 local function preprocess(im, mean, croplen)
 
     -- Depending on the function arguments, image preprocess may include conversion from RGB to BGR and mean subtraction, image resize after mean subtraction
-    local image_preprocessed = data.PreProcess(im, -- input image
-                                               mean, -- mean
-                                               false, -- do not mirror
-                                               false, -- do not crop
+    local image_preprocessed = data.PreProcess(im,    -- input image
                                                false, -- test mode
-                                               nil, nil, nil -- crop parameters (all nil)
+                                               mean,  -- mean
+                                               {}     -- augOpt
                                                )
 
     -- crop to match network expected input dimensions
@@ -206,11 +204,9 @@ local function preprocess(im, mean, croplen)
         assert(image_size[2] >= croplen and image_size[3] >= croplen, "Image must be larger than crop length in all spatial dimensions")
         c = (image_size[2]-croplen)/2 + 1
         image_preprocessed = data.PreProcess(image_preprocessed, -- input image
-                                             nil, -- no mean subtraction (this was done before)
-                                             false, -- do not mirror
-                                             true, -- crop
-                                             false, -- test mode
-                                             c, c, croplen -- crop parameters
+                                             false, --test mode
+                                             nil,   -- no mean subtraction (this was done before)
+                                             {crop={use=true,X=c,Y=c,len=croplen}}
                                              )
     end
     return image_preprocessed

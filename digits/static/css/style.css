@@ -22,6 +22,10 @@ path.c3-line {
     stroke-width: 2px;
 }
 
+/* Hide all data transformation and augmentation by default */
+.data_transformation_input{ display:none; } 
+.data_augmentation_input{ display:none; } 
+
 .autocomplete-suggestions { border: 1px solid #999; background: #FFF; overflow: auto; }
 .autocomplete-suggestion { padding: 2px 5px; white-space: nowrap; overflow: visible; }
 .autocomplete-selected { background: #F0F0F0; }

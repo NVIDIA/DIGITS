@@ -23,12 +23,11 @@ local utils = require 'utils'
 
 opt = lapp[[
 Usage details:
--a,--threads            (default 8)              number of threads
+-a,--threads (default 8) number of threads
 -b,--batchSize (default 0) batch size
 -c,--learningRateDecay (default 1e-6) learning rate decay (in # samples)
 -e,--epoch (default 1) number of epochs to train -1 for unbounded
 -f,--shuffle (default no) shuffle records before train
--g,--mirror (default no) If this option is 'yes', then some of the images are randomly mirrored
 -i,--interval (default 1) number of train epochs to complete, to perform one validation
 -k,--crop (default no) If this option is 'yes', all the images are randomly cropped into square image. And croplength is provided as --croplen parameter
 -l,--croplen (default 0) crop length. This is required parameter when crop option is provided
@@ -41,6 +40,15 @@ Usage details:
 -t,--train (default '') location in which train db exists. This parameter may be omitted only if visualizeModel is 'yes'.
 -v,--validation (default '') location in which validation db exists.
 -w,--weightDecay (default 1e-4) L2 penalty on the weights
+
+--augFlip (default none) options {none, fliplr, flipud, fliplrud} as random pre-processing augmentation
+--augQuadRot (default none) options {none, rot90, rot180, rotall} as random pre-processing augmentation
+--augRot (default 0.0) min and max rotation (degrees) of arbitrary uniform-rotation as pre-processing augmentation
+--augScale (default 0.0) stddev of Scale as pre-processing augmentation
+--augNoise (default 0.0) stddev of Noise in AWGN as pre-processing augmentation
+--augHSVh (default 0.0) stddev of HSV's Hue shift as pre-processing  augmentation
+--augHSVs (default 0.0) stddev of HSV's Saturation shift as pre-processing  augmentation
+--augHSVv (default 0.0) stddev of HSV's Value shift as pre-processing augmentation
 
 --train_labels (default '') location in which train labels db exists. Optional, use this if train db does not contain target labels.
 --validation_labels (default '') location in which validation labels db exists. Optional, use this if validation db does not contain target labels.
@@ -96,7 +104,6 @@ COMPUTE_TRAIN_ACCURACY = false
 
 -- Convert boolean options
 opt.crop = opt.crop == 'yes' or false
-opt.mirror = opt.mirror == 'yes' or false
 opt.shuffle = opt.shuffle == 'yes' or false
 opt.visualizeModel = opt.visualizeModel == 'yes' or false
 
@@ -215,13 +222,15 @@ logmessage.display(0,'creating data readers')
 local trainDataLoader, trainSize, inputTensorShape
 local valDataLoader, valSize
 
+local num_threads_data_loader = 4
+
 if opt.train ~= '' then
     -- create data loader for training dataset
     trainDataLoader = DataLoader:new(
-            4, -- num threads
+            num_threads_data_loader, -- num threads
             package.path,
             opt.dbbackend, opt.train, opt.train_labels,
-            opt.mirror, meanTensor,
+            meanTensor,
             true, -- train
             opt.shuffle,
             classes ~= nil -- whether this is a classification task
@@ -232,10 +241,9 @@ if opt.train ~= '' then
     if opt.validation ~= '' then
         local shape
         valDataLoader = DataLoader:new(
-                4, -- num threads
+                num_threads_data_loader, -- num threads
                 package.path,
                 opt.dbbackend, opt.validation, opt.validation_labels,
-                false, -- no need to do random mirrorring
                 meanTensor,
                 false, -- train
                 false, -- shuffle
@@ -275,7 +283,7 @@ assert(type(network_func)=='function', "Network definition should return a Lua f
 local parameters = {
         nclasses = (classes ~= nil) and #classes or nil,
         ngpus = nGpus,
-        inputShape = inputTensorShape,
+        inputShape = inputTensorShape
     }
 network = network_func(parameters)
 local model = network.model
@@ -315,10 +323,6 @@ if opt.visualizeModel then
     print('\nCriterion: \n' .. loss:__tostring())
     logmessage.display(0,'Network definition ends')
     os.exit(-1)
-end
-
-if opt.mirror then
-    logmessage.display(0,'mirror option was selected, so during training for some of the random images, mirror view will be considered instead of original image view')
 end
 
 -- NOTE: currently randomState option wasn't used in DIGITS. This option was provided to be used from command line, if required.
@@ -429,13 +433,25 @@ end
 
 -- validate "crop length" input parameter
 if opt.crop and inputTensorShape then
-    -- make sure crop length is not bigger than image height or width
-    opt.croplen = math.min(opt.croplen, inputTensorShape[2], inputTensorShape[3])
-    -- set crop length in data readers
-    trainDataLoader:setCropLen(opt.croplen)
-    if valDataLoader then
-        valDataLoader:setCropLen(opt.croplen)
-    end
+    assert(opt.croplen <= math.min(inputTensorShape[2], inputTensorShape[3]), 'croplen parameter is bigger than input image size')
+end
+
+-- Set up augmentation options
+augOpt = { augFlip = opt.augFlip,
+           augQuadRot = opt.augQuadRot,
+           augRot = opt.augRot,
+           augScale = opt.augScale,
+           augNoise = opt.augNoise,
+           augHSV = {H=opt.augHSVh, S=opt.augHSVs, V=opt.augHSVv},
+           crop = {use=opt.crop, Y=-1, X=-1, len=opt.croplen},
+         }
+
+logmessage.display(0, 'augOpt:' .. table.concat(augOpt))
+
+trainDataLoader:setDataAugmentation(augOpt)
+if valDataLoader then
+    -- Note the valDataLoader will automatically nullify certain augmentation options because it knows it is the validation loader due to the test parameter
+    valDataLoader:setDataAugmentation(augOpt)
 end
 
 --modifying total sizes of train and validation dbs to be the exact multiple of 32, when cc2 is used

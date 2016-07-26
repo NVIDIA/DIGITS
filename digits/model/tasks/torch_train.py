@@ -257,6 +257,31 @@ class TorchTrainTask(TrainTask):
                 raise ValueError('Torch does not support multiple pretrained model files')
             args.append('--weights=%s' % self.path(filenames[0]))
 
+        # Augmentations
+        assert self.data_aug['flip'] in ['none', 'fliplr', 'flipud', 'fliplrud'], 'Bad or unknown flag "flip"'
+        args.append('--augFlip=%s' % self.data_aug['flip'])
+
+        assert self.data_aug['quad_rot'] in ['none', 'rot90', 'rot180', 'rotall'], 'Bad or unknown flag "quad_rot"'
+        args.append('--augQuadRot=%s' % self.data_aug['quad_rot'])
+
+        if self.data_aug['rot']:
+            args.append('--augRot=%s' % self.data_aug['rot'])
+
+        if self.data_aug['scale']:
+            args.append('--augScale=%s' % self.data_aug['scale'])
+
+        if self.data_aug['noise']:
+            args.append('--augNoise=%s' % self.data_aug['noise'])
+
+        if self.data_aug['hsv_use']:
+            args.append('--augHSVh=%s' % self.data_aug['hsv_h'])
+            args.append('--augHSVs=%s' % self.data_aug['hsv_s'])
+            args.append('--augHSVv=%s' % self.data_aug['hsv_v'])
+        else:
+            args.append('--augHSVh=0')
+            args.append('--augHSVs=0')
+            args.append('--augHSVv=0')
+
         return args
 
     @override

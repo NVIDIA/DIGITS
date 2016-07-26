@@ -46,6 +46,9 @@ class CaffeFramework(Framework):
     else:
         raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
 
+    SUPPORTED_DATA_TRANSFORMATION_TYPES = ['MEAN_SUBTRACTION', 'CROPPING']
+    SUPPORTED_DATA_AUGMENTATION_TYPES = []
+
     @override
     def __init__(self):
         super(CaffeFramework, self).__init__()

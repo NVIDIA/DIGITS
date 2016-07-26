@@ -1,0 +1,67 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+<div class="form-group{{mark_errors([form.aug_flip])}} data-augmentation-input" id="FLIPPING">
+    {{form.aug_flip.label}}
+    {{form.aug_flip.tooltip}}
+    {{form.aug_flip(class='form-control')}}
+</div>
+
+<div class="form-group{{mark_errors([form.aug_quad_rot])}} data-augmentation-input" id="QUAD_ROTATION">
+    {{form.aug_quad_rot.label}}
+    {{form.aug_quad_rot.tooltip}}
+    {{form.aug_quad_rot(class='form-control')}}
+</div>
+
+<div class="form-group{{mark_errors([form.aug_rot])}} data-augmentation-input" id="ARBITRARY_ROTATION">
+    {{ form.aug_rot.label }}
+    {{ form.aug_rot.tooltip}}
+    {{ form.aug_rot(class='form-control')}}
+</div>
+
+<div class="form-group{{mark_errors([form.aug_scale])}} data-augmentation-input" id="SCALING">
+    {{ form.aug_scale.label }}
+    {{ form.aug_scale.tooltip}}
+    {{ form.aug_scale(class='form-control')}}
+</div>
+
+<div class="form-group{{mark_errors([form.aug_noise])}} data-augmentation-input" id="NOISE">
+    {{ form.aug_noise.label }}
+    {{ form.aug_noise.tooltip}}
+    {{ form.aug_noise(class='form-control')}}
+</div>
+
+<div class="data-augmentation-input" id="HSV_SHIFTING">
+    {{form.aug_hsv_use}}
+    {{form.aug_hsv_use.label}}
+    {{form.aug_hsv_use.tooltip}} 
+    <div class="row cl-augmentation-hsv">
+        <div class="form-group col-sm-4{{ ' has-error' if form.aug_hsv_h.errors else '' }}">
+            {{form.aug_hsv_h.label }}
+            {{form.aug_hsv_h(class='form-control')}}
+        </div>
+
+        <div class="form-group col-sm-4{{ ' has-error' if form.aug_hsv_s.errors else '' }}">
+            {{form.aug_hsv_s.label }}
+            {{form.aug_hsv_s(class='form-control')}}
+        </div>
+   
+        <div class="form-group col-sm-4{{ ' has-error' if form.aug_hsv_v.errors else '' }}">
+            {{form.aug_hsv_v.label }}
+            {{form.aug_hsv_v(class='form-control')}}
+        </div>
+    </div>
+</div>
+
+<script>
+function syncCheckboxToVisibility(checkbox_id, visibility_id) {
+    if ($(checkbox_id).prop("checked")){
+        $(visibility_id).show();
+    } else {
+        $(visibility_id).hide();
+    }
+}
+
+$("#aug_hsv_use"  ).click(function() { syncCheckboxToVisibility("#aug_hsv_use",   ".cl-augmentation-hsv"); });
+syncCheckboxToVisibility("#aug_hsv_use",   ".cl-augmentation-hsv");
+
+</script>
