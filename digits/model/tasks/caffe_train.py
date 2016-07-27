@@ -1376,7 +1376,7 @@ class CaffeTrainTask(TrainTask):
         """
         return len(self.snapshots) > 0
 
-    def get_net(self, epoch=None, gpu=-1):
+    def get_net(self, epoch=None, gpu=None):
         """
         Returns an instance of caffe.Net
 
