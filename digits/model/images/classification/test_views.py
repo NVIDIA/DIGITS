@@ -789,6 +789,50 @@ class BaseTestCreated(BaseViewsTestWithModel):
         for key in keys:
             assert key in rv.data, '"%s" not found in the response'
 
+    def test_inference_while_training(self):
+        # make sure we can do inference while all GPUs are in use for training
+        # if no GPUs, just test inference during a normal training job
+
+        # get number of GPUs
+        gpu_count = 1
+        if (config_value('gpu_list') and
+                config_value('caffe_root')['cuda_enabled'] and
+                config_value('caffe_root')['multi_gpu']):
+            gpu_count = len(config_value('gpu_list').split(','))
+
+        # grab an image for testing
+        category = self.imageset_paths.keys()[-1]
+        image_path = self.imageset_paths[category][-1]
+        image_path = os.path.join(self.imageset_folder, image_path)
+        with open(image_path,'rb') as infile:
+            # StringIO wrapping is needed to simulate POST file upload.
+            image_upload = (StringIO(infile.read()), 'image.png')
+
+        # create a long-running training job
+        job2_id = self.create_model(
+            select_gpu_count=gpu_count,
+            batch_size=10*gpu_count,
+            train_epochs=1000,
+        )
+        try:
+            while True:
+                status = self.model_status(job2_id)
+                if status in ['Initialized', 'Waiting']:
+                    time.sleep(0.01)
+                elif status == 'Running':
+                    break
+                else:
+                    raise RuntimeError('job status is %s' % status)
+
+            rv = self.app.post(
+                '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
+                data = {'image_file': image_upload}
+            )
+            data = json.loads(rv.data)
+            assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        finally:
+            self.delete_model(job2_id)
+
 class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
     """
     Test the interactions between datasets and models
