@@ -4,13 +4,13 @@ import os.path
 import shutil
 import tempfile
 
-import caffe.io
 import lmdb
 import numpy as np
 
 from . import analyze_db
 
 # Must import after importing digits.config
+import caffe.io
 import caffe_pb2
 
 class BaseTestWithDB(object):
