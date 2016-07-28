@@ -727,6 +727,17 @@ layer {
 }
 """
 
+    TORCH_NETWORK = \
+"""
+return function(p)
+    return {
+        -- simple identity network
+        model = nn.Sequential():add(nn.Identity()),
+        loss = nn.MSECriterion(),
+    }
+end
+"""
+
     EXTENSION_ID = "image-processing"
 
     NUM_IMAGES = 100
@@ -952,6 +963,9 @@ class TestTorchCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradi
     @classmethod
     def setUpClass(cls):
         super(TestTorchCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
+
+class TestTorchCreatedWithImageProcessingExtension(BaseTestCreatedWithImageProcessingExtension):
+    FRAMEWORK = 'torch'
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'torch'
