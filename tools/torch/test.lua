@@ -46,10 +46,11 @@ opt = lapp[[
 
 torch.setnumthreads(opt.threads)
 
-if opt.type =='cuda' then
-    require 'cutorch'
+if pcall(function() require('cutorch') end) then
     require 'cunn'
-    cutorch.setDevice(opt.devid)
+    if opt.type =='cuda' then
+        cutorch.setDevice(opt.devid)
+    end
 end
 
 if opt.testMany=='yes' and opt.visualization=='yes' then
