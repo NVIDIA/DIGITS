@@ -238,8 +238,9 @@ class BaseViewsTestWithModelWithAnyDataset(BaseViewsTestWithAnyDataset):
     """
     @classmethod
     def setUpClass(cls, **kwargs):
+        use_mean = kwargs.pop('use_mean', None)
         super(BaseViewsTestWithModelWithAnyDataset, cls).setUpClass(**kwargs)
-        cls.model_id = cls.create_model(json=True)
+        cls.model_id = cls.create_model(json=True, use_mean=use_mean)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
 class BaseTestViews(BaseViewsTest):
@@ -682,7 +683,6 @@ class BaseTestCreatedWithGradientDataExtension(BaseTestCreatedWithAnyDataset,
 
     @classmethod
     def setUpClass(cls, **kwargs):
-        super(BaseTestCreatedWithGradientDataExtension, cls).setUpClass(**kwargs)
         if not hasattr(cls, 'imageset_folder'):
             # Create test image
             cls.imageset_folder = tempfile.mkdtemp()
@@ -698,8 +698,8 @@ class BaseTestCreatedWithGradientDataExtension(BaseTestCreatedWithAnyDataset,
             pil_img = PIL.Image.fromarray(test_image)
             cls.test_image = os.path.join(cls.imageset_folder, 'test.png')
             pil_img.save(cls.test_image)
-        cls.model_id = cls.create_model(json=True)
-        assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
+        # note: model created in BaseTestCreatedWithAnyDataset.setUpClass method
+        super(BaseTestCreatedWithGradientDataExtension, cls).setUpClass()
 
 
 class BaseTestCreatedWithImageProcessingExtension(
@@ -739,8 +739,8 @@ end
 """
 
     EXTENSION_ID = "image-processing"
-
     NUM_IMAGES = 100
+    MEAN = 'none'
 
     @classmethod
     def setUpClass(cls, **kwargs):
@@ -751,7 +751,8 @@ end
         super(BaseTestCreatedWithImageProcessingExtension, cls).setUpClass(
             feature_folder=cls.imageset_folder,
             label_folder=cls.imageset_folder,
-            channel_conversion='L')
+            channel_conversion='L',
+            use_mean = cls.MEAN)
 
     def test_infer_one_json(self):
         image_path = os.path.join(self.imageset_folder, self.test_image)
@@ -767,6 +768,34 @@ end
         data = json.loads(rv.data)
         data_shape = np.array(data['outputs']['output']).shape
         assert data_shape == (1, self.CHANNELS, self.IMAGE_WIDTH, self.IMAGE_HEIGHT)
+
+    def test_infer_one_noresize_json(self):
+        # create large random image
+        shape = (self.CHANNELS, 10*self.IMAGE_HEIGHT, 5*self.IMAGE_WIDTH)
+        x = np.random.randint(
+                    low=0,
+                    high=256,
+                    size=shape)
+        if self.CHANNELS == 1:
+            # drop channel dimension
+            x = x[0]
+        x = x.astype('uint8')
+        pil_img = PIL.Image.fromarray(x)
+        # create output stream
+        s = StringIO()
+        pil_img.save(s, format="png")
+        # create input stream
+        s = StringIO(s.getvalue())
+        image_upload = (s, 'image.png')
+        # post request
+        rv = self.app.post(
+            '/models/images/generic/infer_one.json?job_id=%s' % self.model_id,
+            data={'image_file': image_upload, 'dont_resize':'y'}
+            )
+        assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        data = json.loads(rv.data)
+        data_shape = np.array(data['outputs']['output']).shape
+        assert data_shape == (1,) + shape
 
 
 class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
@@ -934,7 +963,16 @@ class TestCaffeCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradi
     def setUpClass(cls):
         super(TestCaffeCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
-class TestCaffeCreatedWithImageProcessingExtension(BaseTestCreatedWithImageProcessingExtension):
+class TestCaffeCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'image'
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'pixel'
+    FRAMEWORK = 'caffe'
+
+class TestCaffeCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'none'
     FRAMEWORK = 'caffe'
 
 class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
@@ -964,7 +1002,16 @@ class TestTorchCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradi
     def setUpClass(cls):
         super(TestTorchCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
-class TestTorchCreatedWithImageProcessingExtension(BaseTestCreatedWithImageProcessingExtension):
+class TestTorchCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'image'
+    FRAMEWORK = 'torch'
+
+class TestTorchCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'pixel'
+    FRAMEWORK = 'torch'
+
+class TestTorchCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'none'
     FRAMEWORK = 'torch'
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
