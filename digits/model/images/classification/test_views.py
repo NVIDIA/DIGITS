@@ -1124,6 +1124,14 @@ class TestTorchLeNet(BaseTestCreated):
                 'standard-networks', 'torch', 'lenet.lua')
             ).read()
 
+    def test_inference_while_training(self):
+        # override parent method to skip this test as the reference
+        # model for LeNet uses CuDNN by default and it difficult to
+        # perform inference on a CuDNN-trained model without non-trivial
+        # model tweaking
+        raise unittest.SkipTest('Torch CPU inference on CuDNN-trained model not supported')
+
+
 class TestTorchLeNetHdf5Shuffle(TestTorchLeNet):
     BACKEND = 'hdf5'
     SHUFFLE = True
