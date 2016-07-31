@@ -325,24 +325,23 @@ def add_bboxes_to_image(image, bboxes, color='red', width=1):
 
     return image
 
-def get_layer_vis_square(data,
-        allow_heatmap = True,
-        normalize = True,
-        min_img_dim = 100,
-        max_width = 1200,
-        channel_order = 'RGB',
-        ):
-    """
-    Returns a vis_square for the given layer data
+def normalize_data(data):
+    if data is not None:
+        data_min = np.amin(data)
+        data_max = np.amax(data)
+        data = (data - data_min) / (data_max - data_min)
 
+    return data
+
+def reshape_data_for_vis(data,channel_order = 'RGB'):
+    """
+    Returns a reshaped data for visualization
     Arguments:
     data -- a np.ndarray
-
     Keyword arguments:
-    allow_heatmap -- if True, convert single channel images to heatmaps
-    normalize -- whether to normalize the data when visualizing
-    max_width -- maximum width for the vis_square
+    channel_order -- string ex. 'RGB'
     """
+
     if channel_order not in ['RGB', 'BGR']:
         raise ValueError('Unsupported channel_order %s' % channel_order)
     if data.ndim == 1:
@@ -384,6 +383,27 @@ def get_layer_vis_square(data,
             data = data.reshape((data.shape[0]*data.shape[1], data.shape[2], data.shape[3]))
     else:
         raise RuntimeError('unrecognized data shape: %s' % (data.shape,))
+    return data
+
+def get_layer_vis_square(data,
+        allow_heatmap = True,
+        normalize = True,
+        min_img_dim = 100,
+        max_width = 1200,
+        channel_order = 'RGB',
+        ):
+    """
+    Returns a vis_square for the given layer data
+
+    Arguments:
+    data -- a np.ndarray
+
+    Keyword arguments:
+    allow_heatmap -- if True, convert single channel images to heatmaps
+    normalize -- whether to normalize the data when visualizing
+    max_width -- maximum width for the vis_square
+    """
+    data = reshape_data_for_vis(data,channel_order)
 
     # chop off data so that it will fit within max_width
     padsize = 0

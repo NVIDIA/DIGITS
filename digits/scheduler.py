@@ -21,6 +21,7 @@ from .job import Job
 from .log import logger
 from .model import ModelJob
 from .pretrained_model import PretrainedModelJob
+from .inference import WeightsJob
 from .status import Status
 from digits.utils import errors
 
@@ -28,7 +29,7 @@ from digits.utils import errors
 This constant configures how long to wait before automatically
 deleting completed non-persistent jobs
 """
-NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = 3600
+
 
 class Resource(object):
     """
@@ -145,7 +146,7 @@ class Scheduler:
 
         # add DatasetJobs or PretrainedModelJobs
         for job in loaded_jobs:
-            if isinstance(job, DatasetJob) or isinstance(job,PretrainedModelJob):
+            if isinstance(job, DatasetJob) or isinstance(job,PretrainedModelJob) or isinstance(job,WeightsJob):
                 self.jobs[job.id()] = job
 
         # add ModelJobs
@@ -425,7 +426,7 @@ class Scheduler:
                         if job.status.is_running():
                             if job.is_persistent():
                                 job.save()
-                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS):
+                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > job.delete_timeout()):
                             # job has been unclaimed for far too long => proceed to garbage collection
                             self.delete_job(job)
                     last_saved = time.time()
