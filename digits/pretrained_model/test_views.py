@@ -21,9 +21,11 @@ import PIL.Image
 from urlparse import urlparse
 
 from digits.config import config_value
-import digits.dataset.images.classification.test_views
-import digits.test_views
+from digits.pretrained_model import PretrainedModelJob
 import digits.webapp
+import digits.dataset.images.classification.test_views
+import digits.model.images.classification.test_views
+import digits.test_views
 
 # Must import after importing digit.config
 import caffe_pb2
@@ -32,75 +34,49 @@ import caffe_pb2
 TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
 
-################################################################################
-# Base classes (they don't start with "Test" so nose won't run them)
-################################################################################
-
-class BaseViewsTest(digits.test_views.BaseViewsTest):
+class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTestWithModel):
     """
-    Provides some functions
+    Tests uploading Pretrained Models
     """
-    CAFFE_NETWORK = \
-"""
-layer {
-    name: "hidden"
-    type: 'InnerProduct'
-    bottom: "data"
-    top: "output"
-}
-layer {
-    name: "loss"
-    type: "SoftmaxWithLoss"
-    bottom: "output"
-    bottom: "label"
-    top: "loss"
-    exclude { stage: "deploy" }
-}
-layer {
-    name: "accuracy"
-    type: "Accuracy"
-    bottom: "output"
-    bottom: "label"
-    top: "accuracy"
-    include { stage: "val" }
-}
-layer {
-    name: "softmax"
-    type: "Softmax"
-    bottom: "output"
-    top: "softmax"
-    include { stage: "deploy" }
-}
-"""
-    @classmethod
-    def delete_pretrained_model(cls, job_id):
-        return cls.delete_job(job_id, job_type='pretrained_models')
+    def test_upload(self):
+        # job = digits.webapp.scheduler.get_job(self.model_id)
+        job = digits.webapp.scheduler.get_job(self.model_id)
 
-    @classmethod
-    def network(cls):
-        return cls.CAFFE_NETWORK
+        if job is None:
+            raise AssertionError('Failed To Create Job')
 
-class TestViews(BaseViewsTest):
+        # Write the stats of the job to json,
+        # and store in tempfile (for archive)
+        info = job.json_dict(verbose=False,epoch=-1)
+        task = job.train_task()
 
-    def test_create_pretrained_caffe_model(self):
-        """
-        Test uploading a pretrained model for caffe
-        """
-        weights_file = (StringIO("..."), 'weights.caffemodel')
-        model_def_file = (StringIO(self.network()), 'original.prototxt')
-        labels_file = (StringIO("..."), 'labels.txt')
+        snapshot_filename = task.get_snapshot(-1)
+        weights_file = open(snapshot_filename, 'r')
+        model_def_file = open(os.path.join(job.dir(),task.model_file), 'r')
+        labels_file = open(os.path.join(task.dataset.dir(),info["labels file"]), 'r')
 
         rv = self.app.post(
-            '/pretrained_models/new?job_id=%s',
+            '/pretrained_models/new',
             data = {
                 'weights_file': weights_file,
                 'model_def_file': model_def_file,
                 'labels_file': labels_file,
-                'framework': 'caffe',
-                'job_name': 'test_create_pretrained_model_job'
+                'framework': info['framework'],
+                'job_name': info['name'],
+                'image_type': info["image dimensions"][2],
+                'resize_mode': info["image resize mode"],
+                'width': info["image dimensions"][0],
+                'height': info["image dimensions"][1]
                 }
             )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
 
         assert rv.status_code == 302, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
+
+class TestCaffeManualUpload(BaseTestUpload):
+    FRAMEWORK = 'caffe'
+
+class TestTorchManualUpload(BaseTestUpload):
+    FRAMEWORK = 'torch'

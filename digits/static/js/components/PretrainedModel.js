@@ -59,6 +59,7 @@ var PretrainedModel = function(params){
   self.render = function(){
     // Render heading:
     $("#pretrainedModelTab>a").click();
+    d3.select(self.selector).html('');
     self.heading();
 
     self.container = d3.select(self.selector).append("div")
@@ -74,8 +75,27 @@ var PretrainedModel = function(params){
     inputs.field(row.append("div").attr("class","col-xs-6"),"text","Jobname", "job_name");
 
     self.frameworkSelector = inputs.select(
-      row.append("div").attr("class","col-xs-6"),["caffe", "torch"],"Framework","framework"
+      row.append("div").attr("class","col-xs-6"),self.frameworks,"Framework","framework"
     );
+    row = self.newRow();
+    row.style("background", "whitesmoke");
+    row.style("border-radius", "5px 5px 0px 0px");
+    inputs.select(
+      row.append("div").attr("class","col-xs-6"),
+        self.resize_channels,"Image Type","image_type"
+    );
+
+    inputs.select(
+      row.append("div").attr("class","col-xs-6"),
+        self.resize_modes,"Resize Mode","resize_mode"
+    );
+
+    row = self.newRow();
+    row.style("background", "whitesmoke");
+    row.style("border-radius", "0px 0px 5px 5px");
+    inputs.field(row.append("div").attr("class","col-xs-6"),"number","Width", "width").attr("value",256);
+    inputs.field(row.append("div").attr("class","col-xs-6"),"number","Height", "height").attr("value",256);
+
     self.frameworkSelector.on("change", self.frameworkChanged);
     self.innerContainer = self.container.append("div");
     self.caffeForm();
@@ -234,8 +254,8 @@ PretrainedModel.mixins = {
 
     mySelect.selectAll('option').data(data).enter()
       .append("option")
-        .attr("value",function(d){return d})
-        .text(function(d){return d});
+        .attr("value",function(d){return d.value})
+        .text(function(d){return d.text});
 
     return mySelect;
 
@@ -244,7 +264,7 @@ PretrainedModel.mixins = {
     var group = obj.append("div").attr("class","form-group");
     group.append("label")
         .attr("for",name).html(label);
-    group.append("input")
+    return group.append("input")
       .attr({type: type, class: "form-control", name: name});
   }
 

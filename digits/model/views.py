@@ -16,7 +16,7 @@ from . import images as model_images
 from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
 from digits import frameworks, extensions
-from digits.utils import time_filters
+from digits.utils import time_filters, auth
 from digits.utils.routing import request_wants_json
 from digits.webapp import scheduler
 
@@ -176,6 +176,53 @@ def visualize_lr():
         datalist.append(data)
 
     return json.dumps({'data': {'columns': datalist}})
+
+
+@blueprint.route('/<job_id>/to_pretrained',
+        methods=['GET', 'POST'],
+        defaults={'extension': 'tar.gz'})
+@blueprint.route('/<job_id>/to_pretrained.<extension>',
+        methods=['GET', 'POST'])
+def to_pretrained(job_id, extension):
+    job = scheduler.get_job(job_id)
+
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
+    epoch = -1
+    # GET ?epoch=n
+    if 'epoch' in flask.request.args:
+        epoch = float(flask.request.args['epoch'])
+
+    # POST ?snapshot_epoch=n (from form)
+    elif 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+
+    # Write the stats of the job to json,
+    # and store in tempfile (for archive)
+    info = job.json_dict(verbose=False,epoch=epoch)
+
+    task = job.train_task()
+    snapshot_filename = None
+    snapshot_filename = task.get_snapshot(epoch)
+
+    job = PretrainedModelJob(
+        snapshot_filename,
+        job.dir() + "/" + task.model_file ,
+        task.dataset.dir() + "/" + info["labels file"],
+        info["framework"],
+        info["image dimensions"][2],
+        info["image resize mode"],
+        info["image dimensions"][0],
+        info["image dimensions"][1],
+        username = auth.get_username(),
+        name = info["name"]
+    )
+
+    scheduler.add_job(job)
+
+    return flask.redirect(flask.url_for('digits.views.home')), 302
+
 
 @blueprint.route('/<job_id>/download',
         methods=['GET', 'POST'],
