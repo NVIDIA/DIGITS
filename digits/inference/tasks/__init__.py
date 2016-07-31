@@ -2,4 +2,4 @@
 from __future__ import absolute_import
 
 from .inference import InferenceTask
-
+from .weights import WeightsTask

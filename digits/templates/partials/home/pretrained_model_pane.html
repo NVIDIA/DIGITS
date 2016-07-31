@@ -88,7 +88,7 @@
                         ng-keydown="keydown($event)"
                         ng-class="{selected:job.selected}"
                         ng-repeat="job in jobs">
-                        <td ng-bind="job.name"></td>
+                        <td ><a ng-bind="job.name" href="/pretrained_models/layer_visualizations/{[job.id]}"></a></td>
                         <td><dg-framework/></td>
                         <td ng-bind-html="'{[ job.has_labels | precision:2 ]}'|html"></td>
                         <td class="text-{[job.status_css]}">

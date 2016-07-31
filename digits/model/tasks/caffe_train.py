@@ -18,11 +18,13 @@ import scipy
 
 from .train import TrainTask
 import digits
+
 from digits import utils
 from digits.config import config_value
 from digits.status import Status
 from digits.utils import subclass, override, constants
 from digits.utils.filesystem import tail
+from digits.framework_helpers import caffe_helpers
 
 # Must import after importing digit.config
 import caffe
@@ -255,12 +257,12 @@ class CaffeTrainTask(TrainTask):
         """
         Save solver, train_val and deploy files to disk
         """
-        # Save the origin network to file:
+        # Save the original network to file:
         with open(self.path(self.model_file), 'w') as outfile:
             text_format.PrintMessage(self.network, outfile)
 
-        network = cleanedUpClassificationNetwork(self.network, len(self.get_labels()))
-        data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
+        network = caffe_helpers.cleanedUpClassificationNetwork(self.network, len(self.get_labels()))
+        data_layers, train_val_layers, deploy_layers = caffe_helpers.filterLayersByState(network)
 
         ### Write train_val file
 
@@ -561,7 +563,7 @@ class CaffeTrainTask(TrainTask):
         ### Split up train_val and deploy layers
 
         network = cleanedUpGenericNetwork(self.network)
-        data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
+        data_layers, train_val_layers, deploy_layers = caffe_helpers.filterLayersByState(network)
 
         ### Write train_val file
 
@@ -1534,37 +1536,6 @@ class CaffeTrainTask(TrainTask):
                                                        layer.name, bottom, "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"))
 
 
-def cleanedUpClassificationNetwork(original_network, num_categories):
-    """
-    Perform a few cleanup routines on a classification network
-    Returns a new NetParameter
-    """
-    network = caffe_pb2.NetParameter()
-    network.CopyFrom(original_network)
-
-    for i, layer in enumerate(network.layer):
-        if 'Data' in layer.type:
-            assert layer.type in ['Data', 'HDF5Data'], \
-                'Unsupported data layer type %s' % layer.type
-
-        elif layer.type == 'Input':
-            # DIGITS handles the deploy file for you
-            del network.layer[i]
-
-        elif layer.type == 'Accuracy':
-            # Check to see if top_k > num_categories
-            if ( layer.accuracy_param.HasField('top_k') and
-                    layer.accuracy_param.top_k > num_categories ):
-                del network.layer[i]
-
-        elif layer.type == 'InnerProduct':
-            # Check to see if num_output is unset
-            if not layer.inner_product_param.HasField('num_output'):
-                layer.inner_product_param.num_output = num_categories
-
-    return network
-
-
 def cleanedUpGenericNetwork(original_network):
     """
     Perform a few cleanup routines on a generic network
@@ -1588,127 +1559,3 @@ def cleanedUpGenericNetwork(original_network):
                 "Don't leave inner_product_param.num_output unset for generic networks (layer %s)" % layer.name
 
     return network
-
-
-def filterLayersByState(network):
-    """
-    Splits up a network into data, train_val and deploy layers
-    """
-    # The net has a NetState when in use
-    train_state = caffe_pb2.NetState()
-    text_format.Merge('phase: TRAIN stage: "train"', train_state)
-    val_state = caffe_pb2.NetState()
-    text_format.Merge('phase: TEST stage: "val"', val_state)
-    deploy_state = caffe_pb2.NetState()
-    text_format.Merge('phase: TEST stage: "deploy"', deploy_state)
-
-    # Each layer can have several NetStateRules
-    train_rule = caffe_pb2.NetStateRule()
-    text_format.Merge('phase: TRAIN', train_rule)
-    val_rule = caffe_pb2.NetStateRule()
-    text_format.Merge('phase: TEST', val_rule)
-
-    # Return three NetParameters
-    data_layers = caffe_pb2.NetParameter()
-    train_val_layers = caffe_pb2.NetParameter()
-    deploy_layers = caffe_pb2.NetParameter()
-
-    for layer in network.layer:
-        included_train = _layerIncludedInState(layer, train_state)
-        included_val = _layerIncludedInState(layer, val_state)
-        included_deploy = _layerIncludedInState(layer, deploy_state)
-
-        # Treat data layers differently (more processing done later)
-        if 'Data' in layer.type:
-            data_layers.layer.add().CopyFrom(layer)
-            rule = None
-            if not included_train:
-                # Exclude from train
-                rule = val_rule
-            elif not included_val:
-                # Exclude from val
-                rule = train_rule
-            _setLayerRule(data_layers.layer[-1], rule)
-
-        # Non-data layers
-        else:
-            if included_train or included_val:
-                # Add to train_val
-                train_val_layers.layer.add().CopyFrom(layer)
-                rule = None
-                if not included_train:
-                    # Exclude from train
-                    rule = val_rule
-                elif not included_val:
-                    # Exclude from val
-                    rule = train_rule
-                _setLayerRule(train_val_layers.layer[-1], rule)
-
-            if included_deploy:
-                # Add to deploy
-                deploy_layers.layer.add().CopyFrom(layer)
-                _setLayerRule(deploy_layers.layer[-1], None)
-
-    return (data_layers, train_val_layers, deploy_layers)
-
-
-def _layerIncludedInState(layer, state):
-    """
-    Returns True if this layer will be included in the given state
-    Logic copied from Caffe's Net::FilterNet()
-    """
-    # If no include rules are specified, the layer is included by default and
-    # only excluded if it meets one of the exclude rules.
-    layer_included = len(layer.include) == 0
-
-    for exclude_rule in layer.exclude:
-        if _stateMeetsRule(state, exclude_rule):
-            layer_included = False
-            break
-
-    for include_rule in layer.include:
-        if _stateMeetsRule(state, include_rule):
-            layer_included = True
-            break
-
-    return layer_included
-
-
-def _stateMeetsRule(state, rule):
-    """
-    Returns True if the given state meets the given rule
-    Logic copied from Caffe's Net::StateMeetsRule()
-    """
-    if rule.HasField('phase'):
-        if rule.phase != state.phase:
-            return False
-
-    if rule.HasField('min_level'):
-        if state.level < rule.min_level:
-            return False
-
-    if rule.HasField('max_level'):
-        if state.level > rule.max_level:
-            return False
-
-    # The state must contain ALL of the rule's stages
-    for stage in rule.stage:
-        if stage not in state.stage:
-            return False
-
-    # The state must contain NONE of the rule's not_stages
-    for stage in rule.not_stage:
-        if stage in state.stage:
-            return False
-
-    return True
-
-def _setLayerRule(layer, rule=None):
-    """
-    Set a new include rule for this layer
-    If rule is None, the layer will always be included
-    """
-    layer.ClearField('include')
-    layer.ClearField('exclude')
-    if rule is not None:
-        layer.include.add().CopyFrom(rule)

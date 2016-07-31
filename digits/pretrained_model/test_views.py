@@ -7,6 +7,8 @@ import tempfile
 import time
 import unittest
 import urllib
+import io
+import tarfile
 
 # Find the best implementation available
 try:
@@ -21,11 +23,9 @@ import PIL.Image
 from urlparse import urlparse
 
 from digits.config import config_value
-from digits.pretrained_model import PretrainedModelJob
-import digits.webapp
-import digits.dataset.images.classification.test_views
 import digits.model.images.classification.test_views
 import digits.test_views
+import digits.webapp
 
 # Must import after importing digit.config
 import caffe_pb2
@@ -38,7 +38,7 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
     """
     Tests uploading Pretrained Models
     """
-    def test_upload(self):
+    def test_upload_manual(self):
         # job = digits.webapp.scheduler.get_job(self.model_id)
         job = digits.webapp.scheduler.get_job(self.model_id)
 
@@ -62,11 +62,11 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
                 'model_def_file': model_def_file,
                 'labels_file': labels_file,
                 'framework': info['framework'],
-                'job_name': info['name'],
                 'image_type': info["image dimensions"][2],
                 'resize_mode': info["image resize mode"],
                 'width': info["image dimensions"][0],
-                'height': info["image dimensions"][1]
+                'height': info["image dimensions"][1],
+                'job_name': 'test_create_pretrained_model_job'
                 }
             )
         s = BeautifulSoup(rv.data, 'html.parser')
@@ -74,9 +74,42 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
 
         assert rv.status_code == 302, 'POST failed with %s\n\n%s' % (rv.status_code, body)
 
+    def test_upload_archive(self):
+        job = digits.webapp.scheduler.get_job(self.model_id)
 
-class TestCaffeManualUpload(BaseTestUpload):
+        if job is None:
+            raise AssertionError('Failed To Create Job')
+
+        info = json.dumps(job.json_dict(verbose=False,epoch=-1), sort_keys=True, indent=4, separators=(',', ': '))
+        info_io = io.BytesIO()
+        info_io.write(info)
+
+        tmp = tempfile.NamedTemporaryFile()
+
+        tf  = tarfile.open(fileobj=tmp, mode='w:')
+        for path, name in job.download_files(-1):
+            tf.add(path, arcname=name)
+
+        tf_info = tarfile.TarInfo("info.json")
+        tf_info.size = len(info_io.getvalue())
+        info_io.seek(0)
+        tf.addfile(tf_info, info_io)
+        tmp.flush()
+        tmp.seek(0)
+
+        rv = self.app.post(
+            '/pretrained_models/upload_archive',
+            data = {
+                'archive': tmp
+                }
+            )
+        s = BeautifulSoup(rv.data, 'html.parser')
+        body = s.select('body')
+        tmp.close()
+
+        assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+class TestCaffeUpload(BaseTestUpload):
     FRAMEWORK = 'caffe'
 
-class TestTorchManualUpload(BaseTestUpload):
+class TestTorchUpload(BaseTestUpload):
     FRAMEWORK = 'torch'

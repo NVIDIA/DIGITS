@@ -1,17 +1,17 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+import subprocess
 
 import digits
 from digits.task import Task
 from digits.utils import subclass, override
-import subprocess
+
 
 @subclass
 class UploadPretrainedModelTask(Task):
     """
     A task for uploading pretrained models
     """
-
     def __init__(self, **kwargs):
         """
         Arguments:
@@ -65,7 +65,18 @@ class UploadPretrainedModelTask(Task):
                 return reserved_resources
         return None
 
-    def get_model_def_path(self):
+    def get_labels(self):
+        labels = []
+        if self.labels_path is not None:
+            with open(self.job_dir+"/labels.txt") as f:
+                labels = f.readlines()
+        return labels
+
+    def move_file(self,input, output,env):
+        args  = ["cp", input, self.job_dir+"/"+output]
+        p = subprocess.Popen(args,env=env)
+
+    def get_model_def_path(self,as_json=False):
         """
         Get path to model definition
         """
@@ -77,6 +88,14 @@ class UploadPretrainedModelTask(Task):
         """
         raise NotImplementedError('Please implement me')
 
-    def move_file(self,input, output,env):
-        args  = ["cp", input, self.job_dir+"/"+output]
-        p = subprocess.Popen(args,env=env)
+    def get_deploy_path(self):
+        """
+        Get path to file containing model def for deploy/visualization
+        """
+        raise NotImplementedError('Please implement me')
+
+    def write_deploy(self):
+        """
+        Write model definition for deploy/visualization
+        """
+        raise NotImplementedError('Please implement me')

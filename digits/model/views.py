@@ -15,6 +15,7 @@ import werkzeug.exceptions
 from . import images as model_images
 from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
+from digits.inference import WeightsJob
 from digits import frameworks, extensions
 from digits.utils import time_filters, auth
 from digits.utils.routing import request_wants_json
@@ -220,7 +221,14 @@ def to_pretrained(job_id, extension):
     )
 
     scheduler.add_job(job)
+    job.wait_completion()
 
+    weights_job = WeightsJob(
+        job,
+        name     = info['name'],
+        username = auth.get_username()
+    )
+    scheduler.add_job(weights_job)
     return flask.redirect(flask.url_for('digits.views.home')), 302
 
 
