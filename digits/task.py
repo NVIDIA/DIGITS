@@ -203,7 +203,9 @@ class Task(StatusCls):
         #https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         if platform.system() == 'Windows':
             args = ' '.join(args)
-        self.logger.info('Task subprocess args: {}'.format(args))
+            self.logger.info('Task subprocess args: "{}"'.format(args))
+        else:
+            self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
         p = subprocess.Popen(args,
                 stdout=subprocess.PIPE,
