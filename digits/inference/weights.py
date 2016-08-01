@@ -36,6 +36,13 @@ class WeightsJob(Job):
             state_to_save[field] = full_state[field]
         return state_to_save
 
+    @override
+    def delete_timeout(self):
+        return 0
+
+    @override
+    def is_persistent(self):
+        return False
 
     def inference_task(self):
         """Return the first and only InferenceTask for this job"""
