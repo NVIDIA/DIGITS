@@ -25,6 +25,7 @@ class UploadPretrainedModelTask(Task):
         self.model_def_path = kwargs.pop('model_def_path', None)
         self.image_info = kwargs.pop('image_info', None)
         self.labels_path = kwargs.pop('labels_path', None)
+        self.mean_path = kwargs.pop('mean_path', None)
         self.framework = kwargs.pop('framework', None)
 
         # resources
@@ -93,6 +94,9 @@ class UploadPretrainedModelTask(Task):
         Get path to file containing model def for deploy/visualization
         """
         raise NotImplementedError('Please implement me')
+
+    def get_mean_path(self):
+        return self.job_dir + "/mean.binaryproto"
 
     def write_deploy(self):
         """

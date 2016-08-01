@@ -72,5 +72,8 @@ class TorchUploadTask(UploadPretrainedModelTask):
         if self.labels_path is not None:
             self.move_file(self.labels_path, "labels.txt",env)
 
+        if self.mean_path is not None:
+            self.move_file(self.mean_path, "mean.binaryproto",env)
+
         self.write_deploy(env)
         self.status = Status.DONE

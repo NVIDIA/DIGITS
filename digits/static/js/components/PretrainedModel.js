@@ -179,7 +179,8 @@ var PretrainedModel = function(params){
 
     inputs.field(self.innerContainer,"file","Weights (**.caffemodel)", "weights_file");
     inputs.field(self.innerContainer,"file","Model Definition: (original.prototxt)", "model_def_file");
-    inputs.field(self.innerContainer,"file","Labels file: (Optional)", "labels_file");
+    inputs.field(self.innerContainer,"file","Labels file (labels.txt)", "labels_file");
+    inputs.field(self.innerContainer,"file","Mean file (mean.binaryproto)", "mean_file");
 
     self.innerContainer.append("button").attr({type: "submit",class: "btn btn-default"})
       .on("click",self.submit)

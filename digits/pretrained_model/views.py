@@ -206,10 +206,14 @@ def new():
     if str(flask.request.files['labels_file'].filename) is not '':
         labels_path = get_tempfile(flask.request.files['labels_file'],".txt")
 
+    if str(flask.request.files['mean_file'].filename) is not '':
+        mean_path = get_tempfile(flask.request.files['mean_file'],".prototxt")
+
     job = PretrainedModelJob(
         weights_path,
         model_def_path,
         labels_path,
+        mean_path,
         framework,
         form["image_type"],
         form["resize_mode"],
