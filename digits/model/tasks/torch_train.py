@@ -490,12 +490,17 @@ class TorchTrainTask(TrainTask):
         return None
 
     @override
-    def infer_one(self, data, snapshot_epoch=None, layers=None, gpu=None):
+    def infer_one(self,
+                  data,
+                  snapshot_epoch=None,
+                  layers=None,
+                  gpu=None,
+                  resize=True):
+        # resize parameter is unused
         return self.infer_one_image(data,
-                snapshot_epoch=snapshot_epoch,
-                layers=layers,
-                gpu=gpu,
-                )
+                                    snapshot_epoch=snapshot_epoch,
+                                    layers=layers,
+                                    gpu=gpu)
 
     def infer_one_image(self, image, snapshot_epoch=None, layers=None, gpu=None):
         """
@@ -784,7 +789,8 @@ class TorchTrainTask(TrainTask):
         return True           # control never reach this line. It can be removed.
 
     @override
-    def infer_many(self, data, snapshot_epoch=None, gpu=None):
+    def infer_many(self, data, snapshot_epoch=None, gpu=None, resize=True):
+        # resize parameter is unused
         return self.infer_many_images(data, snapshot_epoch=snapshot_epoch, gpu=gpu)
 
     def infer_many_images(self, images, snapshot_epoch=None, gpu=None):

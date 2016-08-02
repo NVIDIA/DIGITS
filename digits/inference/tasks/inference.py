@@ -23,7 +23,7 @@ class InferenceTask(Task):
     A task for inference jobs
     """
 
-    def __init__(self, model, images, epoch, layers, **kwargs):
+    def __init__(self, model, images, epoch, layers, resize, **kwargs):
         """
         Arguments:
         model  -- trained model to perform inference on
@@ -36,6 +36,7 @@ class InferenceTask(Task):
         self.images = images
         self.epoch = epoch
         self.layers = layers
+        self.resize = resize
 
         self.image_list_path = None
         self.inference_log_file = "inference.log"
@@ -211,6 +212,9 @@ class InferenceTask(Task):
 
         if self.image_list_path is None:
             args.append('--db')
+
+        if not self.resize:
+            args.append('--no-resize')
 
         return args
 

@@ -108,26 +108,18 @@ def upscale(image, ratio):
         out[y,x] = image[math.floor(y/ratio), math.floor(x/ratio)]
     return out
 
-def resize_image(image, height, width,
-        channels=None,
-        resize_mode=None,
-        ):
+
+def image_to_array(image,
+                   channels=None):
     """
-    Resizes an image and returns it as a np.array
+    Returns an image as a np.array
 
     Arguments:
     image -- a PIL.Image or numpy.ndarray
-    height -- height of new image
-    width -- width of new image
 
     Keyword Arguments:
     channels -- channels of new image (stays unchanged if not specified)
-    resize_mode -- can be crop, squash, fill or half_crop
     """
-    if resize_mode is None:
-        resize_mode = 'squash'
-    if resize_mode not in ['crop', 'squash', 'fill', 'half_crop']:
-        raise ValueError('resize_mode "%s" not supported' % resize_mode)
 
     if channels not in [None, 1, 3]:
         raise ValueError('unsupported number of channels: %s' % channels)
@@ -178,6 +170,34 @@ def resize_image(image, height, width,
                 raise ValueError('invalid image shape: %s' % (image.shape,))
     else:
         raise ValueError('resize_image() expected a PIL.Image.Image or a numpy.ndarray')
+
+    return image
+
+
+def resize_image(image, height, width,
+        channels=None,
+        resize_mode=None,
+        ):
+    """
+    Resizes an image and returns it as a np.array
+
+    Arguments:
+    image -- a PIL.Image or numpy.ndarray
+    height -- height of new image
+    width -- width of new image
+
+    Keyword Arguments:
+    channels -- channels of new image (stays unchanged if not specified)
+    resize_mode -- can be crop, squash, fill or half_crop
+    """
+
+    if resize_mode is None:
+        resize_mode = 'squash'
+    if resize_mode not in ['crop', 'squash', 'fill', 'half_crop']:
+        raise ValueError('resize_mode "%s" not supported' % resize_mode)
+
+    # convert to array
+    image = image_to_array(image, channels)
 
     # No need to resize
     if image.shape[0] == height and image.shape[1] == width:

@@ -33,8 +33,19 @@ logger = logging.getLogger('digits.tools.inference')
 """
 Perform inference on a list of images using the specified model
 """
-def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers, gpu, input_is_db):
-
+def infer(input_list,
+          output_dir,
+          jobs_dir,
+          model_id,
+          epoch,
+          batch_size,
+          layers,
+          gpu,
+          input_is_db,
+          resize):
+    """
+    Perform inference on a list of images using the specified model
+    """
     # job directory defaults to that defined in DIGITS config
     if jobs_dir == 'none':
         jobs_dir = digits.config.config_value('jobs_dir')
@@ -116,11 +127,17 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
             path = path.strip()
             try:
                 image = utils.image.load_image(path.strip())
-                image = utils.image.resize_image(image,
-                            height, width,
-                            channels    = channels,
-                            resize_mode = resize_mode,
-                            )
+                if resize:
+                    image = utils.image.resize_image(
+                        image,
+                        height,
+                        width,
+                        channels=channels,
+                        resize_mode=resize_mode)
+                else:
+                    image = utils.image.image_to_array(
+                        image,
+                        channels=channels)
                 input_ids.append(idx)
                 input_data.append(image)
                 n_input_samples = n_input_samples + 1
@@ -135,10 +152,19 @@ def infer(input_list, output_dir, jobs_dir, model_id, epoch, batch_size, layers,
         raise InferenceError("Unable to load any image from file '%s'" % repr(input_list))
     elif n_input_samples == 1:
         # single image inference
-        outputs, visualizations = model.train_task().infer_one(input_data[0], snapshot_epoch=epoch, layers=layers, gpu=gpu)
+        outputs, visualizations = model.train_task().infer_one(
+            input_data[0],
+            snapshot_epoch=epoch,
+            layers=layers,
+            gpu=gpu,
+            resize=resize)
     else:
         assert layers == 'none'
-        outputs = model.train_task().infer_many(input_data, snapshot_epoch=epoch, gpu=gpu)
+        outputs = model.train_task().infer_many(
+            input_data,
+            snapshot_epoch=epoch,
+            gpu=gpu,
+            resize=resize)
 
     # write to hdf5 file
     db_path = os.path.join(output_dir, 'inference.hdf5')
@@ -185,45 +211,71 @@ if __name__ == '__main__':
 
     ### Positional arguments
 
-    parser.add_argument('input_list',
-            help='An input file containing paths to input data')
-    parser.add_argument('output_dir',
-            help='Directory to write outputs to')
-    parser.add_argument('model',
-            help='Model ID')
+    parser.add_argument(
+        'input_list',
+        help='An input file containing paths to input data')
+    parser.add_argument(
+        'output_dir',
+        help='Directory to write outputs to')
+    parser.add_argument(
+        'model',
+        help='Model ID')
 
     ### Optional arguments
-    parser.add_argument('-e', '--epoch',
-            default='-1',
-            help="Epoch (-1 for last)"
-            )
+    parser.add_argument(
+        '-e',
+        '--epoch',
+        default='-1',
+        help="Epoch (-1 for last)"
+        )
 
-    parser.add_argument('-j', '--jobs_dir',
-            default='none',
-            help='Jobs directory (default: from DIGITS config)',
-            )
+    parser.add_argument(
+        '-j',
+        '--jobs_dir',
+        default='none',
+        help='Jobs directory (default: from DIGITS config)',
+        )
 
-    parser.add_argument('-l', '--layers',
-            default='none',
-            help='Which layers to write to output ("none" [default] or "all")',
-            )
+    parser.add_argument(
+        '-l',
+        '--layers',
+        default='none',
+        help='Which layers to write to output ("none" [default] or "all")',
+        )
 
-    parser.add_argument('-b', '--batch_size',
-            type=int,
-            default=1,
-            help='Batch size',
-            )
+    parser.add_argument(
+        '-b',
+        '--batch_size',
+        type=int,
+        default=1,
+        help='Batch size',
+        )
 
-    parser.add_argument('-g', '--gpu',
-            type=int,
-            default=None,
-            help='GPU to use (as in nvidia-smi output, default: None)',
-            )
+    parser.add_argument(
+        '-g',
+        '--gpu',
+        type=int,
+        default=None,
+        help='GPU to use (as in nvidia-smi output, default: None)',
+        )
 
-    parser.add_argument('--db',
-            action='store_true',
-            help='Input file is a database',
-            )
+    parser.add_argument(
+        '--db',
+        action='store_true',
+        help='Input file is a database',
+        )
+
+    parser.add_argument(
+        '--resize',
+        dest='resize',
+        action='store_true')
+
+    parser.add_argument(
+        '--no-resize',
+        dest='resize',
+        action='store_false')
+
+    parser.set_defaults(resize=True)
 
     args = vars(parser.parse_args())
 
@@ -238,8 +290,8 @@ if __name__ == '__main__':
             args['layers'],
             args['gpu'],
             args['db'],
-                )
+            args['resize']
+            )
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))
         raise
-
