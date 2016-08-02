@@ -2,13 +2,13 @@
 from __future__ import absolute_import
 
 from digits.utils import subclass, override, constants
-from ..interface import DataIngestionInterface
+from digits.extensions.data.interface import DataIngestionInterface
 from .forms import DatasetForm
 
 import numpy as np
 import os
 
-TEMPLATE = "template.html"
+TEMPLATE = "templates/template.html"
 
 
 @subclass
@@ -46,17 +46,9 @@ class DataIngestion(DataIngestionInterface):
         return "Images"
 
     @staticmethod
-    def get_default_visibility():
-        """
-        Return whether to show extension in GUI (can be overwridden through
-        DIGITS configuration options)
-        """
-        return False
-
-    @staticmethod
     @override
     def get_id():
-        return "image-gradients"
+        return "dummy-image-gradients"
 
     @staticmethod
     @override
@@ -85,7 +77,7 @@ class DataIngestion(DataIngestionInterface):
     @staticmethod
     @override
     def get_title():
-        return "Gradients"
+        return "Dummy Image Gradients"
 
     @override
     def itemize_entries(self, stage):
