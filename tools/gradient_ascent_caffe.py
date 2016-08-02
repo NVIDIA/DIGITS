@@ -40,7 +40,7 @@ def get_mean(mean_file_path, data_size):
 
     return data_mean
 
-def infer(model_def_path, weights_path, layer,unit, mean_file_path=None, gpu=None):
+def infer(output_dir,model_def_path, weights_path, layer,unit, mean_file_path=None, gpu=None):
 
     if gpu is not None:
         caffe.set_device(gpu)
@@ -96,18 +96,27 @@ def infer(model_def_path, weights_path, layer,unit, mean_file_path=None, gpu=Non
     )
 
     im = optimizer.run_optimize(params, prefix_template = "blah",brave = True,save=False)
-    cv2.imshow('gradient',im)
-    cv2.waitKey(0)
+
+    f = h5py.File(os.path.join(output_dir,'max_activations.hdf5'),'a')
+    name = "%s/%s" % (layer, unit)
+    dset = f.create_dataset(name, data=im)
+    f.close()
 
     logger.info('Saved data to %s', 'somewhere :/')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Weights tool for pretrained models - DIGITS')
+    parser = argparse.ArgumentParser(description='Gradient Ascent tool for pretrained models - DIGITS')
 
     ### Positional arguments
+    parser.add_argument('-o', '--output_dir',
+            help='Output directory',
+            default='.'
+            )
+
     parser.add_argument('-p', '--model_def_path',
             help='Path to model definition.prototxt',
             )
+
     parser.add_argument('-w', '--weights_path',
             help='Path to weights.caffemodel',
             )
@@ -136,6 +145,7 @@ if __name__ == '__main__':
 
     try:
         infer(
+            args['output_dir'],
             args['model_def_path'],
             args['weights_path'],
             args['layer'],
