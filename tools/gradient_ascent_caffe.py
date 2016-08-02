@@ -19,6 +19,7 @@ from digits import utils, log
 from digits.inference.errors import InferenceError
 
 from tools.gradient_ascent.gradient_optimizer import GradientOptimizer, FindParams
+import tools.gradient_ascent.caffe_misc as caffe_misc
 # must call digits.config.load_config() before caffe to set the path
 import caffe
 
@@ -72,13 +73,6 @@ def infer(model_def_path, weights_path, layer,unit, mean_file_path=None, gpu=Non
 
     out = net.blobs[layer].data
 
-
-    # output = (input - kernel_size) / stride + 1
-    # field = (227-1)/64 + 1
-    # print "FIELD:"
-    # print field
-    # sys.exit()
-
     # Check if fully convolutional layer, or a convolutional layer
     # If convolutional set spacial to be the center to avoid cropping
     is_conv = (len(out.shape) == 4)
@@ -96,14 +90,13 @@ def infer(model_def_path, weights_path, layer,unit, mean_file_path=None, gpu=Non
         decay = 0.001,
         blur_radius = 1.0,
         blur_every = 4,
-        max_iter = 100,
+        max_iter = 10,
         push_spatial = push_spatial,
         lr_params = {'lr': 100.0}
     )
 
     im = optimizer.run_optimize(params, prefix_template = "blah",brave = True,save=False)
-    print im.shape
-    cv2.imshow('gradient',im[110:118, 110:118, :])
+    cv2.imshow('gradient',im)
     cv2.waitKey(0)
 
     logger.info('Saved data to %s', 'somewhere :/')
