@@ -4,7 +4,6 @@ from __future__ import absolute_import
 import copy
 from pkg_resources import iter_entry_points
 
-from . import imageGradients
 from . import imageProcessing
 from . import imageSegmentation
 from . import objectDetection
@@ -15,7 +14,6 @@ GROUP = "digits.plugins.data"
 
 # built-in extensions
 builtin_data_extensions = [
-    imageGradients.DataIngestion,
     imageProcessing.DataIngestion,
     imageSegmentation.DataIngestion,
     objectDetection.DataIngestion,
