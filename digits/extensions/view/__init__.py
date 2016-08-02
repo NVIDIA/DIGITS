@@ -5,7 +5,6 @@ import copy
 from pkg_resources import iter_entry_points
 
 from . import boundingBox
-from . import imageGradients
 from . import imageOutput
 from . import imageSegmentation
 from . import rawData
@@ -18,7 +17,6 @@ GROUP = "digits.plugins.view"
 # built-in extensions
 builtin_view_extensions = [
     boundingBox.Visualization,
-    imageGradients.Visualization,
     imageOutput.Visualization,
     imageSegmentation.Visualization,
     rawData.Visualization,
