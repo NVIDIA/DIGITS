@@ -3,6 +3,7 @@
 Table of Contents
 =================
 * [Introduction](#introduction)
+* [Installing Image Gradients extensions](#installing-image-gradients-extensions)
 * [Dataset creation](#dataset-creation)
     * [Using the Gradient Data Extension](#using-the-gradient-data-extension)
     * [Alternative method: manually creating LMDB files](#alternative-method-manually-creating-lmdb-files)
@@ -19,51 +20,33 @@ Image regression models may learn to predict any number of image characteristics
 DIGITS may be used to train image regression models. This page will walk you through a simple example where a model is trained to predict the `x` and `y` gradients of a linear image
 (a linear image is an image that has constant gradients in the `x` and `y` directions - `x` and `y` gradients may be different though).
 
+## Installing Image Gradients extensions
+
+Extensions are thin interfaces thay may be used in DIGITS to implement custom methods for ingesting data and visualizing network outputs during inference.
+DIGITS supports a number of built-in extensions.
+Additionally, custom extensions can be wrapped in a plug-in and installed separately.
+To install the image gradients plug-ins, you may proceed as follows:
+
+### Installing DIGITS package
+
+If you haven't done so already, install the main DIGITS package.
+This only needs to be done once:
+
+```sh
+$ pip install -e $DIGITS_ROOT
+```
+
+### Installing data and view plug-ins for Image Gradients:
+
+```
+$ pip install $DIGITS_ROOT/plugins/data/imageGradients
+$ pip install $DIGITS_ROOT/plugins/view/imageGradients
+```
+
 ## Dataset Creation
 
 ### Using the Gradient Data Extension
 
-Data extensions are thin user-defined plugins that may be used to import data into DIGITS.
-The Gradient Data Extension merely creates a number of linear images with random gradients.
-
-By default the Gradient data extension is not shown on the DIGITS home page.
-To enable the extension you may edit the DIGITS configuration.
-When prompted for a list of data and view extensions, type `A` to enable all available extensions:
-
-```sh
-$ ./digits-devserver -c
-...
-=============================== Data extensions ================================
-Available extensions:
-  ID='image-gradients' Title='Gradients'
-  ID='image-object-detection' Title='Object Detection'
-
-Input the IDs of the extensions you would like to use, separated by commas.
-
-  Suggested values:
-  (D*) [default] image-object-detection
-  (A)  [all]     image-gradients,image-object-detection
-  (N)  [none]    <NONE>
->> A
-Using "image-gradients,image-object-detection"
-
-=============================== View extensions ================================
-Available extensions:
-  ID='image-bounding-boxes' Title='Bounding boxes'
-  ID='image-gradients' Title='Gradients'
-  ID='all-raw-data' Title='Raw Data'
-
-Input the IDs of the extensions you would like to use, separated by commas.
-
-  Suggested values:
-  (D*) [default] image-bounding-boxes,all-raw-data
-  (A)  [all]     image-bounding-boxes,image-gradients,all-raw-data
-  (N)  [none]    <NONE>
->> A
-Using "image-bounding-boxes,image-gradients,all-raw-data"
-```
-
-Upon restarting DIGITS, the Gradient Data Extension will show on the home page as below.
 Select the `Datasets` tab then click `New Dataset>Images>Gradients`:
 
 ![test image](select-gradient-data-extension.png)
