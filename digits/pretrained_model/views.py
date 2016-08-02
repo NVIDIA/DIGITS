@@ -76,6 +76,22 @@ def validate_torch_files(files):
 def format_job_name(job):
     return {"name": job.name(), "id": job.id()}
 
+@blueprint.route('/get_max_activations.json', methods=['GET'])
+def get_max_activations():
+    """ Returns array of maximum activations for a given layer """
+    job = job_from_request()
+    args = flask.request.args
+    layer_name = args["layer_name"]
+    data = []
+    # For now return an empty array (currently just building selection)
+    if os.path.isfile(job.get_filters_path()):
+        f = h5py.File(job.get_filters_path())
+        if layer_name in f:
+            stats = json.loads(f[layer_name].attrs["stats"])
+            for activation in range(stats["num_activations"]):
+               data.append([[[]]])
+    return flask.jsonify({"stats": stats, "data": data})
+
 @blueprint.route('/get_weights.json', methods=['GET'])
 def get_weights():
     """ Return the weights for a given layer """

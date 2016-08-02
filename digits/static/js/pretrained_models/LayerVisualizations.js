@@ -76,6 +76,15 @@ var LayerVisualizations = function(selector,props){
     })
   };
 
+  self.drawMaxActivations = function(json){
+    self.layer.stats = json.stats;
+    self.panel.render();
+    self.outputs.length = 0;
+    self.outputs.push.apply(self.outputs, _.isUndefined(json.data) ? [] : json.data);
+    if (self.outputs.length > 0 ) self.panel.body.html('');
+    self.update();
+    self.panel.drawNav(self.range, json.length);
+  }
   self.drawOutputs = function(json){
     self.layer.stats = json.stats;
     self.panel.render();
@@ -148,6 +157,19 @@ LayerVisualizations.Actions = function(props){
     });
   };
 
+  self.getMaxActivations = function(layerName){
+    params = $.param({
+      "job_id": parent.job_id,
+      "layer_name":layerName
+    });
+    parent.overlay.render();
+
+    var outputs_url  = "/pretrained_models/get_max_activations.json?"+params;
+    d3.json(outputs_url, function(error, json) {
+      parent.drawMaxActivations(json);
+    });
+  };
+
   self.getInference = function(layerName){
 
     params = $.param({
@@ -212,6 +234,7 @@ LayerVisualizations.Panel = function(selector,props){
   self.outer = null;
   self.headingCenter = null;
   self.headingRight = null;
+  self.activeTab = null;
   self.body  = null;
   self.nav   = null;
 
@@ -245,6 +268,14 @@ LayerVisualizations.Panel = function(selector,props){
           });
   };
 
+  self.dispatchWeights = function(){
+    parent.actions.getWeights(parent.layer.name);
+  };
+
+  self.dispatchGetMaxActivations = function(){
+    parent.actions.getMaxActivations(parent.layer.name);
+  };
+
   self.remove = function(){
     parent.layer = null;
     parent.overlay.remove();
@@ -260,11 +291,25 @@ LayerVisualizations.Panel = function(selector,props){
     var heading = panel.append("div").attr("class", "panel-heading")
       .append("div").attr("class","row").style("padding","0px 10px");
 
-    self.headingCenter = heading.append("div").attr("class", "text-center col-xs-offset-1 col-xs-10");
-    self.headingCenter.append("div").html(parent.layer.label + " (" + parent.layer.stats.shape + ")");
-    self.headingRight  = heading.append("div").attr("class", "col-xs-1 text-right");
+    self.headingLeft = heading.append("div").attr("class", "text-left col-xs-3")
+      .style({color: "#989898"});
+    self.headingLeft.append("span").html(parent.layer.label + "(" + parent.layer.stats.shape + ")");
+
+    self.headingCenter = heading.append("div").attr("class", "text-center col-xs-6");
+    // self.headingCenter.append("div").html(parent.layer.label + " (" + parent.layer.stats.shape + ")");
+
+    var headingStyles = {background: "white", margin: "0px 1px"};
+
+    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
+      .style(headingStyles).html("Weights").on("click", self.dispatchWeights);
+
+    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
+      .style(headingStyles).html("Max Activations").on("click",self.dispatchGetMaxActivations);
+
+    self.headingRight  = heading.append("div").attr("class", "col-xs-offset-2 col-xs-1 text-right");
 
     var panelBody = panel.append("div").attr("class", "panel-content");
+
     self.body = panelBody.append("div").attr("class", "outputs");
     self.body.append("div")
       .attr("class", "alert alert-warning")

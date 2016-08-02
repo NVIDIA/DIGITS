@@ -41,8 +41,13 @@ def get_weights(output_dir,net):
 
             vis_data = utils.image.reshape_data_for_vis(raw_data,'BGR')
             dset = f.create_dataset(key, data=utils.image.normalize_data(vis_data))
+
+            num_activations = 0
+            if key in net.blobs.keys():
+                num_activations = net.blobs[key].data.shape[1]
+
             # TODO: Add more stats
-            dset.attrs['stats'] = json.dumps({"shape": raw_data.shape})
+            dset.attrs['stats'] = json.dumps({"shape": raw_data.shape, "num_activations": num_activations})
 
             logger.info('Processed %s/%s blobs', index, num_outputs)
 
