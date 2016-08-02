@@ -22,8 +22,10 @@ var LayerVisualizations = function(selector,props){
   self.image_id = null;
   self.layer    = null;
   self.range    = null;
+  self.active_tab = null;
   self.outputs  = [];
 
+  // Initialization
   self.initPanel = function(props){
     var selector = self.tree_container.node();
     self.overlay = new LayerVisualizations.Overlay(selector,self.extend(props));
@@ -39,12 +41,20 @@ var LayerVisualizations = function(selector,props){
     self.jobs.render();
   };
 
+  // Dispatchers:
+  self.dispatchUnitClick = function(data,index){
+    // Only dispatch if on max activations:
+    if (self.active_tab != "max-activations") return;
+    console.log("Clicked unit # "+index);
+  };
+
   self.dispatchInference = function() {
     if (!_.isNull(self.layer)){
       self.actions.getWeights(self.layer.name);
     }
   };
 
+  // Update:
   self.update = function(){
     var h = w = 35;
     var grid_dim = self.outputs[0][0].length;
@@ -54,9 +64,11 @@ var LayerVisualizations = function(selector,props){
     var output_attr  = {height:h, width:w, class: "panel panel-default"};
 
     var items = self.panel.body.selectAll("canvas").data(self.outputs);
+
     items.attr("class", "item").enter()
       .append("canvas")
         .attr(output_attr).style(output_style)
+        .on("click", self.dispatchUnitClick)
         .each(function(data,i){
           var ctx = this.getContext("2d");
           ctx.clearRect(0, 0, w, h);
@@ -71,13 +83,17 @@ var LayerVisualizations = function(selector,props){
       $(this).tooltip({title: self.range.min + i + "", placement: "bottom"});
       $(this).tooltip("show");
     });
+
     items.on("mouseout", function(){
       d3.select(this).classed("canvas-hover", false);
-    })
+    });
+
   };
 
+  // Draw:
   self.drawMaxActivations = function(json){
     self.layer.stats = json.stats;
+    self.active_tab  = "max-activations";
     self.panel.render();
     self.outputs.length = 0;
     self.outputs.push.apply(self.outputs, _.isUndefined(json.data) ? [] : json.data);
@@ -87,6 +103,7 @@ var LayerVisualizations = function(selector,props){
   }
   self.drawOutputs = function(json){
     self.layer.stats = json.stats;
+    self.active_tab = "weights";
     self.panel.render();
     self.outputs.length = 0;
     self.outputs.push.apply(self.outputs, _.isUndefined(json.data) ? [] : json.data);
@@ -250,7 +267,34 @@ LayerVisualizations.Panel = function(selector,props){
     parent.dispatchInference();
   };
 
+  self.drawHeading = function(panel){
+    // Draw panel header:
+
+    var heading = panel.append("div").attr("class", "panel-heading")
+      .append("div").attr("class","row").style("padding","0px 10px");
+
+    // On left show the layer name, as well as its dimensions:
+    self.headingLeft = heading.append("div").attr("class", "text-left col-xs-3")
+      .style({color: "#989898"});
+    self.headingLeft.append("span").html(parent.layer.label + "(" + parent.layer.stats.shape + ")");
+
+    // In the center show buttons for weights, and max-activations:
+    var headingStyles = {background: "white", margin: "0px 1px"};
+    self.headingCenter = heading.append("div").attr("class", "text-center col-xs-6");
+
+    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
+      .style(headingStyles).html("Weights").on("click", self.dispatchWeights);
+
+    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
+      .style(headingStyles).html("Max Activations").on("click",self.dispatchGetMaxActivations);
+
+    // On the right draw a close button
+    self.headingRight  = heading.append("div").attr("class", "col-xs-offset-2 col-xs-1 text-right");
+
+  };
+
   self.drawNav = function(range,n){
+    // Display links at bottom of panel to change range of shown outputs
     var step = range.max - range.min;
     var ul   = self.nav.html("").append("nav")
                 .append("ul").attr("class", "pagination");
@@ -288,25 +332,8 @@ LayerVisualizations.Panel = function(selector,props){
     self.outer.style("padding", "30px");
 
     var panel   = self.outer.append("div").attr("class", "panel panel-default");
-    var heading = panel.append("div").attr("class", "panel-heading")
-      .append("div").attr("class","row").style("padding","0px 10px");
 
-    self.headingLeft = heading.append("div").attr("class", "text-left col-xs-3")
-      .style({color: "#989898"});
-    self.headingLeft.append("span").html(parent.layer.label + "(" + parent.layer.stats.shape + ")");
-
-    self.headingCenter = heading.append("div").attr("class", "text-center col-xs-6");
-    // self.headingCenter.append("div").html(parent.layer.label + " (" + parent.layer.stats.shape + ")");
-
-    var headingStyles = {background: "white", margin: "0px 1px"};
-
-    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
-      .style(headingStyles).html("Weights").on("click", self.dispatchWeights);
-
-    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
-      .style(headingStyles).html("Max Activations").on("click",self.dispatchGetMaxActivations);
-
-    self.headingRight  = heading.append("div").attr("class", "col-xs-offset-2 col-xs-1 text-right");
+    self.drawHeading(panel);
 
     var panelBody = panel.append("div").attr("class", "panel-content");
 
