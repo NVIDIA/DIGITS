@@ -65,3 +65,15 @@ class GenericDatasetForm(DatasetForm):
             ],
         default='lmdb',
         )
+
+    dsopts_force_same_shape = utils.forms.SelectField(
+        'Enforce same shape',
+        choices = [
+            (1, 'Yes'),
+            (0, 'No'),
+            ],
+        coerce = int,
+        default = 1,
+        tooltip = "Check that each entry in the database has the same shape."
+                  "Disabling this will also disable mean image computation."
+        )

@@ -150,6 +150,32 @@ class BaseViewsTestWithDataset(BaseViewsTest):
                     cls.test_image = filename
 
     @classmethod
+    def create_variable_size_random_imageset(cls, **kwargs):
+        """
+        Create a folder of random grayscale images
+        Image size varies randomly
+        """
+        num_images = kwargs.pop('num_images', 10)
+        if not hasattr(cls, 'imageset_folder'):
+            # create a temporary folder
+            cls.imageset_folder = tempfile.mkdtemp()
+            for i in xrange(num_images):
+                image_width = np.random.randint(low=8, high=32)
+                image_height = np.random.randint(low=8, high=32)
+                x = np.random.randint(
+                    low=0,
+                    high=256,
+                    size=(image_height, image_width))
+                x = x.astype('uint8')
+                pil_img = PIL.Image.fromarray(x)
+                filename = os.path.join(
+                    cls.imageset_folder,
+                    '%d.png' % i)
+                pil_img.save(filename)
+                if not hasattr(cls, 'test_image'):
+                    cls.test_image = filename
+
+    @classmethod
     def setUpClass(cls, **kwargs):
         super(BaseViewsTestWithDataset, cls).setUpClass()
         cls.dataset_id = cls.create_dataset(json=True, **kwargs)

@@ -108,6 +108,7 @@ def create(extension_id):
             label_encoding=form.dsopts_label_encoding.data,
             batch_size=int(form.dsopts_batch_size.data),
             num_threads=int(form.dsopts_num_threads.data),
+            force_same_shape=form.dsopts_force_same_shape.data,
             extension_id=extension_id,
             extension_userdata=extension.get_user_data(),
             )
