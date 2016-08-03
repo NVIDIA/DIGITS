@@ -14,11 +14,19 @@
         {{ task.entry_count }}
         </dd>
         {% if task.entry_count > 0 %}
-            <dt>Feature shape</dt>
+            <dt>Feature shape
+                <span class="explanation-tooltip glyphicon glyphicon-question-sign" data-container="body"
+                      title="Shown below is the shape of a sample entry in the database. Other entries might
+                             have a different shape if the dataset has variable entry shapes."></span>
+            </dt>
             <dd>
             {{ task.feature_shape }}
             </dd>
-            <dt>Label shape</dt>
+            <dt>Label shape
+                <span class="explanation-tooltip glyphicon glyphicon-question-sign" data-container="body"
+                      title="Shown below is the shape of a sample entry in the database. Other entries might
+                             have a different shape if the dataset has variable entry shapes."></span>
+            </dt>
             <dd>
             {{ task.label_shape }}
             </dd>

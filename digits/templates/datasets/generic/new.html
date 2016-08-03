@@ -58,6 +58,11 @@ New {{ extension_title }} Dataset
                 {{ form.dsopts_backend.tooltip }}
                 {{ form.dsopts_backend(class='form-control') }}
             </div>
+            <div class="form-group{{mark_errors([form.dsopts_force_same_shape])}}">
+                {{ form.dsopts_force_same_shape.label }}
+                {{ form.dsopts_force_same_shape.tooltip }}
+                {{ form.dsopts_force_same_shape(class='form-control') }}
+            </div>
             <div class="form-group{{mark_errors([form.dataset_name])}}">
                 {{ form.dataset_name.label }}
                 {{ form.dataset_name(class='form-control') }}
