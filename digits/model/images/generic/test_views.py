@@ -146,6 +146,7 @@ class BaseViewsTestWithAnyDataset(BaseViewsTest):
     TRAIN_EPOCHS = 3
     LR_POLICY = None
     LEARNING_RATE = None
+    BATCH_SIZE = 10
 
     @classmethod
     def setUpClass(cls, **kwargs):
@@ -176,7 +177,7 @@ class BaseViewsTestWithAnyDataset(BaseViewsTest):
                 'dataset':          cls.dataset_id,
                 'method':           'custom',
                 'custom_network':   cls.network(),
-                'batch_size':       10,
+                'batch_size':       cls.BATCH_SIZE,
                 'train_epochs':     cls.TRAIN_EPOCHS,
                 'random_seed':      0xCAFEBABE,
                 'framework':        cls.FRAMEWORK,
@@ -739,20 +740,27 @@ end
 """
 
     EXTENSION_ID = "image-processing"
+    VARIABLE_SIZE_DATASET = False
     NUM_IMAGES = 100
     MEAN = 'none'
 
     @classmethod
     def setUpClass(cls, **kwargs):
-        cls.create_random_imageset(
-            num_images=cls.NUM_IMAGES,
-            image_width=cls.IMAGE_WIDTH,
-            image_height=cls.IMAGE_HEIGHT)
+        if cls.VARIABLE_SIZE_DATASET:
+            cls.BATCH_SIZE = 1
+            cls.create_variable_size_random_imageset(
+                num_images=cls.NUM_IMAGES)
+        else:
+            cls.create_random_imageset(
+                num_images=cls.NUM_IMAGES,
+                image_width=cls.IMAGE_WIDTH,
+                image_height=cls.IMAGE_HEIGHT)
         super(BaseTestCreatedWithImageProcessingExtension, cls).setUpClass(
             feature_folder=cls.imageset_folder,
             label_folder=cls.imageset_folder,
             channel_conversion='L',
-            use_mean = cls.MEAN)
+            dsopts_force_same_shape='0' if cls.VARIABLE_SIZE_DATASET else '1',
+            use_mean=cls.MEAN)
 
     def test_infer_one_json(self):
         image_path = os.path.join(self.imageset_folder, self.test_image)
@@ -767,7 +775,8 @@ end
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
         data_shape = np.array(data['outputs']['output']).shape
-        assert data_shape == (1, self.CHANNELS, self.IMAGE_WIDTH, self.IMAGE_HEIGHT)
+        if not self.VARIABLE_SIZE_DATASET:
+            assert data_shape == (1, self.CHANNELS, self.IMAGE_WIDTH, self.IMAGE_HEIGHT)
 
     def test_infer_one_noresize_json(self):
         # create large random image
@@ -796,6 +805,16 @@ end
         data = json.loads(rv.data)
         data_shape = np.array(data['outputs']['output']).shape
         assert data_shape == (1,) + shape
+
+    def test_infer_db(self):
+        if self.VARIABLE_SIZE_DATASET:
+            raise unittest.SkipTest('Skip variable-size inference test')
+        super(BaseTestCreatedWithImageProcessingExtension, self).test_infer_db()
+
+    def test_infer_db_json(self):
+        if self.VARIABLE_SIZE_DATASET:
+            raise unittest.SkipTest('Skip variable-size inference test')
+        super(BaseTestCreatedWithImageProcessingExtension, self).test_infer_db_json()
 
 
 class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
@@ -975,6 +994,11 @@ class TestCaffeCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithIm
     MEAN = 'none'
     FRAMEWORK = 'caffe'
 
+class TestCaffeCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'none'
+    FRAMEWORK = 'caffe'
+    VARIABLE_SIZE_DATASET = True
+
 class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
     FRAMEWORK = 'caffe'
 
@@ -1013,6 +1037,11 @@ class TestTorchCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithI
 class TestTorchCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension):
     MEAN = 'none'
     FRAMEWORK = 'torch'
+
+class TestTorchCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension):
+    MEAN = 'none'
+    FRAMEWORK = 'torch'
+    VARIABLE_SIZE_DATASET = True
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'torch'

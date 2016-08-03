@@ -32,7 +32,7 @@ class BaseTest():
             raise
 
 
-class TestGradientsExtension(BaseTest):
+class BaseTestGradientsExtension(BaseTest):
     """
     Create databases for the gradient extension
     """
@@ -45,6 +45,7 @@ class TestGradientsExtension(BaseTest):
         "image_width": 256,
         "image_height": 128
         }
+    FORCE_SAME_SHAPE = True
 
     def create_db(self, stage):
         # create main DB creator object and execute main method
@@ -56,8 +57,16 @@ class TestGradientsExtension(BaseTest):
             self.BATCH_SIZE,
             self.NUM_THREADS,
             self.FEATURE_ENCODING,
-            self.LABEL_ENCODING)
+            self.LABEL_ENCODING,
+            force_same_shape=self.FORCE_SAME_SHAPE)
 
     def test_create_stages(self):
         for stage in (constants.TRAIN_DB, constants.VAL_DB, constants.TEST_DB):
             yield self.create_db, stage
+
+
+class TestGradientsExtension(BaseTestGradientsExtension):
+    FORCE_SAME_SHAPE = True
+
+class TestGradientsExtensionDontForceSameShape(BaseTestGradientsExtension):
+    FORCE_SAME_SHAPE = False
