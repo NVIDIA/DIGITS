@@ -6,7 +6,7 @@ six>=1.5.2,<=1.10.0
 requests>=2.2.1,<=2.9.1
 gevent>=1.0,<=1.0.2
 Flask==0.10.1
-Flask-WTF==0.11,<=0.12
+Flask-WTF>=0.11,<=0.12
 wtforms>=2.0,<=2.1
 Flask-SocketIO==0.6.0
 gunicorn==17.5
