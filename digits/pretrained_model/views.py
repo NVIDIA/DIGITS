@@ -2,19 +2,19 @@ import flask
 import tempfile
 import tarfile
 import zipfile
-
-
 import os
 import shutil
 import h5py
 import json
 import numpy as np
-
+import PIL.Image
+import StringIO
 from digits import dataset, extensions, model, utils
 from digits.webapp import app, scheduler
 from digits.pretrained_model import PretrainedModelJob
 
 from digits.inference import WeightsJob
+from digits.inference import GradientAscentJob
 
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.views import get_job_list
@@ -76,6 +76,65 @@ def validate_torch_files(files):
 def format_job_name(job):
     return {"name": job.name(), "id": job.id()}
 
+@utils.auth.requires_login
+@blueprint.route('/run_max_activations.json', methods=['POST'])
+def run_max_activations():
+    """ Run Gradient Ascent on a given layer and units """
+    job  = scheduler.get_job(flask.request.args["job_id"])
+    args = flask.request.args
+    layer_name = args["layer_name"]
+    units = eval(args["units"])
+
+    gradient_ascent_job = GradientAscentJob(
+        job,
+        layer_name,
+        units,
+        name = "Gradient Ascent",
+        username = utils.auth.get_username()
+    )
+
+    scheduler.add_job(gradient_ascent_job)
+    gradient_ascent_job.wait_completion()
+    scheduler.delete_job(gradient_ascent_job)
+
+    # f = h5py.File(model_job.get_activations_path())
+    # image_id = str(len(f.keys())-1)
+    # input_data = f[image_id]['data'][:][0]
+
+    return flask.jsonify({"stats": units})
+
+def fill_empty(num):
+    data = []
+    for unit in range(num):
+        data.append([[[]]])
+    return data
+
+def serve_pil_image(pil_img):
+    img_io = StringIO.StringIO()
+    pil_img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    return flask.send_file(img_io, mimetype='image/jpeg')
+
+@blueprint.route('/max_activation', methods=['GET'])
+def max_activation():
+    args = flask.request.args
+    # job  = format_job_name(scheduler.get_job(job_id))
+    job = job_from_request()
+    layer_name = args["layer_name"]
+    unit       = args["unit"]
+
+    raw_data = 128*np.ones((256,256))
+
+    max_activation_path = job.get_max_activations_path()
+    if os.path.isfile(max_activation_path):
+        f = h5py.File(max_activation_path,'r')
+        if layer_name in f:
+            if str(unit) in f[layer_name]:
+                raw_data = f[layer_name][str(unit)]['cropped'][:]
+        f.close()
+    img = PIL.Image.fromarray(np.uint8(raw_data))
+    return serve_pil_image(img)
+
 @blueprint.route('/get_max_activations.json', methods=['GET'])
 def get_max_activations():
     """ Returns array of maximum activations for a given layer """
@@ -84,12 +143,25 @@ def get_max_activations():
     layer_name = args["layer_name"]
     data = []
     # For now return an empty array (currently just building selection)
-    if os.path.isfile(job.get_filters_path()):
-        f = h5py.File(job.get_filters_path())
-        if layer_name in f:
-            stats = json.loads(f[layer_name].attrs["stats"])
-            for activation in range(stats["num_activations"]):
-               data.append([[[]]])
+    if os.path.isfile(job.get_max_activations_path()):
+        f = h5py.File(job.get_max_activations_path(),'a')
+        w = h5py.File(job.get_filters_path(),'r')
+        stats = json.loads(w[layer_name].attrs["stats"])
+
+        if layer_name in w:
+            for unit in range(stats["num_activations"]):
+                if layer_name in f:
+                    if str(unit) in f[layer_name]:
+                        data.append([[[]]])
+                    else:
+                        data.append([[[]]])
+                else:
+                    data.append([[[]]])
+    elif os.path.isfile(job.get_filters_path()):
+        f = h5py.File(job.get_filters_path(),'r')
+        stats = json.loads(f[layer_name].attrs["stats"])
+        data = fill_empty(stats["num_activations"])
+
     return flask.jsonify({"stats": stats, "data": data})
 
 @blueprint.route('/get_weights.json', methods=['GET'])
@@ -134,6 +206,8 @@ def upload_archive():
     """
     files = flask.request.files
     archive_file = get_tempfile(files["archive"],".archive");
+    labels_file  = None
+    mean_file    = None
 
     if tarfile.is_tarfile(archive_file):
         archive = tarfile.open(archive_file,'r')
@@ -157,12 +231,14 @@ def upload_archive():
         weights_file = os.path.join(tempdir, info["snapshot file"])
         model_file   = os.path.join(tempdir, info["model file"])
         labels_file  = os.path.join(tempdir, info["labels file"])
+        mean_file    = os.path.join(tempdir, info["mean file"])
 
         # Upload the Model:
         job = PretrainedModelJob(
             weights_file,
             model_file ,
             labels_file,
+            mean_file,
             info["framework"],
             info["image dimensions"][2],
             info["image resize mode"],
@@ -199,6 +275,7 @@ def new():
     Upload a pretrained model
     """
     labels_path = None
+    mean_path   = None
     framework   = None
 
     form  = flask.request.form

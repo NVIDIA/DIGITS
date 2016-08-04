@@ -5,14 +5,23 @@
 {% extends "layout.html" %}
 
 {% block head %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/ladda-themeless.min.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/layerVisualizationLayout.css') }}">
 <script src="{{ url_for('static', filename='js/chroma.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='js/spin.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='js/ladda.min.js') }}" ></script>
 <script src="{{ url_for('static', filename='js/pretrained_models/LayerVisualizations.js') }}" ></script>
 <script src="{{ url_for('static', filename='js/layer_visualizations/dagre-d3.min.js') }}" ></script>
 <script src="{{ url_for('static', filename='js/layer_visualizations/caffeTree.js') }}" ></script>
 <script src="{{ url_for('static', filename='js/layer_visualizations/torchTree.js') }}" ></script>
 <script src="{{ url_for('static', filename='js/layer_visualizations/readCaffeModel.js') }}" ></script>
 <script src="{{ url_for('static', filename='js/layer_visualizations/readTorchModel.js') }}" ></script>
+<script src="{{ url_for('static', filename='js/layer_visualizations/unitHelpers.js') }}" ></script>
+
+{% with namespace = "/jobs" %}
+    {% set room = job["id"] %}
+    {% include 'socketio.html' %}
+{% endwith %}
 
 {% endblock %}
 
@@ -23,9 +32,9 @@
 {% block content %}
 
 <div class="fixed-fluid-container">
-  <div id="job_container" class="layout-left">
+  <div id="task_container" class="layout-left">
     <div class="panel panel-default text-center" style="padding:3px;overflow-x:hidden;">
-      <h3 class="text-center">{{job.name}}</h3>
+      <h4 class="text-center">{{job.name}}</h3>
       <h6 class="text-center">{{job.id}}</h6>
       <br/>
     </div>
@@ -35,10 +44,11 @@
 
 
 <script>
-  var layerVisualizations = new LayerVisualizations("#tree_container");
-  layerVisualizations.initPanel();
-  layerVisualizations.initCarousel("#image_carousel");
-  layerVisualizations.initJobs("#pretrained_jobs",{jobs: {{[job]|tojson}} });
-  layerVisualizations.actions.getOutputs("{{job["id"]}}");
+    var layerVisualizations = new LayerVisualizations("#tree_container");
+    layerVisualizations.initPanel();
+    layerVisualizations.initCarousel("#image_carousel");
+    layerVisualizations.initJobs("#pretrained_jobs",{jobs: {{[job]|tojson}} });
+    layerVisualizations.initTasks("#task_container .panel");
+    layerVisualizations.actions.changeJob("{{job["id"]}}");
 </script>
 {% endblock %}

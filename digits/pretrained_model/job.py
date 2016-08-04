@@ -56,6 +56,12 @@ class PretrainedModelJob(Job):
     def get_filters_path(self):
         return self.dir()+"/filters.hdf5"
 
+    def get_max_activations_path(self):
+        return self.dir()+"/max_activations.hdf5"
+
+    def get_mean_path(self):
+        return self.tasks[0].get_mean_path()
+
     def get_model_def(self,as_json=False):
         with open(self.get_model_def_path(as_json), 'r') as myfile:
             data=myfile.read()

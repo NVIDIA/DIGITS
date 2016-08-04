@@ -34,7 +34,7 @@ body {
   height: 100%;
 }
 .layout-left {
-    width: 200px;
+    width: 250px;
     padding: 5px;
     height: 100%;
     float: left;
@@ -125,8 +125,8 @@ body {
 .canvas-hover {
   margin-left: -25px !important;
   margin-top: -25px !important;
-  height: 60px !important;
-  width: 60px !important;
+  height: 90px !important;
+  width: 90px !important;
   position:relative !important;
   left: 12.5px;
   top: 12.5px;
