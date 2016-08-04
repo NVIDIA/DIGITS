@@ -19,7 +19,7 @@ app.config['WTF_CSRF_ENABLED'] = False
 # This is still necessary for SocketIO
 app.config['SECRET_KEY'] = config_value('secret_key')
 app.url_map.redirect_defaults = False
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='gevent')
 scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
 ### Register filters and views

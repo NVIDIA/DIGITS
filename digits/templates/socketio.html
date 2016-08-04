@@ -1,10 +1,9 @@
 {# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved. #}
 
 <!-- Scripts for communicating with the SocketIO server -->
-<script type="text/javascript" src="/static/js/socket.io.js"></script>
+<script type="text/javascript" src="/static/js/socket.io-1.4.5.min.js"></script>
 <script>
-WEB_SOCKET_DEBUG = true;
-var socket = io.connect("{{namespace}}");
+var socket = io.connect('http://' + document.domain + ':' + location.port + "{{namespace}}");
 
 $(window).bind("beforeunload", function() {
         socket.emit('leave');
