@@ -9,6 +9,9 @@ import numpy as np
 import os
 import sys
 import cv2
+from scipy.optimize import curve_fit
+from scipy import exp
+from google.protobuf import text_format
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,6 +25,7 @@ from tools.gradient_ascent.gradient_optimizer import GradientOptimizer, FindPara
 import tools.gradient_ascent.caffe_misc as caffe_misc
 # must call digits.config.load_config() before caffe to set the path
 import caffe
+from caffe.proto import caffe_pb2
 
 logger = logging.getLogger('digits.tools.inference')
 
@@ -40,13 +44,22 @@ def get_mean(mean_file_path, data_size):
 
     return data_mean
 
-def infer(output_dir,model_def_path, weights_path, layer,unit, mean_file_path=None, gpu=None):
-
+def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=None, gpu=None):
+    # Set Mode to Run Inference:
     if gpu is not None:
         caffe.set_device(gpu)
         caffe.set_mode_gpu()
     else:
         caffe.set_mode_cpu()
+
+    # Update Model Def to allow force backward
+    deploy_network = caffe.proto.caffe_pb2.NetParameter()
+    with open(model_def_path, 'r') as f:
+       model_def = f.read()
+    text_format.Merge(model_def, deploy_network)
+    text_format.Merge("force_backward: true", deploy_network)
+    with open(model_def_path, 'w') as outfile:
+       text_format.PrintMessage(deploy_network, outfile)
 
     # TODO : Make channel swap inputable
     net = caffe.Classifier(
@@ -65,7 +78,7 @@ def infer(output_dir,model_def_path, weights_path, layer,unit, mean_file_path=No
         mean = get_mean(mean_file_path, data_size)
     else:
         # Else generate grey image:
-        mean = np.ones(net.blobs[in_].data[0].shape) * 150
+        mean = np.ones(net.blobs[in_].data[0].shape) * 127
 
     # Set the mean for the network (as it wasnt set during initialization)
     transformer = caffe.io.Transformer({in_: input_shape})
@@ -83,26 +96,92 @@ def infer(output_dir,model_def_path, weights_path, layer,unit, mean_file_path=No
 
     optimizer = GradientOptimizer(net,mean,channel_swap_to_rgb = (2,1,0))
 
-    # TODO: Make the params below optionable:
-    params = FindParams(
-        push_layer = layer,
-        push_channel = unit,
-        decay = 0.001,
-        blur_radius = 1.0,
-        blur_every = 4,
-        max_iter = 10,
-        push_spatial = push_spatial,
-        lr_params = {'lr': 100.0}
-    )
+    if -1 in units:
+        units = range(out.shape[1])
 
-    im = optimizer.run_optimize(params, prefix_template = "blah",brave = True,save=False)
+    for i, unit in enumerate(units):
+        # TODO: Make the params below optionable:
+        params = FindParams(
+            push_layer = layer,
+            push_channel = unit,
+            decay = 0.001,
+            blur_radius = 1.0,
+            blur_every = 4,
+            max_iter = 100,
+            push_spatial = push_spatial,
+            lr_params = {'lr': 100.0}
+        )
 
-    f = h5py.File(os.path.join(output_dir,'max_activations.hdf5'),'a')
-    name = "%s/%s" % (layer, unit)
-    dset = f.create_dataset(name, data=im)
-    f.close()
+        im = optimizer.run_optimize(params, prefix_template = "blah",brave = True,save=False)
+        # im = np.square(np.gradient(np.mean(np.mean(im, axis=2),axis=1)))
 
-    logger.info('Saved data to %s', 'somewhere :/')
+        # Get the distribution of points along the image (assuming roughly symmetric)
+        y = np.sum(np.square(np.gradient(np.mean(im, axis=2),axis=1)), axis=1)
+        x = np.arange(len(y))
+
+        # N, and initial guess for mean, and sigma for bell curve:
+        n = len(x)
+        mean = np.sum(x*y)/n
+        sigma = np.sum(y*(x-mean)**2)/n
+
+        # Define Bell Curve Fit Function:
+        def gaus(x,a,x0,sigma):
+            return a*exp(-(x-x0)**2/(2*sigma**2))
+
+        # Fit data
+        N_max = 10
+        for j in range(N_max):
+            popt,__ = curve_fit(gaus,x,y,p0=[1,mean,sigma])
+            sigma   = int(popt[2])
+            if sigma == 0 :
+                break
+
+        w = 4*np.abs(sigma)
+        y_out = gaus(x,*popt)
+
+        ymax = np.argmax(y_out)
+        if (ymax == 1):
+            ymax = input_shape[2]/2
+
+        # Plot Gaussian Curve:
+        # import matplotlib.pyplot as plt
+        # plt.plot(x,y,'b+:',label='data')
+        # plt.plot(x,y_out,'ro:',label='fit')
+        # plt.legend()
+        # plt.xlabel('Pixel')
+        # plt.ylabel('Squared Gradient')
+        # plt.show()
+
+        # Crop image:
+        if (sigma != 0 and w < ymax):
+            cropped = im[ymax-w:ymax+w, ymax-w:ymax+w,:]
+        else:
+            cropped = im
+
+        # Show output
+        # cv2.imshow('gradient', cv2.resize(cropped, (input_shape[2],input_shape[3])));
+        # cv2.waitKey(0);
+        # sys.exit()
+
+        name = "%s/%s" % (layer, unit)
+
+        cropped_name = "%s/cropped" % name
+        full_name = "%s/full" % name
+        path = os.path.join(output_dir,'max_activations.hdf5')
+        with h5py.File(path,'a') as f:
+            if cropped_name in f:
+                del f[cropped_name]
+
+            if full_name in f:
+                del f[full_name]
+
+            f.create_dataset(cropped_name, data=np.uint8(256*cropped),dtype='i8')
+            # f.create_dataset(full_name, data=np.uint8(256*im),dtype='i8')
+            f.close()
+        logger.info('Processed %s/%s units', i+1, len(units))
+
+
+    logger.info('Saved data to %s', output_dir)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Gradient Ascent tool for pretrained models - DIGITS')
@@ -124,9 +203,10 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--layer',
             help='Name of output layer',
             )
-    parser.add_argument('-u', '--unit',
-            type=int,
-            help='Name of unit to optimize in output layer',
+    parser.add_argument('-u', '--units',
+            type=str,
+            default="-1",
+            help='Index of units to optimize in output layer',
             )
 
     ### Optional arguments
@@ -143,13 +223,24 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
 
+    # infer(
+    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce",
+    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce/deploy.prototxt",
+    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce/model.caffemodel",
+    #     "inception_3b/3x3",
+    #     [53],
+    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce/mean.binaryproto",
+    #     0
+    #     )
+    #
+    # sys.ext()
     try:
         infer(
             args['output_dir'],
             args['model_def_path'],
             args['weights_path'],
             args['layer'],
-            args['unit'],
+            map(int,str.split(args['units'],",")),
             args['mean_file_path'],
             args['gpu']
             )
