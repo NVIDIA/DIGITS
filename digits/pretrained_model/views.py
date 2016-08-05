@@ -141,6 +141,8 @@ def get_max_activations():
     job = job_from_request()
     args = flask.request.args
     layer_name = args["layer_name"]
+    range_min  = int(args["range_min"])
+    range_max  = int(args["range_max"])
     data = []
     # For now return an empty array (currently just building selection)
     if os.path.isfile(job.get_max_activations_path()):
@@ -152,17 +154,17 @@ def get_max_activations():
             for unit in range(stats["num_activations"]):
                 if layer_name in f:
                     if str(unit) in f[layer_name]:
-                        data.append([[[]]])
+                        data.append(True)
                     else:
-                        data.append([[[]]])
+                        data.append(False)
                 else:
-                    data.append([[[]]])
+                    data.append(False)
     elif os.path.isfile(job.get_filters_path()):
         f = h5py.File(job.get_filters_path(),'r')
         stats = json.loads(f[layer_name].attrs["stats"])
         data = fill_empty(stats["num_activations"])
 
-    return flask.jsonify({"stats": stats, "data": data})
+    return flask.jsonify({"stats": stats, "data": data[range_min:range_max], "length": len(data)})
 
 @blueprint.route('/get_weights.json', methods=['GET'])
 def get_weights():

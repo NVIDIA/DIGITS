@@ -54,21 +54,37 @@ var LayerVisualizations = function(selector,props){
 
   // Dispatchers:
   self.dispatchInference = function() {
-    if (!_.isNull(self.layer)){
+    if (_.isNull(self.layer)) return
+
+    if (_.isNull(self.active_tab) || self.active_tab == "weights")
       self.actions.getWeights(self.layer.name);
-    }
+
+    if (self.active_tab == "max-activations")
+      self.actions.getMaxActivations(self.layer.name);
+
   };
 
   // Update:
-  self.updateItem = function(msg){
-      if (self.layer.name != msg.data.layer) return;
-      console.log(self.outputs[msg.data.unit]);
+  self.updateItem = function(item,layer,unit){
+    if (self.layer.name != layer) return;
+    var hw = 65;
+    var ctx = item.getContext("2d");
+    ctx.clearRect(0, 0, hw, hw);
+    var params = $.param({
+      "job_id": self.job_id,
+      "layer_name":layer,
+      "unit": unit,
+    });
+
+    var image_url = "/pretrained_models/max_activation?"+params;
+    UnitHelpers.drawImage(image_url,ctx,hw,hw);
+
   };
 
   self.update = function(){
-    var hw = 65;
 
-    var items = self.panel.body.selectAll("canvas").data(self.outputs);
+    var items = self.items =
+      self.panel.body.selectAll("canvas").data(self.outputs);
 
     items.attr("class", "item panel panel-default").enter()
       .append("canvas")
@@ -78,22 +94,15 @@ var LayerVisualizations = function(selector,props){
         .style(UnitHelpers.defaultStyles())
         .on("click", self.tasks.dispatchUnitClick)
         .each(function(data,i){
-          var ctx = this.getContext("2d");
-          ctx.clearRect(0, 0, hw, hw);
-          if (data[0][0].length == 0){
-            var params = $.param({
-              "job_id": self.job_id,
-              "layer_name":self.layer.name,
-              "unit": i,
-            });
-
-            var image_url = "/pretrained_models/max_activation?"+params;
-
-            UnitHelpers.drawImage(image_url,ctx,hw,hw);
-          }else{
+          if (_.isBoolean(data)){
+            var unit = self.range.min + i;
+            self.updateItem(this,self.layer.name,unit);
+          }else {
+            var hw = 65;
+            var ctx = this.getContext("2d");
+            ctx.clearRect(0, 0, hw, hw);
             UnitHelpers.drawUnit(data,ctx,hw,hw);
           }
-
         });
 
     items.exit().remove();
@@ -101,8 +110,8 @@ var LayerVisualizations = function(selector,props){
     // Add hover effect
     items.on("mouseover", function(data,i){
       d3.select(this).classed("canvas-hover", true);
-      // $(this).tooltip({title: self.range.min + i + "", placement: "bottom"});
-      // $(this).tooltip("show");
+      $(this).tooltip({title: self.range.min + i + "", placement: "bottom"});
+      $(this).tooltip("show");
     });
 
     items.on("mouseout", function(){
@@ -112,42 +121,40 @@ var LayerVisualizations = function(selector,props){
   };
 
   // Draw:
-  self.drawMaxActivations = function(layerName, json){
+  self.updateTab = function(layerName,json,tabName){
     if (_.isNull(self.layer)) self.layer = {name: layerName};
-    self.layer.name = layerName;
     self.layer.stats = json.stats;
-    self.active_tab  = "max-activations";
+    self.active_tab = tabName;
     self.panel.render();
     self.outputs.length = 0;
     self.outputs.push.apply(self.outputs, _.isUndefined(json.data) ? [] : json.data);
     if (self.outputs.length > 0 ) self.panel.body.html('');
     self.update();
+    self.tasks.render();
     self.panel.drawNav(self.range, json.length);
-  }
+  };
 
-  self.drawOutputs = function(layerName,json){
-    if (_.isNull(self.layer)) self.layer = {name: layerName};
-    self.layer.stats = json.stats;
-    self.active_tab = "weights";
-    self.panel.render();
-    self.outputs.length = 0;
-    self.outputs.push.apply(self.outputs, _.isUndefined(json.data) ? [] : json.data);
-    if (self.outputs.length > 0 ) self.panel.body.html('');
-    self.update();
-    self.panel.drawNav(self.range, json.length);
+  self.drawMaxActivations = function(layerName, json){
+    self.updateTab(layerName,json,"max-activations");
+  };
+
+  self.drawWeights = function(layerName,json){
+    self.updateTab(layerName,json,"weights");
   };
 
   // Events:
   self.layerClicked = function(e){
     self.layer = e.layer;
-    self.range = {min: 0 , max: 500};
+    self.range = {min: 0 , max: 156};
     self.dispatchInference();
     self.tasks.render(e.layer.name);
   };
 
   self.maxActivationsUpdated = function(msg){
     self.tasks.updateProgress(msg);
-    self.updateItem(msg);
+    var unit = msg.data.unit-1;
+    var index = unit - self.range.min;
+    self.updateItem(self.items[0][index],msg.data.layer,unit);
   };
 
   // Event Listeners:
@@ -173,7 +180,7 @@ LayerVisualizations.Actions = function(props){
 
     var outputs_url  = "/pretrained_models/get_weights.json?"+params;
     d3.json(outputs_url, function(error, json) {
-      parent.drawOutputs(layerName,json);
+      parent.drawWeights(layerName,json);
     });
   };
 
@@ -191,7 +198,9 @@ LayerVisualizations.Actions = function(props){
   self.getMaxActivations = function(layerName){
     params = $.param({
       "job_id": parent.job_id,
-      "layer_name":layerName
+      "layer_name":layerName,
+      "range_min": parent.range.min,
+      "range_max": parent.range.max
     });
     parent.overlay.render();
 
@@ -215,7 +224,7 @@ LayerVisualizations.Actions = function(props){
 
     var outputs_url  = "/pretrained_models/get_inference.json?"+params;
     d3.json(outputs_url, function(error, json) {
-      parent.drawOutputs(layerName,json);
+      parent.drawWeights(layerName,json);
     });
   };
 
@@ -291,11 +300,19 @@ LayerVisualizations.Panel = function(selector,props){
     var headingStyles = {background: "white", margin: "0px 1px"};
     self.headingCenter = heading.append("div").attr("class", "text-center col-xs-offset-2 col-xs-8");
 
-    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
-      .style(headingStyles).html("Weights").on("click", self.dispatchWeights);
+    self.headingCenter.append("span")
+      .attr("class", "btn btn-default btn-xs")
+      .style(headingStyles)
+      .html("Weights")
+      .attr("disabled", parent.active_tab == "weights" ? "" : null)
+      .on("click", self.dispatchWeights);
 
-    self.headingCenter.append("span").attr("class", "btn btn-default btn-xs")
-      .style(headingStyles).html("Max Activations").on("click",self.dispatchGetMaxActivations);
+    self.headingCenter.append("span")
+      .attr("class", "btn btn-default btn-xs")
+      .attr("disabled", parent.active_tab == "max-activations" ? "" : null)
+      .style(headingStyles)
+      .html("Max Activations")
+      .on("click",self.dispatchGetMaxActivations);
 
     // On the right draw a close button
     self.headingRight  = heading.append("div").attr("class", "col-xs-2 text-right");
@@ -304,6 +321,7 @@ LayerVisualizations.Panel = function(selector,props){
 
   self.drawNav = function(range,n){
     // Display links at bottom of panel to change range of shown outputs
+    if (_.isNull(range)) return;
     var step = range.max - range.min;
     var ul   = self.nav.html("").append("nav")
                 .append("ul").attr("class", "pagination");
@@ -407,7 +425,7 @@ LayerVisualizations.Tasks = function(selector,props){
     self.render = function(layer){
       self.container.html('');
       self.layer = _.isUndefined(layer) ? self.layer : layer;
-      if (!_.isNull(parent.layer)) self.drawActivationsButton();
+      self.drawActivationsButton();
 
       self.drawTasks();
       self.container.append("br");
@@ -417,7 +435,7 @@ LayerVisualizations.Tasks = function(selector,props){
     };
 
     self.dispatchUnitClick = function(data,index){
-      self.unit = index;
+      self.unit = parent.range.min + index;
       self.render(this.dataset.layer);
     };
 
@@ -442,6 +460,9 @@ LayerVisualizations.Tasks = function(selector,props){
     };
 
     self.drawActivationsButton = function(){
+      if (_.isNull(parent.layer) || parent.active_tab != "max-activations")
+        return;
+
       var btn = self.container.append("a")
         .attr("class", "btn btn-"+self.btn.status)
         .attr("data-style", "expand-left")
@@ -525,7 +546,7 @@ LayerVisualizations.Task = function(parent,layer){
 
   self.layerClicked = function(e){
     self.layer = e.layer;
-    self.range = {min: 0 , max: 500};
+    self.range = {min: 0 , max: 156};
     self.dispatchInference();
     self.tasks.render(e.layer.name);
   };
