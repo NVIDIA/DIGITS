@@ -70,6 +70,12 @@ class Framework(object):
         """
         raise NotImplementedError('Please implement me')
 
+    def get_network_from_path(self, path):
+        """
+        return network object from a file path
+        """
+        raise NotImplementedError('Please implement me')
+
     def get_network_visualization(self, desc):
         """
         return visualization of network

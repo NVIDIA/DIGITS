@@ -18,6 +18,7 @@ from digits import utils
 from digits.config import config_value
 from digits.dataset import ImageClassificationDatasetJob
 from digits.inference import ImageInferenceJob
+from digits.pretrained_model.job import PretrainedModelJob
 from digits.status import Status
 from digits.utils import filesystem as fs
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
@@ -67,6 +68,7 @@ def new():
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
+    form.pretrained_networks.choices = get_pretrained_networks()
 
     prev_network_snapshots = get_previous_network_snapshots()
 
@@ -78,6 +80,7 @@ def new():
             frameworks = frameworks.get_frameworks(),
             previous_network_snapshots = prev_network_snapshots,
             previous_networks_fullinfo = get_previous_networks_fulldetails(),
+            pretrained_networks_fullinfo = get_pretrained_networks_fulldetails(),
             multi_gpu = config_value('caffe_root')['multi_gpu'],
             )
 
@@ -95,6 +98,7 @@ def create():
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
+    form.pretrained_networks.choices = get_pretrained_networks()
 
     prev_network_snapshots = get_previous_network_snapshots()
 
@@ -110,6 +114,7 @@ def create():
                     frameworks = frameworks.get_frameworks(),
                     previous_network_snapshots = prev_network_snapshots,
                     previous_networks_fullinfo = get_previous_networks_fulldetails(),
+                    pretrained_networks_fullinfo = get_pretrained_networks_fulldetails(),
                     multi_gpu = config_value('caffe_root')['multi_gpu'],
                     ), 400
 
@@ -195,6 +200,14 @@ def create():
                                 raise werkzeug.exceptions.BadRequest(
                                         "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
                         break
+
+            elif form.method.data == 'pretrained':
+                pretrained_job  = scheduler.get_job(form.pretrained_networks.data)
+                model_def_path  = pretrained_job.get_model_def_path()
+                weights_path = pretrained_job.get_weights_path()
+
+                network = fw.get_network_from_path(model_def_path)
+                pretrained_model = weights_path
 
             elif form.method.data == 'custom':
                 network = fw.get_network_from_desc(form.custom_network.data)
@@ -700,3 +713,16 @@ def get_previous_network_snapshots():
         prev_network_snapshots.append(e)
     return prev_network_snapshots
 
+def get_pretrained_networks():
+    return [(j.id(), j.name()) for j in sorted(
+        [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
+        cmp=lambda x,y: cmp(y.id(), x.id())
+        )
+        ]
+
+def get_pretrained_networks_fulldetails():
+    return [(j) for j in sorted(
+        [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
+        cmp=lambda x,y: cmp(y.id(), x.id())
+        )
+        ]

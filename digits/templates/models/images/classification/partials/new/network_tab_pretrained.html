@@ -1,0 +1,82 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+<script>
+
+  var updatePretrainedTab = function(fw_id){
+    // Update Active Tab:
+    d3.selectAll(".pretrained-tab").classed("active",false);
+    d3.select("#pretrained-"+fw_id).classed("active",true);
+
+    // Update Table Rows:
+    d3.selectAll(".pretrainedJob").style("display", "none");
+    d3.selectAll(".row-"+fw_id).style("display","table-row");
+  };
+
+  var customizePretrainedNetwork = function(fw_id, data){
+    customizeNetwork(data,undefined,fw_id);
+  };
+
+  d3.selectAll('input[name=pretrained_networks]').on("click", function(){
+
+  });
+
+  $(document).ready(function(){
+    updatePretrainedTab("{{frameworks[0].get_id()}}");
+  });
+
+</script>
+
+
+<ul class="nav nav-tabs">
+    {% for fw in frameworks %}
+    <li class="pretrained-tab" id="pretrained-{{ fw.get_id() }}" ><a href="#{{ fw.get_id() }}_standard" data-toggle="tab">{{ fw.get_name() }}</a></li>
+    <script>
+      d3.select("#pretrained-{{ fw.get_id() }}").on("click",function(){
+        updatePretrainedTab("{{fw.get_id()}}");
+      });
+    </script>
+    {% endfor %}
+</ul>
+
+<div class="tab-content">
+    {% set batch_size = 10 %}
+    {% for batch in form.pretrained_networks|batch(batch_size) %}
+    {% set batch_loop_index = loop.index0 %}
+    <div class="tab-pane{{' active' if loop.index==1}}" id="pretrained_networks-page-{{loop.index}}">
+
+        <table class="table">
+            <tr>
+                <th>Pretrained Model</th>
+                <th></th>
+            </tr>
+            {% for network in batch %}
+            {% set inner_index = batch_loop_index * batch_size + loop.index0 %}
+            {% set pretrained_job = pretrained_networks_fullinfo[inner_index] %}
+            <tr class="pretrainedJob row-{{pretrained_job.framework}}" data-framework="{{pretrained_job.framework}}" >
+                <td>
+                    {{network}}
+                    {{network.label}}
+                    <span class="badge">{{pretrained_job.framework}}</span>
+                </td>
+                <td><a class="btn btn-sm" onClick="customizePretrainedNetwork('{{pretrained_job.framework}}','{{network.data}}')">Customize</a></td>
+
+            </tr>
+            {% else %}
+            <tr>
+                <td><i>None</i></td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </div>
+    {% endfor %}
+</div>
+
+{% if form.pretrained_networks.choices|length > batch_size %}
+<div class="text-center">
+    <ul class="pagination">
+        {% for i in range((form.pretrained_networks.choices|length/batch_size)|round(0,'ceil')|int) %}
+        <li class="{{'active' if i==0}}"><a href="#pretrained_networks-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

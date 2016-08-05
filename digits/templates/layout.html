@@ -9,14 +9,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/c3.min.css', ver=dir_hash) }}">
     <title>{% block title %}DIGITS{% endblock %}</title>
 
-    <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js', ver=dir_hash) }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js', ver=dir_hash) }}"></script>
-    <script src="{{ url_for('static', filename='js/bootbox.min.js', ver=dir_hash) }}"></script>
-    <script src="{{ url_for('static', filename='js/digits.js', ver=dir_hash) }}"></script>
-    <script src="{{ url_for('static', filename='js/d3.min.js', ver=dir_hash) }}"></script>
-    <script src="{{ url_for('static', filename='js/c3.min.js', ver=dir_hash) }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.autocomplete.min.js', ver=dir_hash) }}"></script>
-    <script src="{{ url_for('static', filename='js/file_field.js', ver=dir_hash) }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootbox.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/digits.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/c3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.autocomplete.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/file_field.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/underscore.min.js') }}"></script>
 
     <script src="{{ url_for('static', filename='js/ace/ace.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
     <script src="{{ url_for('static', filename='js/ace/mode-python.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
@@ -64,6 +65,8 @@
     {% endblock %}
 </div>
 <script>
+$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
 $(".explanation-tooltip").tooltip();
 
 window.onload = function () {
