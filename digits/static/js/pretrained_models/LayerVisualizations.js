@@ -184,6 +184,20 @@ LayerVisualizations.Actions = function(props){
     });
   };
 
+  self.removeMaxActivations = function(layerName){
+    params = $.param({
+      "job_id": parent.job_id,
+      "layer_name":layerName
+    });
+
+    var outputs_url  = "/pretrained_models/remove_max_activations.json?"+params;
+    d3.json(outputs_url, function(error, json) {
+      console.log("Activations Removed");
+      console.log(json);
+    });
+
+  };
+
   self.postMaxActivations = function(layerName,units){
     params = $.param({
       "job_id": parent.job_id,
@@ -410,6 +424,7 @@ LayerVisualizations.Overlay = function(selector,props){
 
 LayerVisualizations.Tasks = function(selector,props){
     // Shows Active Running Tasks, last clicked layer, and last clicked unit
+
     var self = this;
     var parent = self.parent =
       !_.isUndefined(props.parent) ? props.parent : props;
@@ -419,8 +434,10 @@ LayerVisualizations.Tasks = function(selector,props){
     self.layer = null;
     self.unit = null;
     self.tasks = new Array();
-    self.btn = {status: "primary", text: "Get Max Activations"};
+    self.btn = null;
     self.disabled = false;
+    self.addBtn    = {status: "primary", text: "Get Max Activations"};
+    self.removeBtn = {status: "danger", text: "Delete Max Activations"};
 
     self.render = function(layer){
       self.container.html('');
@@ -437,6 +454,10 @@ LayerVisualizations.Tasks = function(selector,props){
     self.dispatchUnitClick = function(data,index){
       self.unit = parent.range.min + index;
       self.render(this.dataset.layer);
+    };
+
+    self.dispatchRemoveMaxActivations = function(){
+      parent.actions.removeMaxActivations(parent.layer.name);
     };
 
     self.dispatchRunMaxActivations = function(){
@@ -463,11 +484,16 @@ LayerVisualizations.Tasks = function(selector,props){
       if (_.isNull(parent.layer) || parent.active_tab != "max-activations")
         return;
 
+      var hasOutputs = _.includes(parent.outputs, true);
+      self.btn = hasOutputs ? self.removeBtn : self.addBtn;
+
       var btn = self.container.append("a")
         .attr("class", "btn btn-"+self.btn.status)
         .attr("data-style", "expand-left")
         .style("width","100%")
-        .on("click", self.dispatchRunMaxActivations);
+        .on("click",
+          hasOutputs ? self.dispatchRemoveMaxActivations : self.dispatchRunMaxActivations
+        );
 
       btn.append("span").attr("class","ladda-label")
           .text(self.btn.text);

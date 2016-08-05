@@ -135,6 +135,14 @@ def max_activation():
     img = PIL.Image.fromarray(np.uint8(raw_data))
     return serve_pil_image(img)
 
+
+@blueprint.route('/remove_max_activations.json', methods=['GET'])
+def get_max_activations():
+    """ Deletes Max Activations Dataset pertaining to specified layer in job """
+    job = job_from_request()
+    args = flask.request.args
+    layer_name = args["layer_name"]
+        
 @blueprint.route('/get_max_activations.json', methods=['GET'])
 def get_max_activations():
     """ Returns array of maximum activations for a given layer """
