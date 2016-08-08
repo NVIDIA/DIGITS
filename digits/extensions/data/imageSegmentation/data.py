@@ -9,6 +9,7 @@ import numpy as np
 import PIL.Image
 
 from digits.utils import image, subclass, override, constants
+from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
 from ..interface import DataIngestionInterface
 from .forms import DatasetForm
 
@@ -41,7 +42,7 @@ class DataIngestion(DataIngestionInterface):
         # during dataset creation
         filename = self.make_image_list(self.label_folder)[0]
         image = self.load_label(filename)
-        self.userdata['palette'] = image.getpalette()
+        self.userdata[COLOR_PALETTE_ATTRIBUTE] = image.getpalette()
 
         # get labels if those were provided
         if self.class_labels_file:
@@ -63,7 +64,7 @@ class DataIngestion(DataIngestionInterface):
 
         # label image
         label_image = self.load_label(label_image_file)
-        if label_image.getpalette() != self.userdata['palette']:
+        if label_image.getpalette() != self.userdata[COLOR_PALETTE_ATTRIBUTE]:
             raise ValueError("All label images must use the same palette")
         label_image = self.encode_PIL_Image(label_image)
 

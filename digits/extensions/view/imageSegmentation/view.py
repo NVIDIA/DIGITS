@@ -6,10 +6,10 @@ import os
 import matplotlib as mpl
 import numpy as np
 import PIL.Image
-import PIL.ImageDraw
 
 import digits
 from digits.utils import subclass, override
+from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
 from .forms import ConfigForm
 from ..interface import VisualizationInterface
 
@@ -32,9 +32,9 @@ class Visualization(VisualizationInterface):
 
         # view options
         if kwargs['colormap'] == 'dataset':
-            if not 'palette' in dataset.extension_userdata:
+            if not COLOR_PALETTE_ATTRIBUTE in dataset.extension_userdata:
                 raise ValueError("Palette not found in dataset")
-            palette = dataset.extension_userdata['palette']
+            palette = dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]
             # assume 8-bit RGB palette and convert to N*3 numpy array
             palette = np.array(palette).reshape((len(palette)/3,3)) / 255.
             # normalize input pixels to [0,1]

@@ -16,4 +16,5 @@ DEFAULT_BATCH_SIZE = 16
 # Caffe Protocol Buffers
 MEAN_FILE_CAFFE = 'mean.binaryproto'
 
-
+# Color Palette attribute
+COLOR_PALETTE_ATTRIBUTE = 'color_palette'
