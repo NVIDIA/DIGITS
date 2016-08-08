@@ -1,0 +1,71 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<div class="form-group{{mark_errors([form.feature_folder])}}">
+    {{ form.feature_folder.label }}
+    {{ form.feature_folder.tooltip }}
+    {{ form.feature_folder(class='form-control autocomplete_path', placeholder='folder or URL')}}
+</div>
+
+<div class="form-group{{mark_errors([form.label_folder])}}">
+    {{ form.label_folder.label }}
+    {{ form.label_folder.tooltip }}
+    {{ form.label_folder(class='form-control autocomplete_path', placeholder='folder or URL')}}
+</div>
+
+<div class="form-group{{mark_errors([form.folder_pct_val])}}">
+    {{ form.folder_pct_val.label }}
+    {{ form.folder_pct_val.tooltip }}
+    {{ form.folder_pct_val(class='form-control') }}
+</div>
+
+{{form.has_val_folder}}
+{{form.has_val_folder.label}}
+
+<div style="display:none;" class="form-group{{mark_errors([form.validation_feature_folder])}} cl-separate-val-folder">
+    {{ form.validation_feature_folder.label }}
+    {{ form.validation_feature_folder.tooltip }}
+    {{ form.validation_feature_folder(class='form-control autocomplete_path') }}
+</div>
+
+<div style="display:none;" class="form-group{{mark_errors([form.validation_label_folder])}} cl-separate-val-folder">
+    {{ form.validation_label_folder.label }}
+    {{ form.validation_label_folder.tooltip }}
+    {{ form.validation_label_folder(class='form-control autocomplete_path') }}
+</div>
+
+<script>
+function hasValFolderChanged() {
+    if ($("#has_val_folder").prop("checked"))
+    {
+        $("#validation_feature_folder").prop("disabled", false);
+        $("#validation_label_folder").prop("disabled", false);
+        $(".cl-separate-val-folder").show();
+        $("#folder_pct_val").prop("disabled", true);
+    }
+    else
+    {
+        $(".cl-separate-val-folder").hide();
+        $("#validation_feature_folder").prop("disabled", true);
+        $("#validation_label_folder").prop("disabled", true);
+        $("#folder_pct_val").prop("disabled", false);
+    }
+}
+$("#has_val_folder").click(hasValFolderChanged);
+hasValFolderChanged();
+</script>
+
+<div class="form-group{{mark_errors([form.class_labels_file])}}">
+    {{ form.class_labels_file.label }}
+    {{ form.class_labels_file.tooltip }}
+    {{ form.class_labels_file(class='form-control autocomplete_path', placeholder='folder or URL')}}
+</div>
+
+<div class="form-group{{mark_errors([form.channel_conversion])}}">
+    {{ form.channel_conversion.label }}
+    {{ form.channel_conversion.tooltip }}
+    {{ form.channel_conversion(class='form-control') }}
+</div>
