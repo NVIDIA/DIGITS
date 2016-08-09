@@ -487,130 +487,26 @@ function setFramework(fwid)
             <ul class="nav nav-tabs" id="network-tabs">
                 <li class="active"><a href="#network-tab-standard" data-toggle="tab">Standard Networks</a></li>
                 <li><a href="#network-tab-previous" data-toggle="tab">Previous Networks</a></li>
+                <li><a href="#network-tab-pretrained" data-toggle="tab">Pretrained Networks</a></li>
                 <li><a href="#network-tab-custom" data-toggle="tab">Custom Network</a></li>
             </ul>
             <div class="tab-content well">
                 <div style="display:none;">{{form.framework(class='form-control')}}</div>
                 <div id="network-tab-standard" class="tab-pane active">
-                    <ul class="nav nav-tabs" id="stdnetRole">
-                        {% for fw in frameworks %}
-                        <li id="{{ fw.get_id() }}"><a href="#{{ fw.get_id() }}_standard" data-toggle="tab">{{ fw.get_name() }}</a></li>
-                        {% endfor %}
-                    </ul>
-                    <div id="network-tab-standard-contents" class="tab-pane active">
-                        <script>
-                            $('#stdnetRole li').first().addClass("active");
-                            $('#stdnetRole li').on('click', function(e) {
-                                 $(this).addClass('active');
-                                 $(this).siblings().removeClass('active');
-                                 setFramework($(this).attr('id'));
-                            });
-                        </script>
-                        <table class="table">
-                            <tr>
-                                <th>Network</th>
-                                <th>Details</th>
-                                <th>Intended image size</th>
-                                <th></th>
-                            </tr>
-                            {% for network in form.standard_networks %}
-                            <tr>
-                                <td>{{network}} {{network.label}}</td>
-                                {% if network.data == 'lenet' %}
-                                <td>
-                                    <a href="http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf" target="_blank">Original paper</a>
-                                    [1998]
-                                </td>
-                                <td>28x28 (gray)</td>
-                                {% elif network.data == 'alexnet' %}
-                                <td>
-                                    <a href="http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional" target="_blank">Original paper</a>
-                                    [2012]
-                                </td>
-                                <td>256x256</td>
-                                {% elif network.data == 'vgg-16' %}
-                                <td>
-                                    <a href="http://arxiv.org/abs/1409.1556" target="_blank">Original paper</a>
-                                    [2014]
-                                </td>
-                                <td>256x256</td>
-                                {% elif network.data == 'googlenet' %}
-                                <td>
-                                    <a href="http://arxiv.org/abs/1409.4842" target="_blank">Original paper</a>
-                                    [2014]
-                                </td>
-                                <td>256x256</td>
-                                {% else %}
-                                <td></td><td>?</td>
-                                {% endif %}
-                                <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}');">Customize</a></td>
-                            </tr>
-                            {% endfor %}
-                        </table>
-                    </div>
+                  {% include "models/images/classification/partials/new/network_tab_standard.html" %}
                 </div>
                 <div id="network-tab-previous" class="tab-pane">
-
-                    <div class="tab-content">
-                        {% set batch_size = 10 %}
-                        {% for batch in form.previous_networks|batch(batch_size) %}
-                        {% set batch_loop_index = loop.index0 %}
-                        <div class="tab-pane{{' active' if loop.index==1}}" id="previous_networks-page-{{loop.index}}">
-
-                            <table class="table">
-                                <tr>
-                                    <th>Network</th>
-                                    <th>Pretrained Model</th>
-                                    <th></th>
-                                </tr>
-                                {% for network in batch %}
-                                {% set inner_index = batch_loop_index * batch_size + loop.index0 %}
-                                {% set previous_job = previous_networks_fullinfo[inner_index] %}
-                                <tr>
-                                    <td>
-                                        {{network}}
-                                        {{network.label}}
-                                        <a href="{{url_for('digits.model.views.show', job_id=network.data)}}" target="_blank">View</a>
-                                        <span class="badge">{{previous_job.train_task().get_framework_id()}}</span>
-                                    </td>
-                                    <td>
-                                        {% set snapshot_list = previous_network_snapshots[inner_index] %}
-                                        {% if snapshot_list|length %}
-                                        <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
-                                            {% for each_epoch in snapshot_list %}
-                                            <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
-                                            {% endfor %}
-                                        </select>
-                                        {% endif %}
-                                    </td>
-                                    <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}', '{{network.data}}-snapshot', '{{previous_job.train_task().get_framework_id()}}' );">Customize</a></td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td><i>None</i></td>
-                                </tr>
-                                {% endfor %}
-                            </table>
-
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    {% if form.previous_networks.choices|length > batch_size %}
-                    <div class="text-center">
-                        <ul class="pagination">
-                            {% for i in range((form.previous_networks.choices|length/batch_size)|round(0,'ceil')|int) %}
-                            <li class="{{'active' if i==0}}"><a href="#previous_networks-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-
+                  {% include "models/images/classification/partials/new/network_tab_previous.html" %}
                 </div>
+                <div id="network-tab-pretrained" class="tab-pane">
+                  {% include "models/images/classification/partials/new/network_tab_pretrained.html" %}
+                </div>
+
                 <script>
                     // hide some buttons and form elements
                     $("#network-tab-standard .btn.btn-sm").css('visibility', 'hidden');
                     $("#network-tab-previous .btn.btn-sm").css('visibility', 'hidden');
+                    $("#network-tab-pretrained .btn.btn-sm").css('visibility', 'hidden');
                     $("#network-tab-previous select").css('visibility', 'hidden');
 
                     var $stdtab_prev_clicked_tr = null;
@@ -635,6 +531,18 @@ function setFramework(fwid)
                         $prevtab_prev_clicked_tr = $(this).parents('tr');
                     });
 
+                    var $pretrainedtab_prev_clicked_tr = null;
+                    $("input:radio[name=pretrained_networks]").click(function(){
+                        if ($pretrainedtab_prev_clicked_tr != null) {
+                            $pretrainedtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'hidden');
+                        }
+                        var framework_badge = $(this).parents('td').find(".badge").text();
+                        setFramework(framework_badge);  //sets the framework value based on the job selected in previous networks tab.
+                        $(this).parents('tr').find(".btn.btn-sm").css('visibility', 'visible');
+                        $(this).parents('tr').find(".form-control").css('visibility', 'visible');
+                        $pretrainedtab_prev_clicked_tr = $(this).parents('tr');
+                    });
+
                     //fix to the following issue: when validation fails and the screen was re-displayed, the selected radio buttons in "previous networks" tab remains selected but the select input field and customize button beside the selected previous network is in hidden status, which is wrong. same issue exists in standard networks tab. The below code ensures that select field and customize button beside selected radio button will be visible even when validation fails.
 
                     if($("input:radio[name=standard_networks]").is(":checked")) {
@@ -645,6 +553,11 @@ function setFramework(fwid)
                         $prevtab_prev_clicked_tr =  $("input:radio[name=previous_networks]:checked").parents('tr');
                         $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
                         $prevtab_prev_clicked_tr.find(".form-control").css('visibility', 'visible');
+                    }
+
+                    if($("input:radio[name=pretrained_networks]").is(":checked")) {
+                        $prevtab_prev_clicked_tr =  $("input:radio[name=pretrained_networks]:checked").parents('tr');
+                        $prevtab_prev_clicked_tr.find(".btn.btn-sm").css('visibility', 'visible');
                     }
 
                 </script>

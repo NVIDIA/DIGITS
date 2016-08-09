@@ -29,7 +29,7 @@ import caffe
 import caffe_pb2
 
 # NOTE: Increment this everytime the pickled object changes
-PICKLE_VERSION = 4
+PICKLE_VERSION = 5
 
 # Constants
 CAFFE_SOLVER_FILE = 'solver.prototxt'
@@ -128,7 +128,7 @@ class CaffeTrainTask(TrainTask):
         self.solver = None
 
         self.solver_file = CAFFE_SOLVER_FILE
-        self.original_file = CAFFE_ORIGINAL_FILE
+        self.model_file = CAFFE_ORIGINAL_FILE
         self.train_val_file = CAFFE_TRAIN_VAL_FILE
         self.snapshot_prefix = CAFFE_SNAPSHOT_PREFIX
         self.deploy_file = CAFFE_DEPLOY_FILE
@@ -183,6 +183,13 @@ class CaffeTrainTask(TrainTask):
                 # probably on a platform where that was never possible.
                 # So you can't need this upgrade and we can ignore the error.
                 pass
+
+        if state['pickver_task_caffe_train'] <= 4:
+            if hasattr(self,"original_file"):
+                self.model_file = self.original_file
+                del self.original_file
+            else:
+                self.model_file = None
 
         self.pickver_task_caffe_train = PICKLE_VERSION
 
@@ -300,7 +307,7 @@ class CaffeTrainTask(TrainTask):
         Save solver, train_val and deploy files to disk
         """
         # Save the origin network to file:
-        with open(self.path(self.original_file), 'w') as outfile:
+        with open(self.path(self.model_file), 'w') as outfile:
             text_format.PrintMessage(self.network, outfile)
 
         network = cleanedUpClassificationNetwork(self.network, len(self.get_labels()))
@@ -599,7 +606,7 @@ class CaffeTrainTask(TrainTask):
         assert train_feature_db_path is not None, 'Training images are required'
 
         # Save the origin network to file:
-        with open(self.path(self.original_file), 'w') as outfile:
+        with open(self.path(self.model_file), 'w') as outfile:
             text_format.PrintMessage(self.network, outfile)
 
         ### Split up train_val and deploy layers
@@ -1128,13 +1135,14 @@ class CaffeTrainTask(TrainTask):
         }
 
         # These attributes only available in more recent jobs:
-        if hasattr(self,"original_file"):
-            stats.update({
-                "caffe flavor": self.caffe_flavor,
-                "caffe version": self.caffe_version,
-                "network file": self.original_file,
-                "digits version": self.digits_version
-            })
+        if hasattr(self,"model_file"):
+            if self.model_file is not None:
+                stats.update({
+                    "caffe flavor": self.caffe_flavor,
+                    "caffe version": self.caffe_version,
+                    "model file": self.model_file,
+                    "digits version": self.digits_version
+                })
 
         if hasattr(self.dataset,"resize_mode"):
             stats.update({"image resize mode": self.dataset.resize_mode})
@@ -1555,8 +1563,9 @@ class CaffeTrainTask(TrainTask):
                 "Network (train/val)": self.train_val_file,
                 "Network (deploy)": self.deploy_file
             }
-        if hasattr(self,"original_file"):
-            model_files.update({"Network (original)": self.original_file})
+        if hasattr(self,"model_file"):
+            if self.model_file is not None:
+                model_files.update({"Network (original)": self.model_file})
         return model_files
 
     @override
