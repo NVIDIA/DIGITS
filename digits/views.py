@@ -296,7 +296,9 @@ def show_job(job_id):
     if isinstance(job, model.ModelJob):
         return flask.redirect(flask.url_for('digits.model.views.show', job_id=job_id))
     if isinstance(job, pretrained_model.PretrainedModelJob):
-        return flask.redirect(flask.url_for('digits.pretrained_model.views.show', job_id=job_id))
+        return flask.redirect(flask.url_for('digits.pretrained_model.views.layer_visualizations', job_id=job_id))
+    if isinstance(job, inference.GradientAscentJob):
+        return flask.redirect(flask.url_for('digits.pretrained_model.views.layer_visualizations', job_id=job.pretrained_model.id()))
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
