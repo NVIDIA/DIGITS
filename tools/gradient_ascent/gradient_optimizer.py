@@ -191,14 +191,14 @@ class GradientOptimizer(object):
     def run_optimize(self, params, prefix_template = None, brave = False, skipbig = False, save=True):
         '''All images are in Caffe format, e.g. shape (3, 227, 227) in BGR order.'''
 
-        print '\n\nStarting optimization with the following parameters:'
-        print params
+        # print '\n\nStarting optimization with the following parameters:'
+        # print params
 
         x0 = self._get_x0(params)
         xx, results = self._optimize(params, x0)
         if save is True:
             self.save_results(params, results, prefix_template, brave = brave, skipbig = skipbig)
-            print results.meta_result
+            # print results.meta_result
             return xx
         else:
             return self.return_results(params, results, prefix_template, brave = brave, skipbig = skipbig)
@@ -254,6 +254,8 @@ class GradientOptimizer(object):
             # 0. Crop data
             xx = minimum(255.0, maximum(0.0, xx + self.data_mean)) - self.data_mean     # Crop all values to [0,255]
 
+            # cv2.imshow('gradient',np.transpose(xx[0], (2,1,0)));
+            # cv2.waitKey(0);
 
             # 1. Push data through net
             out = self.net.forward_all(data = xx)
@@ -275,20 +277,20 @@ class GradientOptimizer(object):
 
 
             # 3. Print progress
-            if ii > 0:
-                if params.lr_policy == 'progress':
-                    print '%-4d  progress predicted: %g, actual: %g' % (ii, pred_prog, obj - old_obj)
-                else:
-                    print '%-4d  progress: %g' % (ii, obj - old_obj)
-            else:
-                print '%d' % ii
-            old_obj = obj
+            # if ii > 0:
+            #     if params.lr_policy == 'progress':
+            #         print '%-4d  progress predicted: %g, actual: %g' % (ii, pred_prog, obj - old_obj)
+            #     else:
+            #         print '%-4d  progress: %g' % (ii, obj - old_obj)
+            # else:
+            #     print '%d' % ii
+            # old_obj = obj
 
-            push_label_str = ('(%s)' % push_label) if is_labeled_unit else ''
-            max_label_str  = ('(%s)' % self.labels[idxmax[0]]) if is_labeled_unit else ''
-            print '     push unit: %16s with value %g %s' % (params.push_unit, acts[params.push_unit], push_label_str)
-            print '       Max idx: %16s with value %g %s' % (idxmax, valmax, max_label_str)
-            print '             X:', xx.min(), xx.max(), norm(xx)
+            # push_label_str = ('(%s)' % push_label) if is_labeled_unit else ''
+            # max_label_str  = ('(%s)' % self.labels[idxmax[0]]) if is_labeled_unit else ''
+            # print '     push unit: %16s with value %g %s' % (params.push_unit, acts[params.push_unit], push_label_str)
+            # print '       Max idx: %16s with value %g %s' % (idxmax, valmax, max_label_str)
+            # print '             X:', xx.min(), xx.max(), norm(xx)
 
 
             # 4. Do backward pass to get gradient
@@ -303,12 +305,11 @@ class GradientOptimizer(object):
             backout = self.net.backward(start=params.push_layer)
 
             grad = backout['data'].copy()
-            print '          grad:', grad.min(), grad.max(), norm(grad)
+            # print '          grad:', grad.min(), grad.max(), norm(grad)
             if norm(grad) == 0:
                 print 'Grad exactly 0, failed'
                 results.meta_result = 'Metaresult: grad 0 failure'
                 break
-
 
             # 5. Pick gradient update per learning policy
             if params.lr_policy == 'progress01':
@@ -317,13 +318,13 @@ class GradientOptimizer(object):
                 desired_prog = min(params.lr_params['early_prog'], late_prog)
                 prog_lr = desired_prog / norm(grad)**2
                 lr = min(params.lr_params['max_lr'], prog_lr)
-                print '    desired progress:', desired_prog, 'prog_lr:', prog_lr, 'lr:', lr
+                # print '    desired progress:', desired_prog, 'prog_lr:', prog_lr, 'lr:', lr
                 pred_prog = lr * dot(grad.flatten(), grad.flatten())
             elif params.lr_policy == 'progress':
                 # straight progress-based lr
                 prog_lr = params.lr_params['desired_prog'] / norm(grad)**2
                 lr = min(params.lr_params['max_lr'], prog_lr)
-                print '    desired progress:', params.lr_params['desired_prog'], 'prog_lr:', prog_lr, 'lr:', lr
+                # print '    desired progress:', params.lr_params['desired_prog'], 'prog_lr:', prog_lr, 'lr:', lr
                 pred_prog = lr * dot(grad.flatten(), grad.flatten())
             elif params.lr_policy == 'constant':
                 # constant fixed learning rate
@@ -343,7 +344,7 @@ class GradientOptimizer(object):
                         print 'Warning: blur-radius of .3 or less works very poorly'
                         #raise Exception('blur-radius of .3 or less works very poorly')
                     if ii % params.blur_every == 0:
-                        for channel in range(3):
+                        for channel in range(len(xx[0])):
                             cimg = gaussian_filter(xx[0,channel], params.blur_radius)
                             xx[0,channel] = cimg
                 if params.small_val_percentile > 0:
@@ -382,7 +383,7 @@ class GradientOptimizer(object):
         if results.best_xx is None:
             return
         asimg = results.best_xx[self.channel_swap_to_rgb].transpose((1,2,0))
-        img = asimg + self._data_mean_rgb_img
+        img = np.transpose(asimg + self._data_mean_rgb_img, (1,0,2))
         return norm01(img)[:,:,::-1]
 
     def save_results(self, params, results, prefix_template, brave = False, skipbig = False):

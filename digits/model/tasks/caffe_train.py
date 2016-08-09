@@ -1075,8 +1075,15 @@ class CaffeTrainTask(TrainTask):
 
         loc, mean_file = os.path.split(self.dataset.get_mean_file())
 
+        image_dimensions = list(self.dataset.get_feature_dims())
+
+        # TODO: Store both original, and cropped image dimensions
+        if self.crop_size is not None:
+            image_dimensions[0] = self.crop_size
+            image_dimensions[1] = self.crop_size
+
         stats = {
-            "image dimensions": self.dataset.get_feature_dims(),
+            "image dimensions": tuple(image_dimensions),
             "mean file": mean_file,
             "snapshot file": self.get_snapshot_filename(epoch),
             "solver file": self.solver_file,

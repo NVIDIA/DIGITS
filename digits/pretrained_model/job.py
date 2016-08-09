@@ -13,12 +13,11 @@ class PretrainedModelJob(Job):
     A Job that uploads a pretrained model
     """
     def __init__(self, weights_path, model_def_path, labels_path=None, mean_path=None, framework="caffe",
-                image_type="3",resize_mode="Squash", width=224, height=224, **kwargs):
+                image_type="3",resize_mode="Squash", height=224, width=224, **kwargs):
 
         super(PretrainedModelJob, self).__init__(persistent = False, **kwargs)
 
         self.has_labels = labels_path is not None
-        self.has_mean   = mean_path   is not None
 
         self.framework  = framework
         self.image_info = {
@@ -68,12 +67,16 @@ class PretrainedModelJob(Job):
         return data
 
     @override
+    def is_persistent(self):
+        return True
+
+    @override
     def job_type(self):
         return "Pretrained Model"
 
     @override
     def __getstate__(self):
-        fields_to_save = ['_id', '_name', 'username', 'tasks', 'status_history', 'has_labels', 'has_mean', 'framework', 'image_info']
+        fields_to_save = ['_id', '_name', 'username', 'tasks', 'status_history', 'has_labels', 'framework', 'image_info']
         full_state = super(PretrainedModelJob, self).__getstate__()
         state_to_save = {}
         for field in fields_to_save:

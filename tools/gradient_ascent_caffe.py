@@ -40,7 +40,12 @@ def get_mean(mean_file_path, data_size):
 
     # Convert Mean Blob for Resizing with cv2 to input dimensions
     mean_image = np.transpose(np.array( caffe.io.blobproto_to_array(mean_blob) )[0], (1,2,0))
-    data_mean = np.transpose(cv2.resize(mean_image,data_size), (2,0,1))
+    im = cv2.resize(mean_image,data_size)
+    if len(im.shape) == 2:
+        # cv2 removed color channel, so re-add it:
+        data_mean = np.array([im])
+    else:
+        data_mean = np.transpose(cv2.resize(mean_image,data_size), (2,1,0))
 
     return data_mean
 
@@ -64,13 +69,13 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
     # TODO : Make channel swap inputable
     net = caffe.Classifier(
         model_def_path,
-        weights_path,
-        channel_swap = (2,1,0)
+        weights_path
     )
 
     # Get the input shape in order to resize mean image:
     in_ = net.inputs[0]
     input_shape = net.blobs[in_].data.shape
+
     data_size = (input_shape[2], input_shape[3])
 
     if mean_file_path is not None:
@@ -78,7 +83,7 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
         mean = get_mean(mean_file_path, data_size)
     else:
         # Else generate grey image:
-        mean = np.ones(net.blobs[in_].data[0].shape) * 127
+        mean = np.ones(net.blobs[in_].data[0].shape) * 150
 
     # Set the mean for the network (as it wasnt set during initialization)
     transformer = caffe.io.Transformer({in_: input_shape})
@@ -88,13 +93,15 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
 
     # Check if fully convolutional layer, or a convolutional layer
     # If convolutional set spacial to be the center to avoid cropping
+
     is_conv = (len(out.shape) == 4)
     if (is_conv):
-        push_spatial = (out.shape[2]/2, out.shape[3]/2)
+        min_spatial = min((out.shape[2], out.shape[3]))
+        push_spatial = (min_spatial/2, min_spatial/2)
     else:
         push_spatial = (0,0)
 
-    optimizer = GradientOptimizer(net,mean,channel_swap_to_rgb = (2,1,0))
+    optimizer = GradientOptimizer(net,mean)
 
     if -1 in units:
         units = range(out.shape[1])
@@ -104,7 +111,7 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
         params = FindParams(
             push_layer = layer,
             push_channel = unit,
-            decay = 0.001,
+            decay = 0.0001,
             blur_radius = 1.0,
             blur_every = 4,
             max_iter = 100,
@@ -112,7 +119,13 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
             lr_params = {'lr': 100.0}
         )
 
-        im = optimizer.run_optimize(params, prefix_template = "blah",brave = True,save=False)
+        try:
+            im = optimizer.run_optimize(params, prefix_template = "blah",brave = True,save=False)
+            # cv2.imshow('gradient',im);
+            # cv2.waitKey(0);
+        except:
+            sys.exit()
+
         # im = np.square(np.gradient(np.mean(np.mean(im, axis=2),axis=1)))
 
         # Get the distribution of points along the image (assuming roughly symmetric)
@@ -130,31 +143,41 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
 
         # Fit data
         N_max = 10
+        fit_success = False
         for j in range(N_max):
-            popt,__ = curve_fit(gaus,x,y,p0=[1,mean,sigma])
-            sigma   = int(popt[2])
-            if sigma == 0 :
-                break
+            try:
+                popt,__ = curve_fit(gaus,x,y,p0=[1,mean,sigma])
+                sigma   = int(popt[2])
+                if sigma != 0 :
+                    fit_success = True
+                    break
+            except:
+                print "Failed to find receptive field"
+                pass
 
-        w = 4*np.abs(sigma)
-        y_out = gaus(x,*popt)
+        if fit_success is True:
+            w = 4*np.abs(sigma)
+            y_out = gaus(x,*popt)
 
-        ymax = np.argmax(y_out)
-        if (ymax == 1):
-            ymax = input_shape[2]/2
+            ymax = np.argmax(y_out)
+            if (ymax == 1):
+               ymax = input_shape[2]/2
 
-        # Plot Gaussian Curve:
-        # import matplotlib.pyplot as plt
-        # plt.plot(x,y,'b+:',label='data')
-        # plt.plot(x,y_out,'ro:',label='fit')
-        # plt.legend()
-        # plt.xlabel('Pixel')
-        # plt.ylabel('Squared Gradient')
-        # plt.show()
+            # Plot Gaussian Curve:
+            # import matplotlib.pyplot as plt
+            # plt.plot(x,y,'b+:',label='data')
+            # plt.plot(x,y_out,'ro:',label='fit')
+            # plt.legend()
+            # plt.xlabel('Pixel')
+            # plt.ylabel('Squared Gradient')
+            # plt.show()
 
-        # Crop image:
-        if (sigma != 0 and w < ymax):
-            cropped = im[ymax-w:ymax+w, ymax-w:ymax+w,:]
+            # Crop image:
+            # TODO: Crop based on width and height (for non-square data layers)
+            if (w < ymax):
+               cropped = im[ymax-w:ymax+w, ymax-w:ymax+w,:]
+            else:
+               cropped = im
         else:
             cropped = im
 
@@ -223,17 +246,6 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
 
-    # infer(
-    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce",
-    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce/deploy.prototxt",
-    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce/model.caffemodel",
-    #     "inception_3b/3x3",
-    #     [53],
-    #     "/home/lzeerwanklyn/Projects/DIGITS/digits/jobs/20160801-163240-3cce/mean.binaryproto",
-    #     0
-    #     )
-    #
-    # sys.ext()
     try:
         infer(
             args['output_dir'],

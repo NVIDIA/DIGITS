@@ -94,14 +94,8 @@ def run_max_activations():
     )
 
     scheduler.add_job(gradient_ascent_job)
-    gradient_ascent_job.wait_completion()
-    scheduler.delete_job(gradient_ascent_job)
 
-    # f = h5py.File(model_job.get_activations_path())
-    # image_id = str(len(f.keys())-1)
-    # input_data = f[image_id]['data'][:][0]
-
-    return flask.jsonify({"stats": units})
+    return flask.jsonify({"stats": units, "job_id": gradient_ascent_job.id()})
 
 def fill_empty(num):
     data = []
@@ -132,17 +126,37 @@ def max_activation():
             if str(unit) in f[layer_name]:
                 raw_data = f[layer_name][str(unit)]['cropped'][:]
         f.close()
+
+    if len(raw_data[0][0]) == 1:
+        raw_data = np.transpose(raw_data, (2,0,1))[0]
+
     img = PIL.Image.fromarray(np.uint8(raw_data))
     return serve_pil_image(img)
 
+@blueprint.route('/stop_max_activations.json', methods=['GET'])
+def stop_max_activations():
+    """ Stop Max Activations Job """
+    job  = job_from_request()
+    args = flask.request.args
+    job_id = args["gradient_ascent_id"]
+    scheduler.abort_job(job_id)
+    return flask.jsonify({"status": "success"}), 200
 
 @blueprint.route('/remove_max_activations.json', methods=['GET'])
-def get_max_activations():
+def remove_max_activations():
     """ Deletes Max Activations Dataset pertaining to specified layer in job """
     job = job_from_request()
     args = flask.request.args
     layer_name = args["layer_name"]
-        
+
+    if os.path.isfile(job.get_max_activations_path()):
+        f = h5py.File(job.get_max_activations_path(),'a')
+        if layer_name in f:
+            del f[layer_name]
+            return flask.jsonify({"status": "success"}), 200
+
+    return flask.jsonify({"status": "error"}), 500
+
 @blueprint.route('/get_max_activations.json', methods=['GET'])
 def get_max_activations():
     """ Returns array of maximum activations for a given layer """
@@ -152,13 +166,13 @@ def get_max_activations():
     range_min  = int(args["range_min"])
     range_max  = int(args["range_max"])
     data = []
-    # For now return an empty array (currently just building selection)
-    if os.path.isfile(job.get_max_activations_path()):
-        f = h5py.File(job.get_max_activations_path(),'a')
-        w = h5py.File(job.get_filters_path(),'r')
-        stats = json.loads(w[layer_name].attrs["stats"])
+    stats = {}
 
+    if os.path.isfile(job.get_max_activations_path()):
+        f = h5py.File(job.get_max_activations_path(),'r')
+        w = h5py.File(job.get_filters_path(),'r')
         if layer_name in w:
+            stats = json.loads(w[layer_name].attrs["stats"])
             for unit in range(stats["num_activations"]):
                 if layer_name in f:
                     if str(unit) in f[layer_name]:

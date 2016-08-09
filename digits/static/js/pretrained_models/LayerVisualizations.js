@@ -67,9 +67,10 @@ var LayerVisualizations = function(selector,props){
   // Update:
   self.updateItem = function(item,layer,unit){
     if (self.layer.name != layer) return;
-    var hw = 65;
-    var ctx = item.getContext("2d");
-    ctx.clearRect(0, 0, hw, hw);
+    if (self.active_tab != "max-activations") return;
+
+    var size = 65;
+
     var params = $.param({
       "job_id": self.job_id,
       "layer_name":layer,
@@ -77,8 +78,7 @@ var LayerVisualizations = function(selector,props){
     });
 
     var image_url = "/pretrained_models/max_activation?"+params;
-    UnitHelpers.drawImage(image_url,ctx,hw,hw);
-
+    UnitHelpers.drawUnitImage(image_url,item,size,false);
   };
 
   self.update = function(){
@@ -109,20 +109,25 @@ var LayerVisualizations = function(selector,props){
 
     // Add hover effect
     items.on("mouseover", function(data,i){
-      d3.select(this).classed("canvas-hover", true);
+      d3.select(this)
+        .classed("canvas-hover", true)
+        .style(UnitHelpers.mouseOverStyles());
       $(this).tooltip({title: self.range.min + i + "", placement: "bottom"});
       $(this).tooltip("show");
     });
 
     items.on("mouseout", function(){
-      d3.select(this).classed("canvas-hover", false);
+      d3.select(this)
+        .classed("canvas-hover", false)
+        .style(UnitHelpers.mouseExitStyles());
     });
 
   };
 
   // Draw:
   self.updateTab = function(layerName,json,tabName){
-    if (_.isNull(self.layer)) self.layer = {name: layerName};
+
+    self.layer = {name: layerName};
     self.layer.stats = json.stats;
     self.active_tab = tabName;
     self.panel.render();
@@ -142,19 +147,31 @@ var LayerVisualizations = function(selector,props){
     self.updateTab(layerName,json,"weights");
   };
 
+  self.initRange = function(){
+    self.range = {min: 0 , max: 156};
+  };
+
   // Events:
   self.layerClicked = function(e){
+    self.initRange();
     self.layer = e.layer;
-    self.range = {min: 0 , max: 156};
     self.dispatchInference();
     self.tasks.render(e.layer.name);
   };
 
   self.maxActivationsUpdated = function(msg){
     self.tasks.updateProgress(msg);
-    var unit = msg.data.unit-1;
-    var index = unit - self.range.min;
-    self.updateItem(self.items[0][index],msg.data.layer,unit);
+
+    if (_.isEmpty(self.outputs)){
+      self.initRange();
+      self.dispatchInference();
+      self.tasks.render(msg.data.layer);
+    }else{
+      var unit = msg.data.unit-1;
+      var index = _.isNull(self.range) ? unit : unit-self.range.min;
+      self.outputs[unit] = true;
+      self.updateItem(self.items[0][index],msg.data.layer,unit);
+    }
   };
 
   // Event Listeners:
@@ -184,6 +201,19 @@ LayerVisualizations.Actions = function(props){
     });
   };
 
+  self.stopMaxActivations = function(job_id){
+    params = $.param({
+      "job_id": parent.job_id,
+      "gradient_ascent_id": job_id
+    });
+
+    var outputs_url  = "/pretrained_models/stop_max_activations.json?"+params;
+    d3.json(outputs_url, function(error, json) {
+      parent.tasks.maxActivationsStopped();
+    });
+
+  };
+
   self.removeMaxActivations = function(layerName){
     params = $.param({
       "job_id": parent.job_id,
@@ -192,8 +222,7 @@ LayerVisualizations.Actions = function(props){
 
     var outputs_url  = "/pretrained_models/remove_max_activations.json?"+params;
     d3.json(outputs_url, function(error, json) {
-      console.log("Activations Removed");
-      console.log(json);
+      self.getMaxActivations(layerName);
     });
 
   };
@@ -206,7 +235,9 @@ LayerVisualizations.Actions = function(props){
     });
 
     var outputs_url  = "/pretrained_models/run_max_activations.json?"+params;
-    d3.json(outputs_url).post(function(error, json) {});
+    d3.json(outputs_url).post(function(error,json){
+      parent.tasks.job_id = json.job_id;
+    });
   };
 
   self.getMaxActivations = function(layerName){
@@ -383,7 +414,8 @@ LayerVisualizations.Panel = function(selector,props){
     self.body.append("div")
       .attr("class", "alert alert-warning")
       .style("margin","15px")
-      .html("This layer contains no weights");
+      .html("No Outputs Available");
+
     self.nav = panelBody.append("div").attr("class", "panel-nav");
 
     self.drawCloseButton();
@@ -435,8 +467,10 @@ LayerVisualizations.Tasks = function(selector,props){
     self.unit = null;
     self.tasks = new Array();
     self.btn = null;
-    self.disabled = false;
+    self.job_id = null;
+    self.isRunning = false;
     self.addBtn    = {status: "primary", text: "Get Max Activations"};
+    self.abortBtn  = {status: "warning", text: "Abort Max Activations"};
     self.removeBtn = {status: "danger", text: "Delete Max Activations"};
 
     self.render = function(layer){
@@ -456,12 +490,16 @@ LayerVisualizations.Tasks = function(selector,props){
       self.render(this.dataset.layer);
     };
 
+    self.dispatchStopMaxActivations = function(){
+      parent.actions.stopMaxActivations(self.job_id);
+    };
+
     self.dispatchRemoveMaxActivations = function(){
       parent.actions.removeMaxActivations(parent.layer.name);
     };
 
     self.dispatchRunMaxActivations = function(){
-      self.disabled = true;
+      self.isRunning = true;
       parent.actions.postMaxActivations(parent.layer.name, [-1]);
       self.tasks.push(new LayerVisualizations.Task(self,parent.layer.name));
       self.render();
@@ -485,20 +523,20 @@ LayerVisualizations.Tasks = function(selector,props){
         return;
 
       var hasOutputs = _.includes(parent.outputs, true);
-      self.btn = hasOutputs ? self.removeBtn : self.addBtn;
+
+      self.btn   = hasOutputs ? self.removeBtn : self.addBtn;
+      self.btn   = !self.isRunning ? self.btn  : self.abortBtn;
+
+      var action = hasOutputs ? self.dispatchRemoveMaxActivations : self.dispatchRunMaxActivations;
 
       var btn = self.container.append("a")
         .attr("class", "btn btn-"+self.btn.status)
         .attr("data-style", "expand-left")
         .style("width","100%")
-        .on("click",
-          hasOutputs ? self.dispatchRemoveMaxActivations : self.dispatchRunMaxActivations
-        );
+        .on("click", !self.isRunning ? action : self.dispatchStopMaxActivations);
 
       btn.append("span").attr("class","ladda-label")
           .text(self.btn.text);
-
-      if (self.disabled) btn.attr("disabled","disabled");
     };
 
     self.drawUnitInfo = function(){
@@ -519,15 +557,14 @@ LayerVisualizations.Tasks = function(selector,props){
       canvas.attr(UnitHelpers.defaultAttributes(hw,hw));
       canvas.style(UnitHelpers.defaultStyles(hw,hw));
 
-      var ctx = canvas.node().getContext("2d");
-      ctx.clearRect(0, 0, hw, hw);
-      UnitHelpers.drawImage(image_url,ctx,hw,hw);
+      UnitHelpers.drawUnitImage(image_url,canvas.node(),hw,false);
     };
 
     self.updateProgress = function(msg){
       var task = _.last(self.tasks.filter(function(t){return t.layer == msg.data.layer}));
       if (_.isUndefined(task)){
-        self.disabled = true;
+        self.isRunning = true;
+        self.job_id    = msg.data.id;
         self.tasks.push(new LayerVisualizations.Task(self,msg.data.layer));
         self.render();
         task = _.last(self.tasks);
@@ -538,10 +575,15 @@ LayerVisualizations.Tasks = function(selector,props){
       task.update();
     };
 
+    self.maxActivationsStopped = function(){
+      var task = _.last(self.tasks.filter(function(t){
+        return t.layer == self.layer;
+      }));
+      task.complete("warning");
+    };
+
     self.taskCompleted = function(){
-      self.btn.status = "primary";
-      self.btn.text = "Get Max Activations";
-      self.disabled = false;
+      self.isRunning = false;
       self.render();
     };
 
@@ -557,9 +599,10 @@ LayerVisualizations.Task = function(parent,layer){
   self.status = "default";
   self.container = null;
 
-  self.complete = function(){
+  self.complete = function(status){
+    self.progress = 1;
     self.btn.stop();
-    self.status = "success";
+    self.status = _.isUndefined(status) ? "success" : status;
     self.drawButton();
     parent.taskCompleted();
   };

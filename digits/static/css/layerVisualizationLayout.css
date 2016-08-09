@@ -125,8 +125,6 @@ body {
 .canvas-hover {
   margin-left: -25px !important;
   margin-top: -25px !important;
-  height: 90px !important;
-  width: 90px !important;
   position:relative !important;
   left: 12.5px;
   top: 12.5px;

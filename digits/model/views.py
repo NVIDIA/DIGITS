@@ -211,6 +211,7 @@ def to_pretrained(job_id, extension):
         snapshot_filename,
         job.dir() + "/" + task.model_file ,
         task.dataset.dir() + "/" + info["labels file"],
+        task.dataset.dir() + "/" + info["mean file"],
         info["framework"],
         info["image dimensions"][2],
         info["image resize mode"],
