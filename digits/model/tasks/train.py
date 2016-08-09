@@ -7,6 +7,7 @@ import time
 
 import flask
 import gevent
+import psutil
 
 from digits import device_query
 from digits.task import Task
@@ -86,8 +87,8 @@ class TrainTask(Task):
             del state['snapshots']
         if '_labels' in state:
             del state['_labels']
-        if '_gpu_socketio_thread' in state:
-            del state['_gpu_socketio_thread']
+        if '_hw_socketio_thread' in state:
+            del state['_hw_socketio_thread']
         return state
 
     def __setstate__(self, state):
@@ -157,17 +158,18 @@ class TrainTask(Task):
 
     @override
     def before_run(self):
+        # start a thread which sends SocketIO updates about hardware utilization
+        gpus = None
         if 'gpus' in self.current_resources:
-            # start a thread which sends SocketIO updates about GPU utilization
-            self._gpu_socketio_thread = gevent.spawn(
-                    self.gpu_socketio_updater,
-                    [identifier for (identifier, value)
-                        in self.current_resources['gpus']]
-                    )
+            gpus = [identifier for (identifier, value) in self.current_resources['gpus']]
 
-    def gpu_socketio_updater(self, gpus):
+        self._hw_socketio_thread = gevent.spawn(
+            self.hw_socketio_updater,
+            gpus)
+
+    def hw_socketio_updater(self, gpus):
         """
-        This thread sends SocketIO messages about GPU utilization
+        This thread sends SocketIO messages about hardware utilization
         to connected clients
 
         Arguments:
@@ -176,27 +178,46 @@ class TrainTask(Task):
         from digits.webapp import app, socketio
 
         devices = []
-        for index in gpus:
-            device = device_query.get_device(index)
-            if device:
-                devices.append((index, device))
-        if not devices:
-            raise RuntimeError('Failed to load gpu information for "%s"' % gpus)
+        if gpus is not None:
+            for index in gpus:
+                device = device_query.get_device(index)
+                if device:
+                    devices.append((index, device))
+                else:
+                    raise RuntimeError('Failed to load gpu information for GPU #"%s"' % index)
 
         # this thread continues until killed in after_run()
         while True:
-            data = []
+            # CPU (Non-GPU) Info
+            data_cpu = {}
+            data_cpu['pid'] = self.p.pid
+            try:
+                ps = psutil.Process(self.p.pid) # 'self.p' is the system call object
+                if ps.is_running():
+                    if psutil.version_info[0] >= 2:
+                        data_cpu['cpu_pct'] = ps.cpu_percent(interval=1)
+                        data_cpu['mem_pct'] = ps.memory_percent()
+                        data_cpu['mem_used'] = ps.memory_info().rss
+                    else:
+                        data_cpu['cpu_pct'] = ps.get_cpu_percent(interval=1)
+                        data_cpu['mem_pct'] = ps.get_memory_percent()
+                        data_cpu['mem_used'] = ps.get_memory_info().rss
+            except psutil.NoSuchProcess:
+                # In rare case of instant process crash or PID went zombie (report nothing)
+                pass
 
+            data_gpu = []
             for index, device in devices:
                 update = {'name': device.name, 'index': index}
                 nvml_info = device_query.get_nvml_info(index)
                 if nvml_info is not None:
                     update.update(nvml_info)
-                data.append(update)
+                data_gpu.append(update)
 
             with app.app_context():
                 html = flask.render_template('models/gpu_utilization.html',
-                        data = data)
+                        data_gpu = data_gpu,
+                        data_cpu = data_cpu)
 
                 socketio.emit('task update',
                         {
@@ -349,8 +370,8 @@ class TrainTask(Task):
 
     @override
     def after_run(self):
-        if hasattr(self, '_gpu_socketio_thread'):
-            self._gpu_socketio_thread.kill()
+        if hasattr(self, '_hw_socketio_thread'):
+            self._hw_socketio_thread.kill()
 
     def detect_snapshots(self):
         """
