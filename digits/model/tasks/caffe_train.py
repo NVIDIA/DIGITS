@@ -18,24 +18,22 @@ import scipy
 
 from .train import TrainTask
 import digits
-
 from digits import utils
 from digits.config import config_value
 from digits.status import Status
 from digits.utils import subclass, override, constants
 from digits.utils.filesystem import tail
-from digits.framework_helpers import caffe_helpers
 
 # Must import after importing digit.config
 import caffe
 import caffe_pb2
 
 # NOTE: Increment this everytime the pickled object changes
-PICKLE_VERSION = 4
+PICKLE_VERSION = 5
 
 # Constants
 CAFFE_SOLVER_FILE = 'solver.prototxt'
-CAFFE_MODEL_FILE = 'original.prototxt'
+CAFFE_ORIGINAL_FILE = 'original.prototxt'
 CAFFE_TRAIN_VAL_FILE = 'train_val.prototxt'
 CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
@@ -86,7 +84,7 @@ class CaffeTrainTask(TrainTask):
         self.solver = None
 
         self.solver_file = CAFFE_SOLVER_FILE
-        self.model_file = CAFFE_MODEL_FILE
+        self.model_file = CAFFE_ORIGINAL_FILE
         self.train_val_file = CAFFE_TRAIN_VAL_FILE
         self.snapshot_prefix = CAFFE_SNAPSHOT_PREFIX
         self.deploy_file = CAFFE_DEPLOY_FILE
@@ -141,6 +139,13 @@ class CaffeTrainTask(TrainTask):
                 # probably on a platform where that was never possible.
                 # So you can't need this upgrade and we can ignore the error.
                 pass
+
+        if state['pickver_task_caffe_train'] <= 4:
+            if hasattr(self,"original_file"):
+                self.model_file = self.original_file
+                del self.original_file
+            else:
+                self.model_file = None
 
         self.pickver_task_caffe_train = PICKLE_VERSION
 
@@ -1094,12 +1099,13 @@ class CaffeTrainTask(TrainTask):
 
         # These attributes only available in more recent jobs:
         if hasattr(self,"model_file"):
-            stats.update({
-                "caffe flavor": self.caffe_flavor,
-                "caffe version": self.caffe_version,
-                "model file": self.model_file,
-                "digits version": self.digits_version
-            })
+            if self.model_file is not None:
+                stats.update({
+                    "caffe flavor": self.caffe_flavor,
+                    "caffe version": self.caffe_version,
+                    "model file": self.model_file,
+                    "digits version": self.digits_version
+                })
 
         if hasattr(self.dataset,"resize_mode"):
             stats.update({"image resize mode": self.dataset.resize_mode})
@@ -1495,7 +1501,8 @@ class CaffeTrainTask(TrainTask):
                 "Network (deploy)": self.deploy_file
             }
         if hasattr(self,"model_file"):
-            model_files.update({"Network (original)": self.model_file})
+            if self.model_file is not None:
+                model_files.update({"Network (original)": self.model_file})
         return model_files
 
     @override
