@@ -75,6 +75,22 @@ var PretrainedModel = function(params){
     self.frameworkSelector = inputs.select(
       row.append("div").attr("class","col-xs-6"),self.frameworks,"Framework","framework"
     );
+    row = self.newRow();
+    row.style("border-radius", "5px 5px 0px 0px");
+    inputs.select(
+      row.append("div").attr("class","col-xs-6"),
+        self.resize_channels,"Image Type","image_type"
+    );
+
+    inputs.select(
+      row.append("div").attr("class","col-xs-6"),
+        self.resize_modes,"Resize Mode","resize_mode"
+    );
+
+    row = self.newRow();
+    row.style("border-radius", "0px 0px 5px 5px");
+    inputs.field(row.append("div").attr("class","col-xs-6"),"number","Width", "width").attr("value",256);
+    inputs.field(row.append("div").attr("class","col-xs-6"),"number","Height", "height").attr("value",256);
 
     self.frameworkSelector.on("change", self.frameworkChanged);
     self.innerContainer = self.container.append("div");
