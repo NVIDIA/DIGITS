@@ -85,6 +85,9 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
         # Else generate grey image:
         mean = np.ones(net.blobs[in_].data[0].shape) * 150
 
+    # For now , just use grey image:
+    mean = np.ones(net.blobs[in_].data[0].shape) * 128
+
     # Set the mean for the network (as it wasnt set during initialization)
     transformer = caffe.io.Transformer({in_: input_shape})
     transformer.set_mean(in_, mean)

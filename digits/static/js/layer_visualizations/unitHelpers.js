@@ -4,16 +4,16 @@ var UnitHelpers = {
     w = _.isUndefined(w) ? 65 : w;
     return {margin: "0px",height:h+"px", width:w+"px", position: "relative"}
   },
-  mouseOverStyles: function(){
+  mouseOverStyles: function(h,w){
     return {
-      height: "90px",
-      width: "90px",
+      height: h+25+"px",
+      width: w+25+"px",
     }
   },
-  mouseExitStyles: function(){
+  mouseExitStyles: function(h,w){
     return {
-      height: "65px",
-      width: "65px",
+      height: h+"px",
+      width: w+"px",
     }
   },
   defaultAttributes: function(h,w){
@@ -56,7 +56,16 @@ var UnitHelpers = {
      }
      image.src = image_url+"&time_stamp="+time_stamp;
   },
-  drawUnit: function(output_data,ctx, w,h){
+  drawUnit: function(output_data,canvas, w,h){
+    // Update size of canvas accordingly:
+    canvas.setAttribute("height", h);
+    canvas.setAttribute("width", w);
+    canvas.style.width  = w+"px";
+    canvas.style.height = h+"px";
+
+    // Draw:
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, w, h);
 
     var grid_dim = output_data[0].length;
     var pixel_h = pixel_w = h/grid_dim;

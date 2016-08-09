@@ -94,7 +94,8 @@ body {
   top: 100%;
   margin-top:-110px;
   width:100%;
-  overflow: hidden;
+  height: 133px;
+  overflow: auto;
   z-index: 2;
 }
 

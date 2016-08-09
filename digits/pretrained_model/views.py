@@ -89,7 +89,7 @@ def run_max_activations():
         job,
         layer_name,
         units,
-        name = "Gradient Ascent",
+        name = "Gradient Ascent: %s, %s" % (job.name(), layer_name),
         username = utils.auth.get_username()
     )
 

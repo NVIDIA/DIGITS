@@ -98,10 +98,8 @@ var LayerVisualizations = function(selector,props){
             var unit = self.range.min + i;
             self.updateItem(this,self.layer.name,unit);
           }else {
-            var hw = 65;
-            var ctx = this.getContext("2d");
-            ctx.clearRect(0, 0, hw, hw);
-            UnitHelpers.drawUnit(data,ctx,hw,hw);
+            var hw = 25;
+            UnitHelpers.drawUnit(data,this,hw,hw);
           }
         });
 
@@ -111,7 +109,7 @@ var LayerVisualizations = function(selector,props){
     items.on("mouseover", function(data,i){
       d3.select(this)
         .classed("canvas-hover", true)
-        .style(UnitHelpers.mouseOverStyles());
+        .style(UnitHelpers.mouseOverStyles(this.height,this.width));
       $(this).tooltip({title: self.range.min + i + "", placement: "bottom"});
       $(this).tooltip("show");
     });
@@ -119,7 +117,7 @@ var LayerVisualizations = function(selector,props){
     items.on("mouseout", function(){
       d3.select(this)
         .classed("canvas-hover", false)
-        .style(UnitHelpers.mouseExitStyles());
+        .style(UnitHelpers.mouseExitStyles(this.height,this.width));
     });
 
   };
@@ -615,7 +613,7 @@ LayerVisualizations.Task = function(parent,layer){
 
   self.layerClicked = function(e){
     self.layer = e.layer;
-    self.range = {min: 0 , max: 156};
+    self.range = {min: 0 , max: 300};
     self.dispatchInference();
     self.tasks.render(e.layer.name);
   };

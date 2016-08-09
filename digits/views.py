@@ -15,7 +15,8 @@ import werkzeug.exceptions
 from .config import config_value
 from .webapp import app, socketio, scheduler
 import digits
-from digits import dataset, extensions, model, utils, pretrained_model
+from digits import dataset, extensions, model, utils, pretrained_model, inference
+
 from digits.log import logger
 from digits.utils.routing import request_wants_json
 
@@ -204,10 +205,11 @@ def completed_jobs():
     running_datasets  = get_job_list(dataset.DatasetJob, True)
     running_models    = get_job_list(model.ModelJob, True)
     pretrained_models = get_job_list(pretrained_model.PretrainedModelJob,False)
+    running_max_activ = get_job_list(inference.GradientAscentJob,True)
 
     model_output_fields = set()
     data = {
-        'running': [json_dict(j, model_output_fields) for j in running_datasets + running_models],
+        'running': [json_dict(j, model_output_fields) for j in running_datasets + running_models+running_max_activ],
         'datasets': [json_dict(j, model_output_fields) for j in completed_datasets],
         'models': [json_dict(j, model_output_fields) for j in completed_models],
         'pretrained_models': [json_dict(j, model_output_fields) for j in pretrained_models],
