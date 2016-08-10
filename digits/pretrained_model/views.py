@@ -26,7 +26,7 @@ def get_tempfile(f, suffix):
     os.close(temp[0])
     return path
 
-def validateCaffeFiles(files):
+def validate_caffe_files(files):
     """
     Upload a caffemodel
     """
@@ -47,7 +47,7 @@ def validateCaffeFiles(files):
 
     return (weights_path, model_def_path)
 
-def validateTorchFiles(files):
+def validate_torch_files(files):
     """
     Upload a torch model
     """
@@ -167,9 +167,9 @@ def new():
         raise werkzeug.exceptions.BadRequest('Missing job name')
 
     if framework == "caffe":
-        weights_path, model_def_path = validateCaffeFiles(files)
+        weights_path, model_def_path = validate_caffe_files(files)
     else:
-        weights_path, model_def_path = validateTorchFiles(files)
+        weights_path, model_def_path = validate_torch_files(files)
 
     if str(flask.request.files['labels_file'].filename) is not '':
         labels_path = get_tempfile(flask.request.files['labels_file'],".txt")
@@ -179,8 +179,12 @@ def new():
         model_def_path,
         labels_path,
         framework,
+        form["image_type"],
+        form["resize_mode"],
+        form["width"],
+        form["height"],
         username = utils.auth.get_username(),
-        name = flask.request.form['job_name'],
+        name = flask.request.form['job_name']
     )
 
     scheduler.add_job(job)

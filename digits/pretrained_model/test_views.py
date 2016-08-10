@@ -24,9 +24,11 @@ import PIL.Image
 from urlparse import urlparse
 
 from digits.config import config_value
+from digits.pretrained_model import PretrainedModelJob
+import digits.webapp
+import digits.dataset.images.classification.test_views
 import digits.model.images.classification.test_views
 import digits.test_views
-import digits.webapp
 
 # Must import after importing digit.config
 import caffe_pb2

@@ -11,21 +11,6 @@
         <div ng-controller="pretrained_models_controller">
             <div class="row">
                 <div class="col-md-12">
-                    <!-- Output Field Options -->
-                    <div class="button-group pull-right">
-                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-                            <span class="glyphicon glyphicon-cog"></span>
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" ng-click="$event.stopPropagation()">
-                            <li data-ng-repeat='field in storage.pretrained_model_fields'>
-                                <label style="font-weight: normal !important;">
-                                    <input type="checkbox" ng-model='field.show'>
-                                    {[ field.name ]}
-                                </label>
-                            </li>
-                        </ul>
-                    </div>
                     <!-- Filter -->
                     <div class="pull-right">
                         <form>
@@ -49,11 +34,11 @@
                    ng-mouseleave="mouseleave()"
                    class="table table-bordered table-striped selectable"
                    width="100%">
-                <col ng-repeat="field in storage.pretrained_model_fields | filter:show(true)"
+                <col ng-repeat="field in fields.pretrained_model_fields | filter:show(true)"
                      ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
                 <thead>
                    <tr>
-                     <th ng-repeat="field in storage.pretrained_model_fields | filter:show(true)">
+                     <th ng-repeat="field in fields.pretrained_model_fields | filter:show(true)">
                        <div ng-click="change_sorting(field.name, $event)">
                          <small>
                              {[ field.name ]}
@@ -79,6 +64,7 @@
                         ng-repeat="job in jobs">
                         <td ng-bind="job.name"></td>
                         <td><dg-framework/></td>
+                        <td ng-bind-html="'{[ job.username ]}'|html"></td>
                         <td ng-bind-html="'{[ job.has_labels | precision:2 ]}'|html"></td>
                         <td class="text-{[job.status_css]}">
                             {[ job.status ]}
@@ -102,7 +88,7 @@
                 </tbody>
                 <tbody ng-if="jobs.length == 0">
                     <tr>
-                        {[ colspan = (storage.pretrained_model_fields | filter:show(true)).length + (storage.model_output_fields | filter:show(true)).length;'' ]}
+                        {[ colspan = (fields.pretrained_model_fields | filter:show(true)).length + (storage.model_output_fields | filter:show(true)).length;'' ]}
                         <td colspan="{[colspan]}">
                             <h5>
                                 No Models

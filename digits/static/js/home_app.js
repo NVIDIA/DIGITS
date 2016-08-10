@@ -531,15 +531,16 @@
     app.controller('pretrained_models_controller', function($scope, $localStorage, $controller) {
         $controller('job_controller', {$scope: $scope});
         $scope.title = 'Models';
-        $scope.storage = $localStorage.$default({
+        $scope.fields = {
             model_output_fields: [],
             pretrained_model_fields: [{name: 'name',         show: true,  min_width: 0},
                                       {name: 'framework',    show: true,  min_width: 0},
+                                      {name: 'username',     show: true,  min_width: 0},
                                       {name: 'has_labels',   show: true,  min_width: 0},
                                       {name: 'status',       show: true,  min_width: 0},
                                       {name: 'elapsed',      show: true,  min_width: 0},
                                       {name: 'submitted',    show: true,  min_width: 0}],
-        });
+        };
     });
 
     function precision(input, sigfigs) {
