@@ -1,0 +1,42 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/layerVisualizationLayout.css', ver=dir_hash) }}">
+<script src="{{ url_for('static', filename='js/chroma.min.js', ver=dir_hash) }}" ></script>
+<script src="{{ url_for('static', filename='js/pretrained_models/LayerVisualizations.js', ver=dir_hash) }}" ></script>
+<script src="{{ url_for('static', filename='js/layer_visualizations/dagre-d3.min.js', ver=dir_hash) }}" ></script>
+<script src="{{ url_for('static', filename='js/layer_visualizations/nnTree.js', ver=dir_hash) }}" ></script>
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="#">Layer Visualizations</a></li>
+{% endblock %}
+
+{% block content %}
+
+<div class="fixed-fluid-container">
+  <div class="layout-left">
+    <div class="panel panel-default text-center" style="padding:3px;overflow-x:hidden;">
+      <h3 class="text-center">{{job.name}}</h3>
+      <h6 class="text-center">{{job.id}}</h6>
+      <br/>
+    </div>
+  </div>
+  <div class="layout-right">
+    <div style="overflow:hidden;" class="panel panel-default" id="tree_container">
+    </div>
+  </div>
+</div>
+
+
+<script>
+  var layerVisualizations = new LayerVisualizations("#tree_container");
+  layerVisualizations.initPanel();
+  layerVisualizations.initJobs("#pretrained_jobs",{jobs: {{[job]|tojson}} });
+  layerVisualizations.actions.getJob("{{job["id"]}}");
+</script>
+{% endblock %}

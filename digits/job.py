@@ -17,11 +17,13 @@ from digits.utils import sizeof_fmt, filesystem as fs
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 2
 
+
 class Job(StatusCls):
     """
     Base class
     """
     SAVE_FILE = 'status.pickle'
+    NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = 3600
 
     @classmethod
     def load(cls, job_id):
@@ -342,6 +344,12 @@ class Job(StatusCls):
         # assume it has completed already (done, errored or interrupted)
         if hasattr(self, 'event'):
             self.event.wait()
+
+    def delete_timeout(self):
+        """
+        Returns how long a non-persistent job should exist for
+        """
+        return self.NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS
 
     def is_persistent(self):
         """

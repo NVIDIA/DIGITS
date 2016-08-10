@@ -309,24 +309,59 @@ def embed_image_html(image):
     data = string_buf.getvalue().encode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)
 
-def get_layer_vis_square(data,
-        allow_heatmap = True,
-        normalize = True,
-        min_img_dim = 100,
-        max_width = 1200,
-        channel_order = 'RGB',
-        ):
+
+def add_bboxes_to_image(image, bboxes, color='red', width=1):
     """
-    Returns a vis_square for the given layer data
+    Draw rectangles on the image for the bounding boxes
+    Returns a PIL.Image
 
     Arguments:
-    data -- a np.ndarray
+    image -- input image
+    bboxes -- bounding boxes in the [((l, t), (r, b)), ...] format
 
     Keyword arguments:
-    allow_heatmap -- if True, convert single channel images to heatmaps
-    normalize -- whether to normalize the data when visualizing
-    max_width -- maximum width for the vis_square
+    color -- color to draw the rectangles
+    width -- line width of the rectangles
+
+    Example:
+    image = Image.open(filename)
+    add_bboxes_to_image(image, bboxes[filename], width=2, color='#FF7700')
+    image.show()
     """
+    def expanded_bbox(bbox, n):
+        """
+        Grow the bounding box by n pixels
+        """
+        l = min(bbox[0][0], bbox[1][0])
+        r = max(bbox[0][0], bbox[1][0])
+        t = min(bbox[0][1], bbox[1][1])
+        b = max(bbox[0][1], bbox[1][1])
+        return ((l - n, t - n), (r + n, b + n))
+
+    from PIL import Image, ImageDraw
+    draw = ImageDraw.Draw(image)
+    for bbox in bboxes:
+        for n in xrange(width):
+            draw.rectangle(expanded_bbox(bbox, n), outline = color)
+
+    return image
+
+def normalize_data(data):
+    if data is not None:
+        data_min = np.amin(data)
+        data_max = np.amax(data)
+        data = (data - data_min) / (data_max - data_min)
+    return data
+
+def reshape_data_for_vis(data,channel_order = 'RGB'):
+    """
+    Returns a reshaped data for visualization
+    Arguments:
+    data -- a np.ndarray
+    Keyword arguments:
+    channel_order -- string ex. 'RGB'
+    """
+
     if channel_order not in ['RGB', 'BGR']:
         raise ValueError('Unsupported channel_order %s' % channel_order)
     if data.ndim == 1:
@@ -368,6 +403,27 @@ def get_layer_vis_square(data,
             data = data.reshape((data.shape[0]*data.shape[1], data.shape[2], data.shape[3]))
     else:
         raise RuntimeError('unrecognized data shape: %s' % (data.shape,))
+    return data
+
+def get_layer_vis_square(data,
+        allow_heatmap = True,
+        normalize = True,
+        min_img_dim = 100,
+        max_width = 1200,
+        channel_order = 'RGB',
+        ):
+    """
+    Returns a vis_square for the given layer data
+
+    Arguments:
+    data -- a np.ndarray
+
+    Keyword arguments:
+    allow_heatmap -- if True, convert single channel images to heatmaps
+    normalize -- whether to normalize the data when visualizing
+    max_width -- maximum width for the vis_square
+    """
+    data = reshape_data_for_vis(data,channel_order)
 
     # chop off data so that it will fit within max_width
     padsize = 0
@@ -501,4 +557,3 @@ def get_color_map(name):
         greenmap    = [0,0,0.5,1,1,1,0.5,0,0]
         bluemap     = [0.5,1,1,1,0.5,0,0,0,0]
     return 255.0 * np.array(redmap), 255.0 * np.array(greenmap), 255.0 * np.array(bluemap)
-

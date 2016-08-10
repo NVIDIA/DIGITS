@@ -35,25 +35,7 @@ div.progress div.progress-bar {
     cursor: pointer;
     opacity: 0;
 }
-.btn-file {
-    position: relative;
-    overflow: hidden;
-}
-.btn-file input[type=file] {
-    position: absolute;
-    top: 0;
-    right: 0;
-    min-width: 100%;
-    min-height: 100%;
-    font-size: 100px;
-    text-align: right;
-    filter: alpha(opacity=0);
-    opacity: 0;
-    outline: none;
-    background: white;
-    cursor: inherit;
-    display: block;
-}
+
 /* Spinning Glyphicon */
 .glyphicon-spin {
   -webkit-animation: spin 1000ms infinite linear;
@@ -86,8 +68,8 @@ path.c3-line {
 }
 
 /* Hide all data transformation and augmentation by default */
-.data_transformation_input{ display:none; } 
-.data_augmentation_input{ display:none; } 
+.data_transformation_input{ display:none; }
+.data_augmentation_input{ display:none; }
 
 .autocomplete-suggestions { border: 1px solid #999; background: #FFF; overflow: auto; }
 .autocomplete-suggestion { padding: 2px 5px; white-space: nowrap; overflow: visible; }
