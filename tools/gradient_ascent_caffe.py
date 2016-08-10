@@ -86,13 +86,19 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
         mean = np.ones(net.blobs[in_].data[0].shape) * 150
 
     # For now , just use grey image:
-    mean = np.ones(net.blobs[in_].data[0].shape) * 128
+    mean = np.ones(net.blobs[in_].data[0].shape) * 255
 
     # Set the mean for the network (as it wasnt set during initialization)
     transformer = caffe.io.Transformer({in_: input_shape})
     transformer.set_mean(in_, mean)
+    # cv2.imshow('gradient',np.transpose(net.blobs[in_].data[0], (1,2,0)));
+    # cv2.waitKey(0);
 
-    out = net.blobs[layer].data
+    if layer in net.blobs:
+        out = net.blobs[layer].data
+    else:
+        logger.info('Error: %s', "Layer Not Optimizable")
+        sys.exit()
 
     # Check if fully convolutional layer, or a convolutional layer
     # If convolutional set spacial to be the center to avoid cropping
@@ -117,7 +123,7 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
             decay = 0.0001,
             blur_radius = 1.0,
             blur_every = 4,
-            max_iter = 100,
+            max_iter = 200,
             push_spatial = push_spatial,
             lr_params = {'lr': 100.0}
         )
@@ -127,6 +133,7 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
             # cv2.imshow('gradient',im);
             # cv2.waitKey(0);
         except:
+            logger.info('Error: %s', "Optimization Failure")
             sys.exit()
 
         # im = np.square(np.gradient(np.mean(np.mean(im, axis=2),axis=1)))
@@ -155,10 +162,10 @@ def infer(output_dir,model_def_path, weights_path, layer,units, mean_file_path=N
                     fit_success = True
                     break
             except:
-                print "Failed to find receptive field"
+                logger.info('Warning: %s', "Could not find receptive field")
                 pass
 
-        if fit_success is True:
+        if fit_success is True and is_conv:
             w = 4*np.abs(sigma)
             y_out = gaus(x,*popt)
 

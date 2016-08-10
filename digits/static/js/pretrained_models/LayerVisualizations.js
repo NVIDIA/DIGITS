@@ -98,7 +98,7 @@ var LayerVisualizations = function(selector,props){
             var unit = self.range.min + i;
             self.updateItem(this,self.layer.name,unit);
           }else {
-            var hw = 25;
+            var hw = self.active_tab == "max-activations" ? 65 : 35;
             UnitHelpers.drawUnit(data,this,hw,hw);
           }
         });
@@ -146,7 +146,7 @@ var LayerVisualizations = function(selector,props){
   };
 
   self.initRange = function(){
-    self.range = {min: 0 , max: 156};
+    self.range = {min: 0 , max: 2000};
   };
 
   // Events:
@@ -157,10 +157,13 @@ var LayerVisualizations = function(selector,props){
     self.tasks.render(e.layer.name);
   };
 
+  self.maxActivationsFailed = function(msg){
+      self.tasks.signalError(msg);
+  };
+
   self.maxActivationsUpdated = function(msg){
     self.tasks.updateProgress(msg);
-
-    if (_.isEmpty(self.outputs)){
+    if (msg.data.unit > self.outputs.length){
       self.initRange();
       self.dispatchInference();
       self.tasks.render(msg.data.layer);
@@ -175,6 +178,7 @@ var LayerVisualizations = function(selector,props){
   // Event Listeners:
   document.addEventListener("LayerClicked", self.layerClicked);
   socket.on('task update', self.maxActivationsUpdated);
+  socket.on('task error', self.maxActivationsFailed);
 
 };
 
@@ -558,8 +562,16 @@ LayerVisualizations.Tasks = function(selector,props){
       UnitHelpers.drawUnitImage(image_url,canvas.node(),hw,false);
     };
 
+    self.getTask = function(layer){
+      var task = _.last(self.tasks.filter(function(t){
+        return t.layer == layer;
+      }));
+
+      return task;
+    };
+
     self.updateProgress = function(msg){
-      var task = _.last(self.tasks.filter(function(t){return t.layer == msg.data.layer}));
+      var task = self.getTask(msg.data.layer);
       if (_.isUndefined(task)){
         self.isRunning = true;
         self.job_id    = msg.data.id;
@@ -578,6 +590,16 @@ LayerVisualizations.Tasks = function(selector,props){
         return t.layer == self.layer;
       }));
       task.complete("warning");
+    };
+
+    self.signalError = function(msg){
+      // Complete Task:
+      var task = self.getTask(msg.data.layer);
+      task.layer = task.layer+": "+msg.data.error;
+      task.complete("danger");
+
+      // Send error message to console:
+      console.error(msg.data.error);
     };
 
     self.taskCompleted = function(){
@@ -613,7 +635,7 @@ LayerVisualizations.Task = function(parent,layer){
 
   self.layerClicked = function(e){
     self.layer = e.layer;
-    self.range = {min: 0 , max: 300};
+    self.range = {min: 0 , max: 2000};
     self.dispatchInference();
     self.tasks.render(e.layer.name);
   };

@@ -76,6 +76,17 @@ def validate_torch_files(files):
 def format_job_name(job):
     return {"name": job.name(), "id": job.id()}
 
+def create_max_activation_job(job,username,layer_name,units):
+    gradient_ascent_job = GradientAscentJob(
+        job,
+        layer_name,
+        units,
+        name = "Gradient Ascent: %s, %s" % (job.name(), layer_name),
+        username = username
+    )
+    scheduler.add_job(gradient_ascent_job)
+    return gradient_ascent_job
+
 @utils.auth.requires_login
 @blueprint.route('/run_max_activations.json', methods=['POST'])
 def run_max_activations():
@@ -84,16 +95,9 @@ def run_max_activations():
     args = flask.request.args
     layer_name = args["layer_name"]
     units = eval(args["units"])
+    username = utils.auth.get_username()
 
-    gradient_ascent_job = GradientAscentJob(
-        job,
-        layer_name,
-        units,
-        name = "Gradient Ascent: %s, %s" % (job.name(), layer_name),
-        username = utils.auth.get_username()
-    )
-
-    scheduler.add_job(gradient_ascent_job)
+    gradient_ascent_job = create_max_activation_job(job,username,layer_name,units)
 
     return flask.jsonify({"stats": units, "job_id": gradient_ascent_job.id()})
 
@@ -112,7 +116,6 @@ def serve_pil_image(pil_img):
 @blueprint.route('/max_activation', methods=['GET'])
 def max_activation():
     args = flask.request.args
-    # job  = format_job_name(scheduler.get_job(job_id))
     job = job_from_request()
     layer_name = args["layer_name"]
     unit       = args["unit"]
@@ -127,6 +130,7 @@ def max_activation():
                 raw_data = f[layer_name][str(unit)]['cropped'][:]
         f.close()
 
+    # Add one channel for greyscale images:
     if len(raw_data[0][0]) == 1:
         raw_data = np.transpose(raw_data, (2,0,1))[0]
 
@@ -157,6 +161,13 @@ def remove_max_activations():
 
     return flask.jsonify({"status": "error"}), 500
 
+def layer_has_max_activations(job,layer_name):
+    if os.path.isfile(job.get_max_activations_path()):
+        f = h5py.File(job.get_max_activations_path(),'r')
+        if layer_name in f:
+            return True
+    return False
+
 @blueprint.route('/get_max_activations.json', methods=['GET'])
 def get_max_activations():
     """ Returns array of maximum activations for a given layer """
@@ -168,23 +179,28 @@ def get_max_activations():
     data = []
     stats = {}
 
-    if os.path.isfile(job.get_max_activations_path()):
+    if layer_has_max_activations(job,layer_name):
         f = h5py.File(job.get_max_activations_path(),'r')
+
+        completed_units = len(f[layer_name].keys())
+        for unit in range(completed_units):
+            data.append(True)
+
         w = h5py.File(job.get_filters_path(),'r')
         if layer_name in w:
             stats = json.loads(w[layer_name].attrs["stats"])
-            for unit in range(stats["num_activations"]):
-                if layer_name in f:
-                    if str(unit) in f[layer_name]:
-                        data.append(True)
-                    else:
-                        data.append(False)
-                else:
+            total_units = stats["num_activations"]
+            uncompleted_units = total_units - completed_units
+
+            if uncompleted_units > 0:
+                for unit in range(uncompleted_units):
                     data.append(False)
+
     elif os.path.isfile(job.get_filters_path()):
         f = h5py.File(job.get_filters_path(),'r')
-        stats = json.loads(f[layer_name].attrs["stats"])
-        data = fill_empty(stats["num_activations"])
+        if layer_name in f:
+            stats = json.loads(f[layer_name].attrs["stats"])
+            data = fill_empty(stats["num_activations"])
 
     return flask.jsonify({"stats": stats, "data": data[range_min:range_max], "length": len(data)})
 

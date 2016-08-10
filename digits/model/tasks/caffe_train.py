@@ -23,6 +23,7 @@ from digits.config import config_value
 from digits.status import Status
 from digits.utils import subclass, override, constants
 from digits.utils.filesystem import tail
+from digits.framework_helpers import caffe_helpers
 
 # Must import after importing digit.config
 import caffe

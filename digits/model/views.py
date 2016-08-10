@@ -178,26 +178,11 @@ def visualize_lr():
 
     return json.dumps({'data': {'columns': datalist}})
 
-
-@blueprint.route('/<job_id>/to_pretrained',
-        methods=['GET', 'POST'],
-        defaults={'extension': 'tar.gz'})
-@blueprint.route('/<job_id>/to_pretrained.<extension>',
-        methods=['GET', 'POST'])
-def to_pretrained(job_id, extension):
+def create_pretrained_model(job_id,username,epoch):
     job = scheduler.get_job(job_id)
 
     if job is None:
         raise werkzeug.exceptions.NotFound('Job not found')
-
-    epoch = -1
-    # GET ?epoch=n
-    if 'epoch' in flask.request.args:
-        epoch = float(flask.request.args['epoch'])
-
-    # POST ?snapshot_epoch=n (from form)
-    elif 'snapshot_epoch' in flask.request.form:
-        epoch = float(flask.request.form['snapshot_epoch'])
 
     # Write the stats of the job to json,
     # and store in tempfile (for archive)
@@ -217,7 +202,7 @@ def to_pretrained(job_id, extension):
         info["image resize mode"],
         info["image dimensions"][0],
         info["image dimensions"][1],
-        username = auth.get_username(),
+        username = username,
         name = info["name"]
     )
 
@@ -227,11 +212,27 @@ def to_pretrained(job_id, extension):
     weights_job = WeightsJob(
         job,
         name     = info['name'],
-        username = auth.get_username()
+        username = username
     )
     scheduler.add_job(weights_job)
-    return flask.redirect(flask.url_for('digits.views.home')), 302
 
+    return job
+
+@blueprint.route('/<job_id>/to_pretrained',methods=['GET', 'POST'])
+def to_pretrained(job_id):
+    epoch = -1
+    # GET ?epoch=n
+    if 'epoch' in flask.request.args:
+        epoch = float(flask.request.args['epoch'])
+
+    # POST ?snapshot_epoch=n (from form)
+    elif 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+
+    username = auth.get_username()
+
+    create_pretrained_model(job_id,username,epoch)
+    return flask.redirect(flask.url_for('digits.views.home')), 302
 
 @blueprint.route('/<job_id>/download',
         methods=['GET', 'POST'],

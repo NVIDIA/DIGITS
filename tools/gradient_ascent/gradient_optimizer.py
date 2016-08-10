@@ -383,7 +383,8 @@ class GradientOptimizer(object):
         if results.best_xx is None:
             return
         asimg = results.best_xx[self.channel_swap_to_rgb].transpose((1,2,0))
-        img = np.transpose(asimg + self._data_mean_rgb_img, (1,0,2))
+        img = asimg + self._data_mean_rgb_img
+        # img = np.transpose(asimg + self._data_mean_rgb_img, (1,0,2))
         return norm01(img)[:,:,::-1]
 
     def save_results(self, params, results, prefix_template, brave = False, skipbig = False):

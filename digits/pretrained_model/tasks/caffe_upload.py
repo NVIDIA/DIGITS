@@ -46,7 +46,7 @@ class CaffeUploadTask(UploadPretrainedModelTask):
         model_def_path  = self.get_model_def_path()
         network = fw.get_network_from_path(model_def_path)
 
-        image_dim = [ int(self.image_info["width"]), int(self.image_info["height"]), int(self.image_info["image_type"]) ]
+        image_dim = [int(self.image_info["height"]), int(self.image_info["width"]),int(self.image_info["image_type"]) ]
 
         caffe_helpers.save_deploy_file_classification(network,self.job_dir,len(self.get_labels()),None,image_dim,None)
 
