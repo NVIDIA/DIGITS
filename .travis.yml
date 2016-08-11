@@ -11,8 +11,8 @@ env:
     global:
         - NUM_THREADS=4
     matrix:
-        - CAFFE_FORK=BVLC CAFFE_BRANCH=master
-        - CAFFE_FORK=NVIDIA CAFFE_BRANCH=caffe-0.14
+        - CAFFE_FORK=NVIDIA
+        - CAFFE_FORK=BVLC
 
 cache:
     apt: true
