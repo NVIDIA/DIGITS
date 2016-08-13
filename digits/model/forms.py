@@ -162,7 +162,7 @@ class ModelForm(Form):
     ### Additional settings specific to selected solver
 
     rms_decay = utils.forms.FloatField('RMS decay value',
-            default = 0.02,
+            default = 0.99,
             validators = [
                 validators.NumberRange(min=0),
                 ],
