@@ -685,6 +685,17 @@
         };
     });
 
+    app.directive('dgHasLabels', function() {
+        console.log('has-labels');
+        return {
+            restrict: 'AE',
+            replace: true,
+            template: '<i class="glyphicon '+
+                ' {[job.has_labels ? \'glyphicon-ok\' : ' +
+                '\'glyphicon-remove\']}" style="width:14px"/>',
+        };
+    });
+
     // Because jinja uses {{ and }}, tell angular to use {[ and ]}
     app.config(['$interpolateProvider', function($interpolateProvider) {
         $interpolateProvider.startSymbol('{[');
