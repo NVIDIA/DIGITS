@@ -33,7 +33,7 @@ return function(params)
     -- -- This is a LeNet model. For more information: http://yann.lecun.com/exdb/lenet/
 
     local lenet = nn.Sequential()
-    lenet:add(nn.MulConstant(0.00390625))
+    lenet:add(nn.MulConstant(0.0125)) -- 1/(standard deviation on MNIST dataset)
     lenet:add(backend.SpatialConvolution(channels,20,5,5,1,1,0)) -- channels*28*28 -> 20*24*24
     lenet:add(backend.SpatialMaxPooling(2, 2, 2, 2)) -- 20*24*24 -> 20*12*12
     lenet:add(backend.SpatialConvolution(20,50,5,5,1,1,0)) -- 20*12*12 -> 50*8*8
