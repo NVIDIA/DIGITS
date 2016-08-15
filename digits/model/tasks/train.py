@@ -57,6 +57,7 @@ class TrainTask(Task):
         self.use_mean = kwargs.pop('use_mean', None)
         self.random_seed = kwargs.pop('random_seed', None)
         self.solver_type = kwargs.pop('solver_type', None)
+        self.rms_decay = kwargs.pop('rms_decay', None)
         self.shuffle = kwargs.pop('shuffle', None)
         self.network = kwargs.pop('network', None)
         self.framework_id = kwargs.pop('framework_id', None)

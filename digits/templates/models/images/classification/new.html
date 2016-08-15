@@ -156,6 +156,11 @@ $("#dataset").change();
                     {{form.solver_type.tooltip}}
                     {{form.solver_type(class='form-control')}}
                 </div>
+                <div class="solver-specific-RMSPROP form-group{{mark_errors([form.rms_decay])}}">
+                    {{form.rms_decay.label}}
+                    {{form.rms_decay.tooltip}}
+                    {{form.rms_decay(class='form-control')}}
+                </div>
                 <div class="form-group{{mark_errors([form.learning_rate])}}">
                     {{form.learning_rate.label}}
                     {{form.learning_rate.tooltip}}
@@ -189,8 +194,18 @@ function showHideAdvancedLROptions() {
         $("#advanced-lr-options").hide();
 }
 
+function showHideSolverSpecificOptions() {
+    $('[class^="solver-specific-"]').hide();
+    var solver_type = $("#solver_type").val();
+    if (solver_type == 'RMSPROP') {
+        $(".solver-specific-" + solver_type).show();
+    }
+}
+
+$("#solver_type").change(showHideSolverSpecificOptions);
 $("#show-advanced-lr-options").click(showHideAdvancedLROptions);
 showHideAdvancedLROptions();
+showHideSolverSpecificOptions();
                 </script>
 
                 <div id="advanced-lr-options" style="display:none;">

@@ -579,6 +579,10 @@ class CaffeTrainTask(TrainTask):
             solver.momentum = 0.9
         solver.weight_decay = solver.base_lr / 100.0
 
+        # solver specific values
+        if solver.solver_type == solver.RMSPROP:
+            solver.rms_decay = self.rms_decay
+
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
                 int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),

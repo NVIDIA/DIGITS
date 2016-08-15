@@ -159,6 +159,16 @@ class ModelForm(Form):
                 raise validators.ValidationError(
                     'Solver type not supported by this framework')
 
+    ### Additional settings specific to selected solver
+
+    rms_decay = utils.forms.FloatField('RMS decay value',
+            default = 0.99,
+            validators = [
+                validators.NumberRange(min=0),
+                ],
+            tooltip = "If the gradient updates results in oscillations the gradient is reduced by times 1-rms_decay. Otherwise it will be increased by rms_decay."
+            )
+
     ### Learning rate
 
     learning_rate = utils.forms.MultiFloatField('Base Learning Rate',
