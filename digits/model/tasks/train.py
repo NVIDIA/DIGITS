@@ -191,21 +191,22 @@ class TrainTask(Task):
         while True:
             # CPU (Non-GPU) Info
             data_cpu = {}
-            data_cpu['pid'] = self.p.pid
-            try:
-                ps = psutil.Process(self.p.pid) # 'self.p' is the system call object
-                if ps.is_running():
-                    if psutil.version_info[0] >= 2:
-                        data_cpu['cpu_pct'] = ps.cpu_percent(interval=1)
-                        data_cpu['mem_pct'] = ps.memory_percent()
-                        data_cpu['mem_used'] = ps.memory_info().rss
-                    else:
-                        data_cpu['cpu_pct'] = ps.get_cpu_percent(interval=1)
-                        data_cpu['mem_pct'] = ps.get_memory_percent()
-                        data_cpu['mem_used'] = ps.get_memory_info().rss
-            except psutil.NoSuchProcess:
-                # In rare case of instant process crash or PID went zombie (report nothing)
-                pass
+            if hasattr(self, 'p') and self.p is not None:
+                data_cpu['pid'] = self.p.pid
+                try:
+                    ps = psutil.Process(self.p.pid) # 'self.p' is the system call object
+                    if ps.is_running():
+                        if psutil.version_info[0] >= 2:
+                            data_cpu['cpu_pct'] = ps.cpu_percent(interval=1)
+                            data_cpu['mem_pct'] = ps.memory_percent()
+                            data_cpu['mem_used'] = ps.memory_info().rss
+                        else:
+                            data_cpu['cpu_pct'] = ps.get_cpu_percent(interval=1)
+                            data_cpu['mem_pct'] = ps.get_memory_percent()
+                            data_cpu['mem_used'] = ps.get_memory_info().rss
+                except psutil.NoSuchProcess:
+                    # In rare case of instant process crash or PID went zombie (report nothing)
+                    pass
 
             data_gpu = []
             for index, device in devices:
