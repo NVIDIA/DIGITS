@@ -65,7 +65,7 @@
                         <td ng-bind="job.name"></td>
                         <td><dg-framework/></td>
                         <td ng-bind-html="'{[ job.username ]}'|html"></td>
-                        <td ng-bind-html="'{[ job.has_labels | precision:2 ]}'|html"></td>
+                        <td><dg-has-labels/></td>
                         <td class="text-{[job.status_css]}">
                             {[ job.status ]}
                         </td>

@@ -185,10 +185,10 @@ def json_dict(job, model_output_fields):
         model_output_fields.add("has_labels")
         model_output_fields.add("username")
         d.update({
-        'type': 'pretrained_model',
-        'framework': job.framework,
-        'username': job.username,
-        'has_labels': "&#10004;" if job.has_labels else "&#10006;"
+            'type': 'pretrained_model',
+            'framework': job.framework,
+            'username': job.username,
+            'has_labels': job.has_labels,
         })
     return d
 
