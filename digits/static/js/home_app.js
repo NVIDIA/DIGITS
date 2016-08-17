@@ -45,6 +45,8 @@
         this.isSet = function (tabId) {
             return this.tab === tabId;
         };
+        $scope.model_store_tab={};
+        $scope.model_store_tab.model_length=0;
     });
 
     app.controller('all_jobs_controller', function($rootScope, $scope, $http) {
@@ -541,6 +543,38 @@
                                       {name: 'elapsed',      show: true,  min_width: 0},
                                       {name: 'submitted',    show: true,  min_width: 0}],
         };
+    });
+
+    app.controller('model_store_controller', function($scope, $controller, $http) {
+        $scope.get_model_store_url = function() {
+            $scope.model_store_url = localStorage.getItem('model_store_url');
+            if ($scope.model_store_url == null) {
+                var url = prompt('Please enter model store url', 'http://localhost:5050');
+                if (url != null)  {
+                    $scope.model_store_url = url;
+                    localStorage.setItem('model_store_url', url);
+                }
+            }
+        }
+        $scope.get_models = function() {
+            if ($scope.model_store_url == null) {
+                $scope.get_model_store_url();
+                console.log($scope.model_store_url);
+                $http.get($scope.model_store_url+'/store').then(
+                    function(response) {
+                        $scope.model_store = response.data;
+                        $scope.model_store_tab.model_length = $scope.model_store.length;
+                    }
+                )
+            };
+        };
+        $controller('job_controller', {$scope: $scope});
+        $scope.title = 'Model Store';
+        $scope.model_store_fields = [{name: 'name',      show: true,  min_width: 100},
+                       {name: 'framework', show: true,  min_width: 100},
+                       {name: 'action',     show: true,  min_width: 100},
+                       {name: 'image dim', show: true,  min_width: 100},
+                       {name: 'notes',     show: true,  min_width: 600}]
     });
 
     function precision(input, sigfigs) {

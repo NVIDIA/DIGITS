@@ -327,7 +327,11 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()], related_jobs=related_jobs)
+    show_model_store = config_value('model_store') is not None
+    return flask.render_template('models/images/classification/show.html', job=job,
+                                 framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()],
+                                 related_jobs=related_jobs,
+                                 model_store=show_model_store)
 
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():

@@ -108,7 +108,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-6">
+                    <div class="col-sm-12">
                         <div class="form-group">
                             <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
                             </select>
@@ -140,7 +140,9 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             </script>
                         </div>
                     </div>
-                    <div class="col-sm-6">
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
                         <button
                             formaction="{{url_for('digits.model.views.download', job_id=job.id())}}"
                             formmethod="post"
@@ -155,6 +157,15 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             class="btn btn-success">
                             Make Pretrained Model
                         </button>
+                        {% if model_store %}
+                        <button
+                            formaction="{{url_for('digits.model.views.publish', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-info">
+                            Publish to Model Store
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
                 {% if task.get_framework_id() in framework_ids %}
