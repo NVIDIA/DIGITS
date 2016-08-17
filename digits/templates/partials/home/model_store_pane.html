@@ -30,9 +30,9 @@
                        ng-click="delete_model_in_store()">
                         Delete
                     </a>
-                    <button type="button" class="btn btn-xs btn-info" ng-click="get_models()">
-                        Refresh
-                    </button>
+                    <!-- <button type="button" class="btn btn-xs btn-info" ng-click="get_models()">
+                        Get Models
+                    </button> -->
                 </div>
             </div>
             <table id="model-store-table"
@@ -70,7 +70,7 @@
                             <span class="badge">{[ model.job.framework ]}</span>
                         </td>
                         <td>
-                            <a href="/pretrained_models/retrieve/{[model.key]}"> import </a>
+                            <a href="/pretrained_models/retrieve/{[model.key]}?host={[model_store_host]}&port={[model_store_port]}"> import model </a>
                         </td>
                         <td>
                             {[ model.job.image_dimension ]}
@@ -96,6 +96,20 @@
                     </tr>
                 </tbody>
             </table>
+            </ng-show>
+            <button type="button" class="btn btn-xs btn-info" ng-click="get_model_store()">
+                Refresh Model Store
+            </button>
+            <button type="button" class="btn btn-xs btn-info" ng-click="reset_model_store_url()">
+                Enter Model Store URL
+            </button>
+            <!-- <div class="alert alert-info fade in" ng-show="model_store_url">
+                Current Model Store URL: {[ model_store_url ]}
+            </div> -->
+            <div class="alert alert-danger fade in" ng-show="ms_error">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                {[ ms_error ]}
+            </div>
         </div>
     </div>
 </div>

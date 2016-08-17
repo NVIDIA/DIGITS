@@ -1,32 +1,60 @@
 <div class="panel panel-primary col-md-8 col-md-offset-2">
-    <div class="row">
-        <div class="col-md-10">
-            A model includes the following
-            <div class="list">
-                <ul>
-                    <li> Pre-trained weight file (.caffemodel)</li>
-                    <li> Solver protocol buffer text file</li>
-                    <li> Train_val and deploy protocol buffer text files</li>
-                </ul>
+    <div class="panel-heading"> Publishing a Model </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-10">
+                A model includes the following
+                <div class="list">
+                    <ul>
+                        <li> Pre-trained weight file (.caffemodel)</li>
+                        <li> Solver protocol buffer text file</li>
+                        <li> Original network protocol buffer text file </li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-12">
-        You can publish all of them by filling the form and click Publish.
-    </div>
-    <div class="col-md-12">
-        <form action="/publish" method=post enctype=multipart/form-data>
-            <p>Model name: <input type=text name=model_name><br></p>
-            <p>Notes: <input type=text name=notes><br></p>
-            <p> Below is the file to upload</p>
-            <p>Single tar.gz or zip file downloaded from DIGITS: <input type=file name="archive"><br></p>
-            <p> or </p>
-            <p>Weight file <input type=file name=weight_file><br></p>
-            <p>Solver prototxt file <input type=file name=solver_file><br></p>
-            <p>Train_val prototxt file<input type=file name=train_val_file><br></p>
-            <p>Deploy prototxt file<input type=file name=deploy_file><br></p>
-            <input type=submit value=Publish>
-        </form>
+        <div class="col-md-12">
+            You can publish all of them by filling the form and click Publish.
+        </div>
+        <div class="container">
+            <form action="/publish" method=post enctype=multipart/form-data>
+                <div class="form-group">
+                    <label for="model_name"> Model name: </label>
+                    <input type="text" class="form-control" id="model_name" name=model_name placeholder="Enter model name">
+                </div>
+                <div class="form-group">
+                    <label for="model_notes"> Notes: </label>
+                    <input type="text" class="form-control" id="model_notes" name=notes placeholder="Notes for this model">
+                </div>
+                <p>Below is the file to upload.  Either one tar.gzip/zip file or 3 individual files.</p>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="archive">Single tar.gz or zip file downloaded from DIGITS: </label>
+                            <input type="file" class="btn btn-default" id="archive" name="archive">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="weight_file">Weight file </label>
+                            <input type=file class="btn btn-default" id="weight_file" name=weight_file>
+                        </div>
+                        <div class="form-group">
+                            <label for="solver_file">Solver prototxt file </label>
+                            <input type=file class="btn btn-default" id="solver_file" name=solver_file>
+                        </div>
+                        <div class="form-group">
+                            <label for="network_file">Original prototxt file </label>
+                            <input type=file class="btn btn-default" id="network_file" name=network_file>
+                        </div>
+                        <!-- Deploy prototxt file<input type=file name=deploy_file><br></p> -->
+                    </div>
+                </div>
+                <hr>
+                <button type="submit" class="btn btn-default" value="Publish">Submit</button>
+            </form>
+        </div>
     </div>
 </div>

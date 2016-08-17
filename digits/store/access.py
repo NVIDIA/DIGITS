@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import tarfile
@@ -62,14 +63,10 @@ def download_all_models():
     return response
 
 
-@app.route('/uploads/<model_key>')
+@app.route('/uploads/<model_key>.json')
 def uploaded_file(model_key):
     mr = app.config['model_store'].get_model(model_key)
-    return '''
-    <!doctype html>
-    <title>Newly Published Model</title>
-    <body>Name: {}, notes: {}</body>
-    '''.format(mr['name'], mr['notes'])
+    return json.dumps(mr)
 
 
 @app.route('/store')
@@ -88,11 +85,7 @@ def model_crud():
         for model_key in model_keys:
             app.config['model_store'].delete_one(model_key)
         app.config['model_store'].commit()
-        return '''
-        <!doctype html>
-        <title>Model deleted</title>
-        <body>Model deleted...</body>
-        '''
+        return redirect(url_for('publish_model'))
     elif 'download' in request.args:
         v = app.config['model_store'].get_models_zip(model_keys)
         response = make_response(v.getvalue())
@@ -144,7 +137,7 @@ def publish_model():
                  'files': files,
                  'notes': request.form['notes']}
         model_key = app.config['model_store'].add(model)
-        return redirect(url_for('uploaded_file', model_key=model_key))
+        #return redirect(url_for('uploaded_file', model_key=model_key))
     return redirect(url_for('manage_model_store'))
 
 
@@ -152,4 +145,12 @@ def publish_model():
 def manage_model_store():
     return app.send_static_file('home.html')
 
-app.run(host='0.0.0.0', port=5050, threaded=True)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Model Store server')
+    parser.add_argument('-p', '--port',
+            type=int,
+            default=5050,
+            help='Port to run app on (default 5050)'
+            )
+    args = vars(parser.parse_args())
+    app.run(host='0.0.0.0', port=args['port'], threaded=True)

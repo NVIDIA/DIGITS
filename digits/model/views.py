@@ -324,7 +324,7 @@ def publish(job_id):
     model_store_base_url = config_value('model_store')
     publish_url = model_store_base_url +'/publish'
     response = requests.post(publish_url, files=files, data=data)
-    return "ModelStore returns: " + response.content, response.status_code, {'Content-Type': 'text/css; charset=utf-8'}
+    return flask.redirect(flask.url_for('digits.views.home',tab=4)), 302
 
 class JobBasicInfo(object):
     def __init__(self, name, ID, status, time, framework_id):
