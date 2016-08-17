@@ -11,6 +11,8 @@ from ..interface import VisualizationInterface
 
 CONFIG_TEMPLATE = "config_template.html"
 HEADER_TEMPLATE = "header_template.html"
+APP_BEGIN_TEMPLATE = "app_begin_template.html"
+APP_END_TEMPLATE = "app_end_template.html"
 VIEW_TEMPLATE = "view_template.html"
 
 
@@ -21,18 +23,6 @@ class Visualization(VisualizationInterface):
     """
 
     def __init__(self, dataset, **kwargs):
-        # bounding box options
-        color = kwargs['box_color']
-        if color == "red":
-            self.color = (255, 0, 0)
-        elif color == "green":
-            self.color = (0, 255, 0)
-        elif color == "blue":
-            self.color = (0, 0, 255)
-        else:
-            raise ValueError("unknown color: %s" % color)
-        self.line_width = int(kwargs['line_width'])
-
         # memorize view template for later use
         extension_dir = os.path.dirname(os.path.abspath(__file__))
         self.view_template = open(
@@ -74,6 +64,16 @@ class Visualization(VisualizationInterface):
             os.path.join(extension_dir, HEADER_TEMPLATE), "r").read()
         return template, {'image_count': self.image_count, 'bbox_count': self.bbox_count}
 
+    @override
+    def get_ng_templates(self):
+        """
+        Implements get_ng_templates() method from view extension interface
+        """
+        extension_dir = os.path.dirname(os.path.abspath(__file__))
+        header = open(os.path.join(extension_dir, APP_BEGIN_TEMPLATE), "r").read()
+        footer = open(os.path.join(extension_dir, APP_END_TEMPLATE), "r").read()
+        return header, footer
+
     @staticmethod
     def get_id():
         return 'image-bounding-boxes'
@@ -91,7 +91,11 @@ class Visualization(VisualizationInterface):
           - context is a dictionary of context variables to use for rendering
           the form
         """
-        return self.view_template, {'image': data['image']}
+        return self.view_template, {
+            'image': data['image'],
+            'bboxes': data['bboxes'],
+            'index': data['index'],
+        }
 
     @override
     def process_data(
@@ -117,18 +121,17 @@ class Visualization(VisualizationInterface):
         self.image_count += 1
 
         # create arrays in expected format
-        bboxes = []
-        outputs = inference_data[inference_data.keys()[0]]
-        for output in outputs:
+        keys = inference_data.keys()
+        bboxes = dict(zip(keys, [[] for x in range(0, len(keys))]))
+        for key, outputs in inference_data.items():
             # last number is confidence
-            if output[-1] > 0:
-                box = ((output[0], output[1]), (output[2], output[3]))
-                bboxes.append(box)
-                self.bbox_count += 1
-        digits.utils.image.add_bboxes_to_image(
-            image,
-            bboxes,
-            self.color,
-            self.line_width)
+            bboxes[key] = [list(o) for o in outputs if o[-1] > 0]
+            self.bbox_count += len(bboxes[key])
         image_html = digits.utils.image.embed_image_html(image)
-        return {'image': image_html}
+
+        print bboxes
+        return {
+            'image': image_html,
+            'bboxes': bboxes,
+            'index': self.image_count,
+        }

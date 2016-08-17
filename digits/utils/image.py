@@ -309,42 +309,6 @@ def embed_image_html(image):
     data = string_buf.getvalue().encode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)
 
-def add_bboxes_to_image(image, bboxes, color='red', width=1):
-    """
-    Draw rectangles on the image for the bounding boxes
-    Returns a PIL.Image
-
-    Arguments:
-    image -- input image
-    bboxes -- bounding boxes in the [((l, t), (r, b)), ...] format
-
-    Keyword arguments:
-    color -- color to draw the rectangles
-    width -- line width of the rectangles
-
-    Example:
-    image = Image.open(filename)
-    add_bboxes_to_image(image, bboxes[filename], width=2, color='#FF7700')
-    image.show()
-    """
-    def expanded_bbox(bbox, n):
-        """
-        Grow the bounding box by n pixels
-        """
-        l = min(bbox[0][0], bbox[1][0])
-        r = max(bbox[0][0], bbox[1][0])
-        t = min(bbox[0][1], bbox[1][1])
-        b = max(bbox[0][1], bbox[1][1])
-        return ((l - n, t - n), (r + n, b + n))
-
-    from PIL import Image, ImageDraw
-    draw = ImageDraw.Draw(image)
-    for bbox in bboxes:
-        for n in xrange(width):
-            draw.rectangle(expanded_bbox(bbox, n), outline = color)
-
-    return image
-
 def get_layer_vis_square(data,
         allow_heatmap = True,
         normalize = True,

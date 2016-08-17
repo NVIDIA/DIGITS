@@ -4,19 +4,4 @@
 {% from "helper.html" import print_errors %}
 {% from "helper.html" import mark_errors %}
 
-<small>Draw a bounding box around a detected object. This expected network output is a nested list of list of box coordinates</small>
-
-<div class="form-group{{mark_errors([form.box_color])}}">
-    {{ form.box_color.label }}
-    {{ form.box_color.tooltip }}
-    {{ form.box_color(class='form-control') }}
-</div>
-
-<div class="form-group{{mark_errors([form.line_width])}}">
-    {{ form.line_width.label }}
-    {{ form.line_width.tooltip }}
-    {{ form.line_width(class='form-control') }}
-</div>
-
-
-
+<small>Draw a bounding box around a detected object. The expected network output is a dictionary, keyed by class, where the values are lists of bounding boxes for that image. e.g. {'class1': [[l, t, r, b, confidence], ...], ...}</small>
