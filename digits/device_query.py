@@ -133,6 +133,13 @@ def get_cudart():
             cudart = get_library('cudart%s_%d.dll' % (arch[:2], ver))
             if cudart is not None:
                 return cudart
+    elif platform.system() == 'Darwin':
+        for major in xrange(9,5,-1):
+            for minor in (5,0):
+                cudart = get_library('libcudart.%d.%d.dylib' % (major, minor))
+                if cudart is not None:
+                    return cudart
+        return get_library('libcudart.dylib')
     else:
         for major in xrange(9,5,-1):
             for minor in (5,0):
