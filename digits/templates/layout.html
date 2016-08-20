@@ -44,7 +44,7 @@
             {% else %}
             <a class="navbar-link" href="/login">Login</a>
             {% endif %}
-            <p>
+            </p>
             </li>
             <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Info<span class="caret"></span></a>
@@ -53,9 +53,21 @@
                 <li><span class="navbar-text">Server: {{server_name}}</span></li>
                 {% endif %}
                 <li><span class="navbar-text">DIGITS version: <br> {{server_version}}</span></li>
-                <li><span class="navbar-text">Caffe version: <br> {{caffe_version}}</span><li>
-                <li><span class="navbar-text">Caffe flavor: <br> {{caffe_flavor}}</span><li>
+                <li><span class="navbar-text">Caffe version: <br> {{caffe_version}}</span></li>
+                <li><span class="navbar-text">Caffe flavor: <br> {{caffe_flavor}}</span></li>
             </ul>
+            </li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">About<span class="caret"></span></a>
+                <ul class="dropdown-menu navbar-inverse">
+                    <li><span class="navbar-text brightness"><a href="https://developer.nvidia.com/digits">
+                        <img src="{{url_for('static', filename='images/nvidia-logo.png')}}"></img>
+                    </a></span></li>
+                    <li><span class="navbar-text"><a href="https://groups.google.com/forum/#!forum/digits-users">DIGITS User Group</a></span></li>
+                    <li><span class="navbar-text"><a href="https://github.com/NVIDIA/DIGITS">DIGITS on github</a></span></li>
+                    <li><span class="navbar-text"><a href="mailto:digits@nvidia.com">digits@nvidia.com</a></span></li>
+                </ul>
+            </li>
         </ul>
     </div>
 </div>
@@ -88,5 +100,16 @@ window.onload = function () {
 
 </script>
 
+<style>
+ .dropdown-menu {
+     width: 220px !important;
+ }
+ .brightness {
+     display: inline-block;
+ }
+ .brightness img:hover {
+     opacity: .75;
+ }
+</style>
 
 </body>
