@@ -170,9 +170,19 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                 ></span>
                             <input type="text" id="image_path" name="image_path" class="form-control autocomplete_path">
                         </div>
-                        <div class="form-group">
+                        <div>
                             <label for="image_file" class="control-label">Upload image</label>
-                            <input type="file" id="image_file" name="image_file" class="form-control">
+                            <div class="form-group cl-upload-files">
+                                <div class="input-group">
+                                    <span class="input-group-btn">
+                                        <span class="btn btn-info btn-file" %s>
+                                            Browse&hellip;
+                                            <input class="form-control" type="file" id="image_file" name="image_file" >
+                                        </span>
+                                    </span>
+                                    <input class="form-control" type="text" readonly>
+                                </div>
+                            </div>
                         </div>
                         <script type="text/javascript">
                             // When you fill in one field, the other gets blanked out
@@ -201,10 +211,20 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     </div>
                     <div class="col-sm-6">
                         <h3>Test a list of images</h3>
-                        <div class="form-group">
+                        <div>
                             <label for="image_list" class="control-label">Upload Image List</label>
-                            <input type="file" id="image_list" name="image_list" class="form-control">
-                            <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
+                            <div class="form-group cl-upload-files">
+                                <div class="input-group">
+                                    <span class="input-group-btn">
+                                        <span class="btn btn-info btn-file" %s>
+                                            Browse&hellip;
+                                            <input class="form-control" type="file" id="image_list" name="image_list" >
+                                        </span>
+                                    </span>
+                                    <input class="form-control" type="text" readonly>
+                                </div>
+                                <small>Accepts a list of filenames or urls (you can use your val.txt file)</small>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="image_folder" class="control-label">Image folder <i>(optional)</i></label>
