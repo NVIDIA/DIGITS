@@ -22,7 +22,7 @@ from digits import utils, log
 from digits.inference.errors import InferenceError
 
 from tools.gradient_ascent.gradient_optimizer import GradientOptimizer, FindParams
-import tools.gradient_ascent.caffe_misc as caffe_misc
+
 # must call digits.config.load_config() before caffe to set the path
 import caffe
 from caffe.proto import caffe_pb2
