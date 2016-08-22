@@ -100,6 +100,7 @@ labelHook             | function     | No        | A function(input,dblabel) tha
 trainBatchSize        | number       | No        | If specified, sets train batch size. May be overridden by user in DIGITS UI.
 validationBatchSize   | number       | No        | If specified, sets validation batch size. May be overridden by user in DIGITS UI.
 fineTuneHook          | function     | No        | A function(net) that returns the model to be used for fine-tuning. The untuned model is passed as a function parameter.
+disableAutoDataParallelism | boolean | No        | By default models are encapsulated in a nn.DataParallelTable container to enable multi-GPU training when more than 1 GPUs are selected. Setting this flag to `true` disables this mechanism.
 
 ### Tensors
 

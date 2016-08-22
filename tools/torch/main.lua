@@ -288,6 +288,12 @@ local parameters = {
 network = network_func(parameters)
 local model = network.model
 
+-- embed model in parallel table unless explicitly disallowed in user-defined description
+if nGpus > 1 and not network.disableAutoDataParallelism then
+    local gpus = torch.range(1, nGpus):totable()
+    model = nn.DataParallelTable(1, true, true):add(model, gpus)
+end
+
 -- if the loss criterion was not defined in the network
 -- use nn.ClassNLLCriterion() by default
 local loss = network.loss or nn.ClassNLLCriterion()

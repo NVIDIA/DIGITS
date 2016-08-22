@@ -82,6 +82,7 @@ return function(params)
     end
     return {
         model = createModel(params.ngpus, channels, nclasses),
+        disableAutoDataParallelism = true,
         croplen = 224,
         trainBatchSize = 128,
         validationBatchSize = 32,
