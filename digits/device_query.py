@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import argparse
 import ctypes
 import platform
+from multiprocessing import Process, Pipe
 
 class c_cudaDeviceProp(ctypes.Structure):
     """
@@ -167,18 +168,7 @@ def get_nvml():
 
 devices = None
 
-def get_devices(force_reload=False):
-    """
-    Returns a list of c_cudaDeviceProp's
-    Prints an error and returns None if something goes wrong
-
-    Keyword arguments:
-    force_reload -- if False, return the previously loaded list of devices
-    """
-    global devices
-    if not force_reload and devices is not None:
-        # Only query CUDA once
-        return devices
+def get_devices_process(force_reload, conn):
     devices = []
 
     cudart = get_cudart()
@@ -216,6 +206,33 @@ def get_devices(force_reload=False):
         else:
             print 'cudaGetDeviceProperties() failed with error #%s' % rc
         del properties
+    
+    conn.send(devices)
+    conn.close()
+    
+def get_devices(force_reload=False):
+    """
+    Returns a list of c_cudaDeviceProp's
+    Prints an error and returns None if something goes wrong
+
+    Keyword arguments:
+    force_reload -- if False, return the previously loaded list of devices
+    """
+    global devices
+    if not force_reload and devices is not None:
+        # Only query CUDA once
+        return devices
+
+	devices = []
+
+    parent_conn, child_conn = Pipe(duplex=False)
+    process = Process(target = get_devices_process, args = (force_reload, child_conn, ))
+    process.start()
+    devices = parent_conn.recv()
+    process.join()
+    parent_conn.close()
+    child_conn.close()
+
     return devices
 
 def get_device(device_id):
