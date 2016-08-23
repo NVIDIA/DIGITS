@@ -152,6 +152,7 @@ def create():
             job = ImageClassificationModelJob(
                     username    = utils.auth.get_username(),
                     name        = form.model_name.data + extra,
+                    group       = form.group_name.data,
                     dataset_id  = datasetJob.id(),
                     )
             # get handle to framework object

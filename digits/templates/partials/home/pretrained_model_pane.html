@@ -1,14 +1,15 @@
 {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
 <!-- Pretrained Model -->
 <style>
-#models-table > thead > tr > th:nth-child(1) {
-  width: 100%
-}
+ #models-table > thead > tr > th:nth-child(1) {
+     width: 100%
+ }
 </style>
 
 <div class="col-md-12" ng-show="tab.isSet(3)">
     <div class="well">
-        <div ng-controller="pretrained_models_controller">
+        <div ng-controller="pretrained_models_controller as c">
+            {[ jobs = (jc.pretrained_model_jobs | filter:search_text | sort_with_empty_at_end:this:jc.storage.show_groups); '' ]}
             <div class="row">
                 <div class="col-md-12">
                     <!-- Filter -->
@@ -22,49 +23,70 @@
                             </div>
                         </form>
                     </div>
+                    {[enabled = any_selected();'']}
                     <!-- Delete Button -->
                     <a class="btn btn-xs btn-danger"
-                       ng-disabled="!any_selected()"
+                       ng-disabled="!enabled"
                        ng-click="delete_jobs();">
                         Delete
                     </a>
+                    <a class="btn btn-xs btn-primary"
+                       ng-disabled="!enabled"
+                       ng-click="group_jobs();">
+                        Group
+                    </a>
                 </div>
             </div>
-            <table id="models-table"
+            <table id="pretrained-models-table"
                    ng-mouseleave="mouseleave()"
-                   class="table table-bordered table-striped selectable"
+                   class="table table-bordered table-striped list-group selectable"
                    width="100%">
-                <col ng-repeat="field in fields.pretrained_model_fields | filter:show(true)"
+                <col ng-repeat="field in fields"
                      ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
                 <thead>
-                   <tr>
-                     <th ng-repeat="field in fields.pretrained_model_fields | filter:show(true)">
-                       <div ng-click="change_sorting(field.name, $event)">
-                         <small>
-                             {[ field.name ]}
-                         </small>
-                         <i class="glyphicon"
-                            ng-class="get_icon(field.name)" style="width:14px">
-                         </i>
-                       </div>
-                     </th>
-                   </tr>
+                    <tr>
+                        <th ng-repeat="field in fields">
+                            <div ng-click="change_sorting(field.name, $event)">
+                                <small>
+                                    {[ field.name ]}
+                                </small>
+                                <i class="glyphicon"
+                                   ng-class="get_icon(field.name)" style="width:14px">
+                                </i>
+                            </div>
+                        </th>
+                    </tr>
                 </thead>
-                {[jobs = (jc.pretrained_model_jobs | filter:search_text | sort_with_empty_at_end:this);'']}
-                {[set_jobs(jobs)]}
                 <tbody ng-if="jobs.length">
+                    <tr ng-repeat-start="job in jobs"
+                        ng-hide="true">
+                    </tr>
+                    <!-- group bar -->
+                    <tr class="unselectable group-bar"
+                        ng-if="jc.storage.show_groups && ($first || jobs[$index-1].group != job.group)">
+                        <td colspan="{[ fields.length ]}" style="background-color:#cccccc">
+                            <div ng-click="c.hideRows[job.group] = !c.hideRows[job.group];">
+                                <span class="glyphicon"
+                                      ng-class="c.hideRows[job.group] ? 'glyphicon-triangle-right' : 'glyphicon-triangle-bottom'">
+                                </span>
+                                <strong>{[ job.group ? job.group : 'Ungrouped' ]}</strong>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- job rows -->
                     <tr ng-attr-id="{[ job.id ]}"
                         tabindex="0"
+                        ng-hide="c.hideRows[job.group]"
                         ng-mousedown="mousedown($index, $event)"
                         ng-mousemove="mousemove($index, $event)"
                         ng-mouseup="mouseup($index, $event)"
                         ng-click="click($index, $event)"
                         ng-keydown="keydown($event)"
-                        ng-class="{selected:job.selected}"
-                        ng-repeat="job in jobs">
+                        ng-class="{selected:job.selected}">
                         <td ng-bind="job.name"></td>
                         <td><dg-framework/></td>
-                        <td ng-bind-html="'{[ job.username ]}'|html"></td>
+                        <td ng-bind-html="job.username|html"></td>
                         <td><dg-has-labels/></td>
                         <td class="text-{[job.status_css]}">
                             {[ job.status ]}
@@ -85,13 +107,15 @@
                             </small>
                         </td>
                     </tr>
+                    <tr ng-repeat-end
+                        ng-hide="true">
+                    </tr>
                 </tbody>
                 <tbody ng-if="jobs.length == 0">
                     <tr>
-                        {[ colspan = (fields.pretrained_model_fields | filter:show(true)).length + (storage.model_output_fields | filter:show(true)).length;'' ]}
-                        <td colspan="{[colspan]}">
+                        <td colspan="{[fields.length]}">
                             <h5>
-                                No Models
+                                No Pretrained Models
                             </h5>
                         </td>
                     </tr>

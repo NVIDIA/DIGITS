@@ -15,7 +15,7 @@ from digits.config import config_value
 from digits.utils import sizeof_fmt, filesystem as fs
 
 # NOTE: Increment this everytime the pickled object changes
-PICKLE_VERSION = 1
+PICKLE_VERSION = 2
 
 class Job(StatusCls):
     """
@@ -44,7 +44,7 @@ class Job(StatusCls):
                     task.detect_snapshots()
             return job
 
-    def __init__(self, name, username, persistent = True):
+    def __init__(self, name, username, group = '', persistent = True):
         """
         Arguments:
         name -- name of this job
@@ -56,6 +56,7 @@ class Job(StatusCls):
         self._id = '%s-%s' % (time.strftime('%Y%m%d-%H%M%S'), os.urandom(2).encode('hex'))
         self._dir = os.path.join(config_value('jobs_dir'), self._id)
         self._name = name
+        self.group = group
         self.username = username
         self.pickver_job = PICKLE_VERSION
         self.tasks = []
@@ -86,6 +87,8 @@ class Job(StatusCls):
         """
         if 'username' not in state:
             state['username'] = None
+        if 'group' not in state:
+            state['group'] = ''
         self.__dict__ = state
         self.persistent = True
 
@@ -309,6 +312,22 @@ class Job(StatusCls):
                           'job_id': self.id(),
                           'update': 'progress',
                           'percentage': int(round(100*progress)),
+                      },
+                      namespace='/jobs',
+                      room='job_management'
+                  )
+
+    def emit_attribute_changed(self, attribute, value):
+        """
+        Call socketio.emit for task job update
+        """
+        from digits.webapp import socketio
+        socketio.emit('job update',
+                      {
+                          'job_id': self.id(),
+                          'update': 'attribute',
+                          'attribute': attribute,
+                          'value': value,
                       },
                       namespace='/jobs',
                       room='job_management'

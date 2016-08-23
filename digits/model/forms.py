@@ -358,6 +358,10 @@ class ModelForm(Form):
             tooltip = "An identifier, later used to refer to this model in the Application."
             )
 
+    group_name = utils.forms.StringField('Group Name',
+            tooltip = "An optional group name for organization on the main page."
+            )
+
     # allows shuffling data during training (for frameworks that support this, as indicated by
     # their Framework.can_shuffle_data() method)
     shuffle = utils.forms.BooleanField('Shuffle Train Data',

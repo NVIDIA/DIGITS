@@ -18,6 +18,10 @@
     word-wrap:break-word;
     border-collapse:collapse;
 }
+.table>tbody>tr {
+    background-color: #ffffff;
+}
+
 .table>tbody>tr>td,.table>thead>tr>th {
     padding: 2px;
     border-collapse: collapse;
@@ -29,8 +33,13 @@
     cursor: pointer;
 }
 .table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th {
-    background-color: #f9f9f9;
+    background-color: #f6f6f6;
 }
 .table-striped>tbody>tr:nth-child(even)>td, .table-striped>tbody>tr:nth-child(even)>th {
     background-color: #ffffff;
+}
+tr.group-bar td {
+    cursor: pointer;
+    background-color: #ccccee;
+    border-radius: 4px;
 }

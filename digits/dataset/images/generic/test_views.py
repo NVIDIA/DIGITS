@@ -93,6 +93,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         """
         data = {
                 'dataset_name':     'test_dataset',
+                'group_name':       'test_group',
                 'method':           'prebuilt',
                 'prebuilt_train_images': os.path.join(cls.imageset_folder, 'train_images'),
                 'prebuilt_train_labels': os.path.join(cls.imageset_folder, 'train_labels'),

@@ -51,6 +51,7 @@ def create():
         job = GenericImageDatasetJob(
                 username    = utils.auth.get_username(),
                 name        = form.dataset_name.data,
+                group       = form.group_name.data,
                 mean_file   = form.prebuilt_mean_file.data.strip(),
                 )
 

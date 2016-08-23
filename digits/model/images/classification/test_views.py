@@ -181,6 +181,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             network = cls.network()
         data = {
                 'model_name':       'test_model',
+                'group_name':       'test_group',
                 'dataset':          cls.dataset_id,
                 'method':           'custom',
                 'custom_network':   network,

@@ -297,6 +297,7 @@ def create():
         job = ImageClassificationDatasetJob(
                 username    = utils.auth.get_username(),
                 name        = form.dataset_name.data,
+                group       = form.group_name.data,
                 image_dims  = (
                     int(form.resize_height.data),
                     int(form.resize_width.data),
