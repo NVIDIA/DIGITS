@@ -306,7 +306,7 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 validate_required_iff(method='textfile',
                                       textfile_use_local_files=False)
                 ],
-            tooltip = "The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
+            tooltip = "The 'i'th line of the file should give the string label associated with the '(i-1)'th numeric label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
             )
 
     textfile_local_labels_file = utils.forms.StringField(u'Labels',
@@ -314,6 +314,6 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                 validate_required_iff(method='textfile',
                                       textfile_use_local_files=True)
                 ],
-            tooltip = "The 'i'th line of the file should give the string label associated with the '(i-1)'th numberic label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
+            tooltip = "The 'i'th line of the file should give the string label associated with the '(i-1)'th numeric label. (E.g. the string label for the numeric label 0 is supposed to be on line 1.)"
             )
 
