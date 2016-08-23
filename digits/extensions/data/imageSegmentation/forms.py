@@ -58,7 +58,9 @@ class DatasetForm(Form):
                 " image folder there must be one corresponding image in the label"
                 " image folder. The label image must have the same filename except"
                 " for the extension, which may differ. Label images are expected"
-                " to be single-channel images (paletted or grayscale)."
+                " to be single-channel images (paletted or grayscale), or RGB"
+                " images, in which case the color/class mappings need to be"
+                " specified through a separate text file."
         )
 
     folder_pct_val = utils.forms.IntegerField(
@@ -94,7 +96,9 @@ class DatasetForm(Form):
                 " image folder there must be one corresponding image in the label"
                 " image folder. The label image must have the same filename except"
                 " for the extension, which may differ. Label images are expected"
-                " to be single-channel images (paletted or grayscale)."
+                " to be single-channel images (paletted or grayscale), or RGB"
+                " images, in which case the color/class mappings need to be"
+                " specified through a separate text file."
         )
 
     channel_conversion = utils.forms.SelectField(
@@ -115,7 +119,34 @@ class DatasetForm(Form):
             validate_file_path,
             ],
         tooltip="The 'i'th line of the file should give the string label "
-                "associated with the '(i-1)'th numberic label. (E.g. the "
+                "associated with the '(i-1)'th numeric label. (E.g. the "
                 "string label for the numeric label 0 is supposed to be "
                 "on line 1.)"
+        )
+
+    colormap_method = utils.forms.SelectField(
+        'Color map specification',
+        choices=[
+            ('label', 'From label image'),
+            ('textfile', 'From text file'),
+            ],
+        default='label',
+        tooltip="Specify how to map class IDs to colors. Select 'From label "
+                "image' to use palette or grayscale from label images. For "
+                "RGB image labels, select 'From text file' and provide "
+                "color map in separate text file."
+        )
+
+    colormap_text_file = utils.forms.StringField(
+        'Color map file',
+        validators=[
+            validate_required_iff(colormap_method="textfile"),
+            validate_file_path,
+            ],
+        tooltip="Specify color/class mappings through a text file. "
+                "Each line in the file should contain three space-separated "
+                "integer values, one for each of the Red, Green, Blue "
+                "channels. The 'i'th line of the file should give the color "
+                "associated with the '(i-1)'th class. (E.g. the "
+                "color for class #0 is supposed to be on line 1.)"
         )

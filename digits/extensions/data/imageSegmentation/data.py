@@ -7,6 +7,7 @@ import random
 
 import numpy as np
 import PIL.Image
+import PIL.ImagePalette
 
 from digits.utils import image, subclass, override, constants
 from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
@@ -14,7 +15,6 @@ from ..interface import DataIngestionInterface
 from .forms import DatasetForm
 
 TEMPLATE = "template.html"
-
 
 @subclass
 class DataIngestion(DataIngestionInterface):
@@ -37,12 +37,26 @@ class DataIngestion(DataIngestionInterface):
 
         random.seed(self.userdata['seed'])
 
-        # open first image in label folder to retrieve palette
-        # all label images must use the same palette - this is enforced
-        # during dataset creation
-        filename = self.make_image_list(self.label_folder)[0]
-        image = self.load_label(filename)
-        self.userdata[COLOR_PALETTE_ATTRIBUTE] = image.getpalette()
+        if self.userdata['colormap_method'] == "label":
+            # open first image in label folder to retrieve palette
+            # all label images must use the same palette - this is enforced
+            # during dataset creation
+            filename = self.make_image_list(self.label_folder)[0]
+            image = self.load_label(filename)
+            self.userdata[COLOR_PALETTE_ATTRIBUTE] = image.getpalette()
+        else:
+            # read colormap from file
+            with open(self.colormap_text_file) as f:
+                palette = []
+                lines = f.read().splitlines()
+                for line in lines:
+                    for val in line.split():
+                        palette.append(int(val))
+                # fill rest with zeros
+                palette = palette + [0] * (256*3 - len(palette))
+                self.userdata[COLOR_PALETTE_ATTRIBUTE] = palette
+                self.palette_img = PIL.Image.new("P", (1,1))
+                self.palette_img.putpalette(palette)
 
         # get labels if those were provided
         if self.class_labels_file:
@@ -168,10 +182,17 @@ class DataIngestion(DataIngestionInterface):
         Load a label image
         """
         image = PIL.Image.open(filename)
-        if image.mode not in ['P', 'L', '1']:
-            raise ValueError("Labels are expected to be single-channel (paletted or "
-                             " grayscale) images - %s mode is '%s'"
-                                 % (filename, image.mode))
+        if self.userdata['colormap_method'] == "label":
+            if image.mode not in ['P', 'L', '1']:
+                raise ValueError("Labels are expected to be single-channel (paletted or "
+                                 " grayscale) images - %s mode is '%s'"
+                                     % (filename, image.mode))
+        else:
+            if image.mode not in ['RGB']:
+                raise ValueError("Labels are expected to be RGB images - %s mode is '%s'"
+                                     % (filename, image.mode))
+            image = image.quantize(palette=self.palette_img)
+
         return image
 
     def make_image_list(self, folder):

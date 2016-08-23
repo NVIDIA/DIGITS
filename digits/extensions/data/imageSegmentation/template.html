@@ -7,13 +7,13 @@
 <div class="form-group{{mark_errors([form.feature_folder])}}">
     {{ form.feature_folder.label }}
     {{ form.feature_folder.tooltip }}
-    {{ form.feature_folder(class='form-control autocomplete_path', placeholder='folder or URL')}}
+    {{ form.feature_folder(class='form-control autocomplete_path', placeholder='folder')}}
 </div>
 
 <div class="form-group{{mark_errors([form.label_folder])}}">
     {{ form.label_folder.label }}
     {{ form.label_folder.tooltip }}
-    {{ form.label_folder(class='form-control autocomplete_path', placeholder='folder or URL')}}
+    {{ form.label_folder(class='form-control autocomplete_path', placeholder='folder')}}
 </div>
 
 <div class="form-group{{mark_errors([form.folder_pct_val])}}">
@@ -28,13 +28,37 @@
 <div style="display:none;" class="form-group{{mark_errors([form.validation_feature_folder])}} cl-separate-val-folder">
     {{ form.validation_feature_folder.label }}
     {{ form.validation_feature_folder.tooltip }}
-    {{ form.validation_feature_folder(class='form-control autocomplete_path') }}
+    {{ form.validation_feature_folder(class='form-control autocomplete_path', placeholder='folder') }}
 </div>
 
 <div style="display:none;" class="form-group{{mark_errors([form.validation_label_folder])}} cl-separate-val-folder">
     {{ form.validation_label_folder.label }}
     {{ form.validation_label_folder.tooltip }}
-    {{ form.validation_label_folder(class='form-control autocomplete_path') }}
+    {{ form.validation_label_folder(class='form-control autocomplete_path', placeholder='folder') }}
+</div>
+
+<div class="form-group{{mark_errors([form.class_labels_file])}}">
+    {{ form.class_labels_file.label }}
+    {{ form.class_labels_file.tooltip }}
+    {{ form.class_labels_file(class='form-control autocomplete_path', placeholder='file')}}
+</div>
+
+<div class="form-group{{mark_errors([form.colormap_method])}}">
+    {{ form.colormap_method.label }}
+    {{ form.colormap_method.tooltip }}
+    {{ form.colormap_method(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.colormap_text_file])}} cl-colormap-text-file">
+    {{ form.colormap_text_file.label }}
+    {{ form.colormap_text_file.tooltip }}
+    {{ form.colormap_text_file(class='form-control autocomplete_path', placeholder='file')}}
+</div>
+
+<div class="form-group{{mark_errors([form.channel_conversion])}}">
+    {{ form.channel_conversion.label }}
+    {{ form.channel_conversion.tooltip }}
+    {{ form.channel_conversion(class='form-control') }}
 </div>
 
 <script>
@@ -56,16 +80,17 @@ function hasValFolderChanged() {
 }
 $("#has_val_folder").click(hasValFolderChanged);
 hasValFolderChanged();
+
+function hasColorMapMethodChanged() {
+    if ($("#colormap_method").val() == "textfile")
+    {
+        $("#colormap_text_file").prop("disabled", false);
+    }
+    else
+    {
+        $("#colormap_text_file").prop("disabled", true);
+    }
+}
+$("#colormap_method").click(hasColorMapMethodChanged);
+hasColorMapMethodChanged();
 </script>
-
-<div class="form-group{{mark_errors([form.class_labels_file])}}">
-    {{ form.class_labels_file.label }}
-    {{ form.class_labels_file.tooltip }}
-    {{ form.class_labels_file(class='form-control autocomplete_path', placeholder='folder or URL')}}
-</div>
-
-<div class="form-group{{mark_errors([form.channel_conversion])}}">
-    {{ form.channel_conversion.label }}
-    {{ form.channel_conversion.tooltip }}
-    {{ form.channel_conversion(class='form-control') }}
-</div>
