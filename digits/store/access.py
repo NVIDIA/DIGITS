@@ -102,7 +102,7 @@ def model_crud():
 def publish_model():
     if request.method == 'POST':
         received_files = request.files
-        if 'archive' in received_files:
+        if len(received_files['archive'].filename)>0:
             files = list()
             archive_file = received_files['archive']
             _, extension = os.path.splitext(archive_file.filename)
@@ -131,14 +131,26 @@ def publish_model():
         else:
             files = list()
             for name in received_files:
-                file_dict = dict()
-                file_dict['form_name'] = name
-                file_dict['file_name'] = received_files[name].filename
-                file_dict['content'] = received_files[name].read()
-                files.append(file_dict)
+                if name != 'archive':
+                    file_dict = dict()
+                    file_dict['form_name'] = name
+                    file_dict['file_name'] = received_files[name].filename
+                    file_dict['content'] = received_files[name].read()
+                    files.append(file_dict)
+            info = {
+                'snapshot file': received_files['weight_file'].filename,
+                'model file': received_files['network_file'].filename,
+                'user': request.form['model_user']
+            }
+            files.append({'form_name': 'info.json',
+                          'file_name': 'info.json',
+                          'content': json.dumps(info)})
         model = {'name': request.form['model_name'],
-                 'files': files,
-                 'notes': request.form['notes']}
+                 'description': request.form['description'],
+                 'instruction': request.form['instruction'],
+                 'dataset': request.form['dataset'],
+                 'license': request.form['license'],
+                 'files': files}
         model_key = app.config['model_store'].add(model)
         #return redirect(url_for('uploaded_file', model_key=model_key))
     return redirect(url_for('manage_model_store'))

@@ -91,20 +91,31 @@ class Model(Base):
 
     id = Column(String, primary_key=True)
     name = Column(String)
-    notes = Column(String)
+    description = Column(String)
+    instruction = Column(String)
+    dataset = Column(String)
+    license = Column(String)
     files = relationship('File', back_populates='model', cascade='all, delete, delete-orphan')
     job = relationship('Job', uselist=False, back_populates='model', cascade='all, delete, delete-orphan')
 
-    def __init__(self, model_name, model_notes):
+    def __init__(self, model_name, model_description, model_instruction, model_dataset, model_license):
         self.id = str(uuid.uuid4())
         self.name = model_name
-        self.notes = model_notes
+        self.description = model_description
+        self.instruction = model_instruction
+        self.dataset = model_dataset
+        self.license = model_license
 
-    def update(self, name=None, notes=None):
+    def get_dict(self):
+        return {'key': self.id, 'name': self.name, 'description': self.description,
+                'instruction': self.instruction, 'dataset': self.dataset,
+                'license': self.license}
+
+    def update(self, name=None, description=None):
         if name is not None and self.name != name:
             self.name = name
-        if notes is not None and self.notes != notes:
-            self.notes = notes
+        if description is not None and self.description != description:
+            self.description = description
 
     def get_files(self):
         return [f for f in self.files]
@@ -113,7 +124,7 @@ class Model(Base):
         pass
 
     def __repr__(self):
-        return 'Model<id={}, name={}, notes={}>'.format(self.id, self.name, self.notes)
+        return 'Model<id={}, name={}, description={}>'.format(self.id, self.name, self.description)
 
 
 class Database():

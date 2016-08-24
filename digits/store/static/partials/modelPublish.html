@@ -24,8 +24,31 @@
                     <input type="text" class="form-control" id="model_name" name=model_name placeholder="Enter model name">
                 </div>
                 <div class="form-group">
-                    <label for="model_notes"> Notes: </label>
-                    <input type="text" class="form-control" id="model_notes" name=notes placeholder="Notes for this model">
+                    <label for="model_description"> Description: </label>
+                    <textarea class="form-control" rows="4" id="model_description" name=description placeholder="Description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="model_instruction"> Instruction to use: </label>
+                    <textarea class="form-control" rows="4" id="model_instruction" name=instruction placeholder="Instruction to use"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="model_dataset"> Dataset: </label>
+                    <input type="text" class="form-control" id="model_dataset" name=dataset placeholder="Relevant dataset">
+                </div>
+                <div class="form-group">
+                    <label for="model_license"> License: </label>
+                    <select class="form-control" id="model_license" name=license placeholder="License">
+                        <option>MIT</option>
+                        <option>GPL 2.0</option>
+                        <option>Apache 2.0</option>
+                        <option>GPL 3.0</option>
+                        <option>BSD 2.0 (3-clause, New or Revised)</option>
+                        <option>LGPL 2.1</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="logo"> Logo file: </label>
+                    <input type="file" class="btn btn-default" id="logo" name="logo">
                 </div>
                 <p>Below is the file to upload.  Either one tar.gzip/zip file or 3 individual files.</p>
                 <hr>
@@ -42,14 +65,21 @@
                             <input type=file class="btn btn-default" id="weight_file" name=weight_file>
                         </div>
                         <div class="form-group">
-                            <label for="solver_file">Solver prototxt file </label>
+                            <label for="solver_file">Solver protocol buffer text file </label>
                             <input type=file class="btn btn-default" id="solver_file" name=solver_file>
                         </div>
                         <div class="form-group">
-                            <label for="network_file">Original prototxt file </label>
+                            <label for="network_file">Network protocol buffer text file </label>
                             <input type=file class="btn btn-default" id="network_file" name=network_file>
                         </div>
-                        <!-- Deploy prototxt file<input type=file name=deploy_file><br></p> -->
+                        <div class="form-group">
+                            <label for="mean_file">Image mean file </label>
+                            <input type=file class="btn btn-default" id="mean_file" name=mean_file>
+                        </div>
+                        <div class="form-group">
+                            <label for="model_user"> Model user: </label>
+                            <input type="text" class="form-control" id="model_user" name=model_user placeholder="Enter model user">
+                        </div>
                     </div>
                 </div>
                 <hr>

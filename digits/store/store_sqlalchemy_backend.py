@@ -15,7 +15,7 @@ class ModelStore:
         session = self.db.get_session()
         model_list = list()
         for model in session.query(Model).all():
-            tmp = {'key': model.id, 'name': model.name, 'notes': model.notes}
+            tmp = model.get_dict()
             tmp_dict = dict()
             for tmp_file in model.files:
                 tmp_dict[tmp_file.form_name] = (tmp_file.file_name, tmp_file.id)
@@ -116,13 +116,13 @@ class ModelStore:
 
     def add(self, model):
         session = self.db.get_session()
-        m = Model(model['name'], model['notes'])
+        m = Model(model['name'], model['description'], model['instruction'], model['dataset'], model['license'])
         for f in model['files']:
             if f['file_name'] == 'info.json':
                 tmp_dict = json.loads(f['content'])
-                m.job = Job(tmp_dict['framework'],
-                            tmp_dict['image dimensions'],
-                            tmp_dict['image resize mode'])
+                if 'image dimensions' in tmp_dict:
+                    m.job = Job(tmp_dict['framework'], tmp_dict['image dimensions'],
+                                tmp_dict['image resize mode'])
             tmp_file = File(f['form_name'], f['file_name'])
             tmp_file.blob = Blob(f['content'])
             m.files.append(tmp_file)
