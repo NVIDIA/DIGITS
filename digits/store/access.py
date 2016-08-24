@@ -1,3 +1,6 @@
+#!/usr/bin/env python2
+# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+
 import argparse
 import json
 import os

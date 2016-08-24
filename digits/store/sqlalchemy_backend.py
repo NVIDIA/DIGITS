@@ -1,3 +1,5 @@
+# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+
 import uuid
 
 from sqlalchemy import Column, create_engine, ForeignKey, Integer, LargeBinary, String

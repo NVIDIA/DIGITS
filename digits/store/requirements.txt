@@ -1,0 +1,2 @@
+Flask-Cors>=2.1.2
+SQLAlchemy>=1.0.12
