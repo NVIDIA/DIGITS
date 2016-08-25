@@ -557,6 +557,7 @@ try {
                          {name: 'framework',    show: true,  min_width: 0},
                          {name: 'username',     show: true,  min_width: 0},
                          {name: 'has_labels',   show: true,  min_width: 0},
+                         {name: 'has_mean_file',   show: true,  min_width: 0},
                          {name: 'status',       show: true,  min_width: 0},
                          {name: 'elapsed',      show: true,  min_width: 0},
                          {name: 'submitted',    show: true,  min_width: 0}];
@@ -722,7 +723,16 @@ try {
                 '\'glyphicon-remove\']}" style="width:14px"/>',
         };
     });
-
+    app.directive('dgHasMeanFile', function() {
+        console.log('has-mean-file');
+        return {
+            restrict: 'AE',
+            replace: true,
+            template: '<i class="glyphicon '+
+                ' {[job.has_mean_file ? \'glyphicon-ok\' : ' +
+                '\'glyphicon-remove\']}" style="width:14px"/>',
+        };
+    });
     // Because jinja uses {{ and }}, tell angular to use {[ and ]}
     app.config(['$interpolateProvider', function($interpolateProvider) {
         $interpolateProvider.startSymbol('{[');

@@ -1,21 +1,26 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
-import flask
+import json
+import os
+import shutil
 import tempfile
 import tarfile
 import zipfile
-import json
 
-import os
-import shutil
+import flask
 import h5py
+import json
 import numpy as np
+import PIL.Image
+import StringIO
+import werkzeug.exceptions
 
 from digits import dataset, extensions, model, utils
-from digits.webapp import app, scheduler
 from digits.pretrained_model import PretrainedModelJob
+
 from digits.utils.routing import request_wants_json, job_from_request
-from digits import utils
-import werkzeug.exceptions
+from digits.views import get_job_list
+from digits.webapp import app, scheduler
+
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -87,6 +92,8 @@ def upload_archive():
     """
     files = flask.request.files
     archive_file = get_tempfile(files["archive"],".archive");
+    labels_file  = None
+    mean_file    = None
 
     if tarfile.is_tarfile(archive_file):
         archive = tarfile.open(archive_file,'r')
@@ -124,20 +131,26 @@ def upload_archive():
 
         if "labels file" in info:
             labels_file  = os.path.join(tempdir, info["labels file"])
+        if "mean file" in info:
+            mean_file  = os.path.join(tempdir, info["mean file"])
 
         # Upload the Model:
         job = PretrainedModelJob(
             weights_file,
             model_file ,
             labels_file,
+            mean_file,
             info["framework"],
+            info["image dimensions"][2],
+            info["image resize mode"],
+            info["image dimensions"][0],
+            info["image dimensions"][1],
             username = utils.auth.get_username(),
             name = info["name"]
         )
 
         scheduler.add_job(job)
         job.wait_completion()
-
         # Delete temp directory
         shutil.rmtree(tempdir, ignore_errors=True)
 
@@ -152,7 +165,8 @@ def new():
     """
     Upload a pretrained model
     """
-    labels_path = None
+    labels_file = None
+    mean_file   = None
     framework   = None
 
     form  = flask.request.form
@@ -174,21 +188,24 @@ def new():
         weights_path, model_def_path = validate_torch_files(files)
 
     if str(flask.request.files['labels_file'].filename) is not '':
-        labels_path = get_tempfile(flask.request.files['labels_file'],".txt")
+        labels_file = get_tempfile(flask.request.files['labels_file'],".txt")
+
+    if str(flask.request.files['mean_file'].filename) is not '':
+        mean_file = get_tempfile(flask.request.files['mean_file'],".binaryproto")
 
     job = PretrainedModelJob(
         weights_path,
         model_def_path,
-        labels_path,
+        labels_file,
+        mean_file,
         framework,
         form["image_type"],
         form["resize_mode"],
-        form["width"],
         form["height"],
+        form["width"],
         username = utils.auth.get_username(),
         name = flask.request.form['job_name']
     )
-
     scheduler.add_job(job)
 
     return flask.redirect(flask.url_for('digits.views.home', tab=3)), 302

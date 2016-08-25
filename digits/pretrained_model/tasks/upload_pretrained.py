@@ -1,7 +1,8 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
-
+import os
 import shutil
+
 import digits
 from digits.task import Task
 from digits.utils import subclass, override
@@ -25,6 +26,7 @@ class UploadPretrainedModelTask(Task):
         self.model_def_path = kwargs.pop('model_def_path', None)
         self.image_info = kwargs.pop('image_info', None)
         self.labels_path = kwargs.pop('labels_path', None)
+        self.mean_path = kwargs.pop('mean_path', None)
         self.framework = kwargs.pop('framework', None)
 
         # resources
@@ -54,21 +56,20 @@ class UploadPretrainedModelTask(Task):
         for resource in resources[cpu_key]:
             if resource.remaining() >= 1:
                 reserved_resources[cpu_key] = [(resource.identifier, 1)]
-                # we reserve the first available GPU, if there are any
-                gpu_key = 'gpus'
-                if resources[gpu_key]:
-                    for resource in resources[gpu_key]:
-                        if resource.remaining() >= 1:
-                            self.gpu = int(resource.identifier)
-                            reserved_resources[gpu_key] = [(resource.identifier, 1)]
-                            break
                 return reserved_resources
         return None
 
     def move_file(self,input_file, output):
-        shutil.copy(input_file, self.job_dir+"/"+output)
+        shutil.copy(input_file, os.path.join(self.job_dir,output))
 
-    def get_model_def_path(self):
+    def get_labels(self):
+        labels = []
+        if os.path.isfile(self.get_labels_path()):
+            with open(self.get_labels_path()) as f:
+                labels = f.readlines()
+        return labels
+
+    def get_model_def_path(self,as_json=False):
         """
         Get path to model definition
         """
@@ -77,5 +78,23 @@ class UploadPretrainedModelTask(Task):
     def get_weights_path(self):
         """
         Get path to model weights
+        """
+        raise NotImplementedError('Please implement me')
+
+    def get_deploy_path(self):
+        """
+        Get path to file containing model def for deploy/visualization
+        """
+        raise NotImplementedError('Please implement me')
+
+    def get_labels_path(self):
+        return os.path.join(self.job_dir,"labels.txt")
+
+    def get_mean_path(self):
+        return os.path.join(self.job_dir,"mean.binaryproto")
+
+    def write_deploy(self):
+        """
+        Write model definition for deploy/visualization
         """
         raise NotImplementedError('Please implement me')
