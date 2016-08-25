@@ -25,10 +25,13 @@ from urlparse import urlparse
 
 from digits.config import config_value
 from digits.pretrained_model import PretrainedModelJob
-import digits.webapp
-import digits.dataset.images.classification.test_views
+from digits.inference import GradientAscentJob
+
 import digits.model.images.classification.test_views
+import digits.model.views
+import digits.pretrained_model.views
 import digits.test_views
+import digits.webapp
 
 # Must import after importing digit.config
 import caffe_pb2
@@ -36,6 +39,41 @@ import caffe_pb2
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
+
+class BaseViewsTestWithPretrainedModel(digits.model.images.classification.test_views.BaseViewsTestWithModel):
+    """
+    Provides a model
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(BaseViewsTestWithPretrainedModel, cls).setUpClass()
+        job = digits.model.views.create_pretrained_model(cls.model_id,None,-1)
+        cls.model_id = job.id()
+
+class BaseTestInference(BaseViewsTestWithPretrainedModel):
+    """
+    Test Inference Tasks Such As Gradient Ascent
+    """
+    def test_max_activations(self):
+        """ Run Gradient Ascent on a softmax layer for first unit """
+
+        # Get pretrained model job:
+        job = digits.webapp.scheduler.get_job(self.model_id)
+
+        layer_name = "softmax"
+        units = [0]
+
+        gradient_ascent_job = digits.pretrained_model.views.create_max_activation_job(
+            job,
+            None,
+            layer_name,
+            units
+        )
+
+        gradient_ascent_job.wait_completion()
+        activations = job.get_max_activations_path()
+
+        assert os.path.isfile(activations), 'Gradient Ascent Job Failed'
 
 class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTestWithModel):
     """
@@ -111,6 +149,10 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
         tmp.close()
 
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
+class TestCaffeInference(BaseTestInference):
+    FRAMEWORK = 'caffe'
+
 class TestCaffeUpload(BaseTestUpload):
     FRAMEWORK = 'caffe'
 

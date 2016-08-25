@@ -5,6 +5,7 @@
 {% extends "layout.html" %}
 
 {% block head %}
+
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.time_filters.js', ver=dir_hash) }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js', ver=dir_hash) }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/ui-bootstrap-tpls-1.3.2.min.js', ver=dir_hash) }}"></script>
@@ -123,7 +124,7 @@
                                 <tr ng-repeat-start="job in jobs"
                                     ng-hide="true">
                                 </tr>
-                                
+
                                 <!-- group bar -->
                                 <tr class="unselectable group-bar"
                                     ng-if="jc.storage.show_groups && ($first || jobs[$index-1].group != job.group)">

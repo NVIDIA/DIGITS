@@ -190,7 +190,7 @@ def infer(input_list,
         for idx, layer in enumerate(visualizations):
             vis = layer['vis'] if layer['vis'] is not None else np.empty(0)
             dset = db_layers.create_dataset(str(idx), data=vis)
-            dset.attrs['name'] = layer['name']
+            dset.attrs['name']  = layer['name']
             dset.attrs['vis_type'] = layer['vis_type']
             if 'param_count' in layer:
                 dset.attrs['param_count'] = layer['param_count']

@@ -15,7 +15,7 @@ import werkzeug.exceptions
 from .config import config_value
 from .webapp import app, socketio, scheduler
 import digits
-from digits import dataset, extensions, model, utils, pretrained_model
+from digits import dataset, extensions, model, utils, pretrained_model, inference
 from digits.log import logger
 from digits.utils.routing import request_wants_json
 
@@ -184,12 +184,14 @@ def json_dict(job, model_output_fields):
 
     if isinstance(job, pretrained_model.PretrainedModelJob):
         model_output_fields.add("has_labels")
+        model_output_fields.add("has_mean_file")
         model_output_fields.add("username")
         d.update({
             'type': 'pretrained_model',
             'framework': job.framework,
             'username': job.username,
-            'has_labels': job.has_labels_file()
+            'has_labels': job.has_labels_file(),
+            'has_mean_file': job.has_mean_file()
         })
     return d
 
@@ -207,10 +209,12 @@ def completed_jobs():
     running_datasets  = get_job_list(dataset.DatasetJob, True)
     running_models    = get_job_list(model.ModelJob, True)
     pretrained_models = get_job_list(pretrained_model.PretrainedModelJob,False)
+    running_weights   = get_job_list(inference.WeightsJob,True)
+    running_max_activ = get_job_list(inference.GradientAscentJob,True)
 
     model_output_fields = set()
     data = {
-        'running': [json_dict(j, model_output_fields) for j in running_datasets + running_models],
+        'running': [json_dict(j, model_output_fields) for j in running_datasets + running_models+running_weights+running_max_activ],
         'datasets': [json_dict(j, model_output_fields) for j in completed_datasets],
         'models': [json_dict(j, model_output_fields) for j in completed_models],
         'pretrained_models': [json_dict(j, model_output_fields) for j in pretrained_models],
@@ -347,7 +351,11 @@ def show_job(job_id):
     if isinstance(job, model.ModelJob):
         return flask.redirect(flask.url_for('digits.model.views.show', job_id=job_id))
     if isinstance(job, pretrained_model.PretrainedModelJob):
-        return flask.redirect(flask.url_for('digits.pretrained_model.views.show', job_id=job_id))
+        return flask.redirect(flask.url_for('digits.pretrained_model.views.layer_visualizations', job_id=job_id))
+    if isinstance(job, inference.WeightsJob):
+        return flask.redirect(flask.url_for('digits.pretrained_model.views.layer_visualizations', job_id=job.pretrained_model.id()))
+    if isinstance(job, inference.GradientAscentJob):
+        return flask.redirect(flask.url_for('digits.pretrained_model.views.layer_visualizations', job_id=job.pretrained_model.id()))
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 
@@ -700,4 +708,3 @@ def on_leave_jobs():
         del flask.session['room']
         #print '>>> Somebody left room %s' % room
         leave_room(room)
-

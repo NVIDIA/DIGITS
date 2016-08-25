@@ -368,4 +368,3 @@ class ModelForm(Form):
                                        default = True,
                                        tooltip = 'For every epoch, shuffle the data before training.'
             )
-
