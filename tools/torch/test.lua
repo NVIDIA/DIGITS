@@ -343,40 +343,59 @@ else
     end
     counter = 1 -- here counter is set, so that predictBatch() method displays only the predictions of first image
     predictBatch(inputs, model)
+
     if opt.visualization=='yes' then
-        local filename = paths.concat(opt.save, 'vis.h5')
-        logmessage.display(0,'Saving visualization to ' .. filename)
-        local vis_db = hdf5.open(filename, 'w')
-        local layer_id = 1
-        for i,layer in ipairs(model:listModules()) do
-            local activations = layer.output
-            local weights = layer.weight
-            local bias = layer.bias
-            name = tostring(layer)
-            -- convert 'name' string to Tensor as torch.hdf5 only
-            -- accepts Tensor objects
-            tname = utils.stringToTensor(name)
-            if weights ~= nil then
-                vis_db:write('/layers/'..layer_id..'/weights', weights:float())
-            end
-            if bias ~= nil then
-                vis_db:write('/layers/'..layer_id..'/bias', bias:float())
-            end
-            if type(activations) == 'table' then
-                for k=1,#activations do
-                    name_activation = name..'.'..k
-                    tname_activation = utils.stringToTensor(name_activation)
-                    vis_db:write('/layers/'..layer_id..'/name', tname_activation )
-                    vis_db:write('/layers/'..layer_id..'/activations', activations[k]:float())
-                    layer_id = layer_id + 1
-                end
-            else
-                vis_db:write('/layers/'..layer_id..'/name', tname )
-                vis_db:write('/layers/'..layer_id..'/activations', activations:float())
+
+      local filename = paths.concat(opt.save, 'vis.h5')
+      logmessage.display(0,'Saving visualization to ' .. filename)
+      local vis_db = hdf5.open(filename, 'w')
+
+      vis_db:write('/layers/'.. 0 ..'/activations', inputs:float())
+      vis_db:write('/layers/'.. 0 ..'/chain', utils.stringToTensor("data"))
+      vis_db:write('/layers/'.. 0 ..'/name',  utils.stringToTensor("data"))
+      local layer_id = 1
+
+      function traverseModel(layer, link, chain)
+        local activations = layer.output
+        local weights = layer.weight
+        local bias = layer.bias
+        name = tostring(layer)
+
+        tname = utils.stringToTensor(name)
+        if weights ~= nil then
+            vis_db:write('/layers/'..layer_id..'/weights', weights:float())
+        end
+        if bias ~= nil then
+            vis_db:write('/layers/'..layer_id..'/bias', bias:float())
+        end
+
+        chain = chain .. "_" .. link
+        vis_db:write('/layers/'..layer_id..'/chain', utils.stringToTensor(chain))
+
+        if type(activations) == 'table' then
+            for k=1,#activations do
+                name_activation = name..'.'..k
+                tname_activation = utils.stringToTensor(name_activation)
+                vis_db:write('/layers/'..layer_id..'/name', tname_activation )
+                vis_db:write('/layers/'..layer_id..'/activations', activations[k]:float())
                 layer_id = layer_id + 1
             end
+        else
+            vis_db:write('/layers/'..layer_id..'/name', tname )
+            vis_db:write('/layers/'..layer_id..'/activations', activations:float())
+            layer_id = layer_id + 1
         end
-        vis_db:close()
+
+        if layer.modules then
+          for i=1,#layer.modules do
+            child = layer:get(i)
+            link = link + 1
+            traverseModel(child,link,chain)
+          end
+        end
+      end
+
+      traverseModel(model, 0, "")
+      vis_db:close()
     end
 end
-

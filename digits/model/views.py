@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 from datetime import timedelta
+import os
 import io
 import json
 import math
@@ -15,6 +16,7 @@ import werkzeug.exceptions
 from . import images as model_images
 from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
+from digits.inference import WeightsJob
 from digits import frameworks, extensions
 from digits.utils import time_filters, auth
 from digits.utils.routing import request_wants_json
@@ -202,10 +204,16 @@ def to_pretrained(job_id):
     snapshot_filename = None
     snapshot_filename = task.get_snapshot(epoch)
 
+    model_file = os.path.join(job.dir(),str(task.model_file))
+
+    # If jobs don't container model_file (too old), raise exception:
+    if not os.path.isfile(model_file):
+       raise werkzeug.exceptions.BadRequest('Model file not found in job dir. Job may be too old for conversion.')
+
     job = PretrainedModelJob(
         snapshot_filename,
-        job.dir() + "/" + task.model_file ,
-        task.dataset.dir() + "/" + info["labels file"],
+        model_file,
+        os.path.join(task.dataset.dir(),info["labels file"]),
         info["framework"],
         info["image dimensions"][2],
         info["image resize mode"],
@@ -216,7 +224,15 @@ def to_pretrained(job_id):
     )
 
     scheduler.add_job(job)
+    job.wait_completion()
 
+    weights_job = WeightsJob(
+        job,
+        name     = info['name'],
+        username = auth.get_username()
+    )
+
+    scheduler.add_job(weights_job)
     return flask.redirect(flask.url_for('digits.views.home',tab=3)), 302
 
 
