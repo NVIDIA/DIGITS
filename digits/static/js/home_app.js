@@ -25,6 +25,7 @@ try {
         this.isSet = function (tabId) {
             return this.tab === tabId;
         };
+        $scope.model_store_length=0;
     });
 
     app.controller('all_jobs_controller', function($rootScope, $scope, $localStorage, $http) {
@@ -110,7 +111,6 @@ try {
             });
         }
         $scope.load_jobs();
-
         $scope.is_running = function(job) {
             return (job &&
                     (job.status == 'Initialized' ||
@@ -560,6 +560,81 @@ try {
                          {name: 'status',       show: true,  min_width: 0},
                          {name: 'elapsed',      show: true,  min_width: 0},
                          {name: 'submitted',    show: true,  min_width: 0}];
+    });
+
+    app.controller('model_store_controller', function($scope, $controller, $http) {
+        function get_model_store_url() {
+            var model_store_url = localStorage.getItem('model_store_url');
+            clear_model_store();
+            var default_url = 'http://localhost:5050';
+            var new_url;
+            if (model_store_url == null)
+                new_url = prompt('Please enter model store url', default_url);
+            if (new_url != null)  {
+                model_store_url = new_url;
+            } else model_store_url = default_url;
+
+            localStorage.setItem('model_store_url', model_store_url);
+            $scope.model_store_url = model_store_url;
+            var url = new URL(model_store_url);
+            $scope.model_store_host = url.hostname;
+            $scope.model_store_port = url.port;
+            return model_store_url;
+        };
+
+        function get_model_store() {
+            var model_store = JSON.parse(sessionStorage.getItem('model_store'));
+            if (model_store == null) {
+                var model_store_url = get_model_store_url();
+                var end_point = model_store_url+'/store';
+                $http({
+                    method: 'GET',
+                    url: end_point
+                    }).then(function(response) {
+                        model_store = response.data;
+                        sessionStorage.setItem('model_store', JSON.stringify(model_store));
+                        $scope.model_store = model_store;
+                        $scope.model_store_length = model_store.length;
+                        $scope.ms_error = null;
+                    }, function(response) {
+                        $scope.ms_error = 'Unable to retrieve models from Model Store';
+                        clear_model_store();
+                        $scope.model_store=[];
+                        $scope.model_store_length=0;
+                    }
+                );
+            } else {
+                $scope.model_store_url = get_model_store_url();
+                $scope.model_store = model_store;
+                $scope.model_store_length = model_store.length;
+            }
+        };
+
+        function clear_model_store() {
+            localStorage.removeItem('model_store_url');
+            sessionStorage.removeItem('model_store');
+        };
+
+        function get_models() {
+            get_model_store();
+            console.log($scope.model_store);
+        };
+
+        function reset_model_store_url() {
+            clear_model_store();
+            get_model_store();
+        };
+        // $scope.get_model_store_url = get_model_store_url;
+        $scope.get_model_store = get_model_store;
+        $scope.reset_model_store_url = reset_model_store_url;
+
+        $controller('job_controller', {$scope: $scope});
+        $scope.title = 'Model Store';
+        $scope.model_store_fields = [{name: 'name',      show: true,  min_width: 50},
+                       {name: 'framework', show: true,  min_width: 50},
+                       {name: 'action',    show: true,  min_width: 100},
+                       {name: 'image dim', show: true,  min_width: 80},
+                       {name: 'notes',     show: true,  min_width: 200}];
     });
 
     function precision(input, sigfigs) {

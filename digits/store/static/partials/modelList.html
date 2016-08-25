@@ -1,0 +1,52 @@
+<div class="panel panel-primary col-md-10 col-md-offset-1">
+    <div class="panel-heading"> Model List </div>
+
+    <div class="panel-body">
+        <button class="btn btn-default" ng-click="GetModels()">List all models in Model Store</button><br><p/>
+        <form name="models" action="/store/model/crud" method="GET">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <td> Selected </td>
+                        <td> Name </td>
+                        <td> Dataset </td>
+                        <td> License </td>
+                        <td> Framework </td>
+                        <td> Image dim </td>
+                        <td> Image resize mode </td>
+                        <td> Weight file </td>
+                        <td> Solver file </td>
+                        <td> Network file </td>
+                        <td> Label file </td>
+                        <td> Mean file </td>
+                    </tr>
+                </thead>
+                <div class="form-inline">
+                    <label for="filter">Limit results by: </label>
+                    <input type="text" class="form-control" id="filter" ng-model="narrowed">
+                </div>
+                <tbody>
+                    <tr ng-repeat="model in zoo | filter: narrowed">
+                        <td><input type="checkbox" name="model_keys" value="{{model.key}}"></td>
+                        <td><a href="/store/model/{{model.key}}"> {{ model.name }} </a></td>
+                        <td> {{model.dataset}}</td>
+                        <td> {{model.license}}</td>
+                        <td> {{ model.job.framework }} </td>
+                        <td ng-show="model.job != null"> {{ model.job.image_dimension[0] }} x {{ model.job.image_dimension[1] }} x {{ model.job.image_dimension[2] }} </td>
+                        <td ng-show="model.job == null"> </td>
+                        <td> {{ model.job.image_resize_mode }} </td>
+                        <td><a href="/store/file/{{model.files.weight_file[1]}}"> {{ model.files.weight_file[0] }} </a></td>
+                        <td><a href="/store/file/{{model.files.solver_file[1]}}"> {{ model.files.solver_file[0] }} </a></td>
+                        <td><a href="/store/file/{{model.files.network_file[1]}}"> {{ model.files.network_file[0] }} </a></td>
+                        <td><a href="/store/file/{{model.files.label_file[1]}}"> {{ model.files.label_file[0] }} </a></td>
+                        <td><a href="/store/file/{{model.files.mean_file[1]}}"> {{ model.files.mean_file[0] }} </a></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="btn-group">
+                <input type="submit" class="btn btn-default" id="delete" value="Delete" name="delete">
+                <input type="submit" class="btn btn-default" id="download" value="Download" name="download">
+            </div>
+        </form>
+    </div>
+</div>

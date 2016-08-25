@@ -17,9 +17,10 @@ from . import images as model_images
 from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
 from digits import frameworks, extensions
+from digits.config import config_value
 from digits.utils import time_filters, auth
 from digits.utils.routing import request_wants_json
-from digits.webapp import scheduler
+from digits.webapp import scheduler, app
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -290,6 +291,50 @@ def download(job_id, extension):
     response = flask.make_response(b.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)
     return response
+
+@blueprint.route('/<job_id>/publish',
+        methods=['GET', 'POST'])
+def publish(job_id):
+    """
+    Publish a model to ModelStore
+    """
+
+    job = scheduler.get_job(job_id)
+
+    if job is None:
+        raise werkzeug.exceptions.NotFound('Job not found')
+
+    epoch = -1
+    # GET ?epoch=n
+    if 'epoch' in flask.request.args:
+        epoch = float(flask.request.args['epoch'])
+
+    # POST ?snapshot_epoch=n (from form)
+    elif 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+
+    # Write the stats of the job to json,
+    # and store in tempfile (for archive)
+    job_details = job.json_dict(verbose=False,epoch=epoch)
+    model_name = job_details['name']
+    info = json.dumps(job_details, sort_keys=True, indent=4, separators=(',', ': '))
+    info_io = io.BytesIO()
+    info_io.write(info)
+
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, 'w') as zf:
+        for path, name in job.download_files(epoch):
+            zf.write(path, arcname=name)
+        zf.writestr("info.json", info_io.getvalue())
+
+    import requests
+    zip_name = '%s.zip' % (model_name)
+    files = {'archive':(zip_name, b.getvalue())}
+    data = {'notes': "" if job._notes is None else job._notes, 'model_name': model_name}
+    model_store_base_url = config_value('model_store')
+    publish_url = model_store_base_url +'/publish'
+    response = requests.post(publish_url, files=files, data=data)
+    return flask.redirect(flask.url_for('digits.views.home',tab=4)), 302
 
 class JobBasicInfo(object):
     def __init__(self, name, ID, status, time, framework_id):

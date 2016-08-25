@@ -1,0 +1,115 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+<!-- Pretrained Model -->
+<style>
+#models-table > thead > tr > th:nth-child(1) {
+  width: 100%
+}
+</style>
+
+<!-- Model Store -->
+<div class="col-md-12" ng-show="tab.isSet(4)">
+    <div class="well">
+        <div ng-controller="model_store_controller">
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- Filter -->
+                    <div class="pull-right">
+                        <form>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                                    <input type="text" class="form-control" placeholder="Filter" ng-model="model_store_search_text">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Delete Button -->
+                    <a class="btn btn-xs btn-danger"
+                       ng-disabled="!any_selected()"
+                       ng-show="false"
+                       ng-click="delete_model_in_store()">
+                        Delete
+                    </a>
+                    <!-- <button type="button" class="btn btn-xs btn-info" ng-click="get_models()">
+                        Get Models
+                    </button> -->
+                </div>
+            </div>
+            <table id="model-store-table"
+                   ng-mouseleave="mouseleave()"
+                   class="table table-bordered table-striped selectable"
+                   width="100%">
+                <col ng-repeat="field in model_store_fields | filter:show(true)"
+                     ng-style="$index == 0 ? '{}' : {'width':visualLength(field.name, field.min_width) + 'px'}">
+                <thead>
+                    <tr>
+                        <th ng-repeat="field in model_store_fields">
+                            <div ng-click="change_sorting(field.name, $event)">
+                                <small>
+                                    {[ field.name ]}
+                                </small>
+                                <i class="glyphicon"
+                                   ng-class="get_icon(field.name)" style="width:14px">
+                                </i>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody ng-if="model_store.length">
+                    <tr tabindex="0"
+                        ng-mousedown="mousedown($index, $event)"
+                        ng-mousemove="mousemove($index, $event)"
+                        ng-mouseup="mouseup($index, $event)"
+                        ng-click="click($index, $event)"
+                        ng-keydown="keydown($event)"
+                        ng-repeat="model in model_store | filter:model_store_search_text">
+                        <td>
+                            <a href="{[model_store_url]}/store/model/{[model.key]}"> {[ model.name ]} </a>
+                        </td>
+                        <td>
+                            <span class="badge">{[ model.job.framework ]}</span>
+                        </td>
+                        <td>
+                            <a href="/pretrained_models/retrieve/{[model.key]}?host={[model_store_host]}&port={[model_store_port]}"> import model </a>
+                        </td>
+                        <td>
+                            {[ model.job.image_dimension ]}
+                        </td>
+                        <td>
+                            <a href="#" data-toggle="tooltip" title="{[ model.notes ]}"> {[model.notes]} </a>
+                        </td>
+                        <td ng-repeat="field in storage.model_store_output_fields | filter:show(true)">
+                            <small title="{[ model.name]}">
+                                {[ model.name ]}
+                            </small>
+                        </td>
+                    </tr>
+                </tbody>
+                <tbody ng-if="model_store.length == 0">
+                    <tr>
+                        {[ colspan = (storage.model_store_fields | filter:show(true)).length + (storage.model_store_output_fields | filter:show(true)).length;'' ]}
+                        <td colspan="{[colspan]}">
+                            <h5>
+                                No Models
+                            </h5>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </ng-show>
+            <button type="button" class="btn btn-xs btn-info" ng-click="get_model_store()">
+                Refresh Model Store
+            </button>
+            <button type="button" class="btn btn-xs btn-info" ng-click="reset_model_store_url()">
+                Enter Model Store URL
+            </button>
+            <!-- <div class="alert alert-info fade in" ng-show="model_store_url">
+                Current Model Store URL: {[ model_store_url ]}
+            </div> -->
+            <div class="alert alert-danger fade in" ng-show="ms_error">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                {[ ms_error ]}
+            </div>
+        </div>
+    </div>
+</div>

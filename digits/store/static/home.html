@@ -1,0 +1,31 @@
+<!doctype html>
+<head>
+    <title>Manage Model Store</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-route.js"></script> -->
+    <script src="static/js/app.js"></script>
+    <script src="static/js/angular-ui-router.min.js"></script>
+    <link rel="icon" href="static/images/nvidia.ico"/>
+</head>
+
+<body ng-app="ModelStoreApp">
+    <div class="navbar navbar-inverse" style="border-radius: 0 !important">
+        <div class="container">
+            <!-- <div class="navbar-brand"><img src="static/images/nvidia.ico"></div> -->
+            <a class="navbar-brand" ui-sref="home"> Model Store </a>
+            <div class="navbar-header">
+            </div>
+            <ul class="nav navbar-nav">
+                <li><a ui-sref="modelList"> Model list </a></li>
+                <li><a ui-sref="modelPublish"><i class="glyphicon glyphicon-plus"></i> Publish a model </a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div ui-view></div>
+
+</body>

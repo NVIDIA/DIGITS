@@ -1,9 +1,11 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 import flask
+import io
+import json
+import requests
 import tempfile
 import tarfile
 import zipfile
-import json
 
 import os
 import shutil
@@ -145,7 +147,6 @@ def upload_archive():
     else:
         return flask.jsonify({"status": "Missing or Incorrect json file"}), 500
 
-
 @utils.auth.requires_login
 @blueprint.route('/new', methods=['POST'])
 def new():
@@ -191,4 +192,62 @@ def new():
 
     scheduler.add_job(job)
 
-    return flask.redirect(flask.url_for('digits.views.home', tab=3)), 302
+    return flask.redirect(flask.url_for('digits.views.home')), 302
+
+
+@blueprint.route('/retrieve/<model_id>', methods=['GET'])
+def retrieve_model(model_id):
+    """
+    Retrieve a model from Model Store
+    """
+    model_store_base_url = 'http://'+flask.request.values['host']+':'+flask.request.values['port']
+    model_url = model_store_base_url +'/store/model/'+model_id
+    response = requests.get(model_url)
+
+    zip_io = io.BytesIO(response.content)
+    archive = zipfile.ZipFile(zip_io)
+    names = archive.namelist()
+    if "info.json" in names:
+
+        # Create a temp directory to storce archive
+        tempdir = tempfile.mkdtemp()
+        archive.extractall(path=tempdir)
+        with open(os.path.join(tempdir, "info.json")) as data_file:
+            info = json.load(data_file)
+
+        valid, key = validate_archive_keys(info)
+
+        if valid is False:
+            return flask.jsonify({"status": "Missing Key '"+ key +"' in info.json"}), 500
+
+        # Get path to files needed to be uploaded in directory
+        weights_file = os.path.join(tempdir, info["snapshot file"])
+
+        if "model file" in info:
+            model_file = os.path.join(tempdir, info["model file"])
+        elif "network file" in info:
+            model_file = os.path.join(tempdir, info["network file"])
+        else:
+            model_file = os.path.join(tempdir, 'train_val.prototxt')
+
+        labels_file  = os.path.join(tempdir, info["labels file"])
+
+        # Upload the Model:
+        job = PretrainedModelJob(
+            weights_file,
+            model_file ,
+            labels_file,
+            info["framework"],
+            username = utils.auth.get_username(),
+            name = info["name"]
+        )
+
+        scheduler.add_job(job)
+        job.wait_completion()
+
+        # Delete temp directory
+        shutil.rmtree(tempdir, ignore_errors=True)
+
+        return flask.redirect(flask.url_for('digits.views.home')), 302
+    else:
+        return flask.jsonify({"status": "Missing or Incorrect json file"}), 500

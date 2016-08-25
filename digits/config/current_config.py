@@ -10,6 +10,7 @@ from .log_level import LogLevelOption
 from .torch_option import TorchOption
 from .server_name import ServerNameOption
 from .secret_key import SecretKeyOption
+from .model_store import ModelStoreOption
 
 option_list = None
 
@@ -30,6 +31,7 @@ def reset():
             TorchOption(),
             DataExtensionListOption(),
             ViewExtensionListOption(),
+            ModelStoreOption(),
             ]
 
 reset()

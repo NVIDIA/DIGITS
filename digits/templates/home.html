@@ -208,7 +208,7 @@
 
         <!-- Tabs -->
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <ul class="nav nav-tabs" role="tablist">
                     <li ng-class="{active:tab.isSet(1)}">
                         <a href ng-click="tab.setTab(1, $event)">
@@ -240,9 +240,16 @@
                             </h4>
                         </a>
                     </li>
+                    <li ng-class="{active:tab.isSet(4)}">
+                        <a href ng-click="tab.setTab(4, $event)">
+                            <h4>
+                                Model Store
+                            </h4>
+                        </a>
+                    </li>
                 </ul>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="row">
                     <div class="col-md-12">
                         <div class="pull-right">
@@ -292,6 +299,7 @@
             {% include "partials/home/datasets_pane.html" %}
             {% include "partials/home/model_pane.html" %}
             {% include "partials/home/pretrained_model_pane.html" %}
+            {% include "partials/home/model_store_pane.html" %}
         </div>
     </section>
 </div>
