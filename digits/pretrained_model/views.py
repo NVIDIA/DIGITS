@@ -101,6 +101,7 @@ def upload_archive():
 
         # Create a temp directory to storce archive
         tempdir = tempfile.mkdtemp()
+        labels_file = None
         archive.extractall(path=tempdir)
 
         with open(os.path.join(tempdir, "info.json")) as data_file:
@@ -121,7 +122,8 @@ def upload_archive():
         else:
             return flask.jsonify({"status": "Missing model definition in info.json"}), 500
 
-        labels_file  = os.path.join(tempdir, info["labels file"])
+        if "labels file" in info:
+            labels_file  = os.path.join(tempdir, info["labels file"])
 
         # Upload the Model:
         job = PretrainedModelJob(

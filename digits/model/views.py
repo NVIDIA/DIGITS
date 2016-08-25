@@ -5,6 +5,7 @@ from datetime import timedelta
 import io
 import json
 import math
+import os
 import tarfile
 import tempfile
 import zipfile
@@ -202,13 +203,22 @@ def to_pretrained(job_id):
     snapshot_filename = None
     snapshot_filename = task.get_snapshot(epoch)
 
+    # Set defaults:
+    labels_path = None
+    resize_mode = None
+
+    if "labels file" in info:
+        labels_path = os.path.join(task.dataset.dir(),info["labels file"])
+    if "image resize mode" in info:
+        resize_mode = info["image resize mode"]
+
     job = PretrainedModelJob(
         snapshot_filename,
         job.dir() + "/" + task.model_file ,
-        task.dataset.dir() + "/" + info["labels file"],
+        labels_path,
         info["framework"],
         info["image dimensions"][2],
-        info["image resize mode"],
+        resize_mode,
         info["image dimensions"][0],
         info["image dimensions"][1],
         username = auth.get_username(),

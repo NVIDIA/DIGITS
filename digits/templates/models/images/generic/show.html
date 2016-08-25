@@ -142,6 +142,13 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             class="btn btn-info">
                             Download Model
                         </button>
+                        <button
+                            formaction="{{url_for('digits.model.views.to_pretrained', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-success">
+                            Make Pretrained Model
+                        </button>
                     </div>
                 </div>
                 <div class="row">
