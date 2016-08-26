@@ -20,14 +20,14 @@ class TorchUploadTask(UploadPretrainedModelTask):
         """
         Get path to model definition
         """
-        return self.job_dir+"/original.lua"
+        return os.path.join(self.job_dir, "original.lua")
 
     @override
     def get_weights_path(self):
         """
         Get path to model weights
         """
-        return self.job_dir+"/_Model.t7"
+        return os.path.join(self.job_dir, "_Model.t7")
 
     @override
     def __setstate__(self, state):

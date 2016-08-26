@@ -208,13 +208,13 @@ def to_pretrained(job_id):
     resize_mode = None
 
     if "labels file" in info:
-        labels_path = os.path.join(task.dataset.dir(),info["labels file"])
+        labels_path = os.path.join(task.dataset.dir(), info["labels file"])
     if "image resize mode" in info:
         resize_mode = info["image resize mode"]
 
     job = PretrainedModelJob(
         snapshot_filename,
-        job.dir() + "/" + task.model_file ,
+        os.path.join(job.dir(), task.model_file) ,
         labels_path,
         info["framework"],
         info["image dimensions"][2],
