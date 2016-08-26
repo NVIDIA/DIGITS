@@ -1,5 +1,6 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+import os
 
 from . import tasks
 import digits.frameworks
@@ -17,7 +18,6 @@ class PretrainedModelJob(Job):
                 image_type="3",resize_mode="Squash", width=224, height=224, **kwargs):
         super(PretrainedModelJob, self).__init__(persistent = False, **kwargs)
 
-        self.has_labels = labels_path is not None
         self.framework  = framework
         self.image_info = {
             "image_type": image_type,
@@ -47,6 +47,9 @@ class PretrainedModelJob(Job):
     def get_model_def_path(self):
         return self.tasks[0].get_model_def_path()
 
+    def has_labels_file(self):
+        return os.path.isfile(self.tasks[0].get_labels_path())
+
     @override
     def is_persistent(self):
         return True
@@ -57,7 +60,7 @@ class PretrainedModelJob(Job):
 
     @override
     def __getstate__(self):
-        fields_to_save = ['_id', '_name', 'username', 'tasks', 'status_history', 'has_labels', 'framework', 'image_info']
+        fields_to_save = ['_id', '_name', 'username', 'tasks', 'status_history', 'framework', 'image_info']
         full_state = super(PretrainedModelJob, self).__getstate__()
         state_to_save = {}
         for field in fields_to_save:

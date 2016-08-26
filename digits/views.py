@@ -189,7 +189,7 @@ def json_dict(job, model_output_fields):
             'type': 'pretrained_model',
             'framework': job.framework,
             'username': job.username,
-            'has_labels': job.has_labels,
+            'has_labels': job.has_labels_file()
         })
     return d
 

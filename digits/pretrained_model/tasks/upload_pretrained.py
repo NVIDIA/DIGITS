@@ -1,6 +1,6 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
-
+import os
 import shutil
 import digits
 from digits.task import Task
@@ -67,6 +67,12 @@ class UploadPretrainedModelTask(Task):
 
     def move_file(self,input_file, output):
         shutil.copy(input_file, self.job_dir+"/"+output)
+
+    def get_labels_path(self):
+        """
+        Get path to label file
+        """
+        return os.path.join(self.job_dir,"labels.txt")
 
     def get_model_def_path(self):
         """
