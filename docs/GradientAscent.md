@@ -1,26 +1,19 @@
-# Getting Started With Torch7 in DIGITS
+# Gradient Ascent
 
 Table of Contents
 =================
-* [Enabling support for Torch7 in DIGITS](#enabling-support-for-torch7-in-digits)
-* [Selecting Torch7 when creating a model in DIGITS](#selecting-torch7-when-creating-a-model-in-digits)
-* [Defining a Torch7 model in DIGITS](#defining-a-torch7-model-in-digits)
-    * [External Parameters](#external-parameters)
-    * [Internal Parameters](#internal-parameters)
-    * [Tensors](#tensors)
-* [Examples](#examples)
-    * [Adjusting model to inputs dimensions and number of classes](#adjusting-model-to-input-dimensions-and-number-of-classes)
-    * [Selecting the NN Backend](#selecting-the-nn-backend)
-    * [Supervised Regression Learning](#supervised-regression-learning)
-    * [Command Line Inference](#command-line-inference)
-    * [Multi-GPU training](#multi-gpu-training)
-* [Tutorials](#tutorials)
-    * [Training an autoencoder](#training-an-autoencoder)
-    * [Training a regression model](#training-a-regression-model)
+* [Uploading a Pretrained Model](#uploading-a-pretrained-model)
+* [Selecting a Layer to Visualize](#selecting-a-layer-to-visualize)
+* [Running Gradient Ascent](#running-gradient-ascent)
 
-## Enabling support for Torch7 in DIGITS
+## Uploading a Pretrained Model
 
-DIGITS should automatically enable support for Torch7 if the `th` executable is in your path. If not, you may explicitly point DIGITS to the appropriate location:
+A pretrained model job primarily consists of the following:
+- `weights file:` (.t7 for Torch or .caffemodel for Caffe)
+- `model definition:` ( original.prototxt or model.lua)
+- `input information:` like: Image Type (Colour or Greyscale), Resize Mode (Squash, Crop, etc), and Width and Height
+
+
 
 ```
 $ ./digits-devserver -c
