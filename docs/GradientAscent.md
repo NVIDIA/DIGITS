@@ -33,7 +33,9 @@ Once the pretrained model is uploaded, selecting the job with direct you to the 
 ## Running Gradient Ascent
 
 Only certain layers are likely to produce outputs. These are Convolutional Layers, Fully-Convolutional Layers, and Softmax
+
 In `Caffe` They will have names like: `Convolution`, `Inner Product`, or `Softmax`
+
 In `Torch` They will have names like: `Spatial Convolution`, `Linear`, or `Softmax`
 
 - `Click Layer` in graph
