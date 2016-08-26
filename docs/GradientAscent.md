@@ -39,7 +39,7 @@ In `Caffe` They will have names like: `Convolution`, `Inner Product`, or `Softma
 In `Torch` They will have names like: `Spatial Convolution`, `Linear`, or `Softmax`
 
 - `Click Layer` in graph
-- `Select Tab 2` in panel header
+- `Select Max Activations (Tab 2)` in panel header
 - `Click Run Max Activations` in left pane of page body
 
 Outputs will be produced sequentially from the first unit to the last. The task will take some time to complete.
