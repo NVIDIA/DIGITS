@@ -72,6 +72,15 @@ Then type
 python -m pip install -r requirements.txt
 ```
 
+You may see error about Pillow, like
+``` ValueError: jpeg is required unless explicitly disabled using --disable-jpeg, aborting ```
+If this happens, download Pillow Windows Installer (Pillow-3.1.1.win-amd64-py2.7.exe) at https://pypi.python.org/pypi/Pillow/3.1.1 and run the exectuables.
+After installing Pillow in the above way, run
+```
+python -m pip install -r requirements.txt
+```
+again.
+
 After the above command, check if all required Python dependencies are met by comparing requirements.txt and output of the following command.
 ```
 python -m pip list
