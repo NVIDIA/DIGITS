@@ -20,14 +20,14 @@ class CaffeUploadTask(UploadPretrainedModelTask):
         """
         Get path to model definition
         """
-        return self.job_dir+"/original.prototxt"
+        return os.path.join(self.job_dir, "original.prototxt")
 
     @override
     def get_weights_path(self):
         """
         Get path to model weights
         """
-        return self.job_dir+"/model.caffemodel"
+        return os.path.join(self.job_dir, "model.caffemodel")
 
 
     @override

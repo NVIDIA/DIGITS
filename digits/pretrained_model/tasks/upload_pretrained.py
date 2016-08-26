@@ -58,7 +58,7 @@ class UploadPretrainedModelTask(Task):
         return None
 
     def move_file(self,input_file, output):
-        shutil.copy(input_file, self.job_dir+"/"+output)
+        shutil.copy(input_file, os.path.join(self.job_dir, output))
 
     def get_labels_path(self):
         """
