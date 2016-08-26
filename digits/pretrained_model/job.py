@@ -14,7 +14,7 @@ class PretrainedModelJob(Job):
     A Job that uploads a pretrained model
     """
 
-    def __init__(self, weights_path, model_def_path, labels_path=None,framework="caffe",
+    def __init__(self, weights_path, model_def_path, labels_path=None,mean_path=None,framework="caffe",
                 image_type="3",resize_mode="Squash", width=224, height=224, **kwargs):
         super(PretrainedModelJob, self).__init__(persistent = False, **kwargs)
 
@@ -33,6 +33,7 @@ class PretrainedModelJob(Job):
             "model_def_path": model_def_path,
             "image_info": self.image_info,
             "labels_path": labels_path,
+            "mean_path": mean_path,
             "job_dir": self.dir()
         }
 
@@ -49,6 +50,9 @@ class PretrainedModelJob(Job):
 
     def has_labels_file(self):
         return os.path.isfile(self.tasks[0].get_labels_path())
+
+    def has_mean_file(self):
+        return os.path.isfile(self.tasks[0].get_mean_path())
 
     @override
     def is_persistent(self):

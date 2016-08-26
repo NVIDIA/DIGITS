@@ -177,6 +177,7 @@ var PretrainedModel = function(params){
     inputs.file(self.innerContainer,"Weights (**.caffemodel)", "weights_file");
     inputs.file(self.innerContainer,"Model Definition (original.prototxt)", "model_def_file");
     inputs.file(self.innerContainer,"Labels file: (labels.txt)", "labels_file");
+    inputs.file(self.innerContainer,"Mean file: (mean.binaryproto)", "mean_file");
 
     self.innerContainer.append("button").attr({type: "submit",class: "btn btn-default"})
       .on("click",self.submit)
@@ -190,6 +191,7 @@ var PretrainedModel = function(params){
     inputs.file(self.innerContainer,"Weights (**.t7)", "weights_file");
     inputs.file(self.innerContainer,"Model Definition: (model.lua)", "model_def_file");
     inputs.file(self.innerContainer,"Labels file: (Optional)", "labels_file");
+    inputs.file(self.innerContainer,"Mean file: (mean.binaryproto)", "mean_file");
 
     self.innerContainer.append("button").attr({type: "submit",class: "btn btn-default"})
       .on("click",self.submit)

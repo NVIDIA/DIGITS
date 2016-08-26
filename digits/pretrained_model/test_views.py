@@ -57,6 +57,7 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
         weights_file = open(snapshot_filename, 'r')
         model_def_file = open(os.path.join(job.dir(),task.model_file), 'r')
         labels_file = open(os.path.join(task.dataset.dir(),info["labels file"]), 'r')
+        mean_file = open(os.path.join(task.dataset.dir(),info["mean file"]), 'r')
 
         rv = self.app.post(
             '/pretrained_models/new',
@@ -64,6 +65,7 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
                 'weights_file': weights_file,
                 'model_def_file': model_def_file,
                 'labels_file': labels_file,
+                'mean_file': mean_file,
                 'framework': info['framework'],
                 'image_type': info["image dimensions"][2],
                 'resize_mode': info["image resize mode"],
