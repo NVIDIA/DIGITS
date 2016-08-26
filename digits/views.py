@@ -184,12 +184,14 @@ def json_dict(job, model_output_fields):
 
     if isinstance(job, pretrained_model.PretrainedModelJob):
         model_output_fields.add("has_labels")
+        model_output_fields.add("has_mean_file")
         model_output_fields.add("username")
         d.update({
             'type': 'pretrained_model',
             'framework': job.framework,
             'username': job.username,
-            'has_labels': job.has_labels,
+            'has_labels': job.has_labels_file(),
+            'has_mean_file': job.has_mean_file()
         })
     return d
 
@@ -346,8 +348,6 @@ def show_job(job_id):
         return flask.redirect(flask.url_for('digits.dataset.views.show', job_id=job_id))
     if isinstance(job, model.ModelJob):
         return flask.redirect(flask.url_for('digits.model.views.show', job_id=job_id))
-    if isinstance(job, pretrained_model.PretrainedModelJob):
-        return flask.redirect(flask.url_for('digits.pretrained_model.views.show', job_id=job_id))
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
 

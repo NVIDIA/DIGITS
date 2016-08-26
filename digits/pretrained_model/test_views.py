@@ -25,10 +25,12 @@ from urlparse import urlparse
 
 from digits.config import config_value
 from digits.pretrained_model import PretrainedModelJob
-import digits.webapp
-import digits.dataset.images.classification.test_views
+
 import digits.model.images.classification.test_views
+import digits.model.views
+import digits.pretrained_model.views
 import digits.test_views
+import digits.webapp
 
 # Must import after importing digit.config
 import caffe_pb2
@@ -36,6 +38,17 @@ import caffe_pb2
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
+
+class BaseViewsTestWithPretrainedModel(digits.model.images.classification.test_views.BaseViewsTestWithModel):
+    """
+    Provides a model
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(BaseViewsTestWithPretrainedModel, cls).setUpClass()
+        job = digits.model.views.create_pretrained_model(cls.model_id,None,-1)
+        cls.model_id = job.id()
+
 
 class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTestWithModel):
     """
@@ -57,6 +70,7 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
         weights_file = open(snapshot_filename, 'r')
         model_def_file = open(os.path.join(job.dir(),task.model_file), 'r')
         labels_file = open(os.path.join(task.dataset.dir(),info["labels file"]), 'r')
+        mean_file = open(os.path.join(task.dataset.dir(),info["mean file"]), 'r')
 
         rv = self.app.post(
             '/pretrained_models/new',
@@ -64,6 +78,7 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
                 'weights_file': weights_file,
                 'model_def_file': model_def_file,
                 'labels_file': labels_file,
+                'mean_file': mean_file,
                 'framework': info['framework'],
                 'image_type': info["image dimensions"][2],
                 'resize_mode': info["image resize mode"],
@@ -111,6 +126,7 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
         tmp.close()
 
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
 class TestCaffeUpload(BaseTestUpload):
     FRAMEWORK = 'caffe'
 

@@ -28,7 +28,7 @@ from digits.utils import errors
 This constant configures how long to wait before automatically
 deleting completed non-persistent jobs
 """
-NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = 3600
+
 
 class Resource(object):
     """
@@ -425,7 +425,7 @@ class Scheduler:
                         if job.status.is_running():
                             if job.is_persistent():
                                 job.save()
-                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS):
+                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > job.delete_timeout()):
                             # job has been unclaimed for far too long => proceed to garbage collection
                             self.delete_job(job)
                     last_saved = time.time()
