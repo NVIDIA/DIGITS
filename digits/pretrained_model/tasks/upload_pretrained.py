@@ -54,14 +54,6 @@ class UploadPretrainedModelTask(Task):
         for resource in resources[cpu_key]:
             if resource.remaining() >= 1:
                 reserved_resources[cpu_key] = [(resource.identifier, 1)]
-                # we reserve the first available GPU, if there are any
-                gpu_key = 'gpus'
-                if resources[gpu_key]:
-                    for resource in resources[gpu_key]:
-                        if resource.remaining() >= 1:
-                            self.gpu = int(resource.identifier)
-                            reserved_resources[gpu_key] = [(resource.identifier, 1)]
-                            break
                 return reserved_resources
         return None
 
