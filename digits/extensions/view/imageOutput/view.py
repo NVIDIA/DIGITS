@@ -5,6 +5,7 @@ import os
 
 import PIL.Image
 import PIL.ImageDraw
+import scipy
 
 import digits
 from digits.utils import subclass, override
@@ -29,7 +30,8 @@ class Visualization(VisualizationInterface):
 
         # view options
         self.channel_order = kwargs['channel_order'].upper()
-        self.normalize = (kwargs['pixel_conversion'] == 'normalize')
+        self.pixel_conversion = kwargs['pixel_conversion']
+        self.threshold_val = kwargs['threshold_val']
 
     @staticmethod
     def get_config_form():
@@ -84,14 +86,19 @@ class Visualization(VisualizationInterface):
         # convert to HWC
         data = data.transpose((1, 2, 0))
         # assume 8-bit
-        if self.normalize:
+        if self.pixel_conversion == "normalize":
             data -= data.min()
             if data.max() > 0:
                 data /= data.max()
                 data *= 255
-        else:
+        elif self.pixel_conversion == "clip":
             # clip
             data = data.clip(0, 255)
+        elif self.pixel_conversion == "threshold":
+            data = scipy.stats.threshold(data, threshmin=self.threshold_val, newval=0)
+            data = scipy.stats.threshold(data, threshmax=self.threshold_val, newval=255)
+        else:
+            raise ValueError("Unknown pixel conversion method: %s" % self.pixel_conversion)
         # convert to uint8
         data = data.astype('uint8')
         # convert to PIL image

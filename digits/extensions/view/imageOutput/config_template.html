@@ -17,3 +17,26 @@
     {{ form.pixel_conversion.tooltip }}
     {{ form.pixel_conversion(class='form-control') }}
 </div>
+
+<div style="display:none;" class="form-group{{mark_errors([form.threshold_val])}} cl-threshold">
+    {{ form.threshold_val.label }}
+    {{ form.threshold_val.tooltip }}
+    {{ form.threshold_val(class='form-control autocomplete_path') }}
+</div>
+
+<script>
+function hasPixelConversionChanged() {
+	if ($("#pixel_conversion").val() == "threshold")
+    {
+        $("#threshold_val").prop("disabled", false);
+        $(".cl-threshold").show();
+    }
+    else
+    {
+        $(".cl-threshold").hide();
+        $("#threshold_val").prop("disabled", true);
+    }
+}
+$("#pixel_conversion").click(hasPixelConversionChanged);
+hasPixelConversionChanged();
+</script>

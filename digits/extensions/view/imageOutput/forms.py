@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 from flask.ext.wtf import Form
+from wtforms import validators
 
 from digits import utils
 from digits.utils import subclass
@@ -28,8 +29,18 @@ class ConfigForm(Form):
         choices=[
             ('normalize', 'Normalize'),
             ('clip', 'Clip'),
+            ('threshold', 'Binary threshold')
             ],
         default='normalize',
         tooltip='Select method to convert pixel values to the target bit '
                 'range'
+        )
+
+    threshold_val = utils.forms.IntegerField(
+        u'Threshold',
+        default=128,
+        validators=[
+            validators.NumberRange(min=0, max=255)
+            ],
+        tooltip="Threshold value"
         )
