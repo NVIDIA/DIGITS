@@ -99,6 +99,7 @@ On the DIGITS home page, select the `Models` tab then click `New Model > Images 
 
 On the model creation page:
 - Select the dataset that was created in the previous section.
+- Set `Subtract mean` to `None`.
 - Set the base learning rate to 0.0001.
 - Select the `ADAM` solver.
 - Select the `Custom Network` tab.
