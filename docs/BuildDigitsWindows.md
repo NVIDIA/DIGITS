@@ -1,5 +1,15 @@
 # Build DIGITS on Windows
 
+## Limitation
+DIGITS for Windows depends on Windows branch of BVLC Caffe.
+The following layers, required for DetectNet feature, are not implemented in that branch.
+- detectnet_transform_layer
+- l1_loss_layer
+
+As a result, DIGITS for Windows does not support DetectNet.
+To run DIGITS with DetectNet, please use NV-Caffe 0.15 or above on Ubuntu.
+
+
 ## Prerequisites
 - Python2
 - CUDA 7.5
@@ -138,4 +148,5 @@ except ImportError:
 
 ### DIGITS complains Torch binary not found in PATH
 
-Currently, DIGITS does not support Torch on Windows platform. 
+Currently, DIGITS does not support Torch on Windows platform.
+
