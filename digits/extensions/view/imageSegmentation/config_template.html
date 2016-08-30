@@ -1,0 +1,14 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<small>Display segmented image.</small>
+
+<div class="form-group{{mark_errors([form.colormap])}}">
+    {{ form.colormap.label }}
+    {{ form.colormap.tooltip }}
+    {{ form.colormap(class='form-control') }}
+</div>
+

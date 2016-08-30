@@ -4,7 +4,9 @@ from __future__ import absolute_import
 from . import boundingBox
 from . import imageOutput
 from . import imageGradients
+from . import imageSegmentation
 from . import rawData
+
 
 view_extensions = [
     # Set show=True if extension should be shown by default
@@ -14,6 +16,7 @@ view_extensions = [
     {'class': boundingBox.Visualization, 'show': True},
     {'class': imageGradients.Visualization, 'show': False},
     {'class': imageOutput.Visualization, 'show': True},
+    {'class': imageSegmentation.Visualization, 'show': True},
     {'class': rawData.Visualization, 'show': True},
 ]
 

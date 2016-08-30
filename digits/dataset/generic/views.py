@@ -1,20 +1,22 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import caffe_pb2
-import flask
-import PIL.Image
-
 # Find the best implementation available
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
+import caffe_pb2
+import flask
+import matplotlib as mpl
+import numpy as np
+import PIL.Image
+
 from .forms import GenericDatasetForm
 from .job import GenericDatasetJob
-
 from digits import extensions, utils
+from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.utils.lmdbreader import DbReader
 from digits.webapp import scheduler
@@ -145,6 +147,18 @@ def explore():
     db_path = job.path(db)
     labels = []
 
+    if COLOR_PALETTE_ATTRIBUTE in job.extension_userdata:
+        # assume single-channel 8-bit palette
+        palette = job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]
+        palette = np.array(palette).reshape((len(palette)/3,3)) / 255.
+        # normalize input pixels to [0,1]
+        norm = mpl.colors.Normalize(vmin=0,vmax=255)
+        # create map
+        cmap = mpl.pyplot.cm.ScalarMappable(norm=norm,
+                                            cmap=mpl.colors.ListedColormap(palette))
+    else:
+        cmap = None
+
     page = int(flask.request.args.get('page', 0))
     size = int(flask.request.args.get('size', 25))
 
@@ -167,6 +181,13 @@ def explore():
             s.write(datum.data)
             s.seek(0)
             img = PIL.Image.open(s)
+            if cmap and img.mode in ['L', '1']:
+                data = np.array(img)
+                data = cmap.to_rgba(data)*255
+                data = data.astype('uint8')
+                # keep RGB values only, remove alpha channel
+                data = data[:, :, 0:3]
+                img = PIL.Image.fromarray(data)
             imgs.append({"label": None, "b64": utils.image.embed_image_html(img)})
         count += 1
         if len(imgs) >= size:
