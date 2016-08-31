@@ -52,9 +52,7 @@ if __name__ == '__main__':
             print 'ERROR: Scheduler would not start'
         else:
             app.debug = args['debug']
-            socketio.run(app, '0.0.0.0', args['port'],
-                    policy_server=False
-                    )
+            socketio.run(app, '0.0.0.0', args['port'])
     except KeyboardInterrupt:
         pass
     finally:

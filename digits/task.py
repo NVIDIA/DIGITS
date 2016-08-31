@@ -246,6 +246,7 @@ class Task(StatusCls):
                     self.p.send_signal(signal.SIGKILL)
                     self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
                     time.sleep(0.1)
+                time.sleep(0.01)
         except:
             self.p.terminate()
             self.after_run()
