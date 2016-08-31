@@ -39,6 +39,12 @@ If you hit some errors about missing imports, then use this command to install t
 cat $CAFFE_HOME/python/requirements.txt | xargs -n1 sudo pip install
 ```
 
+### Check gcc version
+On Ubuntu 16.04, you would need to make sure your gcc/g++ is of version 5 (5.4.0) not 4.9 or lower. Otherwise, you would encounter issues compiling Caffee, such as https://github.com/BVLC/caffe/issues/3438.
+```
+gcc --version
+gcc (Ubuntu 5.4.0-6ubuntu1~16.04.2) 5.4.0 20160609
+```
 ## Build
 
 We recommend using CMake to configure Caffe rather than the raw Makefile build for automatic dependency detection:
