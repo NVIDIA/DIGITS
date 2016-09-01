@@ -275,7 +275,7 @@ class Job(StatusCls):
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print 'Caught %s while saving job: %s' % (type(e).__name__, e)
+            print 'Caught %s while saving job %s: %s' % (type(e).__name__, self.id(), e)
         return False
 
     def disk_size_fmt(self):
