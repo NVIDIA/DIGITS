@@ -114,7 +114,7 @@ class DatasetForm(Form):
         u'Minimum box size (in pixels) for validation set',
         default='25',
         validators=[
-            validators.DataRequired(),
+            validators.InputRequired(),
             validators.NumberRange(min=0),
             ],
         tooltip="Retain only the boxes that are larger than the specified "
