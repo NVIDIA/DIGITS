@@ -66,20 +66,12 @@ class Visualization(VisualizationInterface):
     @override
     def process_data(
             self,
-            dataset,
+            input_id,
             input_data,
             inference_data,
             ground_truth=None):
         """
         Process one inference output
-        Parameters:
-        - dataset: dataset used during training
-        - input_data: input to the network
-        - inference_data: network output
-        - ground_truth: Ground truth. Format is application specific.
-          None if absent.
-        Returns:
-        - an object reprensenting the processed data
         """
         # just return the same data and ignore ground truth
         return inference_data

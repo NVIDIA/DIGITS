@@ -106,14 +106,14 @@ class VisualizationInterface(object):
 
     def process_data(
             self,
-            dataset,
+            input_id,
             input_data,
             inference_data,
             ground_truth=None):
         """
         Process one inference output
         Parameters:
-        - dataset: dataset used during training
+        - input_id: index of input sample
         - input_data: input to the network
         - inference_data: network output
         - ground_truth: Ground truth. Format is application specific.

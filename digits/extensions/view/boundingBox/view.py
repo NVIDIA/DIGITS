@@ -100,20 +100,12 @@ class Visualization(VisualizationInterface):
     @override
     def process_data(
             self,
-            dataset,
+            input_id,
             input_data,
             inference_data,
             ground_truth=None):
         """
         Process one inference output
-        Parameters:
-        - dataset: dataset used during training
-        - input_data: input to the network
-        - inference_data: network output
-        - ground_truth: Ground truth. Format is application specific.
-          None if absent.
-        Returns:
-        - an object reprensenting the processed data
         """
         # get source image
         image = PIL.Image.fromarray(input_data).convert('RGB')
