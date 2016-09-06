@@ -13,6 +13,7 @@ import shutil
 import sys
 import threading
 import time
+import Queue
 
 # Find the best implementation available
 try:
@@ -34,8 +35,11 @@ from digits import utils, log
 # must call digits.config.load_config() before caffe to set the path
 import caffe.io
 import caffe_pb2
+import mxnet as mx
 
 logger = logging.getLogger('digits.tools.create_db')
+
+PREFIX_MXNET='images'
 
 class Error(Exception):
     pass
@@ -217,7 +221,7 @@ def create_db(input_file, output_dir,
     image_width -- image resize width
     image_height -- image resize height
     image_channels -- image channels
-    backend -- the DB format (lmdb/hdf5)
+    backend -- the DB format (lmdb/hdf5/rec)
 
     Keyword arguments:
     resize_mode -- passed to utils.image.resize_image()
@@ -287,6 +291,36 @@ def create_db(input_file, output_dir,
         _create_lmdb(image_count, write_queue, batch_size, output_dir,
                 summary_queue, num_threads,
                 mean_files, **kwargs)
+	elif backend == 'rec':
+	    os.makedirs(output_dir)
+		
+		prefix=output_dir+'/'+PREFIX_MXNET
+
+		#open input_file
+        fr=open(input_file)
+        arrayOlines=fr.readlines()
+        numberOfLines=len(arrayOlines)
+        count=0
+		#images_folder
+		images_folder=''
+		for item in arrayOlines[0].strip().split('/')[0:-2]:
+		    images_folder=images_folder+item+'/'
+		
+		#the location of images_list for mxnet
+		images_list_mxnet=prefix+'.lst'
+		outfile=open(images_list_mxnet,'w')
+        for line in arrayOlines:
+            templine=line.strip().split(' ')
+            outfile.write('%s\t%s\t%s\n'%(str(count
+			),templine[1],templine[0]))
+            count=count+1
+		outfile.close()
+		fr.close()
+		
+		images_list_mx = read_list(images_list_mxnet)
+		encoding='.'+kwargs.get('encoding')
+        _create_rec(image_count,images_folder, images_list_mx,image_height,image_width,
+               resize_mode,image_channels,encoding,output_dir,prefix,num_threads,mean_files)
     elif backend == 'hdf5':
         _create_hdf5(image_count, write_queue, batch_size, output_dir,
                 image_width, image_height, image_channels,
@@ -296,6 +330,121 @@ def create_db(input_file, output_dir,
         raise ValueError('invalid backend')
 
     logger.info('Database created after %d seconds.' % (time.time() - start))
+
+def read_list(images_list_mxnet):
+    image_list = []
+    with open(images_list_mxnet) as fin:
+        for line in fin.readlines():
+            line = [i.strip() for i in line.strip().split('\t')]
+            item = [int(line[0])] + [line[-1]] + [float(i) for i in line[1:-1]]
+            image_list.append(item)
+    return image_list
+	
+def _create_rec(image_count,images_folder, images_list_mx,image_height,image_width,
+               resize_mode,image_channels,encoding,output_dir,prefix,num_threads,mean_files):
+	source = images_list_mx
+    tic = [time.time()]
+    total = len(source)
+	
+    def image_encode(item, q_out):
+        try:
+		    img = cv2.imread(item[1])
+        except:
+            print 'imread error:', item[1]
+            return
+        if img == None:
+            print 'read none error:', item[1]
+            return
+		img = utils.image.image_to_array(img, image_channels)
+		
+		img = utils.image.resize_image(img,
+                image_height, image_width,
+                channels    = image_channels,
+                resize_mode = resize_mode,
+                )
+			
+        header = mx.recordio.IRHeader(0, item[2], item[0], 0)
+        try:
+            s = mx.recordio.pack_img(header, img, quality=90, img_fmt=encoding)
+            q_out.put(('data', s, item))
+        except:
+            print 'pack_img error:',item[1]
+            return
+
+    def read_worker(q_in, q_out):
+        while not q_in.empty():
+            item = q_in.get()
+            image_encode(item, q_out)
+
+    def write_worker(q_out, prefix):
+        pre_time = time.time()
+        sink = []
+        record = mx.recordio.MXRecordIO(prefix+'.rec', 'w')
+        while True:
+            stat, s, item = q_out.get()
+            if stat == 'finish':
+                write_list(prefix+'.lst', sink)
+                break
+            record.write(s)
+            sink.append(item)
+            if len(sink) % 1000 == 0:
+                cur_time = time.time()
+                print 'time:', cur_time - pre_time, ' count:', len(sink)
+                pre_time = cur_time
+
+    try:
+        import multiprocessing
+        q_in = [multiprocessing.Queue() for i in range(num_threads)]
+        q_out = multiprocessing.Queue(1024)
+        for i in range(len(image_list_mx)):
+            q_in[i % len(q_in)].put(image_list_mx[i])
+        read_process = [multiprocessing.Process(target=read_worker, args=(q_in[i], q_out)) \
+                for i in range(num_threads)]
+        for p in read_process:
+            p.start()
+        write_process = multiprocessing.Process(target=write_worker, args=(q_out,prefix))
+        write_process.start()
+        for p in read_process:
+            p.join()
+        q_out.put(('finish', '', []))
+        write_process.join()
+		
+    except ImportError:
+        print('multiprocessing not available, fall back to single threaded encoding')
+        import Queue
+        q_out = Queue.Queue()
+        record = mx.recordio.MXRecordIO(prefix+'.rec', 'w')
+        cnt = 0
+        pre_time = time.time()
+        for item in image_list_mx:
+            image_encode(item, q_out)
+            if q_out.empty():
+                continue
+            _, s, _ = q_out.get()
+            record.write(s)
+            cnt += 1
+            if cnt % 1000 == 0:
+                cur_time = time.time()
+                print 'time:', cur_time - pre_time, ' count:', cnt
+                pre_time = cur_time
+				
+	compute_mean = bool(mean_files)
+	if compute_mean:
+        image_sum = _initial_image_sum(image_width, image_height, image_channels)
+    else:
+        image_sum = None
+	
+	for index in range(total):
+	    try:
+		    image = utils.image.load_image(images_list_mx[index][1])
+		    image = utils.image.image_to_array(image,image_channels)
+        except utls.errors.LoadImageError as e:
+		    logger.warning('[%s] %s: %s' % (path, type(e).__name__, e) )
+            continue
+	    if compute_mean:
+            image_sum += image
+	_save_means(image_sum, image_count, mean_files)
+	
 
 def _create_lmdb(image_count, write_queue, batch_size, output_dir,
         summary_queue, num_threads,
@@ -373,6 +522,7 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
         _save_means(image_sum, images_written, mean_files)
 
     db.close()
+
 
 def _create_hdf5(image_count, write_queue, batch_size, output_dir,
         image_width, image_height, image_channels,
