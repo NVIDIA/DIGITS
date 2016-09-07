@@ -1,11 +1,40 @@
 {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
 <!-- Models -->
 <div class="col-md-12" ng-show="tab.isSet(2)">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="pull-right">
+                New Model
+                <ul class="nav nav-pills">
+                    {% for category in new_model_options.keys()|sort %}
+                    {% set options = new_model_options[category] %}
+                    <li class="dropdown active">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            {{category}} <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for id in options.keys()|sort %}
+                            {% set option = options[id] %}
+                            <li><a id="{{option["id"]}}" href="{{option["url"]}}">{{option["title"]}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div style="position:absolute; bottom:0">
+                <label>Group Jobs:
+                    <input type="checkbox"
+                           ng-model="jc.storage.show_groups">
+                </label>
+            </div>
+        </div>
+    </div>
     <div class="well">
         <div ng-controller="models_controller as c">
             {[ jobs = (jc.model_jobs | filter:search_text | sort_with_empty_at_end:this:jc.storage.show_groups); '' ]}
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-xs-12">
                     <!-- Output Field Options -->
                     <div class="button-group pull-right">
                         <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">

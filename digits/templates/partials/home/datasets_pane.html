@@ -1,11 +1,40 @@
 {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
 <!-- Datasets -->
 <div class="col-md-12" ng-show="tab.isSet(1)">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="pull-right">
+                New Dataset
+                <ul class="nav nav-pills">
+                    {% for category in new_dataset_options.keys()|sort %}
+                    {% set options = new_dataset_options[category] %}
+                    <li class="dropdown active">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            {{category}} <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for id in options.keys()|sort %}
+                            {% set option = options[id] %}
+                            <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div style="position:absolute; bottom:0">
+                <label>Group Jobs:
+                    <input type="checkbox"
+                           ng-model="jc.storage.show_groups">
+                </label>
+            </div>
+        </div>
+    </div>
     <div class="well">
         <div ng-controller="datasets_controller as c">
             {[jobs = (jc.dataset_jobs | filter:search_text | sort_with_empty_at_end:this:jc.storage.show_groups);'']}
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-xs-12">
                     <!-- Filter -->
                     <div class="pull-right">
                         <form>
