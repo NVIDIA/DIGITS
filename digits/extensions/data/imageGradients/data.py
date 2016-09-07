@@ -3,13 +3,13 @@ from __future__ import absolute_import
 
 from digits.utils import subclass, override, constants
 from ..interface import DataIngestionInterface
-from .forms import DatasetForm
+from .forms import DatasetForm, InferenceForm
 
 import numpy as np
 import os
 
 TEMPLATE = "template.html"
-
+INFERENCE_TEMPLATE = "inference_template.html"
 
 @subclass
 class DataIngestion(DataIngestionInterface):
@@ -17,8 +17,10 @@ class DataIngestion(DataIngestionInterface):
     A data ingestion extension for an image gradient dataset
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, is_inference_db=False, **kwargs):
         super(DataIngestion, self).__init__(**kwargs)
+
+        self.userdata['is_inference_db'] = is_inference_db
 
         # Used to calculate the gradients later
         self.yy, self.xx = np.mgrid[:self.image_height,
@@ -26,7 +28,7 @@ class DataIngestion(DataIngestionInterface):
 
     @override
     def encode_entry(self, entry):
-        xslope, yslope = np.random.random_sample(2) - 0.5
+        xslope, yslope = entry
         label = np.array([xslope, yslope])
         a = xslope * 255 / self.image_width
         b = yslope * 255 / self.image_height
@@ -74,6 +76,18 @@ class DataIngestion(DataIngestionInterface):
         context = {'form': form}
         return (template, context)
 
+    @override
+    def get_inference_form(self):
+        return InferenceForm()
+
+    @staticmethod
+    @override
+    def get_inference_template(form):
+        extension_dir = os.path.dirname(os.path.abspath(__file__))
+        template = open(os.path.join(extension_dir, INFERENCE_TEMPLATE), "r").read()
+        context = {'form': form}
+        return (template, context)
+
     @staticmethod
     @override
     def get_title():
@@ -81,12 +95,18 @@ class DataIngestion(DataIngestionInterface):
 
     @override
     def itemize_entries(self, stage):
-        if stage == constants.TRAIN_DB:
-            count = self.train_image_count
-        elif stage == constants.VAL_DB:
-            count = self.val_image_count
-        elif stage == constants.TEST_DB:
-            count = self.test_image_count
+        count = 0
+        if self.userdata['is_inference_db']:
+            if stage == constants.TEST_DB:
+                if self.test_image_count:
+                    count = self.test_image_count
+                else:
+                    return [(self.gradient_x, self.gradient_y)]
         else:
-            raise ValueError('Unknown stage %s' % stage)
-        return xrange(count) if count > 0 else []
+            if stage == constants.TRAIN_DB:
+                count = self.train_image_count
+            elif stage == constants.VAL_DB:
+                count = self.val_image_count
+            elif stage == constants.TEST_DB:
+                count = self.test_image_count
+        return [np.random.random_sample(2) - 0.5 for i in xrange(count)] if count > 0 else []

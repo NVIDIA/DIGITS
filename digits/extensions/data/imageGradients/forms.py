@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 from digits import utils
 from digits.utils import subclass
+from digits.utils.forms import validate_required_iff
 from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
@@ -54,4 +55,38 @@ class DatasetForm(Form):
         u'Image Height',
         default=32,
         validators=[validators.DataRequired()]
+        )
+
+
+@subclass
+class InferenceForm(Form):
+    """
+    A form used to perform inference on a gradient regression model
+    """
+
+    gradient_x = utils.forms.FloatField(
+        'Gradient (x)',
+        validators=[
+            validate_required_iff(test_image_count=None),
+            validators.NumberRange(min=-0.5, max=0.5),
+            ],
+        tooltip="Specify a number between -0.5 and 0.5"
+        )
+
+    gradient_y = utils.forms.FloatField(
+        'Gradient (y)',
+        validators=[
+            validate_required_iff(test_image_count=None),
+            validators.NumberRange(min=-0.5, max=0.5),
+            ],
+        tooltip="Specify a number between -0.5 and 0.5"
+        )
+
+    test_image_count = utils.forms.IntegerField(
+        'Test Image count',
+        validators=[
+            validators.Optional(),
+            validators.NumberRange(min=0),
+            ],
+        tooltip="Number of images to create in test set"
         )
