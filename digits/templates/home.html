@@ -80,20 +80,21 @@
                                 </form>
                             </div>
                             {[enabled = any_selected();'']}
+                            {[group_enabled = jc.storage.show_groups && enabled;'']}
                             <div>
                                 <a class="btn btn-xs btn-danger"
                                    ng-disabled="!enabled"
-                                   ng-click="delete_jobs();">
+                                   ng-click="!enabled || delete_jobs();">
                                     Delete
                                 </a>
                                 <a class="btn btn-xs btn-warning"
                                    ng-disabled="!enabled"
-                                   ng-click="abort_jobs();">
+                                   ng-click="!enabled || abort_jobs();">
                                     Abort
                                 </a>
                                 <a class="btn btn-xs btn-primary"
-                                   ng-disabled="!enabled"
-                                   ng-click="group_jobs();">
+                                   ng-disabled="!group_enabled"
+                                   ng-click="!group_enabled || group_jobs();">
                                     Group
                                 </a>
                             </div>

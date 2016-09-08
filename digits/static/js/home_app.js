@@ -384,6 +384,7 @@ try {
 
         $scope.delete_jobs = function() {
             var job_ids = $scope.get_selected_job_ids();
+            if (job_ids.length == 0) return;
             bootbox.confirm(
                 ('Are you sure you want to delete the selected' +
                  (job_ids.length == 1 ? 'job?' : job_ids.length + ' jobs?') +
@@ -410,6 +411,7 @@ try {
 
         $scope.abort_jobs = function() {
             var job_ids = $scope.get_selected_job_ids();
+            if (job_ids.length == 0) return;
             bootbox.confirm(
                 ('Are you sure you want to abort the selected ' +
                  (job_ids.length == 1 ? 'job?' : job_ids.length + ' jobs?')),

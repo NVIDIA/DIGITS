@@ -18,15 +18,16 @@
                         </form>
                     </div>
                     {[enabled = any_selected();'']}
+                    {[group_enabled = jc.storage.show_groups && enabled;'']}
                     <!-- Delete Button -->
                     <a class="btn btn-xs btn-danger"
                        ng-disabled="!enabled"
-                       ng-click="delete_jobs();">
+                       ng-click="!enabled || delete_jobs();">
                         Delete
                     </a>
                     <a class="btn btn-xs btn-primary"
-                       ng-disabled="!enabled"
-                       ng-click="group_jobs();">
+                       ng-disabled="!group_enabled"
+                       ng-click="!group_enabled || group_jobs();">
                         Group
                     </a>
                 </div>
