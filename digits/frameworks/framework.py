@@ -84,4 +84,3 @@ class Framework(object):
 
     def can_accumulate_gradients(self):
         return False
-

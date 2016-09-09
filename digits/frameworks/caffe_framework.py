@@ -150,4 +150,3 @@ class CaffeFramework(Framework):
             return config_value('caffe_root')['version'] > parse_version('0.14.0-alpha')
         else:
             raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
-
