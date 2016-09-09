@@ -21,10 +21,9 @@ import PIL.Image
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
-digits.config.load_config()
 from digits import log
 
-# Run load_config() first to set path to Caffe
+# Import digits.config first to set path to Caffe
 import caffe_pb2
 
 logger = logging.getLogger('digits.tools.analyze_db')

@@ -19,11 +19,10 @@ import threading
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
-digits.config.load_config()
 from digits import extensions, log
 from digits.job import Job
 
-# Run load_config() first to set the path to Caffe
+# Import digits.config first to set the path to Caffe
 import caffe.io
 import caffe_pb2
 

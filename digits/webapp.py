@@ -1,7 +1,7 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import os.path
+import os
 
 import flask
 from flask.ext.socketio import SocketIO
@@ -19,7 +19,7 @@ app.config['DEBUG'] = True
 # Disable CSRF checking in WTForms
 app.config['WTF_CSRF_ENABLED'] = False
 # This is still necessary for SocketIO
-app.config['SECRET_KEY'] = config_value('secret_key')
+app.config['SECRET_KEY'] = os.urandom(12).encode('hex')
 app.url_map.redirect_defaults = False
 socketio = SocketIO(app, async_mode='gevent')
 scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
@@ -28,8 +28,8 @@ scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
 app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.globals['server_version'] = digits.__version__
-app.jinja_env.globals['caffe_version'] = config_value('caffe_root')['ver_str']
-app.jinja_env.globals['caffe_flavor'] = config_value('caffe_root')['flavor']
+app.jinja_env.globals['caffe_version'] = config_value('caffe')['version']
+app.jinja_env.globals['caffe_flavor'] = config_value('caffe')['flavor']
 app.jinja_env.globals['dir_hash'] = fs.dir_hash(
     os.path.join(os.path.dirname(digits.__file__), 'static'))
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time

@@ -5,6 +5,9 @@ import argparse
 import sys
 
 import digits
+import digits.config
+import digits.log
+from digits.webapp import app, socketio, scheduler
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the DIGITS development server')
@@ -12,10 +15,6 @@ if __name__ == '__main__':
             type=int,
             default=5000,
             help='Port to run app on (default 5000)'
-            )
-    parser.add_argument('-c', '--config',
-            action='store_true',
-            help='Edit the application configuration'
             )
     parser.add_argument('-d', '--debug',
             action='store_true',
@@ -28,18 +27,9 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
 
-    from digits import config
-
     if args['version']:
         print digits.__version__
         sys.exit()
-
-    if args['config']:
-        config.load_config('normal')
-    else:
-        config.load_config('quiet')
-
-    from digits.webapp import app, socketio, scheduler
 
     print '  ___ ___ ___ ___ _____ ___'
     print ' |   \_ _/ __|_ _|_   _/ __|'

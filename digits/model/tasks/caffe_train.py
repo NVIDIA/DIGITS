@@ -135,8 +135,8 @@ class CaffeTrainTask(TrainTask):
         self.log_file = self.CAFFE_LOG
 
         self.digits_version = digits.__version__
-        self.caffe_version  = config_value('caffe_root')['ver_str']
-        self.caffe_flavor   = config_value('caffe_root')['flavor']
+        self.caffe_version  = config_value('caffe')['version']
+        self.caffe_flavor   = config_value('caffe')['flavor']
 
     def __getstate__(self):
         state = super(CaffeTrainTask, self).__getstate__()
@@ -502,7 +502,7 @@ class CaffeTrainTask(TrainTask):
         solver.net = self.train_val_file
 
         # Set CPU/GPU mode
-        if config_value('caffe_root')['cuda_enabled'] and \
+        if config_value('caffe')['cuda_enabled'] and \
                 bool(config_value('gpu_list')):
             solver.solver_mode = caffe_pb2.SolverParameter.GPU
         else:
@@ -727,7 +727,7 @@ class CaffeTrainTask(TrainTask):
         solver.net = self.train_val_file
 
         # Set CPU/GPU mode
-        if config_value('caffe_root')['cuda_enabled'] and \
+        if config_value('caffe')['cuda_enabled'] and \
                 bool(config_value('gpu_list')):
             solver.solver_mode = caffe_pb2.SolverParameter.GPU
         else:
@@ -903,7 +903,7 @@ class CaffeTrainTask(TrainTask):
 
         # Not in Windows, or in Windows but no Python Layer
         # This is the normal path
-        args = [config_value('caffe_root')['executable'],
+        args = [config_value('caffe')['executable'],
                 'train',
                 '--solver=%s' % self.path(self.solver_file),
                 ]
@@ -915,13 +915,14 @@ class CaffeTrainTask(TrainTask):
             if len(identifiers) == 1:
                 args.append('--gpu=%s' % identifiers[0])
             elif len(identifiers) > 1:
-                if config_value('caffe_root')['flavor'] == 'NVIDIA':
-                    if config_value('caffe_root')['version'] < utils.parse_version('0.14.0-alpha'):
+                if config_value('caffe')['flavor'] == 'NVIDIA':
+                    if (utils.parse_version(config_value('caffe')['version'])
+                            < utils.parse_version('0.14.0-alpha')):
                         # Prior to version 0.14, NVcaffe used the --gpus switch
                         args.append('--gpus=%s' % ','.join(identifiers))
                     else:
                         args.append('--gpu=%s' % ','.join(identifiers))
-                elif config_value('caffe_root')['flavor'] == 'BVLC':
+                elif config_value('caffe')['flavor'] == 'BVLC':
                     args.append('--gpu=%s' % ','.join(identifiers))
                 else:
                     raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')

@@ -70,27 +70,20 @@ def setup_logging():
 
     ### digits.webapp logger
 
-    if config_value('log_file'):
+    logfile_filename = config_value('log_file')['filename']
+    logfile_level = config_value('log_file')['level']
+
+    if logfile_filename is not None:
         webapp_logger = logging.getLogger('digits.webapp')
         webapp_logger.setLevel(logging.DEBUG)
         # Log to file
         fileHandler = logging.handlers.RotatingFileHandler(
-                config_value('log_file'),
+                logfile_filename,
                 maxBytes=(1024*1024*10), # 10 MB
                 backupCount=10,
                 )
         fileHandler.setFormatter(formatter)
-        level = config_value('log_level')
-        if level == 'debug':
-            fileHandler.setLevel(logging.DEBUG)
-        elif level == 'info':
-            fileHandler.setLevel(logging.INFO)
-        elif level == 'warning':
-            fileHandler.setLevel(logging.WARNING)
-        elif level == 'error':
-            fileHandler.setLevel(logging.ERROR)
-        elif level == 'critical':
-            fileHandler.setLevel(logging.CRITICAL)
+        fileHandler.setLevel(logfile_level)
         webapp_logger.addHandler(fileHandler)
 
         ### Useful shortcut for the webapp, which may set job_id

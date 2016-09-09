@@ -1,14 +1,21 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import os
+# Create this object before importing the following imports, since they edit the list
+option_list = {}
 
-# These are the only two functions that the rest of DIGITS needs to use
-from .current_config import config_value
-from .load import load_config
+from . import caffe
+from . import gpu_list
+from . import jobs_dir
+from . import log_file
+from . import torch
+from . import server_name
+from . import extension_list  # Import this last, since it imports other things inside DIGITS
 
-if 'DIGITS_MODE_TEST' in os.environ:
-    # load the config automatically during testing
-    # it's hard to do it manually with nosetests
-    load_config()
+
+def config_value(option):
+    """
+    Return the current configuration value for the given option
+    """
+    return option_list[option]
 

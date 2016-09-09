@@ -17,13 +17,12 @@ except ImportError:
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
-digits.config.load_config()
 from digits import utils, log
 from digits.inference.errors import InferenceError
 from digits.job import Job
 from digits.utils.lmdbreader import DbReader
 
-# must call digits.config.load_config() before caffe to set the path
+# Import digits.config before caffe to set the path
 import caffe.io
 import caffe_pb2
 
