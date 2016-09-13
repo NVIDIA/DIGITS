@@ -160,4 +160,4 @@ Class name | Class ID
 dontcare | 0
 pedestrian | 1
 
-All labeled objects other than "pedestrian" in your dataset will be mapped to 0.
+All labeled objects other than "pedestrian" in your dataset will be mapped to 0, along with any objects explicitly labeled as "dontcare".
