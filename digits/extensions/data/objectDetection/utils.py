@@ -203,7 +203,7 @@ class GroundTruth:
                             gt.stype = ''
                             gt.object = ObjectType.Dontcare
                     objects_per_image.append(gt)
-                    key = int(os.path.splitext(label_file)[0])
+                    key = os.path.splitext(label_file)[0]
                 self.update_objects_all(key, objects_per_image)
 
     @property
