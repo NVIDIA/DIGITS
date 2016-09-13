@@ -97,10 +97,7 @@ class DataIngestion(DataIngestionInterface):
         # (2) label part
 
         # make sure label exists
-        try:
-            label_id = int(os.path.splitext(os.path.basename(entry))[0])
-        except:
-            raise ValueError("Unable to extract numerical id from file name %s" % entry)
+        label_id = os.path.splitext(os.path.basename(entry))[0]
 
         if not label_id in self.datasrc_annotation_dict:
             raise ValueError("Label key %s not found in label folder" % label_id)
