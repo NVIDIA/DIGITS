@@ -177,6 +177,12 @@ class GroundTruth:
             objects_per_image = list()
             with open( os.path.join(self.label_dir, label_file), 'rb') as flabel:
                 for row in csv.reader(flabel, delimiter=self.label_delimiter):
+                    if len(row) == 0:
+                        # This can happen when you open an empty file
+                        continue
+                    if len(row) < 15:
+                        raise ValueError('Invalid label format in "%s"'
+                                         % os.path.join(self.label_dir, label_file))
 
                     # load data
                     gt = GroundTruthObj()
@@ -203,7 +209,7 @@ class GroundTruth:
                             gt.stype = ''
                             gt.object = ObjectType.Dontcare
                     objects_per_image.append(gt)
-                    key = os.path.splitext(label_file)[0]
+                key = os.path.splitext(label_file)[0]
                 self.update_objects_all(key, objects_per_image)
 
     @property
