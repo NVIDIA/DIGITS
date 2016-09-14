@@ -38,7 +38,7 @@ class InferenceJob(Job):
 
     @override
     def __getstate__(self):
-        fields_to_save = ['_id', '_name']
+        fields_to_save = ['_id', '_name', 'status_history']
         full_state = super(InferenceJob, self).__getstate__()
         state_to_save = {}
         for field in fields_to_save:

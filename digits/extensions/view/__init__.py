@@ -7,6 +7,7 @@ from pkg_resources import iter_entry_points
 from . import boundingBox
 from . import imageOutput
 from . import imageSegmentation
+from . import imageSegmentationGL
 from . import rawData
 
 # Entry point group (this is the key we use to register and
@@ -19,6 +20,7 @@ builtin_view_extensions = [
     boundingBox.Visualization,
     imageOutput.Visualization,
     imageSegmentation.Visualization,
+    imageSegmentationGL.Visualization,
     rawData.Visualization,
 ]
 

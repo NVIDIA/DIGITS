@@ -1,0 +1,31 @@
+<!-- Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. -->
+
+<div id="image-div-{{input_id}}"" class="gl-canvas-container">
+    <img id="input-image-{{input_id}}" src="{{input_image}}" style="max-width:100%;" />
+</div>
+
+<script>
+ $(document).ready(function() {
+     function on_resize( image, callback) {
+         var image_height = image.height;
+         var image_width = image.width;
+
+         setInterval(function() {
+             if(image.height !== image_height || image.width !== image_width){
+                 image_height = image.height;
+                 image_width = image.width;
+                 callback();
+             }
+         }, 300);
+     }
+     
+     var image = document.getElementById("input-image-{{input_id}}");
+     on_resize(image, function() {
+         GLRenderManager.instance().on_resize(image.id);
+     });
+     
+     start_webgl(image,
+                 '{{input_image}}', '{{output_image}}',
+                 '{{width}}', '{{height}}');
+ });
+</script>

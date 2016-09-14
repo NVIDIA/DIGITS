@@ -1,0 +1,21 @@
+<!-- Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. -->
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gl.css', ver=dir_hash) }}">
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/gl/gl-matrix-min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/gl/webgl-utils.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/gl/gl-renderer.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="/models/extension-static/image-segmentation-gl/js/gl.js"></script>
+<script type="text/javascript" src="/models/extension-static/image-segmentation-gl/js/app.js"></script>
+
+<h3>Legend</h3>
+<table>
+{% for category in legend %}
+    {% set image = category['image'] %}
+    {% set text = category['text'] %}
+    <tr>
+    	<td><img src="{{image}}" style="max-width:100%;" /></td>
+    	<td>{{ text }}</td>
+    </tr>
+    {% endfor %}
+</table>
