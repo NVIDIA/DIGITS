@@ -97,6 +97,14 @@ class VisualizationInterface(object):
         """
         raise NotImplementedError
 
+    @staticmethod
+    def get_dirname():
+        """
+        Returns the extension's dirname for building a path to the
+        extension's static files
+        """
+        raise NotImplementedError
+
     def get_view_template(self, data):
         """
         The view template shows the visualization of one inference output.

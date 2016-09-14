@@ -1,0 +1,37 @@
+<!-- Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. -->
+
+<div ng-app="visualization_app" class="ng-cloak">
+    <div ng-controller="display_controller as dispaly">
+        <!-- Display Options -->
+        <div class="pull-right">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="button-group pull-right">
+                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-cog"></span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu"
+                            style="padding:10px"
+                            ng-click="$event.stopPropagation()">
+                            <li>
+                                <small>Opacity {[storage.opacity * 100 | number : 0]}%</small>
+                                <input type="range" min="0" max="1" step="0.01" ng-model="storage.opacity">
+                            </li>
+                            <li>
+                                <small>Mask {[storage.mask * 100 | number : 0]}%</small>
+                                <input type="range" min="0" max="1" step="0.01" ng-model="storage.mask">
+                            </li>
+                            <!-- reset -->
+                            <li>
+                                <button type="button" class="btn btn-default btn-sm dropdown-toggle"
+                                        ng-click="storage.opacity = 0.3; storage.mask = 0;"
+                                        title="Reset to defaults">
+                                    <span class="glyphicon glyphicon-refresh"></span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>

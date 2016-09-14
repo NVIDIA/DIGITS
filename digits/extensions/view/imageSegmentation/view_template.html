@@ -1,3 +1,82 @@
 {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
 
-<img src="{{image}}" style="max-width:100%;" />
+<div>
+	<!-- table is used for the sake of the caption -->
+    <table>
+        <tr>
+            <td>
+                <div class="vis-div">
+                    <img src="{{input_image}}"
+                         style="max-width:100%;"/>
+                    <img src="{{fill_image}}"
+                         style="max-width:100%;"
+                         ng-style="fill_style;"
+                         class="fill overlay"/>
+                    <img src="{{mask_image}}"
+                         style="max-width:100%;"
+                         ng-style="mask_style;"
+                         class="mask overlay"
+                         id="image-{{ input_id }}"/>
+                </div>
+            </td>
+        </tr>
+        <caption>
+            <p align="center">
+                {% for category in legend %}
+                <span style="display:inline-block;">
+                    <span style="display:inline-block; width:10px;height:10px;border:1px solid #000; background-color: {{ category['hex_color'] }}">
+                    </span>
+                    <span style="display:inline-block; padding-right:10px"
+                          class="text-{{ input_id }} text-class"
+                          id="text-{{ input_id }}-{{ category['index'] }}">
+                        {{ category['text'] }}
+                    </span>
+                </span>
+                {% endfor %}
+            </p>
+        </caption>
+    </table>
+</div>
+
+<script>
+
+ function get_mouse_pos(event) {
+     var rect = event.target.getBoundingClientRect();
+     return {
+         x: (event.clientX - rect.left) / rect.width,
+         y: (event.clientY - rect.top) / rect.height,
+     };
+ }
+
+ $(document).ready(function() {
+     var image = document.getElementById("image-{{input_id}}");
+     var last = undefined;
+     image.onmousemove = function(event) {
+         var class_data = {{ class_data }};
+         var mouse_pos = get_mouse_pos(event);
+         var dims = [ class_data.length, class_data[0].length ];
+         var x = Math.round(mouse_pos.x * dims[1]);
+         var y = Math.round(mouse_pos.y * dims[0]);
+         if (class_data[y] !== undefined && class_data[y][x] !== undefined) {
+             var index = class_data[y][x];
+             if (last !== index) {
+                 if (index != 0) {
+                     $('span.text-{{ input_id }}').css('color', '#DDD');
+                     var span = document.getElementById("text-{{ input_id }}-" + index);
+                     span.style.color = "#000000";
+                 } else {
+                     $('span.text-{{ input_id }}').css('color', '#777');
+                 }
+             }
+             last = index;
+         } else {
+             $('span.text-{{ input_id }}').css('color', '#777');
+             last = undefined;
+         }
+     };
+     image.onmouseleave = function(event) {
+         $('span.text-class').css('color', '#777');
+         last = undefined;
+     };
+ });
+</script>
