@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import flask
+from werkzeug.contrib.fixers import ProxyFix
 from flask.ext.socketio import SocketIO
 from gevent import monkey; monkey.patch_all()
 
@@ -13,6 +14,7 @@ import digits.scheduler
 ### Create Flask, Scheduler and SocketIO objects
 
 app = flask.Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app)
 app.config['DEBUG'] = True
 # Disable CSRF checking in WTForms
 app.config['WTF_CSRF_ENABLED'] = False
