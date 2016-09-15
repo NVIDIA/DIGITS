@@ -1112,10 +1112,6 @@ class TestTorchLeNet(BaseTestCreated):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
     TRAIN_EPOCHS = 20
-    # need more aggressive learning rate
-    # on such a small dataset
-    LR_POLICY = 'fixed'
-    LEARNING_RATE = 0.1
 
     # standard lenet model will adjust to color
     # or grayscale images
