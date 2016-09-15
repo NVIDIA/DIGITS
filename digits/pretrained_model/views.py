@@ -102,6 +102,7 @@ def upload_archive():
         # Create a temp directory to storce archive
         tempdir = tempfile.mkdtemp()
         labels_file = None
+        mean_file = None
         archive.extractall(path=tempdir)
 
         with open(os.path.join(tempdir, "info.json")) as data_file:
@@ -125,11 +126,15 @@ def upload_archive():
         if "labels file" in info:
             labels_file  = os.path.join(tempdir, info["labels file"])
 
+        if "mean file" in info:
+            mean_file  = os.path.join(tempdir, info["mean file"])
+
         # Upload the Model:
         job = PretrainedModelJob(
             weights_file,
             model_file ,
             labels_file,
+            mean_file,
             info["framework"],
             username = utils.auth.get_username(),
             name = info["name"]
@@ -153,6 +158,7 @@ def new():
     Upload a pretrained model
     """
     labels_path = None
+    mean_file = None
     framework   = None
 
     form  = flask.request.form
@@ -176,10 +182,14 @@ def new():
     if str(flask.request.files['labels_file'].filename) is not '':
         labels_path = get_tempfile(flask.request.files['labels_file'],".txt")
 
+    if str(flask.request.files['mean_file'].filename) is not '':
+        mean_file = get_tempfile(flask.request.files['mean_file'],".binaryproto")
+
     job = PretrainedModelJob(
         weights_path,
         model_def_path,
         labels_path,
+        mean_file,
         framework,
         form["image_type"],
         form["resize_mode"],

@@ -184,12 +184,14 @@ def json_dict(job, model_output_fields):
 
     if isinstance(job, pretrained_model.PretrainedModelJob):
         model_output_fields.add("has_labels")
+        model_output_fields.add("has_mean_file")
         model_output_fields.add("username")
         d.update({
             'type': 'pretrained_model',
             'framework': job.framework,
             'username': job.username,
-            'has_labels': job.has_labels_file()
+            'has_labels': job.has_labels_file(),
+            'has_mean_file': job.has_mean_file()
         })
     return d
 

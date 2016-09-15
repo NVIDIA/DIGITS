@@ -25,6 +25,7 @@ class UploadPretrainedModelTask(Task):
         self.model_def_path = kwargs.pop('model_def_path', None)
         self.image_info = kwargs.pop('image_info', None)
         self.labels_path = kwargs.pop('labels_path', None)
+        self.mean_path = kwargs.pop('mean_path', None)
         self.framework = kwargs.pop('framework', None)
 
         # resources
@@ -65,6 +66,12 @@ class UploadPretrainedModelTask(Task):
         Get path to label file
         """
         return os.path.join(self.job_dir,"labels.txt")
+
+    def get_mean_path(self):
+        """
+        Get path to mean file
+        """
+        return os.path.join(self.job_dir,"mean.binaryproto")
 
     def get_model_def_path(self):
         """
