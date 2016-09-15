@@ -121,7 +121,6 @@ class Visualization(VisualizationInterface):
             self.bbox_count += len(bboxes[key])
         image_html = digits.utils.image.embed_image_html(image)
 
-        print bboxes
         return {
             'image': image_html,
             'bboxes': bboxes,
