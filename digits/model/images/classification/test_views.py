@@ -1098,6 +1098,7 @@ class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
 
 class TestTorchCreatedDataAug(BaseTestCreatedDataAug):
     FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 2
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'torch'
