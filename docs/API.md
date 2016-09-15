@@ -43,21 +43,21 @@ In order to create a dataset, you will first need to log in.
 The following command will log us in as user `fred`:
 
 ```sh
-$ curl localhost/login -c cookie.tmp -XPOST -F username=fred
+$ curl localhost/login -c digits.cookie -XPOST -F username=fred
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <title>Redirecting...</title>
 <h1>Redirecting...</h1>
 <p>You should be redirected automatically to target URL: <a href="/">/</a>.  If not click the link.(venv)
 ```
 
-Note the `-c cookie.tmp` flag, which instructs `curl` to store the session cookie into `cookie.tmp`.
+Note the `-c digits.cookie` flag, which instructs `curl` to store the session cookie into `digits.cookie`.
 DIGITS requires users to log in before creating jobs.
 A job can only be edited or deleted by the user that created it.
 The session cookie is required for all commands that create or modify jobs.
-For those commands we will use `-b cookie.tmp` in the `curl` command line to pass the session cookie to DIGITS.
+For those commands we will use `-b digits.cookie` in the `curl` command line to pass the session cookie to DIGITS.
 
 > NOTE: if you prefer not to store cookies you may to use the `username` hidden form field directly.
-> This may be done by replacing `-b cookie.tmp` with `-F username=fred` in the commands that require authentication.
+> This may be done by replacing `-b digits.cookie` with `-F username=fred` in the commands that require authentication.
 > Using cookies would however be more robust to future changes in the authentication scheme.
 
 In the above command `/login` is referred to as a "route".
