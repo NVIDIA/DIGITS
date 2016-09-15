@@ -703,6 +703,21 @@ class BaseTestCreatedWithGradientDataExtension(BaseTestCreatedWithAnyDataset,
         # note: model created in BaseTestCreatedWithAnyDataset.setUpClass method
         super(BaseTestCreatedWithGradientDataExtension, cls).setUpClass()
 
+    def test_infer_extension_json(self):
+        rv = self.app.post(
+                '/models/images/generic/infer_extension.json?job_id=%s' % self.model_id,
+                data = {
+                    'gradient_x': 0.5,
+                    'gradient_y': -0.5,
+                    }
+                )
+        assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
+        data = json.loads(rv.data)
+        output = data['outputs'][data['outputs'].keys()[0]]['output']
+        assert output[0] > 0 and \
+                output[1] < 0, \
+                'image regression result is wrong: %s' % data['outputs']['output']
+
 
 class BaseTestCreatedWithImageProcessingExtension(
         BaseTestCreatedWithAnyDataset,

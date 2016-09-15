@@ -7,7 +7,16 @@ class DataIngestionInterface(object):
     A data ingestion extension
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, is_inference_db=False, **kwargs):
+        """
+        Initialize the data ingestion extension
+        Parameters:
+        - is_inference_db: boolean value, indicates whether the database is
+          created for inference. If this is true then the extension needs to
+          use the data from the inference form and create a database only for
+          the test phase (stage == constants.TEST_DB)
+        - kwargs: dataset form fields
+        """
         # save all data there - no other fields will be persisted
         self.userdata = kwargs
 
@@ -58,19 +67,24 @@ class DataIngestionInterface(object):
         """
         raise NotImplementedError
 
-    @staticmethod
-    def get_inference_form():
+    def get_inference_form(self):
         """
-        For later use
+        Return a Form object with all fields required to create an inference dataset
         """
-        raise NotImplementedError
+        return None
 
     @staticmethod
-    def get_inference_template():
+    def get_inference_template(form):
         """
-        For later use
+        Parameters:
+        - form: form returned by get_inference_form().
+        return:
+        - (template, context) tuple
+          - template is a Jinja template to use for rendering the inference form
+          - context is a dictionary of context variables to use for rendering
+          the form
         """
-        raise NotImplementedError
+        return (None, None)
 
     @staticmethod
     def get_title():

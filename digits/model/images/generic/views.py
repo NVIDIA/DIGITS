@@ -17,6 +17,7 @@ from digits.dataset import GenericDatasetJob, GenericImageDatasetJob
 from digits.inference import ImageInferenceJob
 from digits.status import Status
 from digits.utils import filesystem as fs
+from digits.utils import constants
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import get_request_arg, request_wants_json, job_from_request
 from digits.webapp import scheduler
@@ -289,11 +290,29 @@ def show(job, related_jobs=None):
     Called from digits.model.views.models_show()
     """
     view_extensions = get_view_extensions()
+
+    inference_form_html = None
+    if isinstance(job.dataset, GenericDatasetJob):
+        extension_class = extensions.data.get_extension(job.dataset.extension_id)
+        if not extension_class:
+            raise RuntimeError("Unable to find data extension with ID=%s"
+                % job.dataset.extension_id)
+        extension_userdata = job.dataset.extension_userdata
+        extension_userdata.update({'is_inference_db':True})
+        extension = extension_class(**extension_userdata)
+
+        form = extension.get_inference_form()
+        if form:
+            template, context = extension.get_inference_template(form)
+            inference_form_html = flask.render_template_string(template, **context)
+
     return flask.render_template(
         'models/images/generic/show.html',
         job=job,
         view_extensions=view_extensions,
-        related_jobs=related_jobs)
+        related_jobs=related_jobs,
+        inference_form_html=inference_form_html,
+        )
 
 
 @blueprint.route('/large_graph', methods=['GET'])
@@ -391,6 +410,97 @@ def infer_one():
             job=inference_job,
             image_src=image,
             inference_view_html=inference_view_html,
+            header_html=header_html,
+            app_begin_html=app_begin_html,
+            app_end_html=app_end_html,
+            visualizations=model_visualization,
+            total_parameters=sum(v['param_count'] for v in model_visualization
+                                 if v['vis_type'] == 'Weights'),
+            ), status_code
+
+
+@blueprint.route('/infer_extension.json', methods=['POST'])
+@blueprint.route('/infer_extension', methods=['POST', 'GET'])
+def infer_extension():
+    """
+    Perform inference using the data from an extension inference form
+    """
+    model_job = job_from_request()
+
+    inference_db_job = None
+    try:
+        # create an inference database
+        inference_db_job = create_inference_db(model_job)
+        db_path = inference_db_job.get_feature_db_path(constants.TEST_DB)
+
+        # create database creation job
+        epoch = None
+        if 'snapshot_epoch' in flask.request.form:
+            epoch = float(flask.request.form['snapshot_epoch'])
+
+        layers = 'none'
+        if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
+            layers = 'all'
+
+        # create inference job
+        inference_job = ImageInferenceJob(
+            username=utils.auth.get_username(),
+            name="Inference",
+            model=model_job,
+            images=db_path,
+            epoch=epoch,
+            layers=layers,
+            resize=False,
+            )
+
+        # schedule tasks
+        scheduler.add_job(inference_job)
+
+        # wait for job to complete
+        inference_job.wait_completion()
+
+    finally:
+        if inference_db_job:
+            scheduler.delete_job(inference_db_job)
+
+    # retrieve inference data
+    inputs, outputs, model_visualization = inference_job.get_data()
+
+    # set return status code
+    status_code = 500 if inference_job.status == 'E' else 200
+
+    # delete job folder and remove from scheduler list
+    scheduler.delete_job(inference_job)
+
+    if outputs is not None and len(outputs) < 1:
+        # an error occurred
+        outputs = None
+
+    if inputs is not None:
+        keys = [str(idx) for idx in inputs['ids']]
+        inference_views_html, header_html, app_begin_html, app_end_html = get_inference_visualizations(
+            model_job.dataset,
+            inputs,
+            outputs)
+    else:
+        inference_views_html = None
+        header_html = None
+        keys = None
+        app_begin_html = None
+        app_end_html = None
+
+    if request_wants_json():
+        result = {}
+        for i, key in enumerate(keys):
+            result[key] = dict((name, blob[i].tolist()) for name,blob in outputs.iteritems())
+        return flask.jsonify({'outputs': result}), status_code
+    else:
+        return flask.render_template(
+            'models/images/generic/infer_extension.html',
+            model_job=model_job,
+            job=inference_job,
+            keys=keys,
+            inference_views_html=inference_views_html,
             header_html=header_html,
             app_begin_html=app_begin_html,
             app_end_html=app_end_html,
@@ -599,6 +709,54 @@ def infer_many():
             app_begin_html=app_begin_html,
             app_end_html=app_end_html,
             ), status_code
+
+
+def create_inference_db(model_job):
+    # create instance of extension class
+    extension_class = extensions.data.get_extension(model_job.dataset.extension_id)
+    extension_userdata = model_job.dataset.extension_userdata
+    extension_userdata.update({'is_inference_db':True})
+    extension = extension_class(**extension_userdata)
+
+    extension_form = extension.get_inference_form()
+    extension_form_valid = extension_form.validate_on_submit()
+
+    if not extension_form_valid:
+        errors = extension_form.errors.copy()
+        raise werkzeug.exceptions.BadRequest(repr(errors))
+
+    extension.userdata.update(extension_form.data)
+
+    # create job
+    job = GenericDatasetJob(
+        username=utils.auth.get_username(),
+        name='Inference dataset',
+        group=None,
+        backend='lmdb',
+        feature_encoding='none',
+        label_encoding='none',
+        batch_size=1,
+        num_threads=1,
+        force_same_shape=0,
+        extension_id=model_job.dataset.extension_id,
+        extension_userdata=extension.get_user_data(),
+        )
+
+    # schedule tasks and wait for job to complete
+    scheduler.add_job(job)
+    job.wait_completion()
+
+    # check for errors
+    if job.status != Status.DONE:
+        msg = ""
+        for task in job.tasks:
+            if task.exception:
+                msg = msg + task.exception
+            if task.traceback:
+                msg = msg + task.exception
+        raise RuntimeError(msg)
+
+    return job
 
 
 def get_datasets(extension_id):

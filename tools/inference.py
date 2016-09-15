@@ -159,7 +159,8 @@ def infer(input_list,
             gpu=gpu,
             resize=resize)
     else:
-        assert layers == 'none'
+        if layers != 'none':
+            raise InferenceError("Layer visualization is not supported for multiple inference")
         outputs = model.train_task().infer_many(
             input_data,
             snapshot_epoch=epoch,
