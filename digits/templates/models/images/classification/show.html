@@ -156,6 +156,16 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             Make Pretrained Model
                         </button>
                     </div>
+                    <div class="col-sm-4">
+                        <button
+                            id="delete-snapshot"
+                            class="btn btn-danger"
+                            formaction="{{url_for('digits.model.views.delete_snapshot', job_id=job.id())}}"
+                            formenctype="multipart/form-data"
+                            formmethod="post">
+                            Delete Snapshot
+                        </button>
+                    </div>
                 </div>
                 {% if task.get_framework_id() in framework_ids %}
                 <div class="row">
@@ -275,4 +285,3 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
 </div>
 
 {% endblock %}
-
