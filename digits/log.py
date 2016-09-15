@@ -50,9 +50,6 @@ class JobIdLoggerAdapter(logging.LoggerAdapter):
         return msg, kwargs
 
 def setup_logging():
-    socketio_logger = logging.getLogger('socketio')
-    socketio_logger.addHandler(logging.StreamHandler(sys.stdout))
-
     # Set custom logger
     logging.setLoggerClass(JobIdLogger)
 
