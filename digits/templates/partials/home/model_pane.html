@@ -115,13 +115,13 @@
                         ng-keydown="keydown($event)"
                         ng-class="{selected:job.selected}">
                         <td ng-if="storage.model_fields[0].show">
-                            <dg-name/>
+                            <dg-name></dg-name>
                         </td>
                         <td ng-if="storage.model_fields[1].show">
                             {[ job.id ]}
                         </td>
                         <td ng-if="storage.model_fields[2].show">
-                            <dg-framework/>
+                            <dg-framework></dg-framework>
                         </td>
                         <td ng-if="storage.model_fields[3].show"
                             class="text-{[job.status_css]}">

@@ -86,9 +86,9 @@
                         ng-keydown="keydown($event)"
                         ng-class="{selected:job.selected}">
                         <td ng-bind="job.name"></td>
-                        <td><dg-framework/></td>
+                        <td><dg-framework></dg-framework></td>
                         <td ng-bind-html="job.username|html"></td>
-                        <td><dg-has-labels/></td>
+                        <td><dg-has-labels></dg-has-labels></td>
                         <td class="text-{[job.status_css]}">
                             {[ job.status ]}
                         </td>

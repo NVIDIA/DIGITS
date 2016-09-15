@@ -12,7 +12,7 @@ try {
     });
 
     app.controller('tab_controller', function ($scope) {
-        self = this;
+        var self = this;
         $scope.init = function(tab){
           self.tab = _.isUndefined(tab) ? 2 : tab;
         };
