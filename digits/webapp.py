@@ -1,6 +1,8 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import os.path
+
 import flask
 from flask.ext.socketio import SocketIO
 from gevent import monkey; monkey.patch_all()
@@ -28,7 +30,8 @@ app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.globals['server_version'] = digits.__version__
 app.jinja_env.globals['caffe_version'] = config_value('caffe_root')['ver_str']
 app.jinja_env.globals['caffe_flavor'] = config_value('caffe_root')['flavor']
-app.jinja_env.globals['dir_hash'] = fs.dir_hash('digits/static')
+app.jinja_env.globals['dir_hash'] = fs.dir_hash(
+    os.path.join(os.path.dirname(digits.__file__), 'static'))
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time
 app.jinja_env.filters['print_time_diff'] = utils.time_filters.print_time_diff
 app.jinja_env.filters['print_time_since'] = utils.time_filters.print_time_since
