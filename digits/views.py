@@ -79,6 +79,11 @@ def home(tab=2):
                     'url': flask.url_for(
                         'digits.model.images.generic.views.new'),
                     },
+                },
+            }
+
+        load_model_options = {
+            'Images': {
                 'pretrained-model': {
                     'title': 'Upload Pretrained Model',
                     'id': 'uploadPretrainedModel',
@@ -120,6 +125,7 @@ def home(tab=2):
             new_model_options=new_model_options,
             running_models=running_models,
             completed_models=completed_models,
+            load_model_options=load_model_options,
             total_gpu_count=len(scheduler.resources['gpus']),
             remaining_gpu_count=sum(r.remaining()
                                     for r in scheduler.resources['gpus']),
