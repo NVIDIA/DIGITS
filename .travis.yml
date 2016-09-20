@@ -50,7 +50,7 @@ install:
 
 before_script:
     - export CAFFE_ROOT=~/caffe
-    - export TORCH_ROOT=~/torch/install
+    - export TORCH_ROOT=~/torch
     # Disable OpenMP multi-threading
     - export OMP_NUM_THREADS=1
 

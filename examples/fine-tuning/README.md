@@ -26,7 +26,7 @@ We will need to create a new dataset that comprises two classes: one for images 
 
 Assuming you have a folder containing MNIST images, you may use the `create_dataset.sh` script to create the required directory structure into a folder called `odd_or_even_dataset`:
 ```sh
-$ cd $DIGITS_HOME/examples/fine-tuning
+$ cd $DIGITS_ROOT/examples/fine-tuning
 $ ./create_dataset.sh odd_or_even_dataset <PATH_TO_MNIST_IMAGES>/train
 ```
 

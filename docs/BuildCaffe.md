@@ -21,29 +21,29 @@ sudo apt-get install --no-install-recommends build-essential cmake git gfortran 
 
 ```sh
 # example location - can be customized
-export CAFFE_HOME=~/caffe
-git clone https://github.com/NVIDIA/caffe.git $CAFFE_HOME
+export CAFFE_ROOT=~/caffe
+git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT
 ```
 
-Setting the `CAFFE_HOME` environment variable will help DIGITS automatically detect your Caffe installation, but this is optional.
+Setting the `CAFFE_ROOT` environment variable will help DIGITS automatically detect your Caffe installation, but this is optional.
 
 ## Python packages
 
 Several PyPI packages need to be installed:
 ```sh
-sudo pip install -r $CAFFE_HOME/python/requirements.txt
+sudo pip install -r $CAFFE_ROOT/python/requirements.txt
 ```
 
 If you hit some errors about missing imports, then use this command to install the packages in order ([see discussion here](https://github.com/BVLC/caffe/pull/1950#issuecomment-76026969)):
 ```sh
-cat $CAFFE_HOME/python/requirements.txt | xargs -n1 sudo pip install
+cat $CAFFE_ROOT/python/requirements.txt | xargs -n1 sudo pip install
 ```
 
 ## Build
 
 We recommend using CMake to configure Caffe rather than the raw Makefile build for automatic dependency detection:
 ```sh
-cd $CAFFE_HOME
+cd $CAFFE_ROOT
 mkdir build
 cd build
 cmake ..
