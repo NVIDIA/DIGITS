@@ -130,8 +130,8 @@ class TestValidateRange():
         assert parse_folder.validate_range('foo') == False
 
 
-@mock.patch('tools.parse_folder.validate_output_file')
-@mock.patch('tools.parse_folder.validate_input_file')
+@mock.patch('digits.tools.parse_folder.validate_output_file')
+@mock.patch('digits.tools.parse_folder.validate_input_file')
 class TestCalculatePercentages():
     @raises(AssertionError)
     def test_making_0(self, mock_input, mock_output):
@@ -256,7 +256,7 @@ class TestParseWebListing():
                     ['bird.jpg'],
                     ),
                 ]:
-            with mock.patch('tools.parse_folder.requests') as mock_requests:
+            with mock.patch('digits.tools.parse_folder.requests') as mock_requests:
                 response = mock.Mock()
                 response.status_code = mock_requests.codes.ok
                 response.content = content

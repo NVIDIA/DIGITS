@@ -17,7 +17,7 @@ import sys
 import threading
 
 # Add path for DIGITS package
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import digits.config
 from digits import extensions, log
 from digits.job import Job

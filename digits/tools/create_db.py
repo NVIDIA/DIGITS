@@ -26,7 +26,7 @@ import numpy as np
 import PIL.Image
 
 # Add path for DIGITS package
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import digits.config
 from digits import utils, log
 

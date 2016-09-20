@@ -55,7 +55,7 @@ before_script:
     - export OMP_NUM_THREADS=1
 
 script:
-    ./digits-test -v --with-coverage --cover-package=digits,tools,scripts
+    ./digits-test -v --with-coverage --cover-package=digits
 
 after_success:
     coveralls
