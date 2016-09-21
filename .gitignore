@@ -11,3 +11,8 @@ TAGS
 
 # virtualenv
 /venv/
+
+# setuptools
+/build/
+/dist/
+/*.egg-info/
