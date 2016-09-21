@@ -1,16 +1,13 @@
-# Ignore these file types
-*.cfg
-*.log
-*.pyc
+# Temporary files
 *.swp
-
-# Ignore emacs backup files
 *~
 TAGS
 
-# Ignore these files
-.coverage
+# Compiled / optimized files
+*.py[cod]
 
-# Ignore these directories
+# Tests
+/.coverage
+
+# virtualenv
 /venv/
-/digits/jobs/
