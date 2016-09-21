@@ -48,7 +48,7 @@ def validate_required_if_set(other_field, **kwargs):
     """
     def _validator(form, field):
         other_field_value = getattr(form, other_field).data
-        if other_field_value is not None and other_field_value is not "":
+        if other_field_value:
             # Verify that data exists
             if field.data is None \
                     or (isinstance(field.data, (str, unicode))
