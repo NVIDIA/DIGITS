@@ -125,10 +125,7 @@ class TorchFramework(Framework):
 
         try: # do this in a try..finally clause to make sure we delete the temp file
             # build command line
-            if config_value('torch_root') == '<PATHS>':
-                torch_bin = 'th'
-            else:
-                torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
+            torch_bin = config_value('torch')['executable']
 
             args = [torch_bin,
                     os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','main.lua'),

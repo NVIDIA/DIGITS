@@ -35,7 +35,7 @@ Left color images of object data set | `data_object_image_2.zip` | **12GB**
 Training labels of object data set | `data_object_label_2.zip` | 5MB
 Object development kit | `devkit_object.zip` | 1MB
 
-Copy those files into `$DIGITS_HOME/examples/object-detection/`.
+Copy those files into `$DIGITS_ROOT/examples/object-detection/`.
 
 Then, use the `prepare_kitti_data.py` script to create a train/val split of the labelled images.
 This will take a few minutes, spent mostly on unpacking the large zipfiles.
@@ -51,7 +51,7 @@ Creating train/val split ...
 Done.
 ```
 
-At the end you will have your data at `$DIGITS_HOME/examples/object-detection/kitti-data/{train,val}/`.
+At the end you will have your data at `$DIGITS_ROOT/examples/object-detection/kitti-data/{train,val}/`.
 
 The data is structured in the following way:
 - An image folder containing supported images (`.png`, `.jpg`, etc.).
@@ -86,7 +86,7 @@ DetectNet is a GoogLeNet-derived network that is specifically tuned for Object D
 For more information on DetectNet, please refer to [this blog post](https://devblogs.nvidia.com/parallelforall/detectnet-deep-neural-network-object-detection-digits/).
 
 In order to train DetectNet, [NVcaffe](https://github.com/NVIDIA/caffe) version [0.15.1](https://github.com/NVIDIA/caffe/tree/v0.15.1) or later is required.
-The model description for DetectNet can be found at `$CAFFE_HOME/examples/kitti/detectnet_network.prototxt` ([raw link](https://raw.githubusercontent.com/NVIDIA/caffe/caffe-0.15/examples/kitti/detectnet_network.prototxt)).
+The model description for DetectNet can be found at `$CAFFE_ROOT/examples/kitti/detectnet_network.prototxt` ([raw link](https://raw.githubusercontent.com/NVIDIA/caffe/caffe-0.15/examples/kitti/detectnet_network.prototxt)).
 
 Since DetectNet is derived from GoogLeNet it is strongly recommended to use pre-trained weights from an ImageNet-trained GoogLeNet as this will help speed training up significantly.
 A suitable pre-trained GoogLeNet `.caffemodel` may be found on this [page](https://github.com/BVLC/caffe/tree/rc3/models/bvlc_googlenet).

@@ -102,7 +102,7 @@ end
     @classmethod
     def setUpClass(cls):
         super(BaseViewsTest, cls).setUpClass()
-        if cls.FRAMEWORK=='torch' and not config_value('torch_root'):
+        if cls.FRAMEWORK=='torch' and not config_value('torch')['enabled']:
             raise unittest.SkipTest('Torch not found')
 
     @classmethod
@@ -342,10 +342,10 @@ class BaseTestCreation(BaseViewsTestWithDataset):
             not config_value('gpu_list'),
             'no GPUs selected')
     @unittest.skipIf(
-            not config_value('caffe_root')['cuda_enabled'],
+            not config_value('caffe')['cuda_enabled'],
             'CUDA disabled')
     @unittest.skipIf(
-            config_value('caffe_root')['multi_gpu'],
+            config_value('caffe')['multi_gpu'],
             'multi-GPU enabled')
     def test_select_gpu(self):
         for index in config_value('gpu_list').split(','):
@@ -359,10 +359,10 @@ class BaseTestCreation(BaseViewsTestWithDataset):
             not config_value('gpu_list'),
             'no GPUs selected')
     @unittest.skipIf(
-            not config_value('caffe_root')['cuda_enabled'],
+            not config_value('caffe')['cuda_enabled'],
             'CUDA disabled')
     @unittest.skipIf(
-            not config_value('caffe_root')['multi_gpu'],
+            not config_value('caffe')['multi_gpu'],
             'multi-GPU disabled')
     def test_select_gpus(self):
         # test all possible combinations
@@ -797,8 +797,8 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # get number of GPUs
         gpu_count = 1
         if (config_value('gpu_list') and
-                config_value('caffe_root')['cuda_enabled'] and
-                config_value('caffe_root')['multi_gpu']):
+                config_value('caffe')['cuda_enabled'] and
+                config_value('caffe')['multi_gpu']):
             gpu_count = len(config_value('gpu_list').split(','))
 
         # grab an image for testing

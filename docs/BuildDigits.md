@@ -27,17 +27,17 @@ Follow [these instructions](BuildTorch.md) to build Torch7 (*suggested*).
 
 ```sh
 # example location - can be customized
-DIGITS_HOME=~/digits
-git clone https://github.com/NVIDIA/DIGITS.git $DIGITS_HOME
+DIGITS_ROOT=~/digits
+git clone https://github.com/NVIDIA/DIGITS.git $DIGITS_ROOT
 ```
 
-Throughout the docs, we'll refer to your install location as `DIGITS_HOME` (`~/digits` in this case), though you don't need to actually set that environment variable.
+Throughout the docs, we'll refer to your install location as `DIGITS_ROOT` (`~/digits` in this case), though you don't need to actually set that environment variable.
 
 ## Python packages
 
 Several PyPI packages need to be installed:
 ```sh
-sudo pip install -r $DIGITS_HOME/requirements.txt
+sudo pip install -r $DIGITS_ROOT/requirements.txt
 ```
 
 # Starting the server

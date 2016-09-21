@@ -29,7 +29,7 @@ The following sample is an example from the "company" class:
 
 The first step to creating the dataset is to convert the `.csv` files to a format that DIGITS can use:
 ```sh
-$ cd $DIGITS_HOME/examples/text-classification
+$ cd $DIGITS_ROOT/examples/text-classification
 $ ./create_dataset.py $DBPEDIA/dbpedia_csv/train.csv dbpedia/train --labels $DBPEDIA/dbpedia_csv/classes.txt --create-images
 ```
 

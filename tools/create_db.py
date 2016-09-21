@@ -28,10 +28,9 @@ import PIL.Image
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import digits.config
-digits.config.load_config()
 from digits import utils, log
 
-# must call digits.config.load_config() before caffe to set the path
+# Import digits.config first to set the path to Caffe
 import caffe.io
 import caffe_pb2
 
