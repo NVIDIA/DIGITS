@@ -138,7 +138,7 @@ class CreateDbTask(Task):
     @override
     def task_arguments(self, resources, env):
         args = [sys.executable, os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(digits.__file__))),
+            os.path.dirname(os.path.abspath(digits.__file__)),
             'tools', 'create_db.py'),
                 self.path(self.input_file),
                 self.path(self.db_name),

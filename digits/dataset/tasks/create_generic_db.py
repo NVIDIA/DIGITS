@@ -162,8 +162,7 @@ class CreateGenericDbTask(Task):
         args = [
             sys.executable,
             os.path.join(
-                os.path.dirname(
-                    os.path.dirname(os.path.abspath(digits.__file__))),
+                os.path.dirname(os.path.abspath(digits.__file__)),
                 'tools',
                 'create_generic_db.py'),
             self.job.id(),

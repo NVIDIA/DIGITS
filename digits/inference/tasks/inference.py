@@ -192,7 +192,7 @@ class InferenceTask(Task):
     def task_arguments(self, resources, env):
 
         args = [sys.executable,
-            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(digits.__file__))), 'tools', 'inference.py'),
+            os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'inference.py'),
             self.image_list_path if self.image_list_path is not None else self.images,
             self.job_dir,
             self.model.id(),

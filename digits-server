@@ -19,8 +19,9 @@ function set_exe {
 # Some hacking necessary to respect virtualenv installations
 set_exe PYTHON_EXE python2
 set_exe GUNICORN_EXE gunicorn
+GUNICORN_CONFIG=`python -c 'import digits,os.path;print os.path.dirname(os.path.abspath(digits.__file__))'`/gunicorn_config.py
 
 $PYTHON_EXE $GUNICORN_EXE \
-    --config gunicorn_config.py \
+    --config $GUNICORN_CONFIG \
     digits.webapp:app \
     $@
