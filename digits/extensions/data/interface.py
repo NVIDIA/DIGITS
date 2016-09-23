@@ -46,6 +46,14 @@ class DataIngestionInterface(object):
         raise NotImplementedError
 
     @staticmethod
+    def get_default_visibility():
+        """
+        Return whether to show extension in GUI (can be overridden through
+        DIGITS configuration options)
+        """
+        return True
+
+    @staticmethod
     def get_dataset_template(form):
         """
         Parameters:

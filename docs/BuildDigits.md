@@ -40,6 +40,13 @@ Several PyPI packages need to be installed:
 sudo pip install -r $DIGITS_ROOT/requirements.txt
 ```
 
+# [Optional] Enable support for plug-ins
+
+DIGITS needs to be installed to enable loading data and visualization plug-ins:
+```
+sudo pip install $DIGITS_HOME
+```
+
 # Starting the server
 
 You can run DIGITS in two modes:
