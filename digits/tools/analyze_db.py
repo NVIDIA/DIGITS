@@ -16,6 +16,7 @@ except ImportError:
     from StringIO import StringIO
 
 import lmdb
+import numpy as np
 import PIL.Image
 
 # Add path for DIGITS package
@@ -24,9 +25,11 @@ import digits.config
 from digits import log
 
 # Import digits.config first to set path to Caffe
+import caffe.io
 import caffe_pb2
 
 logger = logging.getLogger('digits.tools.analyze_db')
+np.set_printoptions(suppress=True, precision=3)
 
 class DbReader(object):
     """
@@ -81,6 +84,7 @@ def print_datum(datum):
 def analyze_db(database,
         only_count=False,
         force_same_shape=False,
+        print_data=False,
         ):
     """
     Looks at the data in a prebuilt database and verifies it
@@ -93,6 +97,7 @@ def analyze_db(database,
     Keyword arguments:
     only_count -- only count the entries, don't inspect them
     force_same_shape -- throw an error if not all images have the same shape
+    print_data -- print the array for each datum
     """
     start_time = time.time()
 
@@ -113,6 +118,11 @@ def analyze_db(database,
     for key, value in reader.entries():
         datum = caffe_pb2.Datum()
         datum.ParseFromString(value)
+
+        if print_data:
+            array = caffe.io.datum_to_array(datum)
+            print '>>> Datum #%d (shape=%s)' % (count, array.shape)
+            print array
 
         if (not datum.HasField('height') or datum.height == 0 or
                 not datum.HasField('width') or datum.width == 0):
@@ -183,16 +193,19 @@ if __name__ == '__main__':
     parser.add_argument('--only-count',
             action="store_true",
             help="Only print the number of entries, don't analyze the data")
-
     parser.add_argument('--force-same-shape',
             action="store_true",
             help='Throw an error if not all entries have the same shape')
+    parser.add_argument('--print-data',
+            action="store_true",
+            help='Print the array for each datum (best used with --only-count)')
 
     args = vars(parser.parse_args())
 
     if analyze_db(args['database'],
             only_count = args['only_count'],
             force_same_shape = args['force_same_shape'],
+            print_data = args['print_data'],
             ):
         sys.exit(0)
     else:
