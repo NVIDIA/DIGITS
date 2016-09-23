@@ -48,6 +48,11 @@ install:
     - pip install -r requirements.txt
     - pip install -r requirements_test.txt
 
+    # image gradients plug-ins
+    - pip install -e .
+    - pip install plugins/data/imageGradients
+    - pip install plugins/view/imageGradients
+
 before_script:
     - export CAFFE_ROOT=~/caffe
     - export TORCH_ROOT=~/torch
