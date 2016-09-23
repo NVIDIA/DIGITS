@@ -1,0 +1,2 @@
+debian/digits.nginx-site /etc/nginx/sites-available
+debian/custom_http_errors /usr/share/digits

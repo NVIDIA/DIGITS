@@ -1,0 +1,53 @@
+# DIGITS nginx site
+
+server {
+    listen 80; #AUTOCONFIG port (DO NOT DELETE THIS LINE)
+
+    # Gunicorn server
+    location / {
+        client_max_body_size 500M; # Increase this if you receive error 413
+
+        proxy_pass http://127.0.0.1:34448;
+        proxy_redirect off;
+
+        proxy_set_header Host $host:$server_port;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        error_page 413 /custom_http_errors/413.shtml;
+        error_page 502 /custom_http_errors/502.html;
+    }
+
+    # Socketio
+    location /socket.io {
+        proxy_pass http://127.0.0.1:34448/socket.io;
+        proxy_redirect off;
+        proxy_buffering off;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+    }
+
+    # Custom error pages
+    location /custom_http_errors {
+        ssi on;
+        alias /usr/share/digits/custom_http_errors;
+    }
+
+    # Static files
+    location /static {
+        alias /usr/lib/python2.7/dist-packages/digits/static;
+    }
+    location /files {
+        # This should mirror DIGITS_JOBS_DIR
+        alias /var/lib/digits/jobs;
+        autoindex on;
+        autoindex_exact_size off;
+        autoindex_localtime on;
+    }
+}
