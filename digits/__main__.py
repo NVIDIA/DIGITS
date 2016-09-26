@@ -3,10 +3,6 @@
 import argparse
 import sys
 
-import digits
-import digits.config
-import digits.log
-
 
 def main():
     parser = argparse.ArgumentParser(description='DIGITS development server')
@@ -26,6 +22,8 @@ def main():
 
     args = vars(parser.parse_args())
 
+    import digits
+
     if args['version']:
         print digits.__version__
         sys.exit()
@@ -36,6 +34,8 @@ def main():
     print ' |___/___\___|___| |_| |___/', digits.__version__
     print
 
+    import digits.config
+    import digits.log
     import digits.webapp
 
     try:
