@@ -7,10 +7,9 @@ Both are generously made available by Yann LeCun on [his website](http://yann.le
 
 ## Download the data
 
-Use the following command to download the MNIST dataset onto your server
-(for Deb package installations, the script is at `/usr/share/digits/tools/download_data/main.py`):
+Use the following command to download the MNIST dataset onto your server:
 ```sh
-$ $DIGITS_ROOT/tools/download_data/main.py mnist ~/mnist
+$ python -m digits.download_data mnist ~/mnist
 Downloading url=http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz ...
 Downloading url=http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz ...
 Downloading url=http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz ...
@@ -38,7 +37,7 @@ The server should be at either `http://localhost/` (if installed from Deb packag
 
 ### Logging in
 
-Click on `New Dataset > Images > Classification`.
+Click on `Datasets > New Dataset > Images > Classification`.
 This will lead you to the login page:
 
 > NOTE: there is no authentication - you don't even need a password.
@@ -64,14 +63,13 @@ While the job is running, you should see the expected completion time on the rig
 ![Creating dataset](images/creating-dataset.jpg)
 
 When the job is finished, go back to the home page by clicking `DIGITS` in the top left hand part of the page.
-Then click on the "Datasets" tab.
-You should now see your dataset listed.
+You should now see your dataset listed under the "Datasets" tab.
 
 ![Home page with dataset](images/home-page-2.jpg)
 
 ### Training a Model
 
-Click on `New Model > Images > Classification`.
+Click on `Models > New Model > Images > Classification`.
 This will lead you to the "New Image Classification Model" page.
 
 For this example, do the following:
@@ -80,8 +78,7 @@ For this example, do the following:
 * Give the model a name
 * Click on the `Create` button
 
-![New model (top)](images/new-model-top-half.jpg)
-![New model (bottom)](images/new-model-bottom-half.jpg)
+![New model](images/new-model.jpg)
 
 While training the model, you should see the expected completion time on the right side:
 
@@ -94,24 +91,7 @@ To test the model, scroll to the bottom of the page.
 * Check the `Show visualizations and statistics` box
 * Click on `Classify One`
 
-![Classifying one image](images/classifying-one-image.jpg)
-
 At the top of the page, DIGITS displays the top five classifications and corresponding confidence values.
 DIGITS also provides visualizations and statistics about the weights and activations of each layer in your network.
 
 ![Classified one image](images/classified-one-image.jpg)
-
-## More Guides
-
-Once you have finished this guide, take a look at some of the other documentation at [docs/](.) and [examples/](../examples/):
-
-* [Getting Started with Torch7](GettingStartedTorch.md)
-* [Fine-tune a pretrained model](../examples/fine-tuning/README.md)
-* [Train an autoencoder network](../examples/autoencoder/README.md)
-* [Train a regression network](../examples/regression/README.md)
-* [Train a Siamese network](../examples/siamese/README.md)
-* [Train a text classification network](../examples/text-classification/README.md)
-* [Learn more about weight initialization](../examples/weight-init/README.md)
-* [Use Python layers in your Caffe networks](../examples/python-layer/README.md)
-* [Download a model and use it to classify an image outside of DIGITS](../examples/classification/README.md)
-* [Overview of the REST API](API.md)
