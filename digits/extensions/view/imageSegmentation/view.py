@@ -5,6 +5,7 @@ import json
 import os
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import PIL.Image
 import skfmm
@@ -46,10 +47,10 @@ class Visualization(VisualizationInterface):
             norm = mpl.colors.Normalize(vmin=0, vmax=255)
             # create map
             cmap = mpl.colors.ListedColormap(palette)
-            self.map = mpl.pyplot.cm.ScalarMappable(norm=norm, cmap=cmap)
+            self.map = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
         elif kwargs['colormap'] == 'paired':
-            cmap = mpl.pyplot.cm.get_cmap('Paired')
-            self.map = mpl.pyplot.cm.ScalarMappable(norm=None, cmap=cmap)
+            cmap = plt.cm.get_cmap('Paired')
+            self.map = plt.cm.ScalarMappable(norm=None, cmap=cmap)
         elif kwargs['colormap'] == 'none':
             self.map = None
         else:
