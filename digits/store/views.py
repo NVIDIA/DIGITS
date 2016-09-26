@@ -38,7 +38,10 @@ def retrieve_files(url, directory):
     else:
         return flask.jsonify({"status": "Missing model definition in info.json"}), 500
     model = save_binary(model_url, remote_model_file, tmp_dir)
-    label = save_binary(model_url, info["labels file"], tmp_dir)
+    if "labels file" in info:
+        label = save_binary(model_url, info["labels file"], tmp_dir)
+    else:
+        label = None
     meta_data = info
     return weights, model, label, meta_data
 
