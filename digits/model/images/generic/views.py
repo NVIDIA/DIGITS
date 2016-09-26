@@ -859,7 +859,7 @@ def get_view_extensions():
     return all enabled view extensions
     """
     view_extensions = {}
-    all_extensions = config_value('view_extension_list')
+    all_extensions = extensions.view.get_extensions()
     for extension in all_extensions:
         view_extensions[extension.get_id()] = extension.get_title()
     return view_extensions

@@ -8,11 +8,12 @@ import PIL.ImageDraw
 
 import digits
 from digits.utils import subclass, override
+from digits.extensions.view.interface import VisualizationInterface
 from .forms import ConfigForm
-from ..interface import VisualizationInterface
 
-CONFIG_TEMPLATE = "config_template.html"
-VIEW_TEMPLATE = "view_template.html"
+
+CONFIG_TEMPLATE = "templates/config_template.html"
+VIEW_TEMPLATE = "templates/view_template.html"
 
 
 @subclass
@@ -70,20 +71,12 @@ class Visualization(VisualizationInterface):
         return (template, context)
 
     @staticmethod
-    def get_default_visibility():
-        """
-        Return whether to show extension in GUI (can be overridden through
-        DIGITS configuration options)
-        """
-        return False
-
-    @staticmethod
     def get_id():
-        return digits.extensions.data.imageGradients.data.DataIngestion.get_id()
+        return "image-gradients"
 
     @staticmethod
     def get_title():
-        return digits.extensions.data.imageGradients.data.DataIngestion.get_title()
+        return "Gradients"
 
     @override
     def get_view_template(self, data):

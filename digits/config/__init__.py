@@ -10,7 +10,6 @@ from . import jobs_dir
 from . import log_file
 from . import torch
 from . import server_name
-from . import extension_list  # Import this last, since it imports other things inside DIGITS
 
 
 def config_value(option):

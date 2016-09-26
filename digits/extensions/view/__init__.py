@@ -5,7 +5,6 @@ import copy
 from pkg_resources import iter_entry_points
 
 from . import boundingBox
-from . import imageGradients
 from . import imageOutput
 from . import imageSegmentation
 from . import rawData
@@ -18,7 +17,6 @@ GROUP = "digits.plugins.view"
 # built-in extensions
 builtin_view_extensions = [
     boundingBox.Visualization,
-    imageGradients.Visualization,
     imageOutput.Visualization,
     imageSegmentation.Visualization,
     rawData.Visualization,
@@ -32,7 +30,7 @@ def get_default_extension():
     return rawData.Visualization
 
 
-def get_extensions(show_all=False):
+def get_extensions():
     """
     return set of data data extensions
     """
@@ -41,16 +39,14 @@ def get_extensions(show_all=False):
     for entry_point in iter_entry_points(group=GROUP, name=None):
         extensions.append(entry_point.load())
 
-    return [extension
-            for extension in extensions
-            if show_all or extension.get_default_visibility()]
+    return extensions
 
 
 def get_extension(extension_id):
     """
     return extension associated with specified extension_id
     """
-    for extension in get_extensions(show_all=True):
+    for extension in get_extensions():
         if extension.get_id() == extension_id:
             return extension
     return None
