@@ -7,7 +7,8 @@ import digits
 import digits.config
 import digits.log
 
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser(description='DIGITS development server')
     parser.add_argument('-p', '--port',
             type=int,
@@ -48,3 +49,6 @@ if __name__ == '__main__':
     finally:
         digits.webapp.scheduler.stop()
 
+
+if __name__ == '__main__':
+    main()
