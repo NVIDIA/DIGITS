@@ -7,12 +7,29 @@ DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is a webapp for t
 
 # Installation
 
-If you are using Ubuntu 14.04, you can install pre-built packages for the latest major release.
-Visit [docs/UbuntuInstall.md](docs/UbuntuInstall.md) for instructions.
+| Installation method | Supported platform[s] | Available versions | Instructions |
+| --- | --- | --- | --- |
+| Deb packages | Ubuntu 14.04 | [14.04 repo](http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64) | [docs/UbuntuInstall.md](docs/UbuntuInstall.md) |
+| Docker | Linux | [DockerHub tags](https://hub.docker.com/r/nvidia/digits/tags/) | [nvidia-docker wiki](https://github.com/NVIDIA/nvidia-docker/wiki/DIGITS) |
+| Source | Ubuntu 14.04, 16.04 | [GitHub tags](https://github.com/NVIDIA/DIGITS/releases) | [docs/BuildDigits.md](docs/BuildDigits.md) |
 
-To build DIGITS and its requirements from source, visit [docs/BuildDigits.md](docs/BuildDigits.md) for instructions.
+# Usage
 
 Once you have installed DIGITS, visit [docs/GettingStarted.md](docs/GettingStarted.md) for an introductory walkthrough.
+
+Then, take a look at some of the other documentation at [docs/](docs/) and [examples/](examples/):
+
+* [Getting started with Torch](docs/GettingStartedTorch.md)
+* [Fine-tune a pretrained model](examples/fine-tuning/README.md)
+* [Train an autoencoder network](examples/autoencoder/README.md)
+* [Train a regression network](examples/regression/README.md)
+* [Train a Siamese network](examples/siamese/README.md)
+* [Train a text classification network](examples/text-classification/README.md)
+* [Train an object detection network](examples/object-detection/README.md)
+* [Learn more about weight initialization](examples/weight-init/README.md)
+* [Use Python layers in your Caffe networks](examples/python-layer/README.md)
+* [Download a model and use it to classify an image outside of DIGITS](examples/classification/README.md)
+* [Overview of the REST API](docs/API.md)
 
 # Get help
 
