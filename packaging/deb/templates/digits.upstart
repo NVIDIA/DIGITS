@@ -1,0 +1,17 @@
+# DIGITS upstart service
+setuid www-data
+start on started networking
+stop on runlevel [016]
+
+script
+    if [ -f /etc/default/$UPSTART_JOB ]; then
+        . /etc/default/$UPSTART_JOB
+    fi
+
+    # Redirect both stdout and stderr to the log file
+    # Use stdbuf to force line buffering
+    exec stdbuf -oL -eL \
+        gunicorn digits.webapp:app \
+        --config /usr/lib/python2.7/dist-packages/digits/gunicorn_config.py \
+        >>/var/log/digits/digits.log 2>&1
+end script

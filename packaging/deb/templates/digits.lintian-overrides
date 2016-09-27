@@ -1,0 +1,3 @@
+python-script-but-no-python-dep
+postrm-does-not-call-updaterc.d-for-init.d-script
+init.d-script-not-included-in-package

@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    install|upgrade)
+        if [ -d /usr/share/digits/digits/jobs ]; then
+            # Copy job data from previous install
+            mkdir -p /var/lib/digits
+            mv /usr/share/digits/digits/jobs /var/lib/digits/
+        fi
+        ;;
+
+    abort-upgrade)
+        ;;
+
+    *)
+        echo "preinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#

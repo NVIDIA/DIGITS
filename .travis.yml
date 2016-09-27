@@ -60,7 +60,9 @@ before_script:
     - export OMP_NUM_THREADS=1
 
 script:
-    ./digits-test -v --with-coverage --cover-package=digits
+    - ./digits-test -v --with-coverage --cover-package=digits
+    - git fetch --tags
+    - ./packaging/deb/build.sh
 
 after_success:
     coveralls
