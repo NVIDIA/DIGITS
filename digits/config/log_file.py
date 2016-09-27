@@ -30,7 +30,7 @@ def load_logfile_filename():
             dirname = os.path.dirname(filename)
             if not os.path.exists(dirname):
                 os.makedirs(os.path.dirname(filename))
-            with open(filename, 'w'):
+            with open(filename, 'a'):
                 pass
         except:
             if throw_error:
