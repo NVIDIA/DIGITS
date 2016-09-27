@@ -1,7 +1,19 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
 import argparse
+import os.path
 import sys
+
+
+# Update PATH to include the local DIGITS directory
+PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+found_parent_dir = False
+for p in sys.path:
+    if os.path.abspath(p) == PARENT_DIR:
+        found_parent_dir = True
+        break
+if not found_parent_dir:
+    sys.path.insert(0, PARENT_DIR)
 
 
 def main():
