@@ -9,7 +9,7 @@ RUN apt-get update \
         lintian \
     && rm -rf /var/lib/apt/lists/*
 
-ENV DEBFULLNAME "DIGITS Development Team"
+ENV DEBFULLNAME "NVIDIA CORPORATION"
 ENV DEBEMAIL "digits@nvidia.com"
 ENV DEB_BUILD_OPTIONS nocheck
 

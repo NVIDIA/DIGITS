@@ -44,7 +44,7 @@ sudo pip install -r $DIGITS_ROOT/requirements.txt
 
 DIGITS needs to be installed to enable loading data and visualization plug-ins:
 ```
-sudo pip install -e $DIGITS_HOME
+sudo pip install -e $DIGITS_ROOT
 ```
 
 # Starting the server

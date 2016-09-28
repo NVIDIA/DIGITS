@@ -17,7 +17,7 @@ if not found_parent_dir:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='DIGITS development server')
+    parser = argparse.ArgumentParser(description='DIGITS server')
     parser.add_argument('-p', '--port',
             type=int,
             default=5000,

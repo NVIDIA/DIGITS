@@ -1,4 +1,4 @@
-# DIGITS nginx site
+# DIGITS NGINX site
 
 server {
     listen 80; #AUTOCONFIG port (DO NOT DELETE THIS LINE)
