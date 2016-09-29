@@ -1,7 +1,7 @@
 // Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 
-var vert_file = '/models/extension-static/image-segmentation-gl/shaders/image_segmentation.vert';
-var frag_file = '/models/extension-static/image-segmentation-gl/shaders/image_segmentation.frag';
+var vert_file = '/extension-static/view/image-segmentation-gl/shaders/image_segmentation.vert';
+var frag_file = '/extension-static/view/image-segmentation-gl/shaders/image_segmentation.frag';
 
 // Initialize the renderer
 GLRenderManager.instance().initialize(vert_file, frag_file);
