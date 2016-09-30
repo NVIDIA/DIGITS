@@ -269,6 +269,9 @@ def create_db(input_file, output_dir,
     write_queue = Queue.Queue(2*batch_size)
     summary_queue = Queue.Queue()
 
+    # Init helper function for notification between threads
+    _notification(set_flag=False)
+
     for _ in xrange(num_threads):
         p = threading.Thread(target=_load_thread,
                 args=(load_queue, write_queue, summary_queue,
@@ -331,6 +334,9 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
 
         processed_something = False
 
+        if _notification():
+            break
+
         if not summary_queue.empty():
             result_count, result_sum = summary_queue.get()
             images_loaded += result_count
@@ -359,6 +365,9 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
     if len(batch) > 0:
         _write_batch_lmdb(db, batch, images_written)
         images_written += len(batch)
+
+    if _notification():
+        raise WriteError('Encoding should be None for images with color depth higher than 8 bits.')
 
     if images_loaded == 0:
         raise LoadError('no images loaded from input file')
@@ -412,6 +421,9 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
 
         processed_something = False
 
+        if _notification():
+            break
+
         if not summary_queue.empty():
             result_count, result_sum = summary_queue.get()
             images_loaded += result_count
@@ -441,6 +453,9 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
         images_written += len(batch)
 
     assert images_written == writer.count()
+
+    if _notification():
+        raise WriteError('Encoding should be None for images with color depth higher than 8 bits.')
 
     if images_loaded == 0:
         raise LoadError('no images loaded from input file')
@@ -497,6 +512,14 @@ def _fill_load_queue(filename, queue, shuffle):
         logger.debug('Category %s has %d images.' % (key, distribution[key]))
 
     return valid_lines
+
+def _notification(set_flag=None):
+    if set_flag is None:
+        return _notification.flag
+    elif set_flag:
+        _notification.flag = True
+    else:
+        _notification.flag = False
 
 def _parse_line(line, distribution):
     """
@@ -579,12 +602,15 @@ def _load_thread(load_queue, write_queue, summary_queue,
         if compute_mean:
             image_sum += image
 
-        if backend == 'lmdb':
-            datum = _array_to_datum(image, label, encoding)
-            write_queue.put(datum)
-        else:
-            write_queue.put((image, label))
-
+        try:
+            if backend == 'lmdb':
+                datum = _array_to_datum(image, label, encoding)
+                write_queue.put(datum)
+            else:
+                write_queue.put((image, label))
+        except IOError:  # try to save 16-bit images with PNG/JPG encoding
+            _notification(True)
+            break
         images_added += 1
 
     summary_queue.put((images_added, image_sum))
@@ -616,6 +642,8 @@ def _array_to_datum(image, label, encoding):
             image = image[np.newaxis,:,:]
         else:
             raise Exception('Image has unrecognized shape: "%s"' % image.shape)
+        if np.issubdtype(image.dtype, float):
+            image = image.astype(float)
         datum = caffe.io.array_to_datum(image, label)
     else:
         datum = caffe_pb2.Datum()
@@ -667,7 +695,11 @@ def _save_means(image_sum, image_count, mean_files):
     """
     Save mean[s] to file
     """
-    mean = np.around(image_sum / image_count).astype(np.uint8)
+    mean = np.around(image_sum / image_count)
+    if mean.max()>255:
+        mean = mean.astype(np.float)
+    else:
+        mean = mean.astype(np.uint8)
     for mean_file in mean_files:
         if mean_file.lower().endswith('.npy'):
             np.save(mean_file, mean)
@@ -693,7 +725,10 @@ def _save_means(image_sum, image_count, mean_files):
             with open(mean_file, 'wb') as outfile:
                 outfile.write(blob.SerializeToString())
         elif mean_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-            image = PIL.Image.fromarray(mean)
+            if np.issubdtype(mean.dtype, np.float):
+                image = PIL.Image.fromarray(mean*255/mean.max()).convert('L')
+            else:
+                image = PIL.Image.fromarray(mean)
             image.save(mean_file)
         else:
             logger.warning('Unrecognized file extension for mean file: "%s"' % mean_file)

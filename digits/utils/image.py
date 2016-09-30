@@ -11,6 +11,20 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+try:
+    import dicom
+    dicom_extension = ('.dcm', '.dicom')
+except ImportError:
+    dicom = None
+    dicom_extension = None
+
+try:
+    import nifti
+    nifti_extension = ('.nii',)
+except ImportError:
+    nifti = None
+    nifti_extension = None
+
 import numpy as np
 import PIL.Image
 import scipy.misc
@@ -35,6 +49,27 @@ from . import is_url, HTTP_TIMEOUT, errors
 # List of supported file extensions
 # Use like "if filename.endswith(SUPPORTED_EXTENSIONS)"
 SUPPORTED_EXTENSIONS = ('.png','.jpg','.jpeg','.bmp','.ppm')
+if dicom is not None:
+    SUPPORTED_EXTENSIONS = SUPPORTED_EXTENSIONS + dicom_extension
+if nifti is not None:
+    SUPPORTED_EXTENSIONS = SUPPORTED_EXTENSIONS + nifti_extension
+
+def load_image_ex(path):
+    """
+    Handles images not recognized by load_image
+    Reads a file from `path` and returns a PIL.Image with mode 'F' (float32)
+    Raises LoadImageError
+
+    Arguments:
+    path -- file system path to the image
+    """
+    try:
+        dm = dicom.read_file(path)
+    except dicom.errors.InvalidDicomError:
+        raise errors.LoadImageError, 'Invalid Dicom file'
+    pixels = dm.pixel_array
+    image = PIL.Image.fromarray(pixels.astype(np.float))
+    return image
 
 def load_image(path):
     """
@@ -62,11 +97,14 @@ def load_image(path):
             image = PIL.Image.open(path)
             image.load()
         except IOError as e:
-            raise errors.LoadImageError, 'IOError: %s' % e.message
+            if dicom is not None:
+                image = load_image_ex(path)
+            else:
+                raise errors.LoadImageError, e.message
     else:
         raise errors.LoadImageError, '"%s" not found' % path
 
-    if image.mode in ['L', 'RGB']:
+    if image.mode in ['L', 'RGB', 'F']:
         # No conversion necessary
         return image
     elif image.mode in ['1']:
@@ -103,7 +141,7 @@ def upscale(image, ratio):
     width = int(math.floor(image.shape[1] * ratio))
     height = int(math.floor(image.shape[0] * ratio))
     channels = image.shape[2]
-    out = np.ndarray((height, width, channels),dtype=np.uint8)
+    out = np.ndarray((height, width, channels),dtype=image.dtype)
     for x, y in np.ndindex((width,height)):
         out[y,x] = image[int(math.floor(y/ratio)), int(math.floor(x/ratio))]
     return out
@@ -128,7 +166,7 @@ def image_to_array(image,
         # Convert image mode (channels)
         if channels is None:
             image_mode = image.mode
-            if image_mode == 'L':
+            if image_mode == 'L' or image_mode == 'F':
                 channels = 1
             elif image_mode == 'RGB':
                 channels = 3
@@ -136,7 +174,7 @@ def image_to_array(image,
                 raise ValueError('unknown image mode "%s"' % image_mode)
         elif channels == 1:
             # 8-bit pixels, black and white
-            image_mode = 'L'
+            image_mode = image.mode if image.mode == 'F' else 'L'
         elif channels == 3:
             # 3x8-bit pixels, true color
             image_mode = 'RGB'
@@ -208,8 +246,9 @@ def resize_image(image, height, width,
 
     width_ratio = float(image.shape[1]) / width
     height_ratio = float(image.shape[0]) / height
+    image_data_format = 'F' if np.issubdtype(image.dtype, float) else None
     if resize_mode == 'squash' or width_ratio == height_ratio:
-        return scipy.misc.imresize(image, (height, width), interp=interp)
+        return scipy.misc.imresize(image, (height, width), mode=image_data_format, interp=interp)
     elif resize_mode == 'crop':
         # resize to smallest of ratios (relatively larger image), keeping aspect ratio
         if width_ratio > height_ratio:
@@ -218,7 +257,7 @@ def resize_image(image, height, width,
         else:
             resize_width = width
             resize_height = int(round(image.shape[0] / width_ratio))
-        image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+        image = scipy.misc.imresize(image, (resize_height, resize_width), mode=image_data_format, interp=interp)
 
         # chop off ends of dimension that is still too long
         if width_ratio > height_ratio:
@@ -240,7 +279,7 @@ def resize_image(image, height, width,
                 resize_width = int(round(image.shape[1] / height_ratio))
                 if (width - resize_width) % 2 == 1:
                     resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = scipy.misc.imresize(image, (resize_height, resize_width), mode=image_data_format, interp=interp)
         elif resize_mode == 'half_crop':
             # resize to average ratio keeping aspect ratio
             new_ratio = (width_ratio + height_ratio) / 2.0
@@ -250,7 +289,7 @@ def resize_image(image, height, width,
                 resize_height += 1
             elif width_ratio < height_ratio and (width - resize_width) % 2 == 1:
                 resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = scipy.misc.imresize(image, (resize_height, resize_width), mode=image_data_format, interp=interp)
             # chop off ends of dimension that is still too long
             if width_ratio > height_ratio:
                 start = int(round((resize_width-width)/2.0))
@@ -267,14 +306,20 @@ def resize_image(image, height, width,
             noise_size = (padding, width)
             if channels > 1:
                 noise_size += (channels,)
-            noise = np.random.randint(0, 255, noise_size).astype('uint8')
+            if image_data_format == 'F':
+                noise = np.random.randint(int(image.min()), int(image.max()), noise_size).astype('float')
+            else:
+                noise = np.random.randint(0, 255, noise_size).astype('uint8')
             image = np.concatenate((noise, image, noise), axis=0)
         else:
             padding = (width - resize_width)/2
             noise_size = (height, padding)
             if channels > 1:
                 noise_size += (channels,)
-            noise = np.random.randint(0, 255, noise_size).astype('uint8')
+            if image_data_format == 'F':
+                noise = np.random.randint(int(image.min()), int(image.max()), noise_size).astype('float')
+            else:
+                noise = np.random.randint(0, 255, noise_size).astype('uint8')
             image = np.concatenate((noise, image, noise), axis=1)
 
         return image
@@ -305,6 +350,10 @@ def embed_image_html(image):
         fmt = fmt.lower()
 
     string_buf = StringIO()
+    if image.mode == 'F':
+        min_pv, max_pv = image.getextrema()
+        tmp_array = 255.0*(np.asarray(image)-min_pv)/(max_pv-min_pv)
+        image = PIL.Image.fromarray(tmp_array.astype(np.uint8))
     image.save(string_buf, format=fmt)
     data = string_buf.getvalue().encode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)
