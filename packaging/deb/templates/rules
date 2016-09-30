@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --parallel --with=python2 --buildsystem=pybuild
+	dh $@ --parallel --with=python2,systemd --buildsystem=pybuild
 

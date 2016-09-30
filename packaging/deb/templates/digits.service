@@ -1,0 +1,15 @@
+# DIGITS systemd service
+[Unit]
+Description=DIGITS server
+After=local-fs.target network.target
+
+[Service]
+User=www-data
+Environment="DIGITS_JOBS_DIR=/var/lib/digits/jobs"
+Environment="DIGITS_LOGFILE_FILENAME=/var/log/digits/digits.log"
+ExecStart=/usr/bin/python -m digits -p 34448
+Restart=on-failure
+ExecStop=/bin/kill -INT $MAINPID
+
+[Install]
+WantedBy=multi-user.target

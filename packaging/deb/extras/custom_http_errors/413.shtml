@@ -1,7 +1,7 @@
 <html>
-<title>File too large</title>
+<title>Failed to upload file</title>
 <body>
-<h1>Error - File upload too large</h1>
+<h1>Error: File upload too large</h1>
 <p>
 You attempted to upload a file that exceeded the limit allowed by the
 NGINX reverse proxy server.
@@ -13,7 +13,7 @@ You can try uploading your file directly to the DIGITS server running at
 </p>
 <p>
 You can also try increasing the value of the client_max_body_size setting
-in /etc/nginx/sites-available/digits.site.
+in /etc/nginx/sites-available/digits.nginx-site.
 </p>
 </body>
 </html>

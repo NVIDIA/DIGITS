@@ -1,2 +1,0 @@
-export DIGITS_JOBS_DIR=/var/lib/digits/jobs
-export DIGITS_LOGFILE_FILENAME=/var/log/digits/digits.log

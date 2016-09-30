@@ -444,7 +444,7 @@ class Scheduler:
 
     def sigterm_handler(self, signal, frame):
         """
-        Gunicorn shuts down workers with SIGTERM, not SIGKILL
+        Catch SIGTERM in addition to SIGINT
         """
         self.shutdown.set()
 

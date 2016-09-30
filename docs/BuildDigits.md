@@ -16,7 +16,7 @@ Doing so is your own adventure.
 
 Install some dependencies with Deb packages:
 ```sh
-sudo apt-get install --no-install-recommends git graphviz gunicorn python-dev python-flask python-flaskext.wtf python-gevent python-h5py python-numpy python-pil python-protobuf python-scipy
+sudo apt-get install --no-install-recommends git graphviz python-dev python-flask python-flaskext.wtf python-gevent python-h5py python-numpy python-pil python-protobuf python-scipy
 ```
 
 Follow [these instructions](BuildCaffe.md) to build Caffe (**required**).
@@ -44,20 +44,16 @@ sudo pip install -r $DIGITS_ROOT/requirements.txt
 
 DIGITS needs to be installed to enable loading data and visualization plug-ins:
 ```
-sudo pip install -e $DIGITS_HOME
+sudo pip install -e $DIGITS_ROOT
 ```
 
 # Starting the server
-
-You can run DIGITS in two modes:
-
-### Development mode
 
 ```sh
 ./digits-devserver
 ```
 
-Starts a development server (werkzeug backend) at `http://localhost:5000/`.
+Starts a server at `http://localhost:5000/`.
 ```
 $ ./digits-devserver --help
 usage: __main__.py [-h] [-p PORT] [-d] [--version]
@@ -71,16 +67,6 @@ optional arguments:
                         source changes and gives more detailed error messages)
   --version             Print the version number and exit
 ```
-
-### Production mode
-
-```sh
-./digits-server
-```
-
-Starts a production server (gunicorn backend) at `http://localhost:34448`.
-
-If you have installed the nginx.site to `/etc/nginx/sites-enabled/`, then you can view your app at `http://localhost/`.
 
 # Getting started
 

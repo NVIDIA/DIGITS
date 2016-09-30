@@ -4,7 +4,7 @@ Maintainer: #USERNAME# <#EMAIL#>
 Homepage: https://developer.nvidia.com/digits
 Vcs-Browser: https://github.com/NVIDIA/DIGITS
 Priority: optional
-Build-Depends: debhelper (>= 9), dh-python, python-all, python-setuptools, debconf
+Build-Depends: debhelper (>= 9), dh-python, dh-systemd, python-all, python-setuptools, debconf
 Standards-Version: #POLICY#
 
 Package: digits
@@ -12,7 +12,6 @@ Architecture: all
 Depends: ${misc:Depends}, ${python:Depends},
  caffe-nv (>= 0.13),
  graphviz,
- gunicorn,
  nginx,
  python-caffe-nv (>= 0.13),
  python-flaskext.socketio (>= 2.6),

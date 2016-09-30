@@ -3,11 +3,11 @@ Upstream-Name: #PACKAGE#
 Source: https://github.com/NVIDIA/DIGITS
 
 Files: *
-Copyright: #YEAR# #USERNAME# <#EMAIL#>
+Copyright: #YEAR# NVIDIA CORPORATION
 License: BSD-3-Clause
 
 Files: debian/*
-Copyright: #YEAR# #USERNAME# <#EMAIL#>
+Copyright: #YEAR# NVIDIA CORPORATION
 License: BSD-3-Clause
 
 License: BSD-3-Clause
