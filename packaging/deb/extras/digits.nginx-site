@@ -3,7 +3,7 @@
 server {
     listen 80; #AUTOCONFIG port (DO NOT DELETE THIS LINE)
 
-    # Gunicorn server
+    # Main server
     location / {
         client_max_body_size 500M; # Increase this if you receive error 413
 

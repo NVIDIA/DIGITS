@@ -31,7 +31,7 @@ See [Standard Datasets](StandardDatasets.md) for details about this script.
 ## Using the Webapp
 
 Open up a web browser and navigate to the home screen of DIGITS.
-The server should be at either `http://localhost/` (if installed from Deb packages), `http://localhost:5000/` (if using `digits-devserver`) or `http://localhost:34448/` (if using `digits-server`).
+The server should be at either `http://localhost/` (if installed from Deb packages), or `http://localhost:5000/` (if using `digits-devserver`).
 
 ![Home page](images/home-page-1.jpg)
 

@@ -46,6 +46,6 @@ setuptools.setup(
     zip_safe=False,
     install_requires=requirements,
     extras_require={ 'test': test_requirements },
-    scripts=['digits-server', 'digits-devserver'],
+    scripts=['digits-devserver'],
 )
 

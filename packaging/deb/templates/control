@@ -12,7 +12,6 @@ Architecture: all
 Depends: ${misc:Depends}, ${python:Depends},
  caffe-nv (>= 0.13),
  graphviz,
- gunicorn,
  nginx,
  python-caffe-nv (>= 0.13),
  python-flaskext.socketio (>= 2.6),
