@@ -29,6 +29,28 @@ PICKLE_VERSION = 1
 TORCH_MODEL_FILE = 'model.lua'
 TORCH_SNAPSHOT_PREFIX = 'snapshot'
 
+
+def subprocess_visible_devices(gpus):
+    """
+    Calculates CUDA_VISIBLE_DEVICES for a subprocess
+    """
+    if not isinstance(gpus, list):
+        raise ValueError('gpus should be a list')
+    gpus = [int(g) for g in gpus]
+
+    old_cvd = os.environ.get('CUDA_VISIBLE_DEVICES', None)
+    if old_cvd is None:
+        real_gpus = gpus
+    else:
+        map_visible_to_real = {}
+        for visible, real in enumerate(old_cvd.split(',')):
+            map_visible_to_real[visible] = int(real)
+        real_gpus = []
+        for visible_gpu in gpus:
+            real_gpus.append(map_visible_to_real[visible_gpu])
+    return ','.join(str(g) for g in real_gpus)
+
+
 @subclass
 class TorchTrainTask(TrainTask):
     """
@@ -239,7 +261,7 @@ class TorchTrainTask(TrainTask):
             # don't make other GPUs visible though since Torch will load
             # CUDA libraries and allocate memory on all visible GPUs by
             # default.
-            env['CUDA_VISIBLE_DEVICES'] = ','.join(identifiers)
+            env['CUDA_VISIBLE_DEVICES'] = subprocess_visible_devices(identifiers)
             # switch to GPU mode
             args.append('--type=cuda')
         else:
@@ -570,7 +592,7 @@ class TorchTrainTask(TrainTask):
         if gpu is not None:
             args.append('--type=cuda')
             # make only the selected GPU visible
-            env['CUDA_VISIBLE_DEVICES'] = "%d" % gpu
+            env['CUDA_VISIBLE_DEVICES'] = subprocess_visible_devices([gpu])
         else:
             args.append('--type=float')
 
@@ -860,7 +882,7 @@ class TorchTrainTask(TrainTask):
             if gpu is not None:
                 args.append('--type=cuda')
                 # make only the selected GPU visible
-                env['CUDA_VISIBLE_DEVICES'] = "%d" % gpu
+                env['CUDA_VISIBLE_DEVICES'] = subprocess_visible_devices([gpu])
             else:
                 args.append('--type=float')
 
