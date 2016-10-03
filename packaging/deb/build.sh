@@ -90,7 +90,10 @@ docker build -t $DOCKER_BUILD_ID \
     .
 docker ps -a -f "name=${DOCKER_BUILD_ID}" -q | xargs -r docker rm
 docker create --name=$DOCKER_BUILD_ID $DOCKER_BUILD_ID
-rm -rf dist/
-docker cp $DOCKER_BUILD_ID:/dist .
+DIST_ROOT=$LOCAL_DIR/dist
+DIST_DIR=$LOCAL_DIR/dist/$DEBIAN_VERSION
+rm -rf $DIST_DIR
+mkdir -p $DIST_ROOT
+docker cp $DOCKER_BUILD_ID:/dist $DIST_DIR
 docker rm $DOCKER_BUILD_ID
-find `pwd`/dist/ -type f | sort
+find $DIST_DIR -type f | sort
