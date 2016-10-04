@@ -20,6 +20,49 @@ cache:
         - ~/caffe
         - ~/torch
 
+addons:
+    apt:
+        packages:
+            - build-essential
+            - cmake
+            - cython
+            - git
+            - gfortran
+            - graphviz
+            - libboost-filesystem-dev
+            - libboost-python-dev
+            - libboost-system-dev
+            - libboost-thread-dev
+            - libgflags-dev
+            - libgoogle-glog-dev
+            - libhdf5-serial-dev
+            - libleveldb-dev
+            - liblmdb-dev
+            - libopenblas-dev
+            - libopencv-dev
+            - libprotobuf-dev
+            - libsnappy-dev
+            - protobuf-compiler
+            - python-dev
+            - python-flask
+            - python-gevent
+            - python-gevent-websocket
+            - python-gflags
+            - python-h5py
+            - python-matplotlib
+            - python-mock
+            - python-nose
+            - python-numpy
+            - python-pil
+            - python-pip
+            - python-protobuf
+            - python-psutil
+            - python-requests
+            - python-scipy
+            - python-six
+            - python-skimage
+
+
 before_install:
     # undo all of TravisCI's "helpful" Python shenanigans on 14.04
     - deactivate
@@ -32,9 +75,6 @@ before_install:
     - pip --version
 
 install:
-    # apt packages
-    - ./scripts/travis/install-apt.sh
-
     # bust build caches
     - ./scripts/travis/bust-cache.sh ~/caffe ~/torch
 
