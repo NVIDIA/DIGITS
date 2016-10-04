@@ -59,12 +59,12 @@ DESCRIBE_VERSION=$(git describe --match $GIT_TAG)
 UPSTREAM_VERSION=${DESCRIBE_VERSION:1}
 if [[ "$GIT_TAG" == *"-"* ]]; then
     # Replace the first dash with a tilde
-    UPSTREAM_VERSION=$(echo $UPSTREAM_VERSION | sed '0,/-/{s/-/~/}')
+    UPSTREAM_VERSION=${UPSTREAM_VERSION/-/\~}
 fi
 # Replace the first dash with a plus
-UPSTREAM_VERSION=$(echo $UPSTREAM_VERSION | sed '0,/-/{s/-/\+/}')
+UPSTREAM_VERSION=${UPSTREAM_VERSION/-/+}
 # Replace all dashes with dots
-UPSTREAM_VERSION=$(echo $UPSTREAM_VERSION | sed 's/-/\./g')
+UPSTREAM_VERSION=${UPSTREAM_VERSION//-/.}
 echo UPSTREAM_VERSION: $UPSTREAM_VERSION
 DEBIAN_VERSION=${UPSTREAM_VERSION}-${DEBIAN_REVISION}
 echo DEBIAN_VERSION: $DEBIAN_VERSION
