@@ -19,6 +19,8 @@ fi
 rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 
+export MAKEFLAGS="-j$(nproc)"
+
 # install Torch7
 # instructions from: http://torch.ch/docs/getting-started.html
 pushd .
