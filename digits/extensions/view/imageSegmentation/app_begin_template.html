@@ -2,6 +2,64 @@
 
 <div ng-app="visualization_app" class="ng-cloak">
     <div ng-controller="display_controller as dispaly">
+        <?xml version="1.0"?>
+        <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+        "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="0px">
+            <defs>
+                <filter id="Gamma">
+                    <feComponentTransfer>
+                        <feFuncR type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"/>
+                        <feFuncG type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"/>
+                        <feFuncB type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"/>
+                    </feComponentTransfer>
+                </filter>
+                <filter id="Colormap">
+                    <!-- Convert to graysclae -->
+                    <feColorMatrix
+                            type="matrix"
+                            values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"/>
+
+                    <!-- The result of the feColorMatrix will be fed into the feComponentTransfer -->
+                    <feComponentTransfer >
+                        <feFuncR type="table" tableValues="0,0,0,0,0.5,1,1,1,0.5"/>
+                        <feFuncG type="table" tableValues="0,0,0.5,1,1,1,0.5,0,0"/>
+                        <feFuncB type="table" tableValues="0.5,1,1,1,0.5,0,0,0,0"/>
+                    </feComponentTransfer>
+                </filter>
+                <filter id="Segment">
+                    <feComponentTransfer>
+                        <feFuncA type="table" id="segment-a"/>
+                    </feComponentTransfer>
+                </filter>
+                <filter id="BinarySegment">
+                    <feColorMatrix
+                            type="matrix"
+                            values="0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0"/>
+
+                    <feComponentTransfer>
+                        <feFuncR type="table" id="binary-segment-r"/>
+                        <feFuncG type="table" id="binary-segment-g"/>
+                        <feFuncB type="table" id="binary-segment-b"/>
+                        <feFuncA type="table" id="binary-segment-a"/>
+                    </feComponentTransfer>
+                </filter>
+            </defs>
+        </svg>
+        <style>
+         img.gamma {
+             filter: url(#Gamma);
+         }
+         div.colormap {
+             filter: url(#Colormap);
+         }
+         img.segment {
+             filter: url(#Segment);
+         }
+         img.binary-segment {
+             filter: url(#BinarySegment);
+         }
+        </style>
         <!-- Display Options -->
         <div class="pull-right">
             <div class="row">
@@ -22,10 +80,28 @@
                                 <small>Mask {[storage.mask * 100 | number : 0]}%</small>
                                 <input type="range" min="0" max="1" step="0.01" ng-model="storage.mask">
                             </li>
+                            <li ng-hide="!is_binary">
+                                <small>Threshold {[storage.threshold]}</small>
+                                <input type="range" min="-126" max="127" step="1" ng-model="storage.threshold">
+                            </li>
+                            <li>
+                                <small>Line Width {[storage.line_width]}</small>
+                                <input type="range" min="0" max="6" step="1" ng-model="storage.line_width">
+                            </li>
+                            <li>
+                                <small>Gamma {[storage.gamma | number : 2]}</small>
+                                <input type="range" min="0.01" max="1" step="0.01" ng-model="storage.gamma">
+                            </li>
+                            <li>
+                                <label style="font-weight: normal !important;">
+                                    <input type="checkbox" ng-model='storage.colormap'>
+                                    Colormap
+                                </label>
+                            </li>
                             <!-- reset -->
                             <li>
                                 <button type="button" class="btn btn-default btn-sm dropdown-toggle"
-                                        ng-click="storage.opacity = 0.3; storage.mask = 0;"
+                                        ng-click="defaults();"
                                         title="Reset to defaults">
                                     <span class="glyphicon glyphicon-refresh"></span>
                                 </button>

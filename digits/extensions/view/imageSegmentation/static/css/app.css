@@ -9,12 +9,6 @@
      left: 0px;
      top: 0px;
  }
- img.fill {
-     z-index: 1;
- }
- img.mask {
-     z-index: 2;
- }
  caption {
      caption-side: bottom;
  }

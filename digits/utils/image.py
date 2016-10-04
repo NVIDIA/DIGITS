@@ -121,18 +121,14 @@ def image_to_array(image,
     channels -- channels of new image (stays unchanged if not specified)
     """
 
-    if channels not in [None, 1, 3]:
+    if channels not in [None, 1, 3, 4]:
         raise ValueError('unsupported number of channels: %s' % channels)
 
     if isinstance(image, PIL.Image.Image):
         # Convert image mode (channels)
         if channels is None:
             image_mode = image.mode
-            if image_mode == 'L':
-                channels = 1
-            elif image_mode == 'RGB':
-                channels = 3
-            else:
+            if image_mode not in ['L', 'RGB', 'RGBA']:
                 raise ValueError('unknown image mode "%s"' % image_mode)
         elif channels == 1:
             # 8-bit pixels, black and white
@@ -140,6 +136,9 @@ def image_to_array(image,
         elif channels == 3:
             # 3x8-bit pixels, true color
             image_mode = 'RGB'
+        elif channels == 4:
+            # 4x8-bit pixels, true color with alpha
+            image_mode = 'RGBA'
         if image.mode != image_mode:
             image = image.convert(image_mode)
         image = np.array(image)
@@ -149,24 +148,34 @@ def image_to_array(image,
         if image.ndim == 3 and image.shape[2] == 1:
             image = image.reshape(image.shape[:2])
         if channels is None:
-            if image.ndim == 2:
-                channels = 1
-            elif image.ndim == 3 and image.shape[2] == 3:
-                channels = 3
-            else:
+            if not (image.ndim == 2 or (image.ndim == 3 and image.shape[2] in [3, 4])):
                 raise ValueError('invalid image shape: %s' % (image.shape,))
         elif channels == 1:
             if image.ndim != 2:
-                if image.ndim == 3 and image.shape[2] == 3:
-                    # color to grayscale
-                    image = np.dot(image, [0.299, 0.587, 0.114]).astype(np.uint8)
+                if image.ndim == 3 and image.shape[2] in [3, 4]:
+                    # color to grayscale. throw away alpha
+                    image = np.dot(image[:, :, :3], [0.299, 0.587, 0.114]).astype(np.uint8)
                 else:
                     raise ValueError('invalid image shape: %s' % (image.shape,))
         elif channels == 3:
             if image.ndim == 2:
                 # grayscale to color
-                image = np.repeat(image,3).reshape(image.shape + (3,))
+                image = np.repeat(image, 3).reshape(image.shape + (3,))
+            elif image.shape[2] == 4:
+                # throw away alpha
+                image = image[:, :, :3]
             elif image.shape[2] != 3:
+                raise ValueError('invalid image shape: %s' % (image.shape,))
+        elif channels == 4:
+            if image.ndim == 2:
+                # grayscale to color
+                image = np.repeat(image, 4).reshape(image.shape + (4,))
+                image[:, :, 3] = 255
+            elif image.shape[2] == 3:
+                # add alpha
+                image = np.append(image, np.zeros(image.shape[:2] + (1,), dtype='uint8'), axis=2)
+                image[:, :, 3] = 255
+            elif image.shape[2] != 4:
                 raise ValueError('invalid image shape: %s' % (image.shape,))
     else:
         raise ValueError('resize_image() expected a PIL.Image.Image or a numpy.ndarray')
