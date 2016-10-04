@@ -102,9 +102,6 @@ COMPUTE_TRAIN_ACCURACY = false
 ----------------------------------------------------------------------
 -- Initial parameter checks
 
--- We generally are not using doubles, so set default tensor to float.
-torch.setdefaulttensortype('torch.FloatTensor')
-
 -- Convert boolean options
 opt.crop = opt.crop == 'yes' or false
 opt.shuffle = opt.shuffle == 'yes' or false
