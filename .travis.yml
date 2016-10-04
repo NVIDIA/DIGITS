@@ -8,8 +8,6 @@ python:
     2.7
 compiler: gcc
 env:
-    global:
-        - NUM_THREADS=4
     matrix:
         - CAFFE_FORK=NVIDIA
         - CAFFE_FORK=BVLC
