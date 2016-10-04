@@ -11,7 +11,6 @@ then
 fi
 
 INSTALL_DIR=$1
-NUM_THREADS=${NUM_THREADS:-4}
 CAFFE_FORK=${CAFFE_FORK:-"NVIDIA"}
 if [ ! -z "$CAFFE_BRANCH" ]; then
     CAFFE_BRANCH="--branch ${CAFFE_BRANCH}"
@@ -34,7 +33,7 @@ cd ${INSTALL_DIR}/build
 cmake .. -DCPU_ONLY=On -DBLAS=Open
 
 # build
-make --jobs=$NUM_THREADS
+make --jobs=`nproc`
 
 # mark cache
 popd
