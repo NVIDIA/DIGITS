@@ -1,0 +1,11 @@
+# DIGITS upstart service
+description "DIGITS server"
+setuid www-data
+start on started networking
+start on runlevel [2345]
+kill signal INT
+respawn
+
+env DIGITS_JOBS_DIR=/var/lib/digits/jobs
+env DIGITS_LOGFILE_FILENAME=/var/log/digits/digits.log
+exec python -m digits -p 34448

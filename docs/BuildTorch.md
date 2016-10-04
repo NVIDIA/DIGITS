@@ -21,11 +21,10 @@ sudo apt-get install --no-install-recommends git software-properties-common
 These instructions are based on [the official Torch instructions](http://torch.ch/docs/getting-started.html).
 ```sh
 # example location - can be customized
-export TORCH_BUILD=~/torch
-export TORCH_HOME=$TORCH_BUILD/install
+export TORCH_ROOT=~/torch
 
-git clone https://github.com/torch/distro.git $TORCH_BUILD --recursive
-cd $TORCH_BUILD
+git clone https://github.com/torch/distro.git $TORCH_ROOT --recursive
+cd $TORCH_ROOT
 ./install-deps
 ./install.sh -b
 source ~/.bashrc

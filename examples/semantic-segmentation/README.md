@@ -96,7 +96,7 @@ On the DIGITS home page, click `New Dataset > Images > Segmentation`:
 
 In the dataset creation form, click `Separate validation images` then specify the paths to the image and label folders for each of the training and validation sets.
 
-In `Class Labels` specify the path to `$DIGITS_HOME/examples/semantic-segmentation/pascal-voc-classes.txt`.
+In `Class Labels` specify the path to `$DIGITS_ROOT/examples/semantic-segmentation/pascal-voc-classes.txt`.
 This will allow DIGITS to print class names during inference.
 
 In `Label Encoding` select `PNG (lossless)`.

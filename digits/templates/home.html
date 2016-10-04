@@ -52,10 +52,6 @@
     {[jc.model_jobs = (jobs | filter:is_model);'']}
     {[jc.pretrained_model_jobs = (jobs | filter:is_pretrained_model);'']}
     <section ng-controller="tab_controller as tab" ng-init="init({{request.args['tab']}})">
-        <label>Group Jobs:
-            <input type="checkbox"
-                   ng-model="jc.storage.show_groups">
-        </label>
         <div ng-controller="running_controller as c">
             <div ng-if="jc.running_jobs.length">
                 {[jobs = (jc.running_jobs | filter:search_text | sort_with_empty_at_end:this:jc.storage.show_groups);'']}
@@ -209,7 +205,7 @@
 
         <!-- Tabs -->
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <ul class="nav nav-tabs" role="tablist">
                     <li ng-class="{active:tab.isSet(1)}">
                         <a href ng-click="tab.setTab(1, $event)">
@@ -242,50 +238,6 @@
                         </a>
                     </li>
                 </ul>
-            </div>
-            <div class="col-md-6">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="pull-right">
-                            New Model
-                            <ul class="nav nav-pills">
-                                {% for category in new_model_options.keys()|sort %}
-                                {% set options = new_model_options[category] %}
-                                <li class="dropdown active">
-                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                        {{category}} <span class="caret"></span>
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        {% for id in options.keys()|sort %}
-                                        {% set option = options[id] %}
-                                        <li><a id="{{option["id"]}}" href="{{option["url"]}}">{{option["title"]}}</a></li>
-                                        {% endfor %}
-                                    </ul>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        <div class="pull-right" style="margin-right:10px">
-                            New Dataset
-                            <ul class="nav nav-pills">
-                                {% for category in new_dataset_options.keys()|sort %}
-                                {% set options = new_dataset_options[category] %}
-                                <li class="dropdown active">
-                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                        {{category}} <span class="caret"></span>
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        {% for id in options.keys()|sort %}
-                                        {% set option = options[id] %}
-                                        <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
-                                        {% endfor %}
-                                    </ul>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 

@@ -127,8 +127,9 @@ class DatasetForm(Form):
         validators=[
             validators.Optional(),
             ],
-        tooltip="Enter a comma-separated list of lower-case class names. "
+        tooltip="Enter a comma-separated list of class names. "
                 "Class IDs are assigned sequentially, starting from 0. "
+                "Unmapped class names automatically map to 0. "
                 "Leave this field blank to use default class mappings. "
                 "See object detection extension documentation for more "
                 "information."

@@ -38,7 +38,7 @@ The first step in creating the dataset is to create the LMDB databases. In this 
 
 To create a train database of 100000 pairs of images into a folder called `siamesedb`:
 ```sh
-$ cd $DIGITS_HOME/examples/siamese
+$ cd $DIGITS_ROOT/examples/siamese
 $ create_db.py siamesedb ../../digits/jobs/20151111-210842-a4ec/train.txt  -c 100000
 ```
 The script also creates a validation database of 1000 samples. Overall, the script creates:

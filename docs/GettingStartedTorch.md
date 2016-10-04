@@ -20,22 +20,15 @@ Table of Contents
 
 ## Enabling support for Torch7 in DIGITS
 
-DIGITS should automatically enable support for Torch7 if the `th` executable is in your path. If not, you may explicitly point DIGITS to the appropriate location:
+DIGITS will automatically enable support for Torch7 if either of these is true:
 
-```
-$ ./digits-devserver -c
+* The `TORCH_ROOT` environment variable is set
 
-...
+        export TORCH_ROOT=~/torch
 
-==================================== Torch =====================================
-Where is torch installed?
+* The `th` executable is found in your path
 
-	Suggested values:
-	(*)  [Previous]       <PATHS>
-	(P)  [PATH/TORCHPATH] <PATHS>
-	(N)  [none]           <NONE>
->> ~/torch/install/
-```
+        export PATH=$PATH:~/torch/install/bin
 
 ## Selecting Torch7 when creating a model in DIGITS
 
@@ -231,22 +224,3 @@ else
    model = net
 end
 ```
-
-## Tutorials
-
-### Training an autoencoder
-
-Follow [these instructions](../examples/autoencoder/README.md) to learn how to create an autoencoder using Torch7 in DIGITS.
-
-### Training a regression model
-
-Follow [these instructions](../examples/regression/README.md) to learn how to create a regression model using Caffe or Torch7 in DIGITS.
-
-### Siamese network
-
-Follow [these instructions](../examples/siamese/README.md) to learn how to create a Siamese network model using Caffe or Torch7 in DIGITS.
-
-### Fine-tuning
-
-Follow [these instructions](../examples/fine-tuning/README.md) to learn how to fine-tune a model using Caffe or Torch7 in DIGITS.
-

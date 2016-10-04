@@ -11,7 +11,7 @@ from digits.config import config_value
 #
 
 # torch is optional
-torch = TorchFramework() if config_value('torch_root') else None
+torch = TorchFramework() if config_value('torch')['enabled'] else None
 
 # caffe is mandatory
 caffe = CaffeFramework()

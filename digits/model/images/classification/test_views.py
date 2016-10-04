@@ -102,7 +102,7 @@ end
     @classmethod
     def setUpClass(cls):
         super(BaseViewsTest, cls).setUpClass()
-        if cls.FRAMEWORK=='torch' and not config_value('torch_root'):
+        if cls.FRAMEWORK=='torch' and not config_value('torch')['enabled']:
             raise unittest.SkipTest('Torch not found')
 
     @classmethod
@@ -342,10 +342,10 @@ class BaseTestCreation(BaseViewsTestWithDataset):
             not config_value('gpu_list'),
             'no GPUs selected')
     @unittest.skipIf(
-            not config_value('caffe_root')['cuda_enabled'],
+            not config_value('caffe')['cuda_enabled'],
             'CUDA disabled')
     @unittest.skipIf(
-            config_value('caffe_root')['multi_gpu'],
+            config_value('caffe')['multi_gpu'],
             'multi-GPU enabled')
     def test_select_gpu(self):
         for index in config_value('gpu_list').split(','):
@@ -359,10 +359,10 @@ class BaseTestCreation(BaseViewsTestWithDataset):
             not config_value('gpu_list'),
             'no GPUs selected')
     @unittest.skipIf(
-            not config_value('caffe_root')['cuda_enabled'],
+            not config_value('caffe')['cuda_enabled'],
             'CUDA disabled')
     @unittest.skipIf(
-            not config_value('caffe_root')['multi_gpu'],
+            not config_value('caffe')['multi_gpu'],
             'multi-GPU disabled')
     def test_select_gpus(self):
         # test all possible combinations
@@ -797,8 +797,8 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # get number of GPUs
         gpu_count = 1
         if (config_value('gpu_list') and
-                config_value('caffe_root')['cuda_enabled'] and
-                config_value('caffe_root')['multi_gpu']):
+                config_value('caffe')['cuda_enabled'] and
+                config_value('caffe')['multi_gpu']):
             gpu_count = len(config_value('gpu_list').split(','))
 
         # grab an image for testing
@@ -1098,6 +1098,7 @@ class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
 
 class TestTorchCreatedDataAug(BaseTestCreatedDataAug):
     FRAMEWORK = 'torch'
+    TRAIN_EPOCHS = 2
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
     FRAMEWORK = 'torch'
@@ -1112,10 +1113,6 @@ class TestTorchLeNet(BaseTestCreated):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
     TRAIN_EPOCHS = 20
-    # need more aggressive learning rate
-    # on such a small dataset
-    LR_POLICY = 'fixed'
-    LEARNING_RATE = 0.1
 
     # standard lenet model will adjust to color
     # or grayscale images

@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove)
+        # Disable NGINX site
+        SITE_LINK=/etc/nginx/sites-enabled/digits-nginx.site
+        if [ -L "$SITE_LINK" ]
+        then
+            rm -f $SITE_LINK
+            service nginx reload
+        fi
+        ;;
+
+    upgrade|deconfigure|failed-upgrade)
+        ;;
+
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+
+#DEBHELPER#

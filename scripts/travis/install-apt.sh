@@ -29,8 +29,10 @@ sudo apt-get install -y --no-install-recommends \
     python-dev \
     python-flask \
     python-gevent \
+    python-gevent-websocket \
     python-gflags \
     python-h5py \
+    python-matplotlib \
     python-mock \
     python-nose \
     python-numpy \

@@ -136,16 +136,11 @@ class TorchTrainTask(TrainTask):
 
     @override
     def task_arguments(self, resources, env):
-        if config_value('torch_root') == '<PATHS>':
-            torch_bin = 'th'
-        else:
-            torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
-
         dataset_backend = self.dataset.get_backend()
         assert dataset_backend=='lmdb' or dataset_backend=='hdf5'
 
-        args = [torch_bin,
-                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
+        args = [config_value('torch')['executable'],
+                os.path.join(os.path.dirname(digits.__file__),'tools','torch','wrapper.lua'),
                 'main.lua',
                 '--network=%s' % self.model_file.split(".")[0],
                 '--epoch=%d' % int(self.train_epochs),
@@ -527,15 +522,10 @@ class TorchTrainTask(TrainTask):
             self.logger.error(error_message)
             raise digits.inference.errors.InferenceError(error_message)
 
-        if config_value('torch_root') == '<PATHS>':
-            torch_bin = 'th'
-        else:
-            torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
-
         file_to_load = self.get_snapshot(snapshot_epoch)
 
-        args = [torch_bin,
-                os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
+        args = [config_value('torch')['executable'],
+                os.path.join(os.path.dirname(digits.__file__),'tools','torch','wrapper.lua'),
                 'test.lua',
                 '--image=%s' % temp_image_path,
                 '--network=%s' % self.model_file.split(".")[0],
@@ -830,15 +820,10 @@ class TorchTrainTask(TrainTask):
                 os.close(temp_image_handle)
             os.close(temp_imglist_handle)
 
-            if config_value('torch_root') == '<PATHS>':
-                torch_bin = 'th'
-            else:
-                torch_bin = os.path.join(config_value('torch_root'), 'bin', 'th')
-
             file_to_load = self.get_snapshot(snapshot_epoch)
 
-            args = [torch_bin,
-                    os.path.join(os.path.dirname(os.path.dirname(digits.__file__)),'tools','torch','wrapper.lua'),
+            args = [config_value('torch')['executable'],
+                    os.path.join(os.path.dirname(digits.__file__),'tools','torch','wrapper.lua'),
                     'test.lua',
                     '--testMany=yes',
                     '--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS

@@ -16,7 +16,7 @@ Doing so is your own adventure.
 
 Install some dependencies with Deb packages:
 ```sh
-sudo apt-get install --no-install-recommends git graphviz gunicorn python-dev python-flask python-flaskext.wtf python-gevent python-h5py python-numpy python-pil python-protobuf python-scipy
+sudo apt-get install --no-install-recommends git graphviz python-dev python-flask python-flaskext.wtf python-gevent python-h5py python-numpy python-pil python-protobuf python-scipy
 ```
 
 Follow [these instructions](BuildCaffe.md) to build Caffe (**required**).
@@ -27,55 +27,46 @@ Follow [these instructions](BuildTorch.md) to build Torch7 (*suggested*).
 
 ```sh
 # example location - can be customized
-DIGITS_HOME=~/digits
-git clone https://github.com/NVIDIA/DIGITS.git $DIGITS_HOME
+DIGITS_ROOT=~/digits
+git clone https://github.com/NVIDIA/DIGITS.git $DIGITS_ROOT
 ```
 
-Throughout the docs, we'll refer to your install location as `DIGITS_HOME` (`~/digits` in this case), though you don't need to actually set that environment variable.
+Throughout the docs, we'll refer to your install location as `DIGITS_ROOT` (`~/digits` in this case), though you don't need to actually set that environment variable.
 
 ## Python packages
 
 Several PyPI packages need to be installed:
 ```sh
-sudo pip install -r $DIGITS_HOME/requirements.txt
+sudo pip install -r $DIGITS_ROOT/requirements.txt
+```
+
+# [Optional] Enable support for plug-ins
+
+DIGITS needs to be installed to enable loading data and visualization plug-ins:
+```
+sudo pip install -e $DIGITS_ROOT
 ```
 
 # Starting the server
-
-You can run DIGITS in two modes:
-
-### Development mode
 
 ```sh
 ./digits-devserver
 ```
 
-Starts a development server (werkzeug backend) at `http://localhost:5000/`.
+Starts a server at `http://localhost:5000/`.
 ```
 $ ./digits-devserver --help
-usage: digits-devserver [-h] [-p PORT] [-c] [-d] [--version]
+usage: __main__.py [-h] [-p PORT] [-d] [--version]
 
-Run the DIGITS development server
+DIGITS development server
 
 optional arguments:
   -h, --help            show this help message and exit
   -p PORT, --port PORT  Port to run app on (default 5000)
-  -c, --config          Edit the application configuration
   -d, --debug           Run the application in debug mode (reloads when the
                         source changes and gives more detailed error messages)
   --version             Print the version number and exit
 ```
-
-### Production mode
-
-```sh
-./digits-server
-```
-
-Starts a production server (gunicorn backend) at `http://localhost:34448`.
-If you get any errors about an invalid configuration, use the development server first to set your configuration.
-
-If you have installed the nginx.site to `/etc/nginx/sites-enabled/`, then you can view your app at `http://localhost/`.
 
 # Getting started
 
@@ -84,10 +75,4 @@ Now that you're up and running, check out the [Getting Started Guide](GettingSta
 ## Troubleshooting
 
 Most configuration options should have appropriate defaults.
-If you need to edit your configuration for some reason, try one of these commands:
-```sh
-# Set options before starting the server
-./digits-devserver --config
-# Advanced options
-python -m digits.config.edit --verbose
-```
+Read [this doc](Configuration.md) for information about how to set a custom configuration for your server.

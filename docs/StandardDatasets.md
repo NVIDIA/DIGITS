@@ -15,10 +15,9 @@ DIGITS will download some standard datasets for you and store them for you local
 
 ![HTML Form](images/standard-datasets/html-form.jpg)
 
-The script for doing this is at `tools/download_data/main.py`.
 ```
-$ python tools/download_data/main.py -h
-usage: main.py [-h] [-c] dataset output_dir
+$ python -m digits.download_data -h
+usage: __main__.py [-h] [-c] dataset output_dir
 
 Download-Data tool - DIGITS
 
@@ -41,8 +40,9 @@ http://yann.lecun.com/exdb/mnist/
 > It is a good database for people who want to try learning techniques and pattern recognition methods on real-world data while spending minimal efforts on preprocessing and formatting.
 
 Run this:
-
-    $ python tools/download_data/main.py mnist ~/mnist
+```sh
+$ python -m digits.download_data mnist ~/mnist
+```
 
 And these folders and files will be created for you (images and temporary files omitted):
 ```
@@ -81,7 +81,7 @@ http://www.cs.toronto.edu/~kriz/cifar.html
 
 Run this:
 ```sh
-$ python tools/download_data/main.py cifar10 ~/cifar10
+$ python -m digits.download_data cifar10 ~/cifar10
 ```
 And these folders and files will be created for you (images and temporary files omitted):
 ```
@@ -115,7 +115,7 @@ Then, you can use `~/cifar10/train` for your training images and `~/cifar10/test
 
 Run this:
 ```sh
-$ python tools/download_data/main.py cifar100 ~/cifar100
+$ python -m digits.download_data cifar100 ~/cifar100
 ```
 And these folders and files will be created for you (images and temporary files omitted):
 ```

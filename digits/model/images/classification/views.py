@@ -81,7 +81,7 @@ def new():
             previous_network_snapshots = prev_network_snapshots,
             previous_networks_fullinfo = get_previous_networks_fulldetails(),
             pretrained_networks_fullinfo = get_pretrained_networks_fulldetails(),
-            multi_gpu = config_value('caffe_root')['multi_gpu'],
+            multi_gpu = config_value('caffe')['multi_gpu'],
             )
 
 @blueprint.route('.json', methods=['POST'])
@@ -115,7 +115,7 @@ def create():
                     previous_network_snapshots = prev_network_snapshots,
                     previous_networks_fullinfo = get_previous_networks_fulldetails(),
                     pretrained_networks_fullinfo = get_pretrained_networks_fulldetails(),
-                    multi_gpu = config_value('caffe_root')['multi_gpu'],
+                    multi_gpu = config_value('caffe')['multi_gpu'],
                     ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
@@ -240,7 +240,7 @@ def create():
                 raise werkzeug.exceptions.BadRequest(
                         'Invalid learning rate policy')
 
-            if config_value('caffe_root')['multi_gpu']:
+            if config_value('caffe')['multi_gpu']:
                 if form.select_gpus.data:
                     selected_gpus = [str(gpu) for gpu in form.select_gpus.data]
                     gpu_count = None

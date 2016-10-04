@@ -1,0 +1,14 @@
+Template: digits/port
+Type: string
+Default: 80
+Description: DIGITS front-end port for NGINX reverse proxy (0-65535):
+ The DIGITS backend server runs on port 34448 (DIGIT), but this package also
+ configures NGINX to function as a reverse proxy for DIGITS.
+ .
+ If you don't want to use NGINX as a reverse proxy, choose "-1" and the NGINX
+ site will not be installed.
+
+Template: digits/port-invalid
+Type: note
+Description: ERROR - the port you chose is invalid
+ Valid values are 0-65535 or -1.
