@@ -1,0 +1,29 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<div class="row">
+    <div class="col-sm-6">
+        <h3>Test an image</h3>
+        <div class="form-group">
+            <div class="form-group{{mark_errors([form.test_image_file])}}">
+                {{ form.test_image_file.label }}
+                {{ form.test_image_file.tooltip }}
+                {{ form.test_image_file(class='form-control', placeholder='image file') }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6">
+        <h3>Test a record from valiation set</h3>
+        <div class="form-group">
+            <div class="form-group{{mark_errors([form.validation_record])}}">
+                {{ form.validation_record.label }}
+                {{ form.validation_record.tooltip }}
+                {{ form.validation_record(class='form-control') }}
+            </div>
+        </div>
+    </div>
+</div>
