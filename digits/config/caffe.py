@@ -66,7 +66,7 @@ def find_executable_in_dir(dirname=None):
     If dirname is None, search all directories in sys.path
     Returns None if not found
     """
-    if platform.system() == 'windows':
+    if platform.system() == 'Windows':
         exe_name = 'caffe.exe'
     else:
         exe_name = 'caffe'
