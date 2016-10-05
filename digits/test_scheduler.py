@@ -8,7 +8,12 @@ from . import scheduler
 from .config import config_value
 from .job import Job
 from .webapp import app
+from digits import test_utils
 from digits.utils import subclass, override
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestScheduler():
 

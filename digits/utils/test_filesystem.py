@@ -9,6 +9,11 @@ import tempfile
 from nose.tools import assert_raises
 
 from . import filesystem as fs
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestTreeSize():
 

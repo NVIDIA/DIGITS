@@ -8,10 +8,15 @@ import lmdb
 import numpy as np
 
 from . import analyze_db
+from digits import test_utils
 
 # Must import after importing digits.config
 import caffe.io
 import caffe_pb2
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class BaseTestWithDB(object):
     SAME_SHAPE = True

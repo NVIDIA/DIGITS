@@ -5,10 +5,14 @@ import tempfile
 
 from . import create_generic_db
 from digits import extensions
+from digits import test_utils
 from digits.utils import constants
 
 
-class BaseTest():
+test_utils.skipIfNotFramework('none')
+
+
+class BaseTest(object):
 
     FEATURE_ENCODING = "png"
     LABEL_ENCODING = "none"

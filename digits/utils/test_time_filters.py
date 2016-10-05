@@ -6,7 +6,12 @@ import time
 
 from nose.tools import assert_raises
 
+from digits import test_utils
 from digits import utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestTimeFilters():
     def test_print_time(self):

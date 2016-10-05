@@ -30,6 +30,7 @@ from digits.config import config_value
 import digits.dataset.images.generic.test_views
 import digits.dataset.generic.test_views
 import digits.test_views
+from digits import test_utils
 from digits.utils import constants
 import digits.webapp
 
@@ -100,11 +101,6 @@ return function(p)
     }
 end
 """
-    @classmethod
-    def setUpClass(cls, **kwargs):
-        super(BaseViewsTest, cls).setUpClass(**kwargs)
-        if cls.FRAMEWORK == 'torch' and not config_value('torch')['enabled']:
-            raise unittest.SkipTest('Torch not found')
 
     @classmethod
     def model_exists(cls, job_id):
@@ -980,96 +976,85 @@ class BaseTestCreatedCropInForm(BaseTestCreated):
 # Test classes
 ################################################################################
 
-class TestCaffeViews(BaseTestViews):
-    FRAMEWORK = 'caffe'
+class TestCaffeViews(BaseTestViews, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreation(BaseTestCreation):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreation(BaseTestCreation, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreated(BaseTestCreated):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreated(BaseTestCreated, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension, test_utils.CaffeMixin):
     @classmethod
     def setUpClass(cls):
         super(TestCaffeCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
-class TestCaffeCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension):
+class TestCaffeCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'image'
-    FRAMEWORK = 'caffe'
 
-class TestCaffeCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension):
+class TestCaffeCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'pixel'
-    FRAMEWORK = 'caffe'
 
-class TestCaffeCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension):
+class TestCaffeCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'none'
-    FRAMEWORK = 'caffe'
 
-class TestCaffeCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension):
+class TestCaffeCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'none'
-    FRAMEWORK = 'caffe'
     VARIABLE_SIZE_DATASET = True
 
-class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
-    FRAMEWORK = 'caffe'
+class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.CaffeMixin):
+    pass
 
-class TestTorchViews(BaseTestViews):
-    FRAMEWORK = 'torch'
+class TestTorchViews(BaseTestViews, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreation(BaseTestCreation):
-    FRAMEWORK = 'torch'
+class TestTorchCreation(BaseTestCreation, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreated(BaseTestCreated):
-    FRAMEWORK = 'torch'
+class TestTorchCreated(BaseTestCreated, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension, test_utils.TorchMixin):
     @classmethod
     def setUpClass(cls):
         super(TestTorchCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
-class TestTorchCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension):
+class TestTorchCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'image'
-    FRAMEWORK = 'torch'
 
-class TestTorchCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension):
+class TestTorchCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'pixel'
-    FRAMEWORK = 'torch'
 
-class TestTorchCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension):
+class TestTorchCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'none'
-    FRAMEWORK = 'torch'
 
-class TestTorchCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension):
+class TestTorchCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'none'
-    FRAMEWORK = 'torch'
     VARIABLE_SIZE_DATASET = True
 
-class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.TorchMixin):
+    pass
 
-class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
-    FRAMEWORK = 'torch'
+class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.TorchMixin):
+    pass
 
-class TestTorchTableOutput(BaseTestCreated):
-    FRAMEWORK = 'torch'
+class TestTorchTableOutput(BaseTestCreated, test_utils.TorchMixin):
     TORCH_NETWORK = \
 """
 return function(p)
@@ -1112,8 +1097,7 @@ return function(p)
 end
 """
 
-class TestTorchNDOutput(BaseTestCreated):
-    FRAMEWORK = 'torch'
+class TestTorchNDOutput(BaseTestCreated, test_utils.TorchMixin):
     CROP_SIZE = 8
     TORCH_NETWORK = \
 """
@@ -1152,8 +1136,7 @@ end
         assert output.shape == (1, self.CROP_SIZE, self.CROP_SIZE), \
                 'shape mismatch: %s' % str(output.shape)
 
-class TestSweepCreation(BaseViewsTestWithDataset):
-    FRAMEWORK = 'caffe'
+class TestSweepCreation(BaseViewsTestWithDataset, test_utils.CaffeMixin):
     """
     Model creation tests
     """
@@ -1165,11 +1148,10 @@ class TestSweepCreation(BaseViewsTestWithDataset):
             assert not self.model_exists(job_id), 'model exists after delete'
 
 
-class TestAllInOneNetwork(BaseTestCreation, BaseTestCreated):
+class TestAllInOneNetwork(BaseTestCreation, BaseTestCreated, test_utils.CaffeMixin):
     """
     Test an all-in-one network
     """
-    FRAMEWORK = 'caffe'
     CAFFE_NETWORK = \
 """
 layer {

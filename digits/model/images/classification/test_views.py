@@ -26,6 +26,7 @@ from urlparse import urlparse
 from digits.config import config_value
 import digits.dataset.images.classification.test_views
 import digits.test_views
+from digits import test_utils
 import digits.webapp
 
 # Must import after importing digit.config
@@ -98,12 +99,6 @@ return function(p)
     }
 end
 """
-
-    @classmethod
-    def setUpClass(cls):
-        super(BaseViewsTest, cls).setUpClass()
-        if cls.FRAMEWORK=='torch' and not config_value('torch')['enabled']:
-            raise unittest.SkipTest('Torch not found')
 
     @classmethod
     def model_exists(cls, job_id):
@@ -1000,15 +995,13 @@ end
 # Test classes
 ################################################################################
 
-class TestCaffeViews(BaseTestViews):
-    FRAMEWORK = 'caffe'
+class TestCaffeViews(BaseTestViews, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreation(BaseTestCreation):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreation(BaseTestCreation, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedWideMoreNumOutput(BaseTestCreatedWide):
-    FRAMEWORK = 'caffe'
-
+class TestCaffeCreatedWideMoreNumOutput(BaseTestCreatedWide, test_utils.CaffeMixin):
     CAFFE_NETWORK = \
 """
 layer {
@@ -1045,45 +1038,40 @@ layer {
 }
 """
 
-class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions):
-    FRAMEWORK = 'caffe'
+class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork, test_utils.CaffeMixin):
+    pass
 
-class TestCaffeCreatedTallMultiStepLR(BaseTestCreatedTall):
-    FRAMEWORK = 'caffe'
+class TestCaffeCreatedTallMultiStepLR(BaseTestCreatedTall, test_utils.CaffeMixin):
     LR_POLICY = 'multistep'
     LR_MULTISTEP_VALUES = '50,75,90'
 
-class TestTorchViews(BaseTestViews):
-    FRAMEWORK = 'torch'
+class TestTorchViews(BaseTestViews, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreation(BaseTestCreation):
-    FRAMEWORK = 'torch'
+class TestTorchCreation(BaseTestCreation, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreatedUnencodedShuffle(BaseTestCreated):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedUnencodedShuffle(BaseTestCreated, test_utils.TorchMixin):
     ENCODING = 'none'
     SHUFFLE = True
 
-class TestTorchCreatedHdf5(BaseTestCreated):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedHdf5(BaseTestCreated, test_utils.TorchMixin):
     BACKEND = 'hdf5'
 
-class TestTorchCreatedTallHdf5Shuffle(BaseTestCreatedTall):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedTallHdf5Shuffle(BaseTestCreatedTall, test_utils.TorchMixin):
     BACKEND = 'hdf5'
     SHUFFLE = True
 
-class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions):
-    FRAMEWORK = 'torch'
+class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.TorchMixin):
+    pass
 
-class TestCaffeLeNet(BaseTestCreated):
-    FRAMEWORK = 'caffe'
+class TestCaffeLeNet(BaseTestCreated, test_utils.CaffeMixin):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
 
@@ -1093,23 +1081,20 @@ class TestCaffeLeNet(BaseTestCreated):
                 'standard-networks', 'caffe', 'lenet.prototxt')
             ).read()
 
-class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreatedDataAug(BaseTestCreatedDataAug):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedDataAug(BaseTestCreatedDataAug, test_utils.TorchMixin):
     TRAIN_EPOCHS = 2
 
-class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork, test_utils.TorchMixin):
+    pass
 
-class TestTorchCreatedWideMultiStepLR(BaseTestCreatedWide):
-    FRAMEWORK = 'torch'
+class TestTorchCreatedWideMultiStepLR(BaseTestCreatedWide, test_utils.TorchMixin):
     LR_POLICY = 'multistep'
     LR_MULTISTEP_VALUES = '50,75,90'
 
-class TestTorchLeNet(BaseTestCreated):
-    FRAMEWORK = 'torch'
+class TestTorchLeNet(BaseTestCreated, test_utils.TorchMixin):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
     TRAIN_EPOCHS = 20
@@ -1134,8 +1119,7 @@ class TestTorchLeNetHdf5Shuffle(TestTorchLeNet):
     BACKEND = 'hdf5'
     SHUFFLE = True
 
-class TestPythonLayer(BaseViewsTestWithDataset):
-    FRAMEWORK = 'caffe'
+class TestPythonLayer(BaseViewsTestWithDataset, test_utils.CaffeMixin):
     CAFFE_NETWORK = """\
 layer {
     name: "hidden"
@@ -1230,8 +1214,7 @@ class PythonLayer(caffe.Layer):
         content = json.loads(rv.data)
         assert len(content['snapshots']), 'should have at least snapshot'
 
-class TestSweepCreation(BaseViewsTestWithDataset):
-    FRAMEWORK = 'caffe'
+class TestSweepCreation(BaseViewsTestWithDataset, test_utils.CaffeMixin):
     """
     Model creation tests
     """

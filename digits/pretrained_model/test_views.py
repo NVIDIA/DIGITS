@@ -28,6 +28,7 @@ from digits.pretrained_model import PretrainedModelJob
 import digits.webapp
 import digits.dataset.images.classification.test_views
 import digits.model.images.classification.test_views
+from digits import test_utils
 import digits.test_views
 
 # Must import after importing digit.config
@@ -111,8 +112,9 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
         tmp.close()
 
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
-class TestCaffeUpload(BaseTestUpload):
-    FRAMEWORK = 'caffe'
 
-class TestTorchUpload(BaseTestUpload):
-    FRAMEWORK = 'torch'
+class TestCaffeUpload(BaseTestUpload, test_utils.CaffeMixin):
+    pass
+
+class TestTorchUpload(BaseTestUpload, test_utils.TorchMixin):
+    pass
