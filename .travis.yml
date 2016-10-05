@@ -4,13 +4,15 @@ sudo: required
 dist: trusty
 
 language: python
-python:
-    2.7
-compiler: gcc
+python: 2.7
+
 env:
     matrix:
-        - CAFFE_FORK=NVIDIA
-        - CAFFE_FORK=BVLC
+        - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=NVIDIA
+        - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=BVLC
+        - DIGITS_TEST_FRAMEWORK=torch
+        - DIGITS_TEST_FRAMEWORK=none
+        - DEB_BUILD=true
 
 cache:
     apt: true
@@ -60,46 +62,21 @@ addons:
             - python-six
             - python-skimage
 
+services:
+    - docker
 
 before_install:
-    # undo all of TravisCI's "helpful" Python shenanigans on 14.04
     - deactivate
-    # use --system-site-packages so that Python will use deb packages
     - virtualenv --system-site-packages ~/venv
     - source ~/venv/bin/activate
-    - which python
-    - python --version
-    - which pip
-    - pip --version
 
 install:
-    # bust build caches
-    - ./scripts/travis/bust-cache.sh ~/caffe ~/torch
-
-    # build caffe
     - ./scripts/travis/install-caffe.sh ~/caffe
-
-    # build torch
-    - travis_wait ./scripts/travis/install-torch-wrapper.sh ~/torch $(pwd)/torch-install-log.txt
-
-    # digits requirements
-    - pip install -r requirements.txt
-    - pip install -r requirements_test.txt
-
-    # image gradients plug-ins
-    - pip install -e .
-    - pip install plugins/data/imageGradients
-    - pip install plugins/view/imageGradients
-
-before_script:
-    - export CAFFE_ROOT=~/caffe
-    - export TORCH_ROOT=~/torch
-    # Disable OpenMP multi-threading
-    - export OMP_NUM_THREADS=1
+    - travis_wait ./scripts/travis/install-torch.sh ~/torch
+    - ./scripts/travis/install-python-requirements.sh
+    - ./scripts/travis/install-digits.sh
 
 script:
-    ./digits-test -v --with-coverage --cover-package=digits
-
-after_success:
-    coveralls
+    - ./scripts/travis/test.sh
+    - ./scripts/travis/deb-build.sh
 
