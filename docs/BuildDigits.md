@@ -16,7 +16,7 @@ Doing so is your own adventure.
 
 Install some dependencies with Deb packages:
 ```sh
-sudo apt-get install --no-install-recommends git graphviz python-dev python-flask python-flaskext.wtf python-gevent python-h5py python-numpy python-pil python-protobuf python-scipy
+sudo apt-get install --no-install-recommends git graphviz python-dev python-flask python-flaskext.wtf python-gevent python-h5py python-numpy python-pil python-pip python-protobuf python-scipy
 ```
 
 Follow [these instructions](BuildCaffe.md) to build Caffe (**required**).
