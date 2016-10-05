@@ -7,6 +7,11 @@ import tempfile
 
 from .job import Job
 from .status import Status
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestStatus():
 

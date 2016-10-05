@@ -6,6 +6,11 @@ import stat
 import tempfile
 
 from . import resize_image
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestOutputValidation():
     def test_no_filename(self):

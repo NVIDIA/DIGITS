@@ -20,6 +20,11 @@ import numpy as np
 import PIL.Image
 
 from . import create_db
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class BaseTest():
     """

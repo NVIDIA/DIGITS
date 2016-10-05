@@ -21,6 +21,7 @@ import PIL.Image
 from urlparse import urlparse
 
 from .test_imageset_creator import create_classification_imageset, IMAGE_SIZE as DUMMY_IMAGE_SIZE, IMAGE_COUNT as DUMMY_IMAGE_COUNT
+from digits import test_utils
 import digits.test_views
 
 # May be too short on a slow system
@@ -208,7 +209,7 @@ class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
 # Test classes
 ################################################################################
 
-class TestViews(BaseViewsTest):
+class TestViews(BaseViewsTest, test_utils.DatasetMixin):
     """
     Tests which don't require an imageset or a dataset
     """
@@ -221,7 +222,7 @@ class TestViews(BaseViewsTest):
         assert not self.dataset_exists('foo'), "dataset shouldn't exist"
 
 
-class TestCreation(BaseViewsTestWithImageset):
+class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
     """
     Dataset creation tests
     """
@@ -323,7 +324,7 @@ class TestCreation(BaseViewsTestWithImageset):
         assert 'status should be' in rv.data, 'unexpected page format'
 
 
-class TestImageCount(BaseViewsTestWithImageset):
+class TestImageCount(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
     def test_image_count(self):
         for type in ['train','val','test']:
@@ -365,7 +366,7 @@ class TestImageCount(BaseViewsTestWithImageset):
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
-class TestMaxPerClass(BaseViewsTestWithImageset):
+class TestMaxPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
     def test_max_per_class(self):
         for type in ['train','val','test']:
             yield self.check_max_per_class, type
@@ -402,7 +403,7 @@ class TestMaxPerClass(BaseViewsTestWithImageset):
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
-class TestMinPerClass(BaseViewsTestWithImageset):
+class TestMinPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
     UNBALANCED_CATEGORY = True
 
@@ -442,7 +443,7 @@ class TestMinPerClass(BaseViewsTestWithImageset):
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
 
-class TestCreated(BaseViewsTestWithDataset):
+class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
     """
     Tests on a dataset that has already been created
     """
@@ -514,26 +515,26 @@ class TestCreated(BaseViewsTestWithDataset):
             assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
             assert 'Items per page' in rv.data, 'unexpected page format'
 
-class TestCreatedGrayscale(TestCreated):
+class TestCreatedGrayscale(TestCreated, test_utils.DatasetMixin):
     IMAGE_CHANNELS = 1
 
-class TestCreatedWide(TestCreated):
+class TestCreatedWide(TestCreated, test_utils.DatasetMixin):
     IMAGE_WIDTH = 20
 
-class TestCreatedTall(TestCreated):
+class TestCreatedTall(TestCreated, test_utils.DatasetMixin):
     IMAGE_HEIGHT = 20
 
-class TestCreatedJPEG(TestCreated):
+class TestCreatedJPEG(TestCreated, test_utils.DatasetMixin):
     ENCODING = 'jpg'
 
-class TestCreatedRaw(TestCreated):
+class TestCreatedRaw(TestCreated, test_utils.DatasetMixin):
     ENCODING = 'none'
 
-class TestCreatedRawGrayscale(TestCreated):
+class TestCreatedRawGrayscale(TestCreated, test_utils.DatasetMixin):
     ENCODING = 'none'
     IMAGE_CHANNELS = 1
 
-class TestCreatedHdf5(TestCreated):
+class TestCreatedHdf5(TestCreated, test_utils.DatasetMixin):
     BACKEND = 'hdf5'
 
     def test_compression_method(self):
@@ -542,5 +543,5 @@ class TestCreatedHdf5(TestCreated):
         for task in content['CreateDbTasks']:
             assert task['compression'] == self.COMPRESSION
 
-class TestCreatedHdf5Gzip(TestCreatedHdf5):
+class TestCreatedHdf5Gzip(TestCreatedHdf5, test_utils.DatasetMixin):
     COMPRESSION = 'gzip'
