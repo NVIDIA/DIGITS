@@ -24,6 +24,8 @@
     GRAYSCALE
     {% endif %}
     </dd>
+    <dt>Image bit-depth</dt>
+    <dd>{{dataset.resize_bpp}}</dd>
     <dt>DB backend</dt>
     <dd>{{dataset.get_backend()}}</dd>
     {% for task in dataset.create_db_tasks() %}

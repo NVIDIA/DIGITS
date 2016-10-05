@@ -202,6 +202,7 @@ def create_db(input_file, output_dir,
         image_width, image_height, image_channels,
         backend,
         resize_mode     = None,
+        resize_bpp      = None,
         image_folder    = None,
         shuffle         = True,
         mean_files      = None,
@@ -241,6 +242,8 @@ def create_db(input_file, output_dir,
         raise ValueError('invalid number of channels')
     if resize_mode not in [None, 'crop', 'squash', 'fill', 'half_crop']:
         raise ValueError('invalid resize_mode')
+    if resize_bpp not in [None, '8', '32']:
+        raise ValueError('invalid resize_bpp')
     if image_folder is not None and not os.path.exists(image_folder):
         raise ValueError('image_folder does not exist')
     if mean_files:
@@ -270,13 +273,13 @@ def create_db(input_file, output_dir,
     summary_queue = Queue.Queue()
 
     # Init helper function for notification between threads
-    _notification(set_flag=False)
+    _notification(reset=True)
 
     for _ in xrange(num_threads):
         p = threading.Thread(target=_load_thread,
                 args=(load_queue, write_queue, summary_queue,
                     image_width, image_height, image_channels,
-                    resize_mode, image_folder, compute_mean),
+                    resize_mode, image_folder, compute_mean, resize_bpp),
                 kwargs={'backend': backend,
                     'encoding': kwargs.get('encoding', None)},
                 )
@@ -367,7 +370,7 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
         images_written += len(batch)
 
     if _notification():
-        raise WriteError('Encoding should be None for images with color depth higher than 8 bits.')
+        raise WriteError('. '.join(_notification()))
 
     if images_loaded == 0:
         raise LoadError('no images loaded from input file')
@@ -421,9 +424,6 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
 
         processed_something = False
 
-        if _notification():
-            break
-
         if not summary_queue.empty():
             result_count, result_sum = summary_queue.get()
             images_loaded += result_count
@@ -453,9 +453,6 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
         images_written += len(batch)
 
     assert images_written == writer.count()
-
-    if _notification():
-        raise WriteError('Encoding should be None for images with color depth higher than 8 bits.')
 
     if images_loaded == 0:
         raise LoadError('no images loaded from input file')
@@ -513,13 +510,27 @@ def _fill_load_queue(filename, queue, shuffle):
 
     return valid_lines
 
-def _notification(set_flag=None):
-    if set_flag is None:
-        return _notification.flag
-    elif set_flag:
-        _notification.flag = True
+def _notification(reset=False, message=None):
+    """
+
+    Args:
+        reset: clear the message list if True
+        message: the error message
+
+    Returns:
+        False: if no message stored and not reset
+        The messages (a list): if some messages stored
+    """
+    if not reset:
+        if message is None:
+            if len(_notification.messages) == 0:
+                return False
+            else:
+                return _notification.messages
+        else:
+            _notification.messages.append(message)
     else:
-        _notification.flag = False
+        _notification.messages = list()
 
 def _parse_line(line, distribution):
     """
@@ -564,7 +575,7 @@ def _calculate_num_threads(batch_size, shuffle):
 
 def _load_thread(load_queue, write_queue, summary_queue,
         image_width, image_height, image_channels,
-        resize_mode, image_folder, compute_mean,
+        resize_mode, image_folder, compute_mean, resize_bpp,
         backend=None, encoding=None):
     """
     Consumes items in load_queue
@@ -597,6 +608,7 @@ def _load_thread(load_queue, write_queue, summary_queue,
                 image_height, image_width,
                 channels    = image_channels,
                 resize_mode = resize_mode,
+                resize_bpp = resize_bpp
                 )
 
         if compute_mean:
@@ -608,8 +620,8 @@ def _load_thread(load_queue, write_queue, summary_queue,
                 write_queue.put(datum)
             else:
                 write_queue.put((image, label))
-        except IOError:  # try to save 16-bit images with PNG/JPG encoding
-            _notification(True)
+        except IOError as e:  # report error to user (possibly save 16-bit image to PNG/JPG)
+            _notification(message=e.message)
             break
         images_added += 1
 
@@ -695,11 +707,7 @@ def _save_means(image_sum, image_count, mean_files):
     """
     Save mean[s] to file
     """
-    mean = np.around(image_sum / image_count)
-    if mean.max()>255:
-        mean = mean.astype(np.float)
-    else:
-        mean = mean.astype(np.uint8)
+    mean = np.around(image_sum / image_count).astype(np.float)
     for mean_file in mean_files:
         if mean_file.lower().endswith('.npy'):
             np.save(mean_file, mean)
@@ -725,10 +733,13 @@ def _save_means(image_sum, image_count, mean_files):
             with open(mean_file, 'wb') as outfile:
                 outfile.write(blob.SerializeToString())
         elif mean_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-            if np.issubdtype(mean.dtype, np.float):
+            #ensure pixel range is within supported format
+            if mean.max() < 256:  # works for three formats
+                image = PIL.Image.fromarray(mean.astype(np.uint8))
+            elif mean_file.lower().endswith('.png'):  # png supports higher color depth
+                image = PIL.Image.fromarray(mean).convert('I')
+            else:  # reduce color depth for jpg or jpeg
                 image = PIL.Image.fromarray(mean*255/mean.max()).convert('L')
-            else:
-                image = PIL.Image.fromarray(mean)
             image.save(mean_file)
         else:
             logger.warning('Unrecognized file extension for mean file: "%s"' % mean_file)
@@ -764,6 +775,9 @@ if __name__ == '__main__':
             )
     parser.add_argument('-r', '--resize_mode',
             help='resize mode for images (must be "crop", "squash" [default], "fill" or "half_crop")'
+            )
+    parser.add_argument('--resize_bpp',
+            help='bit per pixel for resized images (must be 8 (color/grayscale) or 32 (grayscale only)")'
             )
     parser.add_argument('-m', '--mean_file', action='append',
             help="location to output the image mean (doesn't save mean if not specified)")
@@ -801,6 +815,7 @@ if __name__ == '__main__':
                 args['width'], args['height'], args['channels'],
                 args['backend'],
                 resize_mode     = args['resize_mode'],
+                resize_bpp      = args['resize_bpp'],
                 image_folder    = args['image_folder'],
                 shuffle         = args['shuffle'],
                 mean_files      = args['mean_file'],

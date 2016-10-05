@@ -215,6 +215,7 @@ def image_to_array(image,
 def resize_image(image, height, width,
         channels=None,
         resize_mode=None,
+        resize_bpp='8'
         ):
     """
     Resizes an image and returns it as a np.array
@@ -227,19 +228,24 @@ def resize_image(image, height, width,
     Keyword Arguments:
     channels -- channels of new image (stays unchanged if not specified)
     resize_mode -- can be crop, squash, fill or half_crop
+    resize_bpp -- bits per pixel (per channel), either 8 or 32.
     """
 
     if resize_mode is None:
         resize_mode = 'squash'
     if resize_mode not in ['crop', 'squash', 'fill', 'half_crop']:
         raise ValueError('resize_mode "%s" not supported' % resize_mode)
+    if resize_bpp not in ['8', '32']:
+        raise ValueError('resize_bpp "%s" not supported' % resize_bpp)
+
+    target_dtype = np.uint8 if resize_bpp == '8' else np.float
 
     # convert to array
     image = image_to_array(image, channels)
 
     # No need to resize
     if image.shape[0] == height and image.shape[1] == width:
-        return image
+        return image.astype(target_dtype)
 
     ### Resize
     interp = 'bilinear'
@@ -306,20 +312,20 @@ def resize_image(image, height, width,
             noise_size = (padding, width)
             if channels > 1:
                 noise_size += (channels,)
-            if image_data_format == 'F':
-                noise = np.random.randint(int(image.min()), int(image.max()), noise_size).astype('float')
+            if target_dtype == np.float:
+                noise = np.random.randint(int(image.min()), int(image.max()), noise_size).astype(target_dtype)
             else:
-                noise = np.random.randint(0, 255, noise_size).astype('uint8')
+                noise = np.random.randint(0, 255, noise_size).astype(target_dtype)
             image = np.concatenate((noise, image, noise), axis=0)
         else:
             padding = (width - resize_width)/2
             noise_size = (height, padding)
             if channels > 1:
                 noise_size += (channels,)
-            if image_data_format == 'F':
-                noise = np.random.randint(int(image.min()), int(image.max()), noise_size).astype('float')
+            if target_dtype == np.float:
+                noise = np.random.randint(int(image.min()), int(image.max()), noise_size).astype(target_dtype)
             else:
-                noise = np.random.randint(0, 255, noise_size).astype('uint8')
+                noise = np.random.randint(0, 255, noise_size).astype(target_dtype)
             image = np.concatenate((noise, image, noise), axis=1)
 
         return image

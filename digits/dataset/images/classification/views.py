@@ -109,6 +109,7 @@ def from_folders(job, form):
                 backend     = backend,
                 image_dims  = job.image_dims,
                 resize_mode = job.resize_mode,
+                resize_bpp = job.resize_bpp,
                 encoding    = encoding,
                 compression = compression,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
@@ -126,6 +127,7 @@ def from_folders(job, form):
                     backend     = backend,
                     image_dims  = job.image_dims,
                     resize_mode = job.resize_mode,
+                    resize_bpp = job.resize_bpp,
                     encoding    = encoding,
                     compression = compression,
                     labels_file = job.labels_file,
@@ -142,6 +144,7 @@ def from_folders(job, form):
                     backend     = backend,
                     image_dims  = job.image_dims,
                     resize_mode = job.resize_mode,
+                    resize_bpp = job.resize_bpp,
                     encoding    = encoding,
                     compression = compression,
                     labels_file = job.labels_file,
@@ -188,6 +191,7 @@ def from_files(job, form):
                 image_dims  = job.image_dims,
                 image_folder= image_folder,
                 resize_mode = job.resize_mode,
+                resize_bpp = job.resize.bpp,
                 encoding    = encoding,
                 compression = compression,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,
@@ -220,6 +224,7 @@ def from_files(job, form):
                     image_dims  = job.image_dims,
                     image_folder= image_folder,
                     resize_mode = job.resize_mode,
+                    resize_bpp = job.resize_bpp,
                     encoding    = encoding,
                     compression = compression,
                     labels_file = job.labels_file,
@@ -251,6 +256,7 @@ def from_files(job, form):
                     image_dims  = job.image_dims,
                     image_folder= image_folder,
                     resize_mode = job.resize_mode,
+                    resize_bpp = job.resize_bpp,
                     encoding    = encoding,
                     compression = compression,
                     labels_file = job.labels_file,
@@ -303,7 +309,8 @@ def create():
                     int(form.resize_width.data),
                     int(form.resize_channels.data),
                     ),
-                resize_mode = form.resize_mode.data
+                resize_mode = form.resize_mode.data,
+                resize_bpp = int(form.resize_bpp.data)
                 )
 
         if form.method.data == 'folder':

@@ -57,6 +57,13 @@ New Image Classification Dataset
                 </div>
             </div>
             <div class="row">
+                <div class="form-group{{mark_errors([form.resize_bpp])}}">
+                    {{ form.resize_bpp.label }}
+                    {{ form.resize_bpp.tooltip }}
+                    {{ form.resize_bpp(class='form-control') }}
+                </div>
+            </div>
+            <div class="row">
                 <a class="btn btn-info" href="#" onClick="return showResizeExample();">See example</a>
                 <br>
                 <br>
