@@ -11,19 +11,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-try:
-    import dicom
-    dicom_extension = ('.dcm', '.dicom')
-except ImportError:
-    dicom = None
-    dicom_extension = None
-
-try:
-    import nifti
-    nifti_extension = ('.nii',)
-except ImportError:
-    nifti = None
-    nifti_extension = None
+import dicom
 
 import numpy as np
 import PIL.Image
@@ -48,11 +36,7 @@ from . import is_url, HTTP_TIMEOUT, errors
 
 # List of supported file extensions
 # Use like "if filename.endswith(SUPPORTED_EXTENSIONS)"
-SUPPORTED_EXTENSIONS = ('.png','.jpg','.jpeg','.bmp','.ppm')
-if dicom is not None:
-    SUPPORTED_EXTENSIONS = SUPPORTED_EXTENSIONS + dicom_extension
-if nifti is not None:
-    SUPPORTED_EXTENSIONS = SUPPORTED_EXTENSIONS + nifti_extension
+SUPPORTED_EXTENSIONS = ('.png','.jpg','.jpeg','.bmp','.ppm', '.dcm', '.dicom')
 
 def load_image_ex(path):
     """
@@ -65,9 +49,11 @@ def load_image_ex(path):
     """
     try:
         dm = dicom.read_file(path)
-    except dicom.errors.InvalidDicomError:
-        raise errors.LoadImageError, 'Invalid Dicom file'
+    except:
+        raise errors.LoadImageError, 'Unable to load Dicom file'
     pixels = dm.pixel_array
+    if len(pixels.shape) != 2:
+        raise errors.LoadImageError, 'Currently support Dicom 2-D image only'
     image = PIL.Image.fromarray(pixels.astype(np.float))
     return image
 
@@ -96,11 +82,8 @@ def load_image(path):
         try:
             image = PIL.Image.open(path)
             image.load()
-        except IOError as e:
-            if dicom is not None:
-                image = load_image_ex(path)
-            else:
-                raise errors.LoadImageError, e.message
+        except IOError:
+            image = load_image_ex(path)
     else:
         raise errors.LoadImageError, '"%s" not found' % path
 
@@ -215,7 +198,7 @@ def image_to_array(image,
 def resize_image(image, height, width,
         channels=None,
         resize_mode=None,
-        resize_bpp='8'
+        resize_bpp=None
         ):
     """
     Resizes an image and returns it as a np.array
@@ -235,9 +218,8 @@ def resize_image(image, height, width,
         resize_mode = 'squash'
     if resize_mode not in ['crop', 'squash', 'fill', 'half_crop']:
         raise ValueError('resize_mode "%s" not supported' % resize_mode)
-    if resize_bpp not in ['8', '32']:
-        raise ValueError('resize_bpp "%s" not supported' % resize_bpp)
-
+    if resize_bpp is None:
+        resize_bpp = '8'
     target_dtype = np.uint8 if resize_bpp == '8' else np.float
 
     # convert to array

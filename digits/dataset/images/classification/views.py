@@ -191,7 +191,7 @@ def from_files(job, form):
                 image_dims  = job.image_dims,
                 image_folder= image_folder,
                 resize_mode = job.resize_mode,
-                resize_bpp = job.resize.bpp,
+                resize_bpp = job.resize_bpp,
                 encoding    = encoding,
                 compression = compression,
                 mean_file   = utils.constants.MEAN_FILE_CAFFE,

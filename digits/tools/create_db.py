@@ -202,7 +202,7 @@ def create_db(input_file, output_dir,
         image_width, image_height, image_channels,
         backend,
         resize_mode     = None,
-        resize_bpp      = None,
+        resize_bpp      = '8',
         image_folder    = None,
         shuffle         = True,
         mean_files      = None,
@@ -221,6 +221,7 @@ def create_db(input_file, output_dir,
 
     Keyword arguments:
     resize_mode -- passed to utils.image.resize_image()
+    resize_bpp -- bit-depth of image on storage
     shuffle -- if True, shuffle the images in the list before creating
     mean_files -- a list of mean files to save
     """
@@ -242,7 +243,7 @@ def create_db(input_file, output_dir,
         raise ValueError('invalid number of channels')
     if resize_mode not in [None, 'crop', 'squash', 'fill', 'half_crop']:
         raise ValueError('invalid resize_mode')
-    if resize_bpp not in [None, '8', '32']:
+    if resize_bpp not in ['8', '32']:
         raise ValueError('invalid resize_bpp')
     if image_folder is not None and not os.path.exists(image_folder):
         raise ValueError('image_folder does not exist')
@@ -616,7 +617,7 @@ def _load_thread(load_queue, write_queue, summary_queue,
 
         try:
             if backend == 'lmdb':
-                datum = _array_to_datum(image, label, encoding)
+                datum = _array_to_datum(image, label, encoding, bpp=resize_bpp)
                 write_queue.put(datum)
             else:
                 write_queue.put((image, label))
@@ -636,7 +637,7 @@ def _initial_image_sum(width, height, channels):
     else:
         return np.zeros((height, width, channels), np.float64)
 
-def _array_to_datum(image, label, encoding):
+def _array_to_datum(image, label, encoding, bpp='8'):
     """
     Create a caffe Datum from a numpy.ndarray
     """
@@ -654,10 +655,10 @@ def _array_to_datum(image, label, encoding):
             image = image[np.newaxis,:,:]
         else:
             raise Exception('Image has unrecognized shape: "%s"' % image.shape)
-        if np.issubdtype(image.dtype, float):
+        if bpp == '32':
             image = image.astype(float)
         datum = caffe.io.array_to_datum(image, label)
-    else:
+    elif bpp == '8':
         datum = caffe_pb2.Datum()
         if image.ndim == 3:
             datum.channels = image.shape[2]
@@ -676,6 +677,8 @@ def _array_to_datum(image, label, encoding):
             raise ValueError('Invalid encoding type')
         datum.data = s.getvalue()
         datum.encoded = True
+    else:
+        raise ValueError('32 bit-depth can not encoded to PNG/JPG')
     return datum
 
 def _write_batch_lmdb(db, batch, image_count):

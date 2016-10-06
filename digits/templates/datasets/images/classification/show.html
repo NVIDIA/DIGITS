@@ -19,8 +19,10 @@
         <dd>{{'Color' if job.image_dims[2] == 3 else 'Grayscale'}}</dd>
         <dt>Resize Transformation</dt>
         <dd>{{ job.resize_mode_name() }}</dd>
+        {% if job.resize_bpp is defined %}
         <dt>Image bit-depth</dt>
         <dd>{{ job.resize_bpp }}</dd>
+        {% endif %}
         <dt>DB Backend</dt>
         <dd>{{job.get_backend()}}</dd>
         <dt>Image Encoding</dt>

@@ -83,6 +83,7 @@ def infer(input_list,
     width = image_dims[1]
     channels = image_dims[2]
     resize_mode = dataset.resize_mode if hasattr(dataset, 'resize_mode') else 'squash'
+    resize_bpp = str(dataset.resize_bpp) if hasattr(dataset, 'resize_bpp') else '8'  # model's train data bit-depth
 
     n_input_samples = 0  # number of samples we were able to load
     input_ids = []       # indices of samples within file list
@@ -126,13 +127,19 @@ def infer(input_list,
             path = path.strip()
             try:
                 image = utils.image.load_image(path.strip())
+                # model trained with 8-bit image, but we gives high
+                # bit-depth image.
+                # Inversely, it's not optimal but may be OK (high bit-depth trained model to inference 8-bit image)
+                if image.mode == 'F' and resize_bpp == '8':
+                    raise InferenceError('Model trained with 8-bit, can not handle images w/ high bit-depth')
                 if resize:
                     image = utils.image.resize_image(
                         image,
                         height,
                         width,
                         channels=channels,
-                        resize_mode=resize_mode)
+                        resize_mode=resize_mode,
+                        resize_bpp=resize_bpp)
                 else:
                     image = utils.image.image_to_array(
                         image,
