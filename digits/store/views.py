@@ -117,7 +117,7 @@ def models():
                 dirs = json_response['children']
                 msg = json_response['msg']
             else:
-                break
+                continue
         for subdir in dirs:
             tmp_dict = {'dir_name': subdir}
             response = requests.get(os.path.join(store_base_url,subdir,'info.json'))

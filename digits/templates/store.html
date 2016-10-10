@@ -21,15 +21,15 @@
     body {
     padding-top: 65px;
     }
-     .dropdown-menu {
+    .dropdown-menu {
          width: 220px !important;
-     }
-     .brightness {
+    }
+    .brightness {
          display: inline-block;
-     }
-     .brightness img:hover {
+    }
+    .brightness img:hover {
          opacity: .75;
-     }
+    }
     .div-ellipsis {
         white-space: nowrap;
         max-width: 400px;
@@ -42,7 +42,7 @@
 
 {% block content %}
 <div id="modelList" ng-app="modelStore" ng-controller="ModelListController">
-    <div class="panel panel-default col-md-10 col-sm-offset-1">
+    <div class="panel panel-default col-md-12">
         <div class="input-group">
           <span class="input-group-addon" id="basic-addon1">Filter list by:</span>
           <input type="text" ng-model="query" class="form-control" placeholder="query" aria-describedby="basic-addon1">
@@ -51,36 +51,40 @@
         <div ng-show="groups_length==0"> No models in Model Store</div>
         <div ng-hide="groups_length==0" ng-repeat="(key, value) in groups">
             <div class="panel-heading">
-                <h3 ng-show="local_error != null">{[ local_error ]}</h3>
+                <div ng-show="local_error != null">{[ local_error ]}</div>
                 <div> model store url: {[value.base_url]} </div>
             </div>
             <div class="panel-body">
-                <table class="table table-bordered table-hover">
+                <table class="table table-bordered table-hover" style="word-wrap: break-word">
                     <thead>
                     <tr>
+                        <th></th>
                         <th>Name</th>
                         <th>Contributor</th>
                         <th>Affiliate</th>
                         <th>Note</th>
-                        <th>Relevant data sets</th>
+                        <th>Data sets</th>
                         <th>License</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr ng-repeat="model in value.model_list | filter: query">
                         <td>
-                            <div data-toggle="tooltip" title="{[model.info.note]}">
-                                <a href="/store/push?id={[model.id]}"> {[ model.info.name ]} </a>
-                            </div>
+                            <a href="/store/push?id={[model.id]}"> Import </a>
+                        </td>
+                        <td>
+                            {[ model.info.name ]}
                         </td>
                         <td>
                             {[ model.info.username ]}
                         </td>
                         <td>
-                            <img ng-src="{[value.base_url+model.dir_name]}/logo.png" height="30" width="40"/>
+                            <img ng-show="model.aux.logo" ng-src="{[value.base_url+model.dir_name]}/{[model.aux.logo]}" height="30" width="40"/>
                         </td>
                         <td>
-                            {[ model.info.note ]}
+                            <div data-toggle="tooltip" title="{[model.info.note]}">
+                                {[ model.info.note ]}
+                            </div>
                         </td>
                         <td>
                             {[ model.aux.dataset ]}
@@ -110,8 +114,8 @@
                               </div>
                             </div>
                         </td>
-                        <td ng-show="true">
-                            <a href="{[value.base_url+model.dir_name]}/license.txt">{[model.aux.license ]}</a>
+                        <td>
+                            <a  ng-show="model.aux.license" href="{[value.base_url+model.dir_name]}/license.txt">{[model.aux.license]}</a>
                         </td>
                     </tr>
                     </tbody>

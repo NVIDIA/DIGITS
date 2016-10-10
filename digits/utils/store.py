@@ -39,11 +39,11 @@ class StoreParser(HTMLParser):
         pass
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'td':
+        if tag == 'td' or tag == 'a':
             self.starting = True
 
     def handle_endtag(self, tag):
-        if tag == 'td':
+        if tag == 'td' or tag == 'a':
             self.starting = False
 
     def handle_data(self, data):
