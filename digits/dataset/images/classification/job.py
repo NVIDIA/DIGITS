@@ -149,6 +149,7 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                     "image_width":      t.image_dims[0],
                     "image_height":     t.image_dims[1],
                     "image_channels":   t.image_dims[2],
+                    "image_bpp":        t.resize_bpp,
                     "backend":          t.backend,
                     "encoding":         t.encoding,
                     "compression":      t.compression,

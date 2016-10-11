@@ -44,3 +44,8 @@ class ImageDatasetForm(DatasetForm):
             choices=ImageDatasetJob.resize_mode_choices(),
             tooltip = "Options for dealing with aspect ratio changes during resize. See examples below."
             )
+    resize_bpp = utils.forms.SelectField(u'Bits per pixel',
+            default='8',
+            choices=[('8', '8-bit (color or grayscale)'), ('32', '32-bit floating point (grayscale only)')],
+            tooltip="Storing 32-bit floating point for certain medical images."
+            )

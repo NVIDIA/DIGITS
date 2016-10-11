@@ -539,6 +539,8 @@ class TorchTrainTask(TrainTask):
         temp_image_handle, temp_image_path = tempfile.mkstemp(suffix='.png')
         os.close(temp_image_handle)
         image = PIL.Image.fromarray(image)
+        if image.mode == 'F':
+            image = image.convert('L')
         try:
             image.save(temp_image_path, format='png')
         except KeyError:
@@ -836,6 +838,8 @@ class TorchTrainTask(TrainTask):
                 temp_image_handle, temp_image_path = tempfile.mkstemp(
                         dir=temp_dir_path, suffix='.png')
                 image = PIL.Image.fromarray(image)
+                if image.mode == 'F':
+                    image = image.convert('L')
                 try:
                     image.save(temp_image_path, format='png')
                 except KeyError:

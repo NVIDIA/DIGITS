@@ -40,6 +40,7 @@ class CreateDbTask(Task):
         self.shuffle = kwargs.pop('shuffle', True)
         self.resize_mode = kwargs.pop('resize_mode' , None)
         self.encoding = kwargs.pop('encoding', None)
+        self.resize_bpp = kwargs.pop('resize_bpp', None)
         self.compression = kwargs.pop('compression', None)
         self.mean_file = kwargs.pop('mean_file', None)
         self.labels_file = kwargs.pop('labels_file', None)
@@ -147,6 +148,7 @@ class CreateDbTask(Task):
                 '--backend=%s' % self.backend,
                 '--channels=%s' % self.image_dims[2],
                 '--resize_mode=%s' % self.resize_mode,
+                '--resize_bpp=%s' % self.resize_bpp
                 ]
 
         if self.mean_file is not None:
