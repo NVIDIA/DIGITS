@@ -37,6 +37,7 @@ CAFFE_ORIGINAL_FILE = 'original.prototxt'
 CAFFE_TRAIN_VAL_FILE = 'train_val.prototxt'
 CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
+CAFFE_PYTHON_LAYER_FILE = 'digits_python_layers.py'
 
 @subclass
 class DigitsTransformer(caffe.io.Transformer):
@@ -1155,6 +1156,12 @@ class CaffeTrainTask(TrainTask):
         if hasattr(self.dataset,"labels_file"):
             stats.update({"labels file": self.dataset.labels_file})
 
+        # Add this if python layer file exists
+        if os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)):
+            stats.update({"python layer file": CAFFE_PYTHON_LAYER_FILE})
+        elif os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')):
+            stats.update({"python layer file": CAFFE_PYTHON_LAYER_FILE+'c'})
+
         return stats
 
     @override
@@ -1568,6 +1575,10 @@ class CaffeTrainTask(TrainTask):
                 "Network (train/val)": self.train_val_file,
                 "Network (deploy)": self.deploy_file
             }
+        if os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)):
+            model_files.update({"Python layer": os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)})
+        elif os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')):
+            model_files.update({"Python layer": os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')})
         if hasattr(self,"model_file"):
             if self.model_file is not None:
                 model_files.update({"Network (original)": self.model_file})
