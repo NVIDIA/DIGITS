@@ -18,8 +18,6 @@ local LRPolicy = torch.class('LRPolicy')
 --      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
 --------------------------------------------------------------------------------------------------
 
-
-
 function LRPolicy:__init(...)
     local args = dok.unpack(
     {...},
@@ -74,6 +72,7 @@ function LRPolicy:GetLearningRate(iter)
   else
     --have to include additional comments
     print("Unknown learning rate policy: " .. self.policy)
+    os.exit(-1)
   end
 
   return rate

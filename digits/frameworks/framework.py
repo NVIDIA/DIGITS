@@ -26,6 +26,18 @@ class Framework(object):
         """
         return self.CAN_SHUFFLE_DATA
 
+    def supports_python_layers_file(self):
+        """
+        return whether framework can shuffle input data during training
+        """
+        return self.SUPPORTS_PYTHON_LAYERS_FILE
+
+    def supports_timeline_traces(self):
+        """
+        return whether framework supports creating timeline traces
+        """
+        return self.SUPPORTS_TIMELINE_TRACING
+
     def supports_solver_type(self, solver_type):
         """
         return whether framework supports this solver_type
@@ -77,7 +89,7 @@ class Framework(object):
         """
         raise NotImplementedError('Please implement me')
 
-    def get_network_visualization(self, desc):
+    def get_network_visualization(self, **kwargs):
         """
         return visualization of network
         """

@@ -1,4 +1,4 @@
--- source: https://github.com/soumith/imagenet-multiGPU.torch/blob/master/models/alexnet_cudnn.lua
+-- source: https://github.com/soumith/imagenet-multiGPU.torch/blob/master/models/googlenet.lua
 
 require 'nn'
 if pcall(function() require('cudnn') end) then

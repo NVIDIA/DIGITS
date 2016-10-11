@@ -2,7 +2,6 @@
 require 'torch' -- torch
 require 'nn' -- provides a normalization operator
 require 'utils' -- various utility functions
-require 'hdf5' -- import HDF5 now as it is unsafe to do it from a worker thread
 local threads = require 'threads' -- for multi-threaded data loader
 check_require('image') -- for color transforms
 

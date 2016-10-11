@@ -86,6 +86,22 @@ class ImageModelForm(ModelForm):
                  "preprocessing, assuming [0 1] pixel-value range. Suggested value is 0.03.")
     )
 
+    aug_contrast = utils.forms.FloatField(
+        'Contrast (factor)',
+        default=0,
+        validators=[ 
+            validators.NumberRange(min=0, max=5)
+        ],
+        tooltip="Per channel, the mean of the channel is computed and then adjusts each component x of each pixel to (x - mean) * contrast_factor + mean. The contrast_factor is picked form a random uniform distribution to yield a value between [1-contrast_factor, 1+contrast_factor]. Suggested value is 0.8."
+    )
+
+    aug_whitening = utils.forms.BooleanField(
+        'Whitening',
+        default=False,
+        validators=[],
+        tooltip="Per-image whitening by subtracting its own mean, and dividing by its own standard deviation."
+    )
+
     aug_hsv_use = utils.forms.BooleanField(
         'HSV Shifting',
         default=False,

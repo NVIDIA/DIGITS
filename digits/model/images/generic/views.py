@@ -228,6 +228,8 @@ def create(extension_id=None):
             data_aug['rot'] = form.aug_rot.data
             data_aug['scale'] = form.aug_scale.data
             data_aug['noise'] = form.aug_noise.data
+            data_aug['contrast'] = form.aug_contrast.data
+            data_aug['whitening']= form.aug_whitening.data
             data_aug['hsv_use'] = form.aug_hsv_use.data
             data_aug['hsv_h'] = form.aug_hsv_h.data
             data_aug['hsv_s'] = form.aug_hsv_s.data
@@ -253,6 +255,7 @@ def create(extension_id=None):
                 batch_size=form.batch_size.data[0],
                 batch_accumulation=form.batch_accumulation.data,
                 val_interval=form.val_interval.data,
+                traces_interval=form.traces_interval.data,
                 pretrained_model=pretrained_model,
                 crop_size=form.crop_size.data,
                 use_mean=form.use_mean.data,
@@ -317,6 +320,14 @@ def show(job, related_jobs=None):
         inference_form_html=inference_form_html,
     )
 
+@blueprint.route('/timeline_tracing', methods=['GET'])
+def timeline_tracing():
+    """
+    Shows timeline trace of a model
+    """
+    job = job_from_request()
+
+    return flask.render_template('models/timeline_tracing.html', job=job)
 
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():
@@ -325,7 +336,7 @@ def large_graph():
     """
     job = job_from_request()
 
-    return flask.render_template('models/images/generic/large_graph.html', job=job)
+    return flask.render_template('models/large_graph.html', job=job)
 
 
 @blueprint.route('/infer_one.json', methods=['POST'])

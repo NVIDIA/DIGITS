@@ -12,6 +12,7 @@ from . import (  # noqa
     torch,
     server_name,
     store_option,
+    tensorflow,
 )
 
 
@@ -20,3 +21,4 @@ def config_value(option):
     Return the current configuration value for the given option
     """
     return option_list[option]
+

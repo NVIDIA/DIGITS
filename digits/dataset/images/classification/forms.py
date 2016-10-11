@@ -21,12 +21,15 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                                   choices=[
                                       ('lmdb', 'LMDB'),
                                       ('hdf5', 'HDF5'),
+                                      ('tfrecords', 'TFRecords'),
                                   ],
                                   default='lmdb',
                                   )
 
     def validate_backend(form, field):
         if field.data == 'lmdb':
+            form.compression.data = 'none'
+        elif field.data == 'tfrecords':
             form.compression.data = 'none'
         elif field.data == 'hdf5':
             form.encoding.data = 'none'

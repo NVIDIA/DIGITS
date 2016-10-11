@@ -33,6 +33,8 @@ class TorchFramework(Framework):
 
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = True
+    SUPPORTS_PYTHON_LAYERS_FILE = False
+    SUPPORTS_TIMELINE_TRACING = False
 
     SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
                               'RMSPROP', 'ADADELTA', 'ADAM']
@@ -115,10 +117,11 @@ class TorchFramework(Framework):
         return True
 
     @override
-    def get_network_visualization(self, desc):
+    def get_network_visualization(self, **kwargs):
         """
         return visualization of network
         """
+        desc = kwargs['desc']
         # save network description to temporary file
         temp_network_handle, temp_network_path = tempfile.mkstemp(suffix='.lua')
         os.write(temp_network_handle, desc)
@@ -176,7 +179,7 @@ class TorchFramework(Framework):
                 # we did not find a network description
                 raise NetworkVisualizationError(''.join(unrecognized_output))
             else:
-                output = flask.Markup('<pre>')
+                output = flask.Markup('<pre align="left">')
                 for line in desc:
                     output += flask.Markup.escape(line)
                 output += flask.Markup('</pre>')
