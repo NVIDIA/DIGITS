@@ -1,3 +1,5 @@
+// Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+
 (function(angular) {
   'use strict';
   var app = angular.module('modelStore', []);
