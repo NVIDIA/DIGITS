@@ -254,8 +254,6 @@ Now that we have a dataset of RGB images, we can easily re-use the pre-trained F
 - name your model `FCN-Alexnet-Sunnybrooke_with_dice-pretrained`
 - set the number of training epochs to `30`
 
-You will also need to rename the `score_fr` and `upscore` layers, since those have a different number of outputs from those we used in the semantic segmentation example.
-
 When you are ready, click `Create`.
 You will see that after a small number of epochs, the Dice coefficient starts increasing to finally exceed 0.6:
 
