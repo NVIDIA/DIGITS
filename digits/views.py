@@ -498,6 +498,7 @@ def abort_jobs():
     not_found = 0
     forbidden = 0
     failed = 0
+    errors = []
     job_ids = flask.request.form.getlist('job_ids[]')
     for job_id in job_ids:
 
@@ -516,22 +517,20 @@ def abort_jobs():
                 continue
 
         except Exception as e:
-            error.append(e)
+            errors.append(e)
             pass
 
-    error = []
     if not_found:
-        error.append('%d job%s not found.' % (not_found, '' if not_found == 1 else 's'))
+        errors.append('%d job%s not found.' % (not_found, '' if not_found == 1 else 's'))
 
     if forbidden:
-        error.append('%d job%s not permitted to be aborted.' % (forbidden, '' if forbidden == 1 else 's'))
+        errors.append('%d job%s not permitted to be aborted.' % (forbidden, '' if forbidden == 1 else 's'))
 
     if failed:
-        error.append('%d job%s failed to abort.' % (failed, '' if failed == 1 else 's'))
+        errors.append('%d job%s failed to abort.' % (failed, '' if failed == 1 else 's'))
 
-    if len(error) > 0:
-        error = ' '.join(error)
-        raise werkzeug.exceptions.BadRequest(error)
+    if len(errors) > 0:
+        raise werkzeug.exceptions.BadRequest(' '.join(errors))
 
     return 'Jobs aborted.'
 

@@ -159,7 +159,7 @@ def get_version_and_flavor(executable):
         if version < parse_version(minimum_version):
             raise ValueError(
                 'Required version "%s" is greater than "%s". Upgrade your installation.'
-                % (nvidia_minimum_version, version_string))
+                % (minimum_version, version_string))
     else:
         flavor = 'BVLC'
 
@@ -171,7 +171,7 @@ def get_version_from_pycaffe():
     try:
         from caffe import __version__ as version
         return version
-    except AttributeError:
+    except ImportError:
         return None
 
 
@@ -182,8 +182,9 @@ def get_version_from_cmdline(executable):
         print p.stderr.read().strip()
         raise RuntimeError('"%s" returned error code %s' % (command, p.returncode))
 
+    pattern = 'version'
     for line in p.stdout:
-        if 'version' in line:
+        if pattern in line:
             return line[line.find(pattern) + len(pattern)+1:].strip()
     return None
 
@@ -196,9 +197,10 @@ def get_version_from_soname(executable):
         raise RuntimeError('"%s" returned error code %s' % (command, p.returncode))
 
     # Search output for caffe library
+    libname = 'libcaffe'
     caffe_line = None
     for line in p.stdout:
-        if 'libcaffe' in line:
+        if libname in line:
             caffe_line = line
             break
 
