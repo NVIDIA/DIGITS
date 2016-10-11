@@ -42,6 +42,7 @@ class TrainTask(Task):
         batch_size -- if set, override any network specific batch_size with this value
         batch_accumulation -- accumulate gradients over multiple batches
         val_interval -- how many epochs between validating the model with an epoch of validation data
+        traces_interval -- amount of steps in between timeline traces
         pretrained_model -- filename for a model to use for fine-tuning
         crop_size -- crop each image down to a square of this size
         use_mean -- subtract the dataset's mean file or mean pixel
@@ -53,6 +54,7 @@ class TrainTask(Task):
         self.batch_size = kwargs.pop('batch_size', None)
         self.batch_accumulation = kwargs.pop('batch_accumulation', None)
         self.val_interval = kwargs.pop('val_interval', None)
+        self.traces_interval = kwargs.pop('traces_interval', None)
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.crop_size = kwargs.pop('crop_size', None)
         self.use_mean = kwargs.pop('use_mean', None)
@@ -76,6 +78,7 @@ class TrainTask(Task):
 
         self.current_epoch = 0
         self.snapshots = []
+        self.timeline_traces = []
 
         # data gets stored as dicts of lists (for graphing)
         self.train_outputs = OrderedDict()
@@ -121,6 +124,7 @@ class TrainTask(Task):
         super(TrainTask, self).__setstate__(state)
 
         self.snapshots = []
+        self.timeline_traces = []
         self.dataset = None
 
     @override
@@ -205,7 +209,7 @@ class TrainTask(Task):
                             data_cpu['cpu_pct'] = ps.get_cpu_percent(interval=1)
                             data_cpu['mem_pct'] = ps.get_memory_percent()
                             data_cpu['mem_used'] = ps.get_memory_info().rss
-                except psutil.NoSuchProcess:
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
                     # In rare case of instant process crash or PID went zombie (report nothing)
                     pass
 
@@ -510,6 +514,37 @@ class TrainTask(Task):
                 'lr': 'Learning Rate'
             },
         }
+
+    def detect_timeline_traces(self):
+        """
+        Populate self.timeline_traces with snapshots that exist on disk
+        Returns True if at least one usable snapshot is found
+        """
+        return False
+
+    def has_timeline_traces(self):
+        """
+        Evaluates if there are timeline traces to be viewed at all
+        """
+        return len(self.timeline_traces) > 0
+
+    def timeline_trace(self, tid):
+        """
+        Returns the data of a selected timeline trace
+        """
+        for item in self.timeline_traces:
+            if item[1] == tid:
+                fn = item[0]
+                with open(fn, 'r') as file_data:
+                    return file_data.read()
+
+        raise ValueError('Requested timeline not found in timeline list')
+
+    def timeline_trace_list(self):
+        """
+        Returns an array of timeline trace id's for creating an HTML select field
+        """
+        return [[s[1], 'Trace #%s' % s[1]] for s in reversed(self.timeline_traces)]
 
     def combined_graph_data(self, cull=True):
         """

@@ -1,6 +1,7 @@
 # Temporary files
 *.swp
 *~
+.DS_Store
 TAGS
 
 # Compiled / optimized files

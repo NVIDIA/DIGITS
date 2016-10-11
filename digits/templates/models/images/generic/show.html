@@ -66,6 +66,12 @@
                     href="{{url_for('digits.model.images.generic.views.large_graph', job_id=job.id())}}">
                     View Large
                 </a>
+                {% if job.train_task().has_timeline_traces() %}
+                <a class="btn btn-primary btn-sm" target="_blank"
+                    href="{{url_for('digits.model.images.classification.views.timeline_tracing', job_id=job.id())}}">
+                    View Timeline Traces
+                </a>
+                {% endif %}
             </div>
             <br>
             <br>
@@ -345,4 +351,3 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
 </div>
 
 {% endblock %}
-

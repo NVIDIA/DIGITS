@@ -328,7 +328,7 @@ if opt.visualizeModel then
     print('\nModel: \n' .. model:__tostring())
     print('\nCriterion: \n' .. loss:__tostring())
     logmessage.display(0,'Network definition ends')
-    os.exit(-1)
+    os.exit(0)
 end
 
 -- NOTE: currently randomState option wasn't used in DIGITS. This option was provided to be used from command line, if required.

@@ -27,6 +27,8 @@ from digits import test_utils
 import digits.webapp
 
 
+import numpy as np
+
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
@@ -91,6 +93,23 @@ return function(p)
 end
 """
 
+    TENSORFLOW_NETWORK = \
+        """
+def build_model(params):
+    ninputs = params['input_shape'][0] * params['input_shape'][1] * params['input_shape'][2]
+    W = tf.get_variable('W', [ninputs, 2], initializer=tf.constant_initializer(0.0))
+    b = tf.get_variable('b', [2], initializer=tf.constant_initializer(0.0)),
+    model = tf.reshape(params['x'], shape=[-1, ninputs])
+    model = tf.add(tf.matmul(model, W), b)
+    def loss(y):
+        y = tf.reshape(y, shape=[-1, 2])
+        return digits.mse_loss(model, y)
+    return {
+        'model' : model,
+        'loss' : loss
+        }
+"""
+
     @classmethod
     def model_exists(cls, job_id):
         return cls.job_exists(job_id, 'models')
@@ -116,7 +135,14 @@ end
 
     @classmethod
     def network(cls):
-        return cls.TORCH_NETWORK if cls.FRAMEWORK == 'torch' else cls.CAFFE_NETWORK
+        if cls.FRAMEWORK=='torch':
+            return cls.TORCH_NETWORK
+        elif cls.FRAMEWORK=='caffe':
+            return cls.CAFFE_NETWORK
+        elif cls.FRAMEWORK=='tensorflow':
+            return cls.TENSORFLOW_NETWORK
+        else:
+            raise ValueError('Unknown framework %s' % cls.FRAMEWORK)
 
 
 class BaseViewsTestWithAnyDataset(BaseViewsTest):
@@ -1255,3 +1281,40 @@ layer {
   exclude { stage: "deploy" }
 }
 """
+
+#class TestTensorflowViews(BaseTestViews, test_utils.TensorflowMixin):
+#    # @TODO(tzaman) For TF i need to pass a proper dataset too - how to do this best?
+#    pass
+
+class TestTensorflowCreation(BaseTestCreation, test_utils.TensorflowMixin):
+    pass
+
+class TestTensorflowCreated(BaseTestCreated, test_utils.TensorflowMixin):
+    pass
+
+class TestTensorflowCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension, test_utils.TensorflowMixin):
+    pass
+
+class TestTensorflowCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension, test_utils.TensorflowMixin):
+    @classmethod
+    def setUpClass(cls):
+        super(TestTensorflowCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
+
+class TestTensorflowCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
+    MEAN = 'image'
+
+class TestTensorflowCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
+    MEAN = 'pixel'
+
+class TestTensorflowCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
+    MEAN = 'none'
+
+class TestTensorflowCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
+    MEAN = 'none'
+    VARIABLE_SIZE_DATASET = True
+
+class TestTensorflowCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.TensorflowMixin):
+    pass
+
+class TestTensorflowDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.TensorflowMixin):
+    pass

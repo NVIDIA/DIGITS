@@ -15,8 +15,8 @@ from . import images as model_images
 from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
 from digits import frameworks, extensions
-from digits.utils import auth
-from digits.utils.routing import request_wants_json
+from digits.utils import time_filters, auth
+from digits.utils.routing import request_wants_json, job_from_request, get_request_arg
 from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
@@ -100,6 +100,18 @@ def customize():
     })
 
 
+@blueprint.route('/timeline_trace_data', methods=['POST'])
+def timeline_trace_data():
+    """
+    Shows timeline trace of a model
+    """
+    job = job_from_request()
+    step = get_request_arg('step')
+    if step is None:
+        raise werkzeug.exceptions.BadRequest('step is a required field')
+    return job.train_task().timeline_trace(int(step))
+
+
 @blueprint.route('/view-config/<extension_id>', methods=['GET'])
 def view_config(extension_id):
     """
@@ -122,9 +134,18 @@ def visualize_network():
     if not framework:
         raise werkzeug.exceptions.BadRequest('framework not provided')
 
-    fw = frameworks.get_framework_by_id(framework)
-    ret = fw.get_network_visualization(flask.request.form['custom_network'])
+    dataset = None
+    if 'dataset_id' in flask.request.form:
+        dataset = scheduler.get_job(flask.request.form['dataset_id'])
 
+    fw = frameworks.get_framework_by_id(framework)
+    ret = fw.get_network_visualization(desc=flask.request.form['custom_network'],
+            dataset=dataset,
+            solver_type=flask.request.form['solver_type'] if 'solver_type' in flask.request.form else None,
+            use_mean=flask.request.form['use_mean'] if 'use_mean' in flask.request.form else None,
+            crop_size=flask.request.form['crop_size'] if 'crop_size' in flask.request.form else None,
+            num_gpus=flask.request.form['num_gpus'] if 'num_gpus' in flask.request.form else None,
+            )
     return ret
 
 
