@@ -12,7 +12,7 @@ class DatasetForm(Form):
     (abstract class)
     """
 
-    dataset_name = utils.forms.StringField(u'Dataset Name',
+    dataset_name = utils.forms.StringField(u'Dataset Name *',
             validators=[DataRequired()]
             )
 

@@ -76,7 +76,7 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
 
     ### Method - folder
 
-    folder_train = utils.forms.StringField(u'Training Images',
+    folder_train = utils.forms.StringField(u'Training Images *',
             validators=[
                 validate_required_iff(method='folder'),
                 validate_folder_path,
@@ -301,7 +301,7 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
             tooltip = "Shuffle the list[s] of images before creating the database."
             )
 
-    textfile_labels_file = utils.forms.FileField(u'Labels',
+    textfile_labels_file = utils.forms.FileField(u'Labels *',
             validators=[
                 validate_required_iff(method='textfile',
                                       textfile_use_local_files=False)

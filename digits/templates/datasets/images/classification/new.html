@@ -244,7 +244,7 @@ hasTestFolderChanged();
                                 <td></td>
                             </tr>
                             <tr>
-                                <td><b>Training</b></td>
+                                <td><b>Training *</b></td>
                                 <td class="form-group{{mark_errors([form.textfile_train_images])}} cl-upload-files">
                                     {{ form.textfile_train_images(class='form-control') }}
                                 </td>
@@ -259,7 +259,7 @@ hasTestFolderChanged();
                                 <td>
                                     <label for="{{form.textfile_use_val.name}}">
                                         {{form.textfile_use_val}}
-                                        Validation
+                                        Validation *
                                     </label>
                                 </td>
                                 <td class="form-group{{mark_errors([form.textfile_val_images])}} cl-upload-files">

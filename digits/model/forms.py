@@ -64,7 +64,7 @@ class ModelForm(Form):
     ### Fields
 
     # The options for this get set in the view (since they are dynamic)
-    dataset = utils.forms.SelectField('Select Dataset', choices=[],
+    dataset = utils.forms.SelectField('Select Dataset *', choices=[],
                 tooltip = "Choose the dataset to use for this model."
             )
 
@@ -351,7 +351,7 @@ class ModelForm(Form):
                 field.errors[:] = []
                 raise validators.StopValidation()
 
-    model_name = utils.forms.StringField('Model Name',
+    model_name = utils.forms.StringField('Model Name *',
             validators = [
                 validators.DataRequired()
                 ],
