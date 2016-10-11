@@ -10,6 +10,7 @@ from gevent import monkey; monkey.patch_all()
 from .config import config_value
 from digits import utils
 from digits.utils import filesystem as fs
+from digits.utils.store import StoreCache
 import digits.scheduler
 
 ### Create Flask, Scheduler and SocketIO objects
@@ -22,6 +23,8 @@ app.config['WTF_CSRF_ENABLED'] = False
 app.config['SECRET_KEY'] = os.urandom(12).encode('hex')
 app.url_map.redirect_defaults = False
 socketio = SocketIO(app, async_mode='gevent')
+app.config['store_cache'] = StoreCache()
+app.config['store_url_list'] = config_value('model_store')['url_list']
 scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
 ### Register filters and views
@@ -62,6 +65,8 @@ import digits.model.images.generic.views
 app.register_blueprint(digits.model.images.generic.views.blueprint, url_prefix='/models/images/generic')
 import digits.pretrained_model.views
 app.register_blueprint(digits.pretrained_model.views.blueprint, url_prefix='/pretrained_models')
+import digits.store.views
+app.register_blueprint(digits.store.views.blueprint, url_prefix='/store')
 
 def username_decorator(f):
     from functools import wraps
