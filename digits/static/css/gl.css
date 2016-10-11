@@ -1,0 +1,15 @@
+/* Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. */
+
+/* set the gl-canvas over the img, because the img will receive
+    resize events which we want to pass to the canvas */
+.gl-canvas-container {
+    position: relative;
+}
+
+.gl-canvas {
+    float: left;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 1;
+}

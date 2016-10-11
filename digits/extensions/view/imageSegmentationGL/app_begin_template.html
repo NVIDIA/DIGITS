@@ -1,0 +1,41 @@
+<!-- Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. -->
+
+<div ng-app="visualization_app">
+    <div ng-controller="display_controller as dispaly">
+        <!-- Display Options -->
+        <div class="pull-right">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="button-group pull-right">
+                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-cog"></span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu"
+                            style="padding:10px"
+                            ng-click="$event.stopPropagation()">
+                            <li>
+                                <small>Opacity {[storage.opacity]}%</small>
+                                <input type="range" min="0" max="100" step="1" ng-model="storage.opacity">
+                            </li>
+                            <li>
+                                <small>Mask {[storage.mask]}%</small>
+                                <input type="range" min="0" max="100" step="1" ng-model="storage.mask">
+                            </li>
+                            <li>
+                                <small>Line Width {[storage.line_width]}</small>
+                                <input type="range" min="0" max="6" step="1" ng-model="storage.line_width">
+                            </li>
+                            <!-- reset -->
+                            <li>
+                                <button type="button" class="btn btn-default btn-sm dropdown-toggle"
+                                        ng-click="storage.opacity = 30; storage.mask = 0; storage.line_width = 3;"
+                                        title="Reset to defaults">
+                                    <span class="glyphicon glyphicon-refresh"></span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>

@@ -37,6 +37,9 @@ class DataIngestion(DataIngestionInterface):
 
         random.seed(self.userdata['seed'])
 
+        if 'colormap_method' not in self.userdata:
+            self.userdata['colormap_method'] = "label";
+
         if self.userdata['colormap_method'] == "label":
             # open first image in label folder to retrieve palette
             # all label images must use the same palette - this is enforced
