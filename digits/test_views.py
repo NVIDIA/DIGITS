@@ -7,6 +7,7 @@ import urllib
 
 from urlparse import urlparse
 
+from . import test_utils
 from . import webapp
 
 ################################################################################
@@ -20,6 +21,11 @@ class BaseViewsTest(object):
     """
     @classmethod
     def setUpClass(cls):
+        # Call super.setUpClass() unless we're the last in the class hierarchy
+        supercls = super(BaseViewsTest, cls)
+        if hasattr(supercls, 'setUpClass'):
+            supercls.setUpClass()
+
         # Start up the server
         assert webapp.scheduler.start(), "scheduler wouldn't start"
         webapp.app.config['WTF_CSRF_ENABLED'] = False
@@ -165,6 +171,11 @@ class BaseViewsTest(object):
 ################################################################################
 
 class TestViews(BaseViewsTest):
+    @classmethod
+    def setUpClass(cls):
+        test_utils.skipIfNotFramework('none')
+        super(TestViews, cls).setUpClass()
+
     def test_homepage(self):
         rv = self.app.get('/')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code

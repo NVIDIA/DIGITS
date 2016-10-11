@@ -7,6 +7,11 @@ import unittest
 import nose
 
 from . import parse_version
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestParseVersion():
 

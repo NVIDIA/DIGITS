@@ -10,7 +10,7 @@ from . import jobs_dir
 from . import log_file
 from . import torch
 from . import server_name
-
+from . import store_option
 
 def config_value(option):
     """

@@ -90,6 +90,11 @@ def home(tab=2):
                     'url': flask.url_for(
                         'digits.pretrained_model.views.new'),
                     },
+                'access-model-store': {
+                    'title': 'Retrieve from Model Store',
+                    'id': 'retrieveModelStore',
+                    'url': flask.url_for('digits.store.views.store'),
+                    }
                 },
             }
 

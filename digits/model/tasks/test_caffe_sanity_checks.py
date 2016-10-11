@@ -5,6 +5,7 @@ from .caffe_train import CaffeTrainTask,CaffeTrainSanityCheckError
 
 from google.protobuf import text_format
 from digits.config import config_value
+from digits import test_utils
 
 # Must import after importing digit.config
 import caffe
@@ -23,7 +24,7 @@ def check_negative(desc, stage):
     except CaffeTrainSanityCheckError:
         pass
 
-class TestCaffeNetSanityCheck():
+class TestCaffeNetSanityCheck(test_utils.CaffeMixin):
 
     # positive cases
 

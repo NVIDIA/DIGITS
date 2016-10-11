@@ -7,6 +7,11 @@ import platform
 import unittest
 
 from . import device_query
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestGetDevices():
     """

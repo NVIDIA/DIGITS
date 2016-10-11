@@ -19,6 +19,11 @@ import PIL.Image
 from . import errors
 from . import image as image_utils
 import digits
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestLoadImage():
 

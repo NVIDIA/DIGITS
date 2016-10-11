@@ -12,6 +12,11 @@ import numpy as np
 import PIL.Image
 
 from . import parse_folder
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestUnescape():
     def test_hello(self):

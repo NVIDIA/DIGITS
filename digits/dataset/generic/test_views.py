@@ -11,6 +11,7 @@ import PIL.Image
 
 import digits.test_views
 from digits import extensions
+from digits import test_utils
 from digits.utils import constants
 
 # May be too short on a slow system
@@ -330,14 +331,14 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
 ################################################################################
 
 
-class TestImageGradientViews(GenericViewsTest):
+class TestImageGradientViews(GenericViewsTest, test_utils.DatasetMixin):
     """
     Tests which don't require an imageset or a dataset
     """
     EXTENSION_ID = "image-gradients"
 
 
-class TestImageGradientCreation(GenericCreationTest):
+class TestImageGradientCreation(GenericCreationTest, test_utils.DatasetMixin):
     """
     Test that create datasets
     """
@@ -359,7 +360,7 @@ class TestImageGradientCreation(GenericCreationTest):
         assert self.get_entry_count(constants.TEST_DB) == 10
 
 
-class TestImageGradientCreated(GenericCreatedTest):
+class TestImageGradientCreated(GenericCreatedTest, test_utils.DatasetMixin):
     """
     Test that create datasets
     """
@@ -374,7 +375,7 @@ class TestImageGradientCreated(GenericCreatedTest):
             image_height=cls.IMAGE_HEIGHT)
 
 
-class TestImageProcessingCreated(GenericCreatedTest):
+class TestImageProcessingCreated(GenericCreatedTest, test_utils.DatasetMixin):
     """
     Test Image processing extension
     """
@@ -400,7 +401,7 @@ class TestImageProcessingCreated(GenericCreatedTest):
         assert self.get_entry_count(constants.VAL_DB) == self.NUM_IMAGES * (self.FOLDER_PCT_VAL/100.)
 
 
-class TestImageProcessingCreatedWithSeparateValidationDirs(GenericCreatedTest):
+class TestImageProcessingCreatedWithSeparateValidationDirs(GenericCreatedTest, test_utils.DatasetMixin):
     """
     Test Image processing extension, using separate fields for the train and validation folders
     Use RGB channel conversion for this test

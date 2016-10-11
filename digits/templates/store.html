@@ -1,0 +1,127 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+
+{% extends "layout.html" %}
+
+{% block head %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.time_filters.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/angular.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ui-bootstrap-tpls-1.3.2.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ngStorage.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.sparkline.min.js', ver=dir_hash) }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/store.js', ver=dir_hash) }}"></script>
+<script>
+    $(document).ready(function(){
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/table_selection.css', ver=dir_hash) }}">
+<style>
+    body {
+    padding-top: 65px;
+    }
+    .dropdown-menu {
+         width: 220px !important;
+    }
+    .brightness {
+         display: inline-block;
+    }
+    .brightness img:hover {
+         opacity: .75;
+    }
+    .div-ellipsis {
+        white-space: nowrap;
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .logo-column { min-width: 100px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="modelList" ng-app="modelStore" ng-controller="ModelListController">
+    <div class="panel panel-default col-md-12">
+        <div class="input-group">
+          <span class="input-group-addon" id="basic-addon1">Filter list by:</span>
+          <input type="text" ng-model="query" class="form-control" placeholder="query" aria-describedby="basic-addon1">
+        </div>
+        <button type="button" class="btn btn-info" ng-click="get_model_list(1)">Update model list</button>
+        <div ng-show="groups_length==0"> No models in Model Store</div>
+        <div ng-hide="groups_length==0" ng-repeat="(key, value) in groups">
+            <div class="panel-heading">
+                <div ng-show="local_error != null">{[ local_error ]}</div>
+                <div> model store url: {[value.base_url]} </div>
+            </div>
+            <div class="panel-body">
+                <table class="table table-bordered table-hover" style="word-wrap: break-word">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Contributor</th>
+                        <th>Affiliate</th>
+                        <th>Note</th>
+                        <th>Data sets</th>
+                        <th>License</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="model in value.model_list | filter: query">
+                        <td>
+                            <a href="/store/push?id={[model.id]}"> Import </a>
+                        </td>
+                        <td>
+                            {[ model.info.name ]}
+                        </td>
+                        <td>
+                            {[ model.info.username ]}
+                        </td>
+                        <td>
+                            <img ng-show="model.aux.logo" ng-src="{[value.base_url+model.dir_name]}/{[model.aux.logo]}" height="30" width="40"/>
+                        </td>
+                        <td>
+                            <div data-toggle="tooltip" title="{[model.info.note]}">
+                                {[ model.info.note ]}
+                            </div>
+                        </td>
+                        <td>
+                            {[ model.aux.dataset ]}
+                        </td>
+                        <td ng-show="false">
+                            <div>
+                                <!-- Trigger the modal with a button -->
+                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#{[value.id+model.name]}">
+                                    {[model.info.license ]}
+                                </button>
+                            </div>
+                            <div id="{[value.id+model.name]}" class="modal fade" role="dialog">
+                              <div class="modal-dialog">
+                                <!-- Modal content-->
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                    <h4 class="modal-title">License</h4>
+                                  </div>
+                                  <div class="modal-body">
+                                    <p> {[model.license_text]} </p>
+                                  </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                        </td>
+                        <td>
+                            <a  ng-show="model.aux.license" href="{[value.base_url+model.dir_name]}/license.txt">{[model.aux.license]}</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

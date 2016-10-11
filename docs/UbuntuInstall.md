@@ -16,7 +16,7 @@ sudo dpkg -i /tmp/${CUDA_REPO_PKG}
 rm -f /tmp/${CUDA_REPO_PKG}
 
 # Access to Machine Learning packages
-ML_REPO_PKG=nvidia-machine-learning-repo_4.0-2_amd64.deb
+ML_REPO_PKG=nvidia-machine-learning-repo-ubuntu1404_4.0-2_amd64.deb
 wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/${ML_REPO_PKG} -O /tmp/${ML_REPO_PKG}
 sudo dpkg -i /tmp/${ML_REPO_PKG}
 rm -f /tmp/${ML_REPO_PKG}

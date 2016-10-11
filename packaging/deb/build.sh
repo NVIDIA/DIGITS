@@ -59,12 +59,12 @@ DESCRIBE_VERSION=$(git describe --match $GIT_TAG)
 UPSTREAM_VERSION=${DESCRIBE_VERSION:1}
 if [[ "$GIT_TAG" == *"-"* ]]; then
     # Replace the first dash with a tilde
-    UPSTREAM_VERSION=$(echo $UPSTREAM_VERSION | sed '0,/-/{s/-/~/}')
+    UPSTREAM_VERSION=${UPSTREAM_VERSION/-/\~}
 fi
 # Replace the first dash with a plus
-UPSTREAM_VERSION=$(echo $UPSTREAM_VERSION | sed '0,/-/{s/-/\+/}')
+UPSTREAM_VERSION=${UPSTREAM_VERSION/-/+}
 # Replace all dashes with dots
-UPSTREAM_VERSION=$(echo $UPSTREAM_VERSION | sed 's/-/\./g')
+UPSTREAM_VERSION=${UPSTREAM_VERSION//-/.}
 echo UPSTREAM_VERSION: $UPSTREAM_VERSION
 DEBIAN_VERSION=${UPSTREAM_VERSION}-${DEBIAN_REVISION}
 echo DEBIAN_VERSION: $DEBIAN_VERSION
@@ -90,7 +90,10 @@ docker build -t $DOCKER_BUILD_ID \
     .
 docker ps -a -f "name=${DOCKER_BUILD_ID}" -q | xargs -r docker rm
 docker create --name=$DOCKER_BUILD_ID $DOCKER_BUILD_ID
-rm -rf dist/
-docker cp $DOCKER_BUILD_ID:/dist .
+DIST_ROOT=$LOCAL_DIR/dist
+DIST_DIR=$LOCAL_DIR/dist/$DEBIAN_VERSION
+rm -rf $DIST_DIR
+mkdir -p $DIST_ROOT
+docker cp $DOCKER_BUILD_ID:/dist $DIST_DIR
 docker rm $DOCKER_BUILD_ID
-find `pwd`/dist/ -type f | sort
+find $DIST_DIR -type f | sort

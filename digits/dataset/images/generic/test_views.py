@@ -21,6 +21,7 @@ import PIL.Image
 from urlparse import urlparse
 
 from .test_lmdb_creator import create_lmdbs
+from digits import test_utils
 import digits.test_views
 
 # May be too short on a slow system
@@ -147,7 +148,7 @@ class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
 # Test classes
 ################################################################################
 
-class TestViews(BaseViewsTest):
+class TestViews(BaseViewsTest, test_utils.DatasetMixin):
     """
     Tests which don't require an imageset or a dataset
     """
@@ -160,7 +161,7 @@ class TestViews(BaseViewsTest):
         assert not self.dataset_exists('foo'), "dataset shouldn't exist"
 
 
-class TestCreation(BaseViewsTestWithImageset):
+class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
     """
     Dataset creation tests
     """
@@ -232,7 +233,7 @@ class TestCreation(BaseViewsTestWithImageset):
 
         assert (job1.form_data == job2.form_data), 'form content does not match'
 
-class TestCreated(BaseViewsTestWithDataset):
+class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
     """
     Tests on a dataset that has already been created
     """

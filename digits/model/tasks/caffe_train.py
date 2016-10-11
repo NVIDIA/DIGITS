@@ -1575,10 +1575,10 @@ class CaffeTrainTask(TrainTask):
                 "Network (train/val)": self.train_val_file,
                 "Network (deploy)": self.deploy_file
             }
-        if os.path.exists(os.path.join(self.job_dir, 'digits_python_layers.py')):
-            model_files.update({"Python layer": os.path.join(self.job_dir, 'digits_python_layers.py')})
-        elif os.path.exists(os.path.join(self.job_dir, 'digits_python_layers.pyc')):
-            model_files.update({"Python layer": os.path.join(self.job_dir, 'digits_python_layers.pyc')})
+        if os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)):
+            model_files.update({"Python layer": os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)})
+        elif os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')):
+            model_files.update({"Python layer": os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')})
         if hasattr(self,"model_file"):
             if self.model_file is not None:
                 model_files.update({"Network (original)": self.model_file})

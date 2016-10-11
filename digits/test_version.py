@@ -4,6 +4,11 @@ from __future__ import absolute_import
 import os.path
 import re
 
+from digits import test_utils
+
+
+test_utils.skipIfNotFramework('none')
+
 
 class TestVersion():
     DEV_REGEX = re.compile('^(0|[1-9]\d*)\.(0|[1-9]\d*)-dev$')
