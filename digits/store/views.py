@@ -42,8 +42,12 @@ def retrieve_files(url, directory):
         label = save_binary(model_url, info["labels file"], tmp_dir)
     else:
         label = None
+    if "python layer file" in info:
+        label = save_binary(model_url, info["python layer file"], tmp_dir)
+    else:
+        label = None
     meta_data = info
-    return weights, model, label, meta_data
+    return weights, model, label, meta_data, tmp_dir
 
 @blueprint.route('/push', methods=['GET'])
 def push():
@@ -64,9 +68,13 @@ def push():
             if found:
                 break
     if not found:
-        return 'Error', 404
+        return 'Unable to find requested model', 404
     else:
-        weights, model, label, meta_data = retrieve_files(url, directory)
+        weights, model, label, meta_data, tmp_dir = retrieve_files(url, directory)
+        if 'python layer file' in meta_data:
+            python_layer_path = os.path.join(tmp_dir, meta_data['python layer file'])
+        else:
+            python_layer_path = None
         job = PretrainedModelJob(
             weights,
             model,
