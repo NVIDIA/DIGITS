@@ -658,6 +658,28 @@ def path_autocomplete():
 
     return json.dumps(result)
 
+@blueprint.route('/extension-static/<extension_type>/<extension_id>/<path:filename>')
+def extension_static(extension_type, extension_id, filename):
+    """
+    Returns static files from an extension's static directory.
+    '/extension-static/view/image-segmentation/js/app.js'
+    would send the file
+    'digits/extensions/view/imageSegmentation/static/js/app.js'
+    """
+
+    extension = None
+    if (extension_type == 'view'):
+        extension = extensions.view.get_extension(extension_id)
+    elif (extension_type == 'data'):
+        extension = extensions.data.get_extension(extension_id)
+
+    if extension is None:
+        raise ValueError("Unknown extension '%s'" % extension_id)
+
+    digits_root = os.path.dirname(os.path.abspath(digits.__file__))
+    rootdir = os.path.join(digits_root, *['extensions', 'view', extension.get_dirname(), 'static'])
+    return flask.send_from_directory(rootdir, filename)
+
 ### SocketIO functions
 
 ## /home

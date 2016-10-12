@@ -1,0 +1,20 @@
+/* Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. */
+
+ div.vis-div {
+     position: relative;
+ }
+ img.overlay {
+     float: left;
+     position: absolute;
+     left: 0px;
+     top: 0px;
+ }
+ img.fill {
+     z-index: 1;
+ }
+ img.mask {
+     z-index: 2;
+ }
+ caption {
+     caption-side: bottom;
+ }
