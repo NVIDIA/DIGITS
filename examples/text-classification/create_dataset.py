@@ -136,7 +136,7 @@ def _write_batch_to_lmdb(db, batch):
         except AttributeError as e:
             version = tuple(int(x) for x in lmdb.__version__.split('.'))
             if version < (0,87):
-                raise Error('py-lmdb is out of date (%s vs 0.87)' % lmdb.__version__)
+                raise ImportError('py-lmdb is out of date (%s vs 0.87)' % lmdb.__version__)
             else:
                 raise e
         # try again
