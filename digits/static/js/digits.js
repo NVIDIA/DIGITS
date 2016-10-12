@@ -1,13 +1,13 @@
 // Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
-function errorAlert(data) {
+function errorAlert(response) {
     var title, msg;
-    if (data.status == 0) {
+    if (response.status == 0) {
         title = 'An error occurred!';
         msg = '<p class="text-danger">The server may be down.</p>';
     } else {
-        title = data.status + ': ' + data.statusText;
-        msg = data.responseText;
+        title = response.status + ': ' + response.statusText;
+        msg = response.responseText ? response.responseText : response.data;
     }
     bootbox.alert({
         title: title,

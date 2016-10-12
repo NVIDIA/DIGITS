@@ -3,43 +3,98 @@ from __future__ import absolute_import
 
 import json
 import os
-import requests
 import tempfile
+import time
 import uuid
 
 import flask
+import requests
 
 from digits.log import logger
 from digits.pretrained_model import PretrainedModelJob
 from digits.utils import auth
 from digits.utils.store import StoreParser
-from digits.webapp import app, scheduler
+from digits.webapp import app, scheduler, socketio
+
 
 blueprint = flask.Blueprint(__name__, __name__)
 
-def save_binary(url, file_name, tmp_dir):
+class Progress(object):
+    """class to emit download progress"""
+    def __init__(self, model_id):
+        self._model_id = model_id
+        self._file = 0
+        self._n_files = 0
+        self._n_chunks = 0
+        self._last_progress = -1
+        self.emit(0)
+
+    def set_n_files(self, n_files):
+        """ set the number of files file this Progress object will report """
+        self._n_files = n_files
+
+    def set_n_chunks(self, n_chuncks):
+        """ set the number of chunks expected """
+        self._n_chunks = n_chuncks
+        self._file += 1
+        self._last_progress = -1
+
+    def emit(self, progress):
+        """ emit the progress to the client """
+        socketio.emit('update',
+                      {
+                          'model_id': self._model_id,
+                          'update': 'progress',
+                          'progress': progress,
+                      },
+                      namespace='/jobs',
+                      room='job_management'
+                     )
+        # micro sleep so that emit is broadcast to the client
+        time.sleep(0.001)
+
+    def incr(self, itr):
+        """ progress iterator that the request iterator is wrapped in """
+        for i, item in enumerate(itr):
+            yield item
+            progress = min(int(round(((self._file - 1.0) + (i + 1.0) / self._n_chunks) /
+                                     self._n_files * 100)), 100)
+            if progress != self._last_progress:
+                self.emit(progress)
+                self._last_progress = progress
+
+def save_binary(url, file_name, tmp_dir, progress):
     r = requests.get(os.path.join(url, file_name), stream=True)
+    chunk_size = 1024
+    total_length = int(r.headers.get('content-length'))
+    n_chuncks = (total_length / chunk_size) + bool(total_length % chunk_size)
+    progress.set_n_chunks(n_chuncks)
     full_path = os.path.join(tmp_dir, file_name)
     with open(full_path,'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024):
+        for chunk in progress.incr(r.iter_content(chunk_size=chunk_size)):
             if chunk:  # filter out keep-alive new chunks
                 f.write(chunk)
     return full_path
 
-def retrieve_files(url, directory):
+def retrieve_files(url, directory, progress):
     model_url = os.path.join(url, directory)
     tmp_dir = tempfile.mkdtemp()
     info = json.loads(requests.get(os.path.join(model_url, 'info.json')).content)
-    weights = save_binary(model_url, info["snapshot file"], tmp_dir)
+
+    # How many files will we download?
+    n_files = 1 + ("model file" in info or "network file" in info) + ("labels file" in info)
+    progress.set_n_files(n_files)
+
+    weights = save_binary(model_url, info["snapshot file"], tmp_dir, progress)
     if "model file" in info:
         remote_model_file = info["model file"]
     elif "network file" in info:
         remote_model_file = info["network file"]
     else:
         return flask.jsonify({"status": "Missing model definition in info.json"}), 500
-    model = save_binary(model_url, remote_model_file, tmp_dir)
+    model = save_binary(model_url, remote_model_file, tmp_dir, progress)
     if "labels file" in info:
-        label = save_binary(model_url, info["labels file"], tmp_dir)
+        label = save_binary(model_url, info["labels file"], tmp_dir, progress)
     else:
         label = None
     meta_data = info
@@ -66,7 +121,8 @@ def push():
     if not found:
         return 'Error', 404
     else:
-        weights, model, label, meta_data = retrieve_files(url, directory)
+        progress = Progress(model_id)
+        weights, model, label, meta_data = retrieve_files(url, directory, progress)
         job = PretrainedModelJob(
             weights,
             model,
@@ -76,7 +132,8 @@ def push():
             name=meta_data['name']
         )
         scheduler.add_job(job)
-        return flask.redirect(flask.url_for('digits.views.home', tab=3)), 302
+        response = flask.make_response(job.id())
+        return response
 
 @blueprint.route('/models', methods=['GET'])
 def models():
@@ -100,31 +157,33 @@ def models():
             store_base_url = store_url + '/'
         else:
             store_base_url = store_url
+
         try:
-            page = requests.get(store_base_url)
-        except requests.exceptions.RequestException as e:
-            logger.warning('Skip %s due to error %s' % (store_base_url, e))
-            continue
-        parser = StoreParser()
-        parser.feed(page.content)
-        msg = 'Thanks for visiting {}'.format(store_base_url)
-        if len(parser.get_child_dirs()) > 0:
-            dirs = [d[:-1] for d in parser.get_child_dirs()]
-        else:
-            response = requests.get(os.path.join(store_base_url,'master.json'))
+            response = requests.get(os.path.join(store_base_url, 'master.json'))
             if response.status_code == 200:
                 json_response = json.loads(response.content)
                 dirs = json_response['children']
                 msg = json_response['msg']
-            else:
-                continue
+            else:  # try to retrieve from directory listing
+                page = requests.get(store_base_url)
+                parser = StoreParser()
+                parser.feed(page.content)
+                if len(parser.get_child_dirs()) > 0:  # we have list of subdirectories
+                    dirs = [d[:-1] for d in parser.get_child_dirs()]
+                    msg = 'Thanks for visiting {}'.format(store_base_url)
+                else:  # nothing found, try next URL
+                    continue
+        except requests.exceptions.RequestException as e:
+            logger.warning('Skip %s due to error %s' % (store_base_url, e))
+            continue
+
         for subdir in dirs:
             tmp_dict = {'dir_name': subdir}
-            response = requests.get(os.path.join(store_base_url,subdir,'info.json'))
+            response = requests.get(os.path.join(store_base_url, subdir, 'info.json'))
             if response.status_code == 200:
                 tmp_dict['info'] = json.loads(response.content)
                 tmp_dict['id'] = str(uuid.uuid4())
-            response = requests.get(os.path.join(store_base_url,subdir,'aux.json'))
+            response = requests.get(os.path.join(store_base_url, subdir, 'aux.json'))
             if response.status_code == 200:
                 tmp_dict['aux'] = json.loads(response.content)
             model_list.append(tmp_dict)
