@@ -200,10 +200,10 @@ class Visualization(VisualizationInterface):
                 line_width = 3
                 line_mask |= c_mask & np.less(distance, line_width)
 
-        # add the outlines to the input image
-        for x in xrange(3):
-            input_data[:, :, x] = (input_data[:, :, x] * (1 - line_mask) +
-                                   fill_data[:, :, x] * line_mask)
+            # add the outlines to the input image
+            for x in xrange(3):
+                input_data[:, :, x] = (input_data[:, :, x] * (1 - line_mask) +
+                                       fill_data[:, :, x] * line_mask)
 
         # Input image with outlines
         input_image = PIL.Image.fromarray(input_data)
