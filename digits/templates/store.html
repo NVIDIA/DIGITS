@@ -12,116 +12,153 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.sparkline.min.js', ver=dir_hash) }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/store.js', ver=dir_hash) }}"></script>
 <script>
-    $(document).ready(function(){
-        $('[data-toggle="tooltip"]').tooltip();
-    });
+ $(document).ready(function(){
+     $('[data-toggle="tooltip"]').tooltip();
+ });
 </script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/table_selection.css', ver=dir_hash) }}">
+{% with namespace = "/jobs" %}
+{% set room = "job_management" %}
+{% include 'socketio.html' %}
+{% endwith %}
 <style>
-    body {
-    padding-top: 65px;
-    }
-    .dropdown-menu {
-         width: 220px !important;
-    }
-    .brightness {
-         display: inline-block;
-    }
-    .brightness img:hover {
-         opacity: .75;
-    }
-    .div-ellipsis {
-        white-space: nowrap;
-        max-width: 400px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .logo-column { min-width: 100px; }
+ body {
+     padding-top: 65px;
+ }
+ span.glyphicon {
+     color: grey;
+     cursor: pointer;
+ }
+ span.glyphicon:hover {
+     color: black;
+ }
+
+ div.progress-line-parent {
+     position: relative;
+ }
+ div.progress-line {
+     content: "";
+     position: absolute;
+     bottom: 0;
+     left: 0;
+     width: 0;
+     height: 2px;
+     background-color: rgb(51, 122, 183);
+ }
 </style>
 {% endblock %}
 
 {% block content %}
-<div id="modelList" ng-app="modelStore" ng-controller="ModelListController">
-    <div class="panel panel-default col-md-12">
-        <div class="input-group">
-          <span class="input-group-addon" id="basic-addon1">Filter list by:</span>
-          <input type="text" ng-model="query" class="form-control" placeholder="query" aria-describedby="basic-addon1">
-        </div>
-        <button type="button" class="btn btn-info" ng-click="get_model_list(1)">Update model list</button>
-        <div ng-show="groups_length==0"> No models in Model Store</div>
-        <div ng-hide="groups_length==0" ng-repeat="(key, value) in groups">
-            <div class="panel-heading">
-                <div ng-show="local_error != null">{[ local_error ]}</div>
-                <div> model store url: {[value.base_url]} </div>
+<div class="row" style="margin-bottom: 45px;">
+    <h1>Model Store</h1>
+</div>
+<div id="modelList" class="row" ng-app="modelStore" ng-controller="ModelListController">
+    <button type="button" class="btn btn-xs btn-primary" ng-click="get_model_list(1)">Update Model List</button>
+    <div ng-show="groups_length==0">
+        <h4>
+            No models in Model Store
+        </h4>
+    </div>
+    <div ng-hide="groups_length==0" class="well">
+        <!-- Filter -->
+        <div class="col-md-12">
+            <div class="pull-right">
+                <form>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                            <input type="text" class="form-control" placeholder="Filter" ng-model="query">
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="panel-body">
-                <table class="table table-bordered table-hover" style="word-wrap: break-word">
-                    <thead>
-                    <tr>
-                        <th></th>
-                        <th>Name</th>
-                        <th>Contributor</th>
-                        <th>Affiliate</th>
-                        <th>Note</th>
-                        <th>Data sets</th>
-                        <th>License</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-repeat="model in value.model_list | filter: query">
-                        <td>
-                            <a href="/store/push?id={[model.id]}"> Import </a>
-                        </td>
-                        <td>
+        </div>
+        <table class="table table-bordered table-striped list-group selectable"
+               style="word-wrap: break-word"
+               width="100%">
+            <thead>
+                <tr>
+                    <th style="width:24px"></th>
+                    <th>Name</th>
+                    <th>Contributor</th>
+                    <th>Affiliate</th>
+                    <th>Note</th>
+                    <th>Data sets</th>
+                    <th>License</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat-start="(key, value) in groups" ng-hide="true"> </tr>
+                <!-- group bar -->
+                <tr class="unselectable group-bar">
+                    <td colspan="7" style="background-color:#cccccc" title="{[ value.base_url ]}">
+                        <strong>{[ value.welcome_msg ? value.welcome_msg : value.base_url ]}</strong>
+                        <span ng-show="local_error != null">{[ local_error ]}</span>
+                    </td>
+                </tr>
+                <tr ng-repeat="model in value.model_list | filter: query">
+                    <td>
+                        <span ng-click="download(model.id);"
+                              title="Download"
+                              class="glyphicon glyphicon-download-alt">
+                        </span>
+                    </td>
+                    <td>
+                        <div class="progress-line-parent">
                             {[ model.info.name ]}
-                        </td>
-                        <td>
-                            {[ model.info.username ]}
-                        </td>
-                        <td>
-                            <img ng-show="model.aux.logo" ng-src="{[value.base_url+model.dir_name]}/{[model.aux.logo]}" height="30" width="40"/>
-                        </td>
-                        <td>
-                            <div data-toggle="tooltip" title="{[model.info.note]}">
-                                {[ model.info.note ]}
+                            <div class="progress-line"
+                                 ng-style="{width : ( model.progress + '%' ) }">
                             </div>
-                        </td>
-                        <td>
-                            {[ model.aux.dataset ]}
-                        </td>
-                        <td ng-show="false">
-                            <div>
-                                <!-- Trigger the modal with a button -->
-                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#{[value.id+model.name]}">
-                                    {[model.info.license ]}
-                                </button>
-                            </div>
-                            <div id="{[value.id+model.name]}" class="modal fade" role="dialog">
-                              <div class="modal-dialog">
+                        </div>
+                    </td>
+                    <td>
+                        {[ model.info.username ]}
+                    </td>
+                    <td>
+                        <img ng-show="model.aux.logo" ng-src="{[value.base_url+model.dir_name]}/{[model.aux.logo]}" height="30" width="40"/>
+                    </td>
+                    <td>
+                        <div data-toggle="tooltip" title="{[model.info.note]}">
+                            {[ model.info.note ]}
+                        </div>
+                    </td>
+                    <td>
+                        {[ model.aux.dataset ]}
+                    </td>
+                    <td ng-show="false">
+                        <div>
+                            <!-- Trigger the modal with a button -->
+                            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#{[value.id+model.name]}">
+                                {[model.info.license ]}
+                            </button>
+                        </div>
+                        <div id="{[value.id+model.name]}" class="modal fade" role="dialog">
+                            <div class="modal-dialog">
                                 <!-- Modal content-->
                                 <div class="modal-content">
-                                  <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                    <h4 class="modal-title">License</h4>
-                                  </div>
-                                  <div class="modal-body">
-                                    <p> {[model.license_text]} </p>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                                  </div>
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                        <h4 class="modal-title">License</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p> {[model.license_text]} </p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                    </div>
                                 </div>
-                              </div>
                             </div>
-                        </td>
-                        <td>
-                            <a  ng-show="model.aux.license" href="{[value.base_url+model.dir_name]}/license.txt">{[model.aux.license]}</a>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                        </div>
+                    </td>
+                    <td>
+                        <a ng-show="model.aux.license" href="{[value.base_url+model.dir_name]}/license.txt">{[model.aux.license]}</a>
+                    </td>
+                </tr>
+                <tr ng-repeat-end
+                    ng-hide="true">
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
