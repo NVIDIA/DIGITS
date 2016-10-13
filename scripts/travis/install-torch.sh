@@ -41,8 +41,9 @@ LOG_FILE=$LOCAL_DIR/torch-install.log
 
 # install custom packages
 ${INSTALL_DIR}/install/bin/luarocks install tds
+# you can't just install "hdf5" because it will install "lua-hdf5" instead of "torch-hdf5"
 ${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
-${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/Sravan2j/lua-pb/master/lua-pb-scm-0.rockspec"
+${INSTALL_DIR}/install/bin/luarocks install "https://raw.github.com/Neopallium/lua-pb/master/lua-pb-scm-0.rockspec"
 ${INSTALL_DIR}/install/bin/luarocks install lightningmdb 0.9.18.1-1 LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
 
 # mark cache
