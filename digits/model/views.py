@@ -88,12 +88,14 @@ def customize():
         model_def = open(job.get_model_def_path(),'r')
         network = model_def.read()
         snapshot = job.get_weights_path()
+        python_layer = job.get_python_layer_path()
     else:
         network = job.train_task().get_network_desc()
 
     return json.dumps({
             'network': network,
-            'snapshot': snapshot
+            'snapshot': snapshot,
+            'python_layer': python_layer
             })
 
 

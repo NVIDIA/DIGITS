@@ -410,6 +410,10 @@ function customizeNetwork(network, snapshot_list, framework) {
                     $('input[name=custom_network_snapshot]').val(data['snapshot']);
                 else
                     $('input[name=custom_network_snapshot]').val('');
+                if (data['python_layer'])
+                    $('#python_layer_server_file').val(data['python_layer']);
+                else
+                    $('#python_layer_server_file').val('');
                 })
         .fail(function(data) {
                 editor.setValue('');
