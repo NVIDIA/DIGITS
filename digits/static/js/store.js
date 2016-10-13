@@ -14,7 +14,6 @@
                   $scope.groups = response.data;
                   $scope.local_error = null;
                   $scope.groups_length = Object.keys($scope.groups).length;
-                  console.log($scope.groups)
               }, function errorCallback(response) {
                   $scope.local_error = response.statusText;
                   $scope.groups = null;
