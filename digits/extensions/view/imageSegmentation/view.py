@@ -206,7 +206,14 @@ class Visualization(VisualizationInterface):
                                        fill_data[:, :, x] * line_mask)
 
         # Input image with outlines
-        input_image = PIL.Image.fromarray(input_data)
+        input_max = input_data.max()
+        input_min = input_data.min()
+        input_range = input_max - input_min
+        if input_range > 255:
+            input_data = (input_data - input_min) * 255.0 / input_range
+        elif input_min < 0:
+            input_data -= input_min
+        input_image = PIL.Image.fromarray(input_data.astype('uint8'))
         input_image.format = 'png'
 
         # Fill image
