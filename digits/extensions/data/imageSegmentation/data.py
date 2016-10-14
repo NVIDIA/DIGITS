@@ -35,6 +35,9 @@ class DataIngestion(DataIngestionInterface):
             # choose random seed and add to userdata so it gets persisted
             self.userdata['seed'] = random.randint(0, 1000)
 
+        if 'colormap_method' not in self.userdata:
+            self.userdata['colormap_method'] = 'label'
+
         random.seed(self.userdata['seed'])
 
         if self.userdata['colormap_method'] == "label":
