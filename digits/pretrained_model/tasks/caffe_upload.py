@@ -42,5 +42,11 @@ class CaffeUploadTask(UploadPretrainedModelTask):
 
         if self.labels_path is not None:
             self.move_file(self.labels_path, "labels.txt")
+        tmp_dir = os.path.dirname(self.weights_path)
+        python_layer_file_name = 'digits_python_layers.py'
+        if os.path.exists(os.path.join(tmp_dir,python_layer_file_name)):
+            self.move_file(os.path.join(tmp_dir,python_layer_file_name), python_layer_file_name)
+        elif os.path.exists(os.path.join(tmp_dir,python_layer_file_name+'c')):
+            self.move_file(os.path.join(tmp_dir,python_layer_file_name+'c'), python_layer_file_name+'c')
 
         self.status = Status.DONE

@@ -47,6 +47,16 @@ class PretrainedModelJob(Job):
     def get_model_def_path(self):
         return self.tasks[0].get_model_def_path()
 
+    def get_python_layer_path(self):
+        tmp_dir = os.path.dirname(self.tasks[0].get_model_def_path())
+        python_layer_file_name = 'digits_python_layers.py'
+        if os.path.exists(os.path.join(tmp_dir, python_layer_file_name)):
+            return os.path.join(tmp_dir, python_layer_file_name)
+        elif os.path.exists(os.path.join(tmp_dir, python_layer_file_name+'c')):
+            return os.path.join(tmp_dir, python_layer_file_name+'c')
+        else:
+            return None
+
     def has_labels_file(self):
         return os.path.isfile(self.tasks[0].get_labels_path())
 
