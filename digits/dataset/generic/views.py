@@ -147,7 +147,8 @@ def explore():
     db_path = job.path(db)
     labels = []
 
-    if COLOR_PALETTE_ATTRIBUTE in job.extension_userdata:
+    if COLOR_PALETTE_ATTRIBUTE in job.extension_userdata \
+            and job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
         # assume single-channel 8-bit palette
         palette = job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]
         palette = np.array(palette).reshape((len(palette)/3,3)) / 255.
