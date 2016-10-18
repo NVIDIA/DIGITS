@@ -18,6 +18,7 @@ if [ -z "$DIGITS_TEST_FRAMEWORK" ] || [ "$DIGITS_TEST_FRAMEWORK" = "torch" ]; th
 fi
 # Disable OpenMP multi-threading
 export OMP_NUM_THREADS=1
+export OPENBLAS_MAIN_FREE=1
 
 cd $ROOT_DIR
 ./digits-test -v
