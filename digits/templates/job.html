@@ -317,8 +317,9 @@ $('#delete-job').on('click', function(event) {
                     <a href=# class="btn btn-info" onClick="$('#edit-job-notes').hide(); $('#show-job-notes').show(); return false;">Cancel</a>
                 </div>
             </div>
-
         </div>
+        {% block option_details %}
+        {% endblock %}
     </div>
 
 </div>

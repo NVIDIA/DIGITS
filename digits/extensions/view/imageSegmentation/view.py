@@ -80,9 +80,9 @@ class Visualization(VisualizationInterface):
         extension_dir = os.path.dirname(os.path.abspath(__file__))
         template = open(
             os.path.join(extension_dir, CONFIG_TEMPLATE), "r").read()
-        return (template, {'form': form})
+        return template, {'form': form}
 
-    def get_legend_for(self, found_classes, skip_classes=[]):
+    def get_legend_for(self, found_classes, skip_classes=()):
         """
         Return the legend color image squares and text for each class
         :param found_classes: list of class indices
@@ -153,10 +153,7 @@ class Visualization(VisualizationInterface):
         return self.view_template, {
             'input_id': data['input_id'],
             'input_image': digits.utils.image.embed_image_html(data['input_image']),
-            'fill_image': digits.utils.image.embed_image_html(data['fill_image']),
-            'line_image': digits.utils.image.embed_image_html(data['line_image']),
             'seg_image': digits.utils.image.embed_image_html(data['seg_image']),
-            'mask_image': digits.utils.image.embed_image_html(data['mask_image']),
             'legend': data['legend'],
             'is_binary': data['is_binary'],
             'class_data': json.dumps(data['class_data'].tolist()),
@@ -182,21 +179,15 @@ class Visualization(VisualizationInterface):
 
         # convert using color map (assume 8-bit output)
         if self.map:
-            fill_data = (self.map.to_rgba(class_data) * 255).astype('uint8')
+            seg_data = (self.map.to_rgba(class_data) * 255).astype('uint8')
         else:
-            fill_data = np.ndarray((class_data.shape[0], class_data.shape[1], 4), dtype='uint8')
-            for x in xrange(3):
-                fill_data[:, :, x] = class_data.copy()
+            seg_data = np.ndarray((class_data.shape[0], class_data.shape[1], 4), dtype='uint8')
+            for x in range(3):
+                seg_data[:, :, x] = class_data.copy()
 
         # Assuming that class 0 is the background
         mask = np.greater(class_data, 0)
-        fill_data[:, :, 3] = mask * 255
-        line_data = fill_data.copy()
-        seg_data = fill_data.copy()
-
-        # Black mask of non-segmented pixels
-        mask_data = np.zeros(fill_data.shape, dtype='uint8')
-        mask_data[:, :, 3] = (1 - mask) * 255
+        seg_data[:, :, 3] = mask * 255
 
         def normalize(array):
             mn = array.min()
@@ -224,7 +215,6 @@ class Visualization(VisualizationInterface):
                 line_mask |= c_mask & np.less(distance, line_width)
                 max_distance = np.maximum(max_distance, distance + 128)
 
-            line_data[:, :, 3] = line_mask * 255
             seg_data[:, :, 3] = max_distance
 
         # Input image with outlines
@@ -238,22 +228,10 @@ class Visualization(VisualizationInterface):
         input_image = PIL.Image.fromarray(input_data.astype('uint8'))
         input_image.format = 'png'
 
-        # Fill image
-        fill_image = PIL.Image.fromarray(fill_data)
-        fill_image.format = 'png'
-
-        # Fill image
-        line_image = PIL.Image.fromarray(line_data)
-        line_image.format = 'png'
-
         # Seg image
         seg_image = PIL.Image.fromarray(seg_data)
         seg_image.format = 'png'
         seg_image.save('seg.png')
-
-        # Mask image
-        mask_image = PIL.Image.fromarray(mask_data)
-        mask_image.format = 'png'
 
         # legend for this instance
         legend = self.get_legend_for(found_classes, skip_classes=[0])
@@ -261,10 +239,7 @@ class Visualization(VisualizationInterface):
         return {
             'input_id': input_id,
             'input_image': input_image,
-            'fill_image': fill_image,
-            'line_image': line_image,
             'seg_image': seg_image,
-            'mask_image': mask_image,
             'legend': legend,
             'is_binary': is_binary,
             'class_data': class_data,

@@ -23,6 +23,8 @@ app.controller('display_controller',
                         var threshold = $scope.is_binary ? Number($localStorage.threshold) + 128 : 128;
                         for (var i = 0; i < 256; i++) {
                             c[i] = (i < threshold ? 0.0 : 1.0);
+                            // a[0] = 0, because the area around the image has alpha == 0, and
+                            // that area outside of the image will render black if a[0] > 0.
                             a[i] = (i == 0 ? 0 :
                                 i < threshold ? $localStorage.mask :
                                     i < threshold + Number($localStorage.line_width) ? 1 :

@@ -22,7 +22,6 @@ from digits.utils.lmdbreader import DbReader
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
-
 blueprint = flask.Blueprint(__name__, __name__)
 
 
@@ -355,13 +354,15 @@ def explore():
     """
     job = job_from_request()
     # Get LMDB
-    db = flask.request.args.get('db', 'train')
+    db = flask.request.args.get('feature_db', 'train')
     if 'train' in db.lower():
         task = job.train_db_task()
     elif 'val' in db.lower():
         task = job.val_db_task()
     elif 'test' in db.lower():
         task = job.test_db_task()
+    else:
+        task = None
     if task is None:
         raise ValueError('No create_db task for {0}'.format(db))
     if task.status != 'D':
@@ -416,7 +417,7 @@ def explore():
                         # XXX see issue #59
                         arr = arr[:, :, [2, 1, 0]]
                     img = PIL.Image.fromarray(arr)
-                imgs.append({"label": labels[datum.label], "b64": utils.image.embed_image_html(img)})
+                imgs.append({"label": labels[datum.label], "image": utils.image.embed_image_html(img)})
         if label is None:
             count += 1
         else:
@@ -427,7 +428,7 @@ def explore():
         if len(imgs) >= size:
             break
 
-    return flask.render_template(
-        'datasets/images/explore.html',
-        page=page, size=size, job=job, imgs=imgs, labels=labels,
-        pages=pages, label=label, total_entries=total_entries, db=db)
+    return flask.render_template('datasets/images/explore.html',
+                                 page=page, size=size, job=job, imgs=imgs, labels=labels,
+                                 pages=pages, label=label, total_entries=total_entries,
+                                 feature_db=db, label_db=None)

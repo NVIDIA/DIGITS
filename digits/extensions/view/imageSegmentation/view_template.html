@@ -63,17 +63,17 @@
                      var span = document.getElementById("text-{{ input_id }}-" + index);
                      span.style.color = "#000000";
                  } else {
-                     $('span.text-{{ input_id }}').css('color', '#777');
+                     $('span.text-{{ input_id }}').css('color', '#888');
                  }
              }
              last = index;
          } else {
-             $('span.text-{{ input_id }}').css('color', '#777');
+             $('span.text-{{ input_id }}').css('color', '#888');
              last = undefined;
          }
      };
-     image.onmouseleave = function(event) {
-         $('span.text-class').css('color', '#777');
+     image.onmouseleave = function() {
+         $('span.text-class').css('color', '#888');
          last = undefined;
      };
  });

@@ -800,7 +800,7 @@ def get_inference_visualizations(dataset, inputs, outputs):
     visualizations = []
     # process data
     n = len(inputs['ids'])
-    for idx in xrange(n):
+    for idx in range(n):
         input_id = inputs['ids'][idx]
         input_data = inputs['data'][idx]
         output_data = {key: outputs[key][idx] for key in outputs}

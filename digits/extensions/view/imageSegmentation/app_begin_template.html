@@ -9,39 +9,40 @@
             <defs>
                 <filter id="Gamma">
                     <feComponentTransfer>
-                        <feFuncR type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"/>
-                        <feFuncG type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"/>
-                        <feFuncB type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"/>
+                        <feFuncR type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"></feFuncR>
+                        <feFuncG type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"></feFuncG>
+                        <feFuncB type="gamma" amplitude="1" exponent="{[storage.gamma]}" offset="0"></feFuncB>
                     </feComponentTransfer>
                 </filter>
                 <filter id="Colormap">
                     <!-- Convert to graysclae -->
                     <feColorMatrix
                             type="matrix"
-                            values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"/>
+                            values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0">
+                    </feColorMatrix>
 
                     <!-- The result of the feColorMatrix will be fed into the feComponentTransfer -->
-                    <feComponentTransfer >
-                        <feFuncR type="table" tableValues="0,0,0,0,0.5,1,1,1,0.5"/>
-                        <feFuncG type="table" tableValues="0,0,0.5,1,1,1,0.5,0,0"/>
-                        <feFuncB type="table" tableValues="0.5,1,1,1,0.5,0,0,0,0"/>
+                    <feComponentTransfer>
+                        <feFuncR type="table" tableValues="0,0,0,0,0.5,1,1,1,0.5"></feFuncR>
+                        <feFuncG type="table" tableValues="0,0,0.5,1,1,1,0.5,0,0"></feFuncG>
+                        <feFuncB type="table" tableValues="0.5,1,1,1,0.5,0,0,0,0"></feFuncB>
                     </feComponentTransfer>
                 </filter>
                 <filter id="Segment">
                     <feComponentTransfer>
-                        <feFuncA type="table" id="segment-a"/>
+                        <feFuncA type="table" id="segment-a"></feFuncA>
                     </feComponentTransfer>
                 </filter>
                 <filter id="BinarySegment">
                     <feColorMatrix
                             type="matrix"
-                            values="0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0"/>
-
+                            values="0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0">
+                    </feColorMatrix>
                     <feComponentTransfer>
-                        <feFuncR type="table" id="binary-segment-r"/>
-                        <feFuncG type="table" id="binary-segment-g"/>
-                        <feFuncB type="table" id="binary-segment-b"/>
-                        <feFuncA type="table" id="binary-segment-a"/>
+                        <feFuncR type="table" id="binary-segment-r"></feFuncR>
+                        <feFuncG type="table" id="binary-segment-g"></feFuncG>
+                        <feFuncB type="table" id="binary-segment-b"></feFuncB>
+                        <feFuncA type="table" id="binary-segment-a"></feFuncA>
                     </feComponentTransfer>
                 </filter>
             </defs>
@@ -53,7 +54,7 @@
          div.colormap {
              filter: url(#Colormap);
          }
-         img.segment {
+         .segment {
              filter: url(#Segment);
          }
          img.binary-segment {
