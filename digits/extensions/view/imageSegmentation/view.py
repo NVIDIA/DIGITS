@@ -36,8 +36,9 @@ class Visualization(VisualizationInterface):
 
         # view options
         if kwargs['colormap'] == 'dataset':
-            if not COLOR_PALETTE_ATTRIBUTE in dataset.extension_userdata:
-                raise ValueError("Palette not found in dataset")
+            if not COLOR_PALETTE_ATTRIBUTE in dataset.extension_userdata or \
+                   not dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
+                raise ValueError("No palette found in dataset - choose other colormap")
             palette = dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]
             # assume 8-bit RGB palette and convert to N*3 numpy array
             palette = np.array(palette).reshape((len(palette)/3,3)) / 255.
