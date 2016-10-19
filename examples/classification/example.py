@@ -16,9 +16,10 @@ import numpy as np
 import PIL.Image
 import scipy.misc
 
-os.environ['GLOG_minloglevel'] = '2' # Suppress most caffe output
-import caffe
-from caffe.proto import caffe_pb2
+os.environ['GLOG_minloglevel'] = '2'  # Suppress most caffe output
+import caffe  # noqa
+from caffe.proto import caffe_pb2  # noqa
+
 
 def get_net(caffemodel, deploy_file, use_gpu=True):
     """
@@ -36,6 +37,7 @@ def get_net(caffemodel, deploy_file, use_gpu=True):
 
     # load a new model
     return caffe.Net(deploy_file, caffemodel, caffe.TEST)
+
 
 def get_transformer(deploy_file, mean_file=None):
     """
@@ -56,19 +58,17 @@ def get_transformer(deploy_file, mean_file=None):
     else:
         dims = network.input_dim[:4]
 
-    t = caffe.io.Transformer(
-            inputs = {'data': dims}
-            )
-    t.set_transpose('data', (2,0,1)) # transpose to (channels, height, width)
+    t = caffe.io.Transformer(inputs={'data': dims})
+    t.set_transpose('data', (2, 0, 1))  # transpose to (channels, height, width)
 
     # color images
     if dims[1] == 3:
         # channel swap
-        t.set_channel_swap('data', (2,1,0))
+        t.set_channel_swap('data', (2, 1, 0))
 
     if mean_file:
         # set mean pixel
-        with open(mean_file,'rb') as infile:
+        with open(mean_file, 'rb') as infile:
             blob = caffe_pb2.BlobProto()
             blob.MergeFromString(infile.read())
             if blob.HasField('shape'):
@@ -83,6 +83,7 @@ def get_transformer(deploy_file, mean_file=None):
             t.set_mean('data', pixel)
 
     return t
+
 
 def load_image(path, height, width, mode='RGB'):
     """
@@ -106,6 +107,7 @@ def load_image(path, height, width, mode='RGB'):
     image = scipy.misc.imresize(image, (height, width), 'bilinear')
     return image
 
+
 def forward_pass(images, net, transformer, batch_size=None):
     """
     Returns scores for each image as an np.ndarray (nImages x nClasses)
@@ -125,7 +127,7 @@ def forward_pass(images, net, transformer, batch_size=None):
     caffe_images = []
     for image in images:
         if image.ndim == 2:
-            caffe_images.append(image[:,:,np.newaxis])
+            caffe_images.append(image[:, :, np.newaxis])
         else:
             caffe_images.append(image)
 
@@ -150,6 +152,7 @@ def forward_pass(images, net, transformer, batch_size=None):
 
     return scores
 
+
 def read_labels(labels_file):
     """
     Returns a list of strings
@@ -170,8 +173,9 @@ def read_labels(labels_file):
     assert len(labels), 'No labels found'
     return labels
 
+
 def classify(caffemodel, deploy_file, image_files,
-        mean_file=None, labels_file=None, batch_size=None, use_gpu=True):
+             mean_file=None, labels_file=None, batch_size=None, use_gpu=True):
     """
     Classify some images against a Caffe model and print the results
 
@@ -201,9 +205,11 @@ def classify(caffemodel, deploy_file, image_files,
     # Classify the image
     scores = forward_pass(images, net, transformer, batch_size=batch_size)
 
-    ### Process the results
+    #
+    # Process the results
+    #
 
-    indices = (-scores).argsort()[:, :5] # take top 5 results
+    indices = (-scores).argsort()[:, :5]  # take top 5 results
     classifications = []
     for image_index, index_list in enumerate(indices):
         result = []
@@ -213,7 +219,7 @@ def classify(caffemodel, deploy_file, image_files,
                 label = 'Class #%s' % i
             else:
                 label = labels[i]
-            result.append((label, round(100.0*scores[image_index, i],4)))
+            result.append((label, round(100.0*scores[image_index, i], 4)))
         classifications.append(result)
 
     for index, classification in enumerate(classifications):
@@ -228,30 +234,27 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Classification example - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
+    parser.add_argument('caffemodel', help='Path to a .caffemodel')
+    parser.add_argument('deploy_file', help='Path to the deploy file')
+    parser.add_argument('image_file', nargs='+', help='Path[s] to an image')
 
-    parser.add_argument('caffemodel',   help='Path to a .caffemodel')
-    parser.add_argument('deploy_file',  help='Path to the deploy file')
-    parser.add_argument('image_file',
-                        nargs='+',
-                        help='Path[s] to an image')
-
-    ### Optional arguments
-
-    parser.add_argument('-m', '--mean',
-            help='Path to a mean file (*.npy)')
-    parser.add_argument('-l', '--labels',
-            help='Path to a labels file')
-    parser.add_argument('--batch-size',
-                        type=int)
-    parser.add_argument('--nogpu',
-            action='store_true',
-            help="Don't use the GPU")
+    # Optional arguments
+    parser.add_argument('-m', '--mean', help='Path to a mean file (*.npy)')
+    parser.add_argument('-l', '--labels', help='Path to a labels file')
+    parser.add_argument('--batch-size', type=int)
+    parser.add_argument('--nogpu', action='store_true', help="Don't use the GPU")
 
     args = vars(parser.parse_args())
 
-    classify(args['caffemodel'], args['deploy_file'], args['image_file'],
-            args['mean'], args['labels'], args['batch_size'], not args['nogpu'])
+    classify(
+        args['caffemodel'],
+        args['deploy_file'],
+        args['image_file'],
+        args['mean'],
+        args['labels'],
+        args['batch_size'],
+        not args['nogpu'],
+    )
 
     print 'Script took %f seconds.' % (time.time() - script_start_time,)
-

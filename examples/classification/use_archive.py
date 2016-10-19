@@ -14,6 +14,7 @@ import zipfile
 
 from example import classify
 
+
 def unzip_archive(archive):
     """
     Unzips an archive into a temporary directory
@@ -24,9 +25,8 @@ def unzip_archive(archive):
     """
     assert os.path.exists(archive), 'File not found - %s' % archive
 
-    tmpdir = os.path.join(tempfile.gettempdir(),
-            os.path.basename(archive))
-    assert tmpdir != archive # That wouldn't work out
+    tmpdir = os.path.join(tempfile.gettempdir(), os.path.basename(archive))
+    assert tmpdir != archive  # That wouldn't work out
 
     if os.path.exists(tmpdir):
         # files are already extracted
@@ -79,20 +79,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Classification example using an archive - DIGITS')
 
-    ### Positional arguments
-
+    # Positional arguments
     parser.add_argument('archive', help='Path to a DIGITS model archive')
-    parser.add_argument('image_file',
-                        nargs='+',
-                        help='Path[s] to an image')
+    parser.add_argument('image_file', nargs='+', help='Path[s] to an image')
 
-    ### Optional arguments
-
-    parser.add_argument('--batch-size',
-                        type=int)
-    parser.add_argument('--nogpu',
-            action='store_true',
-            help="Don't use the GPU")
+    # Optional arguments
+    parser.add_argument('--batch-size', type=int)
+    parser.add_argument('--nogpu', action='store_true', help="Don't use the GPU")
 
     args = vars(parser.parse_args())
 
@@ -102,4 +95,3 @@ if __name__ == '__main__':
                           )
 
     print 'Script took %f seconds.' % (time.time() - script_start_time,)
-
