@@ -34,12 +34,13 @@ class DbWriter(threading.Thread):
     Abstract class for writing to databases
     """
 
-    def __init__(self, output_dir, total_records=None):
+    def __init__(self, output_dir, total_batches):
         self._dir = output_dir
         self.write_queue = Queue.Queue(10)
         # sequence number
         self.seqn = 0
-        self.total_records = total_records
+        self.total_batches = total_batches
+        self.processed_batches = 0
         self.done = False
         threading.Thread.__init__(self)
 
@@ -188,7 +189,8 @@ class LmdbWriter(DbWriter):
         self.write_datums(self.feature_db, feature_datums)
         if len(label_datums) > 0:
             self.write_datums(self.label_db, label_datums)
-        logger.info('Processed %d/%d' % (self.seqn, self.total_records))
+        self.processed_batches += 1
+        logger.info('Processed %d/%d' % (self.processed_batches, self.total_batches))
 
     def write_datums(self, db, batch):
         try:
@@ -221,6 +223,7 @@ class Encoder(threading.Thread):
         self.feature_shape = None
         self.feature_sum = None
         self.processed_count = 0
+        self.sample_count = 0
         self.error_queue = error_queue
         self.force_same_shape = force_same_shape
         threading.Thread.__init__(self)
@@ -240,27 +243,33 @@ class Encoder(threading.Thread):
                 data = []
                 for entry_id in batch:
                     # call into extension to format entry into number arrays
-                    feature, label = self.extension.encode_entry(entry_id)
+                    entry_value = self.extension.encode_entry(entry_id)
+                    # entry_value is either a list of (feature, label) tuples
+                    # or a single tuple
+                    if not isinstance(entry_value, list):
+                        entry_value = [entry_value]  # convert to list
 
-                    # check feature and label shapes
-                    if self.feature_shape is None:
-                        self.feature_shape = feature.shape
-                    if self.label_shape is None:
-                        self.label_shape = label.shape
-                    if self.force_same_shape:
-                        if self.feature_shape != feature.shape:
-                            raise ValueError("Feature shape mismatch (last:%s, previous:%s)" %
-                                             (repr(feature.shape), repr(self.feature_shape)))
-                        if self.label_shape != label.shape:
-                            raise ValueError("Label shape mismatch (last:%s, previous:%s)" %
-                                             (repr(label.shape), repr(self.label_shape)))
-                        if self.feature_sum is None:
-                            self.feature_sum = np.zeros(self.feature_shape, dtype=np.float64)
-                        # accumulate sum for mean file calculation
-                        self.feature_sum += feature
+                    for feature, label in entry_value:
+                        # check feature and label shapes
+                        if self.feature_shape is None:
+                            self.feature_shape = feature.shape
+                        if self.label_shape is None:
+                            self.label_shape = label.shape
+                        if self.force_same_shape:
+                            if self.feature_shape != feature.shape:
+                                raise ValueError("Feature shape mismatch (last:%s, previous:%s)"
+                                                 % (repr(feature.shape), repr(self.feature_shape)))
+                            if self.label_shape != label.shape:
+                                raise ValueError("Label shape mismatch (last:%s, previous:%s)"
+                                                 % (repr(label.shape), repr(self.label_shape)))
+                            if self.feature_sum is None:
+                                self.feature_sum = np.zeros(self.feature_shape, dtype=np.float64)
+                            # accumulate sum for mean file calculation
+                            self.feature_sum += feature
 
-                    # aggregate data
-                    data.append((feature, label))
+                        # aggregate data
+                        data.append((feature, label))
+                        self.sample_count += 1
 
                     self.processed_count += 1
 
@@ -291,28 +300,22 @@ class DbCreator(object):
             # create a queue to write errors to
             error_queue = Queue.Queue()
 
+            # create and fill encoder queue
+            encoder_queue = Queue.Queue()
+            batch_indices = xrange(0, len(entry_ids), batch_size)
+            for batch in [entry_ids[start:start+batch_size] for start in batch_indices]:
+                # queue this batch
+                encoder_queue.put(batch)
+
             # create db writer
             writer = LmdbWriter(
                 dataset_dir,
                 stage,
-                total_records=entry_count,
+                total_batches=len(batch_indices),
                 feature_encoding=feature_encoding,
                 label_encoding=label_encoding)
             writer.daemon = True
             writer.start()
-
-            # create and fill encoder queue
-            encoder_queue = Queue.Queue()
-            batch = []
-            for entry_id in entry_ids:
-                batch.append(entry_id)
-                if len(batch) >= batch_size:
-                    # queue this batch
-                    encoder_queue.put(batch)
-                    batch = []
-            if len(batch) > 0:
-                # queue any remaining entries
-                encoder_queue.put(batch)
 
             # create encoder threads
             encoders = []
@@ -325,6 +328,7 @@ class DbCreator(object):
             # wait for all encoder threads to complete and aggregate data
             feature_sum = None
             processed_count = 0
+            sample_count = 0
             feature_shape = None
             label_shape = None
             for encoder in encoders:
@@ -343,20 +347,21 @@ class DbCreator(object):
                     logger.info('Label shape for stage %s: %s' % (stage, repr(label_shape)))
                 if force_same_shape:
                     if encoder.feature_shape and feature_shape != encoder.feature_shape:
-                        raise ValueError("Feature shape mismatch (last:%s, previous:%s)" %
-                                         (repr(feature_shape), repr(encoder.feature_shape)))
+                        raise ValueError("Feature shape mismatch (last:%s, previous:%s)"
+                                         % (repr(feature_shape), repr(encoder.feature_shape)))
                     if encoder.label_shape and label_shape != encoder.label_shape:
-                        raise ValueError("Label shape mismatch (last:%s, previous:%s)" %
-                                         (repr(label_shape), repr(encoder.label_shape)))
+                        raise ValueError("Label shape mismatch (last:%s, previous:%s)"
+                                         % (repr(label_shape), repr(encoder.label_shape)))
                     if feature_sum is None:
                         feature_sum = encoder.feature_sum
                     elif encoder.feature_sum is not None:
                         feature_sum += encoder.feature_sum
                 processed_count += encoder.processed_count
+                sample_count += encoder.sample_count
 
             # write mean file
             if feature_sum is not None:
-                self.save_mean(feature_sum, processed_count, dataset_dir, stage)
+                self.save_mean(feature_sum, sample_count, dataset_dir, stage)
 
             # wait for writer thread to complete
             writer.set_done()
@@ -364,10 +369,10 @@ class DbCreator(object):
 
             if processed_count != entry_count:
                 # TODO: handle this more gracefully
-                raise ValueError('Number of processed entries (%d) does not match entry count (%d)' %
-                                 (processed_count, entry_count))
+                raise ValueError('Number of processed entries (%d) does not match entry count (%d)'
+                                 % (processed_count, entry_count))
 
-            logger.info('Found %d entries for stage %s' % (processed_count, stage))
+            logger.info('Found %d entries for stage %s' % (sample_count, stage))
 
     def save_mean(self, feature_sum, entry_count, dataset_dir, stage):
         """
