@@ -5,11 +5,6 @@ set -e
 LOCAL_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 ROOT_DIR=$( dirname "$(dirname "$LOCAL_DIR")")
 
-if [ -z "$DEB_BUILD" ]; then
-    echo "Skipping for non-deb build"
-    exit 0
-fi
-
 set -x
 
 git fetch --tags

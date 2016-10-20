@@ -4,10 +4,6 @@ set -e
 
 LOCAL_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-if [ ! -z "$DEB_BUILD" ]; then
-    echo "Skipping for deb build"
-    exit 0
-fi
 if [ "$#" -ne 1 ];
 then
     echo "Usage: $0 INSTALL_DIR"

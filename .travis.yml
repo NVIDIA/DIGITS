@@ -1,24 +1,51 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 
-sudo: required
+os: linux
 dist: trusty
-
+sudo: required
 language: python
 python: 2.7
 
 env:
+    global:
+        - CAFFE_ROOT=~/caffe
+        - TORCH_ROOT=~/torch
+        # Fixes for Torch and OpenBLAS
+        - OMP_NUM_THREADS=1
+        - OPENBLAS_MAIN_FREE=1
     matrix:
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=NVIDIA
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=BVLC
         - DIGITS_TEST_FRAMEWORK=torch
         - DIGITS_TEST_FRAMEWORK=none
-        - DEB_BUILD=true
+
+matrix:
+    include:
+        - env: LINT_CHECK
+          addons:
+              apt:
+                  packages:
+                      - python-flake8
+          install: true
+          script:
+              - ./digits-lint
+        - env: DEB_BUILD
+          services: docker
+          addons:
+              apt:
+                  packages:
+                      - devscripts
+                      - debhelper
+                      - dput
+          install: true
+          script:
+              - ./scripts/travis/deb-build.sh
 
 cache:
     apt: true
     directories:
-        - ~/caffe
-        - ~/torch
+        - $CAFFE_ROOT
+        - $TORCH_ROOT
 
 addons:
     apt:
@@ -27,7 +54,6 @@ addons:
             - cmake
             - cython
             - git
-            - gfortran
             - graphviz
             - libboost-filesystem-dev
             - libboost-python-dev
@@ -53,17 +79,16 @@ addons:
             - python-mock
             - python-nose
             - python-numpy
+            - python-opencv
             - python-pil
             - python-pip
             - python-protobuf
             - python-psutil
+            - python-pydot
             - python-requests
             - python-scipy
             - python-six
             - python-skimage
-
-services:
-    - docker
 
 before_install:
     - deactivate
@@ -71,12 +96,11 @@ before_install:
     - source ~/venv/bin/activate
 
 install:
-    - ./scripts/travis/install-caffe.sh ~/caffe
-    - travis_wait ./scripts/travis/install-torch.sh ~/torch
+    - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
+    - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
     - ./scripts/travis/install-python-requirements.sh
     - ./scripts/travis/install-digits.sh
 
 script:
-    - ./scripts/travis/test.sh
-    - ./scripts/travis/deb-build.sh
+    - ./digits-test -v
 

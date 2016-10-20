@@ -19,7 +19,7 @@ FCN_ALEXNET_MODEL_FILENAME = "fcn_alexnet.caffemodel"
 
 def download(url, filename):
     print "Downloading %s..." % url
-    urllib.urlretrieve (url, filename)
+    urllib.urlretrieve(url, filename)
 
 
 def generate_fcn():
@@ -44,7 +44,7 @@ def generate_fcn():
 
 
 def transplant(new_net, net, suffix=''):
-	# from fcn.berkeleyvision.org
+    # from fcn.berkeleyvision.org
     for p in net.params:
         p_new = p + suffix
         if p_new not in new_net.params:

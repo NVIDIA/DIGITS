@@ -7,7 +7,8 @@ import setuptools
 LOCAL_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Get current __version__
-execfile(os.path.join(LOCAL_DIR, 'digits', 'version.py'))
+version_locals = {}
+execfile(os.path.join(LOCAL_DIR, 'digits', 'version.py'), {}, version_locals)
 
 # Get requirements
 requirements = []
@@ -27,7 +28,7 @@ with open(os.path.join(LOCAL_DIR, 'requirements_test.txt'), 'r') as infile:
 
 setuptools.setup(
     name='digits',
-    version=__version__,
+    version=version_locals['__version__'],
     description="NVIDIA's Deep Learning GPU Training System",
     url='https://developer.nvidia.com/digits',
     author='DIGITS Development Team',
@@ -45,7 +46,6 @@ setuptools.setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=requirements,
-    extras_require={ 'test': test_requirements },
+    extras_require={'test': test_requirements},
     scripts=['digits-devserver'],
 )
-
