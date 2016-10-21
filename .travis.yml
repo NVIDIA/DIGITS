@@ -98,8 +98,11 @@ before_install:
 install:
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
     - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
-    - ./scripts/travis/install-python-requirements.sh
-    - ./scripts/travis/install-digits.sh
+    - pip install -r ./requirements.txt
+    - pip install -r ./requirements_test.txt
+    - pip install -e .
+    - pip install -e ./plugins/data/imageGradients
+    - pip install -e ./plugins/view/imageGradients
 
 script:
     - ./digits-test -v
