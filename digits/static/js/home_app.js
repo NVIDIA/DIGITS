@@ -102,7 +102,9 @@ try {
                         }
                     }
                     if (!found) {
-                        scope.storage.model_output_fields.push({'name': response.data.model_output_fields[i], 'show': false});
+                        scope.storage.model_output_fields.push({
+                        'name': response.data.model_output_fields[i],
+                        'show': false});
                     }
                 }
             }, function error(response) {
@@ -499,8 +501,8 @@ try {
             return t0 == t1;
         };
 
-        $scope.show = function(show ) {
-            return function(item ) {
+        $scope.show = function(show) {
+            return function(item) {
                 return item.show === show;
             };
         };
