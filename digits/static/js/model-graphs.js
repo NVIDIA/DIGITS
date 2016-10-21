@@ -1,6 +1,6 @@
 // Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 function drawCombinedGraph(data) {
-    $(".combined-graph").show();
+    $('.combined-graph').show();
     // drawCombinedGraph.chart is a static variable that holds the graph state;
     // it is initialized on first call to drawCombinedGraph()
     if (typeof drawCombinedGraph.chart == 'undefined') {
@@ -15,7 +15,7 @@ function drawCombinedGraph(data) {
                     },
                     tick: {
                         // 3 sig-digs
-                        format: function(x) { return Math.round(x*1000)/1000; },
+                        format: function(x) { return Math.round(x * 1000) / 1000; },
                         fit: false,
                     },
                     min: 0,
@@ -65,7 +65,7 @@ function drawCombinedGraph(data) {
     }
 }
 function drawLRGraph(data) {
-    $(".lr-graph").show();
+    $('.lr-graph').show();
     c3.generate($.extend({
         bindto: '#lr-graph',
         size: {height: 300},
@@ -77,7 +77,7 @@ function drawLRGraph(data) {
                 },
                 tick: {
                     // 3 sig-digs
-                    format: function(x) { return Math.round(x*1000)/1000; },
+                    format: function(x) { return Math.round(x * 1000) / 1000; },
                     fit: false,
                 },
                 min: 0,

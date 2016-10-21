@@ -1,19 +1,19 @@
 // Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 
-"use strict";
+'use strict';
 
 try {
-(function () {
+(function() {
     var app = angular.module('home_app', ['ngStorage', 'ui.bootstrap'])
-        .filter('html',function($sce){
-        return function(input){
+        .filter('html', function($sce) {
+        return function(input) {
             return $sce.trustAsHtml(input);
         }
     });
 
-    app.controller('tab_controller', function ($scope) {
+    app.controller('tab_controller', function($scope) {
         var self = this;
-        $scope.init = function(tab){
+        $scope.init = function(tab) {
           self.tab = _.isUndefined(tab) ? 2 : tab;
         };
 
@@ -22,7 +22,7 @@ try {
             $event.stopPropagation();
         };
 
-        this.isSet = function (tabId) {
+        this.isSet = function(tabId) {
             return this.tab === tabId;
         };
     });
@@ -36,7 +36,7 @@ try {
 
         $scope.add_job = function(job_id) {
             $http({
-                method : "GET",
+                method: 'GET',
                 url: '/jobs/' + job_id + '/table_data.json',
             }).then(function success(response) {
                 var job = response.data.job;
@@ -48,7 +48,7 @@ try {
                 }
                 $scope.jobs.push(job);
             });
-        }
+        };
 
         $scope.remove_job = function(job_id) {
             for (var i = 0; i < $scope.jobs.length; i++) {
@@ -57,18 +57,18 @@ try {
                     return true;
                 }
             }
-            return false
-        }
+            return false;
+        };
 
         $scope.deselect_all = function() {
             for (var i = 0; i < $scope.jobs.length; i++) {
                 $scope.jobs[i].selected = false;
             }
-        }
+        };
 
         $scope.load_jobs = function() {
             $http({
-                method : "GET",
+                method: 'GET',
                 url: '/completed_jobs.json',
             }).then(function success(response) {
                 // Find the dataset reference count
@@ -77,7 +77,7 @@ try {
                     if (!count.hasOwnProperty(response.data.models[i].dataset_id)) {
                         count[response.data.models[i].dataset_id] = 0;
                     }
-                    count[response.data.models[i].dataset_id]++;;
+                    count[response.data.models[i].dataset_id]++;
                 }
                 for (var i = 0; i < response.data.datasets.length; i++) {
                     if (count.hasOwnProperty(response.data.datasets[i].id)) {
@@ -91,7 +91,7 @@ try {
                 var r = response.data;
                 $scope.jobs = [].concat(r.running, r.datasets, r.models, r.pretrained_models);
 
-                var scope = angular.element(document.getElementById("models-table")).scope();
+                var scope = angular.element(document.getElementById('models-table')).scope();
                 // scope.storage.model_output_fields = [];
                 for (var i = 0; i < response.data.model_output_fields.length; i++) {
                     var found = false;
@@ -102,13 +102,15 @@ try {
                         }
                     }
                     if (!found) {
-                        scope.storage.model_output_fields.push({'name': response.data.model_output_fields[i], 'show': false});
+                        scope.storage.model_output_fields.push({
+                        'name': response.data.model_output_fields[i],
+                        'show': false});
                     }
                 }
             }, function error(response) {
                 console.log(response.statusText);
             });
-        }
+        };
         $scope.load_jobs();
 
         $scope.is_running = function(job) {
@@ -116,21 +118,21 @@ try {
                     (job.status == 'Initialized' ||
                      job.status == 'Waiting' ||
                      job.status == 'Running'));
-        }
+        };
 
         $scope.is_dataset = function(job) {
             return (job &&
                     (!$scope.is_running(job) &&
                      job.type == 'dataset'));
-        }
+        };
 
         $scope.is_model = function(job) {
             return (!$scope.is_running(job) && job.type == 'model');
-        }
+        };
 
         $scope.is_pretrained_model = function(job) {
             return (!$scope.is_running(job) && job.type == 'pretrained_model');
-        }
+        };
 
         $scope.set_attribute = function(job_id, name, value) {
             for (var i = 0; i < $scope.jobs.length; i++) {
@@ -140,11 +142,11 @@ try {
                 }
             }
             return false;
-        }
+        };
 
         $scope.print = function(txt) {
             console.log(txt);
-        }
+        };
     });
 
     app.controller('select_controller', function($scope) {
@@ -272,7 +274,7 @@ try {
                         last_selected_row = i;
                 }
             }
-            switch($event.which) {
+            switch ($event.which) {
             case 38: // up
                 if (last_selected_row !== null) {
                     if (!$event.shiftKey)
@@ -298,7 +300,7 @@ try {
 
         $scope.mouseleave = function($event) {
             mousedown_row = null;
-        }
+        };
 
         $scope.any_selected = function() {
             if ($scope.jobs === undefined)
@@ -308,7 +310,7 @@ try {
                 if ($scope.jobs[i].selected)
                     return true;
             return false;
-        }
+        };
     });
 
     app.controller('job_controller', function($scope, $controller) {
@@ -320,7 +322,7 @@ try {
             descending1: 1,
             active2: 'submitted',
             descending2: 1,
-        }
+        };
         $scope.jobs = [];
 
         $scope.default_descending = function(active) {
@@ -355,14 +357,14 @@ try {
             var sort = $scope.sort;
 
             if (sort.active1 == parameter) {
-                return sort.descending1 == 1
-                    ? 'glyphicon-chevron-up'
-                    : 'glyphicon-chevron-down';
+                return sort.descending1 == 1 ?
+                    'glyphicon-chevron-up' :
+                    'glyphicon-chevron-down';
             }
             if (sort.active2 == parameter) {
-                return sort.descending2 == 1
-                    ? 'glyphicon-chevron-up'
-                    : 'glyphicon-chevron-down';
+                return sort.descending2 == 1 ?
+                    'glyphicon-chevron-up' :
+                    'glyphicon-chevron-down';
             }
             return '';
         };
@@ -373,14 +375,14 @@ try {
                 if ($scope.jobs[i].selected)
                     job_ids.push($scope.jobs[i].id);
             return job_ids;
-        }
+        };
 
         $scope.get_group_for_job = function(job_id) {
             for (var i = 0; i < $scope.jobs.length; i++)
                 if ($scope.jobs[i].id == job_id)
                     return $scope.jobs[i].group ? $scope.jobs[i].group : '';
             return '';
-        }
+        };
 
         $scope.delete_jobs = function() {
             var job_ids = $scope.get_selected_job_ids();
@@ -393,21 +395,21 @@ try {
                     if (result)
                         $.ajax('/jobs',
                                {
-                                   type: "DELETE",
+                                   type: 'DELETE',
                                    data: {'job_ids': job_ids},
                                })
                         .done(function() {
-                            var scope = angular.element(document.getElementById("all-jobs")).scope();
+                            var scope = angular.element(document.getElementById('all-jobs')).scope();
                             scope.load_jobs();
                         })
                         .fail(function(data) {
-                            var scope = angular.element(document.getElementById("all-jobs")).scope();
+                            var scope = angular.element(document.getElementById('all-jobs')).scope();
                             scope.load_jobs();
                             errorAlert(data);
                         });
                 });
             return false;
-        }
+        };
 
         $scope.abort_jobs = function() {
             var job_ids = $scope.get_selected_job_ids();
@@ -419,21 +421,21 @@ try {
                     if (result)
                         $.ajax('/abort_jobs',
                                {
-                                   type: "POST",
+                                   type: 'POST',
                                    data: {'job_ids': job_ids},
                                })
                         .done(function() {
-                            var scope = angular.element(document.getElementById("all-jobs")).scope();
+                            var scope = angular.element(document.getElementById('all-jobs')).scope();
                             scope.load_jobs();
                         })
                         .fail(function(data) {
-                            var scope = angular.element(document.getElementById("all-jobs")).scope();
+                            var scope = angular.element(document.getElementById('all-jobs')).scope();
                             scope.load_jobs();
                             errorAlert(data);
                         });
                 });
             return false;
-        }
+        };
 
         $scope.group_jobs = function() {
             var job_ids = $scope.get_selected_job_ids();
@@ -456,7 +458,7 @@ try {
                             result = '';
                         $.ajax('/group',
                                {
-                                   type: "POST",
+                                   type: 'POST',
                                    data: {
                                        'job_ids': job_ids,
                                        group_name: result,
@@ -473,34 +475,34 @@ try {
                 }
             });
             return false;
-        }
+        };
 
 
         $scope.print_time_diff_ago = function(start) {
             return print_time_diff_ago(start, 'minute');
-        }
+        };
 
         $scope.print_time_diff_simple = function(diff) {
             return print_time_diff_simple(diff);
-        }
+        };
 
         $scope.print_time_diff_terse = function(diff) {
             return print_time_diff_terse(diff);
-        }
+        };
 
         $scope.print_time_diff = function(diff) {
             return print_time_diff(diff);
-        }
+        };
 
         $scope.is_today = function(date) {
             // return true if the date is from today
             var t0 = new Date(date * 1000).setHours(0, 0, 0, 0);
             var t1 = new Date().setHours(0, 0, 0, 0);
-            return t0 == t1
-        }
+            return t0 == t1;
+        };
 
-        $scope.show = function( show ) {
-            return function( item ) {
+        $scope.show = function(show) {
+            return function(item) {
                 return item.show === show;
             };
         };
@@ -509,32 +511,32 @@ try {
         {
             if (min_width == undefined)
                 min_width = 0;
-            var ruler = document.getElementById("ruler");
+            var ruler = document.getElementById('ruler');
             ruler.innerHTML = txt;
             var icon_width = 14;
             var width = ruler.offsetWidth + icon_width + 4;
             return Math.max(width, min_width);
-        }
+        };
     });
 
     app.controller('running_controller', function($scope, $controller) {
         $controller('job_controller', {$scope: $scope});
         $scope.title = 'Running Jobs';
-        $scope.fields = [{name: 'name',      show: true, min_width: 100},
+        $scope.fields = [{name: 'name', show: true, min_width: 100},
                          {name: 'submitted', show: true, min_width: 100},
-                         {name: 'status',    show: true, min_width: 120},
-                         {name: 'loss',      show: true, min_width: 200},
-                         {name: 'progress',  show: true, min_width: 200}];
+                         {name: 'status', show: true, min_width: 120},
+                         {name: 'loss', show: true, min_width: 200},
+                         {name: 'progress', show: true, min_width: 200}];
     });
 
     app.controller('datasets_controller', function($scope, $controller) {
         $controller('job_controller', {$scope: $scope});
         $scope.title = 'Datasets';
-        $scope.fields = [{name: 'name',      show: true},
-                         {name: 'refs',      show: true},
-                         {name: 'backend',   show: true},
-                         {name: 'status',    show: true},
-                         {name: 'elapsed',   show: true},
+        $scope.fields = [{name: 'name', show: true},
+                         {name: 'refs', show: true},
+                         {name: 'backend', show: true},
+                         {name: 'status', show: true},
+                         {name: 'elapsed', show: true},
                          {name: 'submitted', show: true}];
     });
 
@@ -543,25 +545,25 @@ try {
         $scope.title = 'Models';
         $scope.storage = $localStorage.$default({
             model_output_fields: [],
-            model_fields: [{name: 'name',      show: true,  min_width: 100},
-                           {name: 'id',        show: false, min_width: 200},
-                           {name: 'framework', show: true,  min_width: 50},
-                           {name: 'status',    show: true,  min_width: 50},
-                           {name: 'elapsed',   show: true,  min_width: 50},
-                           {name: 'submitted', show: true,  min_width: 50}],
+            model_fields: [{name: 'name', show: true, min_width: 100},
+                           {name: 'id', show: false, min_width: 200},
+                           {name: 'framework', show: true, min_width: 50},
+                           {name: 'status', show: true, min_width: 50},
+                           {name: 'elapsed', show: true, min_width: 50},
+                           {name: 'submitted', show: true, min_width: 50}],
         });
     });
 
     app.controller('pretrained_models_controller', function($scope, $localStorage, $controller) {
         $controller('job_controller', {$scope: $scope});
         $scope.title = 'Models';
-        $scope.fields = [{name: 'name',         show: true,  min_width: 0},
-                         {name: 'framework',    show: true,  min_width: 0},
-                         {name: 'username',     show: true,  min_width: 0},
-                         {name: 'has_labels',   show: true,  min_width: 0},
-                         {name: 'status',       show: true,  min_width: 0},
-                         {name: 'elapsed',      show: true,  min_width: 0},
-                         {name: 'submitted',    show: true,  min_width: 0}];
+        $scope.fields = [{name: 'name', show: true, min_width: 0},
+                         {name: 'framework', show: true, min_width: 0},
+                         {name: 'username', show: true, min_width: 0},
+                         {name: 'has_labels', show: true, min_width: 0},
+                         {name: 'status', show: true, min_width: 0},
+                         {name: 'elapsed', show: true, min_width: 0},
+                         {name: 'submitted', show: true, min_width: 0}];
     });
 
     function precision(input, sigfigs) {
@@ -570,37 +572,37 @@ try {
         var n = Math.floor(Math.log10(input)) + 1;
         n = Math.min(n, 0);
         var places = sigfigs - n;
-        var factor = "1" + Array(+(places > 0 && places + 1)).join("0");
+        var factor = '1' + Array(+(places > 0 && places + 1)).join('0');
         return Math.round(input * factor) / factor;
     }
 
-    app.filter('precision', function ($filter) {
-        return function (input, sigfigs) {
+    app.filter('precision', function($filter) {
+        return function(input, sigfigs) {
             return precision(input, sigfigs);
         }
     });
 
-    app.filter('positive', function ($filter) {
-        return function (input) {
-            return (input == 0) ? "" : input;
+    app.filter('positive', function($filter) {
+        return function(input) {
+            return (input == 0) ? '' : input;
         }
     });
 
-    app.filter('major_name', function ($filter) {
-        return function (input) {
+    app.filter('major_name', function($filter) {
+        return function(input) {
             return input.replace(/(\w+:[\.\w]+[, \w:\.]*)$/, '');
         }
     });
 
-    app.filter('minor_name', function ($filter) {
-        return function (input) {
+    app.filter('minor_name', function($filter) {
+        return function(input) {
             var match = input.match(/(\w+:[\.\w]+[, \w:\.]*)$/);
-            return match ? match[0] : ''
+            return match ? match[0] : '';
         }
     });
 
-    app.filter("sort_with_empty_at_end", function () {
-        return function (array, scope, show_groups) {
+    app.filter('sort_with_empty_at_end', function() {
+        return function(array, scope, show_groups) {
             if (!angular.isArray(array)) return;
             array.sort(
                 function(x, y)
@@ -638,7 +640,7 @@ try {
         return {
             restrict: 'E',
             link: function(scope, elem, attrs) {
-                if(attrs.href !== '' && attrs.href !== '#') {
+                if (attrs.href !== '' && attrs.href !== '#') {
                     elem.on('mousedown', function($event) {
                         $event.stopPropagation();
                     });
@@ -656,16 +658,16 @@ try {
         };
     });
 
-    app.directive("sparkline", function () {
+    app.directive('sparkline', function() {
         return {
-            restrict: "E",
+            restrict: 'E',
             scope: {
-                data: "@"
+                data: '@'
             },
-            compile: function (tElement, tAttrs, transclude) {
-                tElement.replaceWith("<span>" + tAttrs.data + "</span>");
-                return function (scope, element, attrs) {
-                    attrs.$observe("data", function(data) {
+            compile: function(tElement, tAttrs, transclude) {
+                tElement.replaceWith('<span>' + tAttrs.data + '</span>');
+                return function(scope, element, attrs) {
+                    attrs.$observe('data', function(data) {
                         data = JSON.parse(data);
                         if (typeof(data) == 'undefined') {
                             console.info('bad sparkline');
@@ -695,14 +697,14 @@ try {
         return {
             restrict: 'AE',
             replace: true,
-            template: ( '<span>' +
+            template: ('<span>' +
                         '    <a href="/jobs/{[ job.id ]}" title="{[job.name]}">' +
                         '        {[ job.name | major_name ]}' +
                         '    </a>' +
                         '    <small>' +
                         '        {[ job.name | minor_name ]}' +
                         '    </small>' +
-                        '</span>' ),
+                        '</span>'),
         };
     });
 
@@ -719,7 +721,7 @@ try {
         return {
             restrict: 'AE',
             replace: true,
-            template: '<i class="glyphicon '+
+            template: '<i class="glyphicon ' +
                 ' {[job.has_labels ? \'glyphicon-ok\' : ' +
                 '\'glyphicon-remove\']}" style="width:14px"/>',
         };
@@ -733,7 +735,7 @@ try {
 
 })();
 }
-catch(ex) {
+catch (ex) {
     console.log(ex);
 }
 
@@ -748,14 +750,14 @@ $(document).ready(function() {
             return;
         }
 
-        var scope = angular.element(document.getElementById("all-jobs")).scope();
+        var scope = angular.element(document.getElementById('all-jobs')).scope();
         scope.deselect_all();
         scope.$apply();
     });
 
-    socket.on('task update', function (msg) {
+    socket.on('task update', function(msg) {
         if (msg['update'] == 'combined_graph') {
-            var scope = angular.element(document.getElementById("all-jobs")).scope();
+            var scope = angular.element(document.getElementById('all-jobs')).scope();
             if (scope.set_attribute(msg['job_id'], 'sparkline', msg['data'])) {
                 scope.set_attribute(msg['job_id'], 'loss', msg['data'][-1]);
                 scope.$apply();
@@ -763,8 +765,8 @@ $(document).ready(function() {
         }
     });
 
-    socket.on('job update', function (msg) {
-        var scope = angular.element(document.getElementById("all-jobs")).scope();
+    socket.on('job update', function(msg) {
+        var scope = angular.element(document.getElementById('all-jobs')).scope();
         if (false)
             return;
         if (msg.update == 'status') {

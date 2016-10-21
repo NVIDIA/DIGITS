@@ -55,8 +55,8 @@
 })(window.angular);
 
 $(document).ready(function() {
-    socket.on('update', function (msg) {
-        var scope = angular.element(document.getElementById("modelList")).scope();
+    socket.on('update', function(msg) {
+        var scope = angular.element(document.getElementById('modelList')).scope();
         if (msg.update == 'progress') {
             if (scope.set_attribute(msg.model_id, 'progress', msg.progress))
                 scope.$apply();
