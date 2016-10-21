@@ -72,7 +72,7 @@ def username_decorator(f):
     from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
-        this_username = flask.request.cookies.get('username', None)
+        this_username = flask.request.cookies.get('username')
         app.jinja_env.globals['username'] = this_username
         return f(*args, **kwargs)
     return decorated

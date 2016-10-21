@@ -38,7 +38,7 @@ def subprocess_visible_devices(gpus):
         raise ValueError('gpus should be a list')
     gpus = [int(g) for g in gpus]
 
-    old_cvd = os.environ.get('CUDA_VISIBLE_DEVICES', None)
+    old_cvd = os.environ.get('CUDA_VISIBLE_DEVICES')
     if old_cvd is None:
         real_gpus = gpus
     else:
