@@ -32,7 +32,7 @@ class DataIngestion(DataIngestionInterface):
         # this instance is automatically populated with form field
         # attributes by superclass constructor
 
-        if 'custom_classes' in self.__dict__ and self.custom_classes != '':
+        if hasattr(self, 'custom_classes') and self.custom_classes != '':
             s = StringIO.StringIO(self.custom_classes)
             reader = csv.reader(s)
             self.class_mappings = {}
