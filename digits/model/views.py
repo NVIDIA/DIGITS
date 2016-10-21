@@ -91,6 +91,7 @@ def customize():
         python_layer = job.get_python_layer_path()
     else:
         network = job.train_task().get_network_desc()
+        python_layer = None
 
     return json.dumps({
             'network': network,
