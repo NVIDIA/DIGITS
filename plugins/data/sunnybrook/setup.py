@@ -21,8 +21,9 @@ setup(
     packages=find_packages(),
     entry_points={
         DIGITS_PLUGIN_GROUP: [
-        'class=digitsDataPluginSunnybrook:DataIngestion',
-        ]},
+            'class=digitsDataPluginSunnybrook:DataIngestion',
+        ]
+    },
     include_package_data=True,
     install_requires=['pydicom'],
 )

@@ -100,8 +100,8 @@ class Visualization(VisualizationInterface):
         # assume only one output and grayscale input
 
         output_vector = output_data[output_data.keys()[0]]
-        grad = np.array(
-            [output_vector[0] * self.width,
+        grad = np.array([
+            output_vector[0] * self.width,
             output_vector[1] * self.height])
         grad_rotated_90 = np.array([-grad[1], grad[0]])
         center = np.array([self.width / 2, self.height / 2])

@@ -7,6 +7,7 @@ from flask.ext.wtf import Form
 import wtforms
 from wtforms import validators
 
+
 @subclass
 class ConfigForm(Form):
     """

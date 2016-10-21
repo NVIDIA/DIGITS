@@ -21,7 +21,8 @@ setup(
     packages=find_packages(),
     entry_points={
         DIGITS_PLUGIN_GROUP: [
-        'class=digitsViewPluginImageGradients:Visualization',
-        ]},
+            'class=digitsViewPluginImageGradients:Visualization',
+        ]
+    },
     include_package_data=True,
 )

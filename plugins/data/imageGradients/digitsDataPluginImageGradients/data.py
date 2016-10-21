@@ -11,6 +11,7 @@ import os
 TEMPLATE = "templates/template.html"
 INFERENCE_TEMPLATE = "templates/inference_template.html"
 
+
 @subclass
 class DataIngestion(DataIngestionInterface):
     """

@@ -6,8 +6,7 @@ import os
 from digits import utils
 from digits.utils import subclass
 from flask.ext.wtf import Form
-import wtforms
-from wtforms import HiddenField, validators
+from wtforms import validators
 
 
 @subclass
@@ -98,4 +97,3 @@ class InferenceForm(Form):
         default='none',
         tooltip="Test a record from the validation set."
         )
-
