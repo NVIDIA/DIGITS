@@ -12,20 +12,20 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/c3.min.css', ver=dir_hash) }}">
     <title>{% block title %}DIGITS{% endblock %}</title>
 
-    <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootbox.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/jquery-1.11.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/bootstrap-3.3.6.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/bootbox-4.3.0.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/digits.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/c3.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.autocomplete.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/d3-3.5.5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/c3-0.4.10.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/jquery.autocomplete-1.2.21.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/file_field.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/underscore.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/underscore-1.8.3.min.js') }}"></script>
 
-    <script src="{{ url_for('static', filename='js/ace/ace.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{ url_for('static', filename='js/ace/mode-python.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{ url_for('static', filename='js/ace/mode-lua.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
-    <script src="{{ url_for('static', filename='js/ace/theme-chrome.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/ace-1.2.3.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/ace.mode-python-1.2.3.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/ace.mode-lua-1.2.3.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='js/3rdparty/ace.theme-chrome-1.2.3.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
     {% block head %}
     {% endblock %}
 </head>
