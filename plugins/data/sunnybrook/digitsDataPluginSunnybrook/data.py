@@ -1,7 +1,6 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import csv
 import cv2
 import fnmatch
 import math
@@ -47,8 +46,10 @@ SAX_SERIES = {
 # Utility functions
 #
 
+
 def shrink_case(case):
     toks = case.split("-")
+
     def shrink_if_number(x):
         try:
             cvt = int(x)
@@ -73,9 +74,11 @@ class Contour(object):
 
 def get_all_contours(contour_path):
     # walk the directory structure for all the contour files
-    contours = [os.path.join(dirpath, f)
+    contours = [
+        os.path.join(dirpath, f)
         for dirpath, dirnames, files in os.walk(contour_path)
-        for f in fnmatch.filter(files, 'IM-0001-*-icontour-manual.txt')]
+        for f in fnmatch.filter(files, 'IM-0001-*-icontour-manual.txt')
+    ]
     extracted = map(Contour, contours)
     return extracted
 
@@ -93,6 +96,7 @@ def load_contour(contour, img_path):
 #
 # Main class
 #
+
 
 @subclass
 class DataIngestion(DataIngestionInterface):
@@ -123,7 +127,6 @@ class DataIngestion(DataIngestionInterface):
         palette = [0, 0, 0,  255, 255, 255] + [0] * (254 * 3)
         self.userdata[COLOR_PALETTE_ATTRIBUTE] = palette
 
-
     @override
     def encode_entry(self, entry):
         img, label = load_contour(entry, self.image_folder)
@@ -131,8 +134,7 @@ class DataIngestion(DataIngestionInterface):
         if self.userdata['channel_conversion'] == 'L':
             feature = img[np.newaxis, ...]
         elif self.userdata['channel_conversion'] == 'RGB':
-            feature = np.empty(shape=(3, img.shape[0], img.shape[1]),
-                dtype=img.dtype)
+            feature = np.empty(shape=(3, img.shape[0], img.shape[1]), dtype=img.dtype)
             # just copy the same data over the three color channels
             feature[0] = img
             feature[1] = img

@@ -2,10 +2,13 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 
 set -e
-set -x
+
+echo "Checking for lint ..."
 
 if which flake8 >/dev/null 2>&1; then
     python2 `which flake8` .
 else
     python2 -m flake8 .
 fi
+
+echo "No lint found."
