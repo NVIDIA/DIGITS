@@ -1,0 +1,18 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<div class="row">
+    <div class="col-sm-6">
+        <h3>Test a story/question</h3>
+        <div class="form-group">
+            <div class="form-group{{mark_errors([form.snippet])}}">
+                {{ form.snippet.label }}
+                {{ form.snippet.tooltip }}
+                {{ form.snippet(class='form-control', placeholder='image file') }}
+            </div>
+        </div>
+    </div>
+</div>

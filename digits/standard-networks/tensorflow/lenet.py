@@ -15,6 +15,9 @@ class UserModel(Tower):
 
         # Create model
         def conv_net(x, weights, biases):
+            # scale (divide by MNIST std)
+            x = x * 0.0125
+
             # Convolution Layer
             conv1 = conv2d(x, weights['wc1'], biases['bc1'], s=1, padding='VALID')
             # Max Pooling (down-sampling)
@@ -30,7 +33,7 @@ class UserModel(Tower):
             fc1 = tf.reshape(conv2, [-1, weights['wd1'].get_shape().as_list()[0]])
             fc1 = tf.add(tf.matmul(fc1, weights['wd1']), biases['bd1'])
             fc1 = tf.nn.relu(fc1)
-            
+
             # Apply Dropout
             if self.is_training:
                 fc1 = tf.nn.dropout(fc1, 0.5)

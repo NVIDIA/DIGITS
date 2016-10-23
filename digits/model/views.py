@@ -15,7 +15,7 @@ from . import images as model_images
 from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
 from digits import frameworks, extensions
-from digits.utils import time_filters, auth
+from digits.utils import auth
 from digits.utils.routing import request_wants_json, job_from_request, get_request_arg
 from digits.webapp import scheduler
 
@@ -139,13 +139,14 @@ def visualize_network():
         dataset = scheduler.get_job(flask.request.form['dataset_id'])
 
     fw = frameworks.get_framework_by_id(framework)
-    ret = fw.get_network_visualization(desc=flask.request.form['custom_network'],
-            dataset=dataset,
-            solver_type=flask.request.form['solver_type'] if 'solver_type' in flask.request.form else None,
-            use_mean=flask.request.form['use_mean'] if 'use_mean' in flask.request.form else None,
-            crop_size=flask.request.form['crop_size'] if 'crop_size' in flask.request.form else None,
-            num_gpus=flask.request.form['num_gpus'] if 'num_gpus' in flask.request.form else None,
-            )
+    ret = fw.get_network_visualization(
+        desc=flask.request.form['custom_network'],
+        dataset=dataset,
+        solver_type=flask.request.form['solver_type'] if 'solver_type' in flask.request.form else None,
+        use_mean=flask.request.form['use_mean'] if 'use_mean' in flask.request.form else None,
+        crop_size=flask.request.form['crop_size'] if 'crop_size' in flask.request.form else None,
+        num_gpus=flask.request.form['num_gpus'] if 'num_gpus' in flask.request.form else None,
+    )
     return ret
 
 

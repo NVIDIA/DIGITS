@@ -435,7 +435,7 @@ class TrainTask(Task):
         """
         return None
 
-    def get_snapshot(self, epoch=-1):
+    def get_snapshot(self, epoch=-1, download=False):
         """
         return snapshot file for specified epoch
         """

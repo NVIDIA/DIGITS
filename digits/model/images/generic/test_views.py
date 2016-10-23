@@ -27,8 +27,6 @@ from digits import test_utils
 import digits.webapp
 
 
-import numpy as np
-
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
@@ -95,19 +93,21 @@ end
 
     TENSORFLOW_NETWORK = \
         """
-def build_model(params):
-    ninputs = params['input_shape'][0] * params['input_shape'][1] * params['input_shape'][2]
-    W = tf.get_variable('W', [ninputs, 2], initializer=tf.constant_initializer(0.0))
-    b = tf.get_variable('b', [2], initializer=tf.constant_initializer(0.0)),
-    model = tf.reshape(params['x'], shape=[-1, ninputs])
-    model = tf.add(tf.matmul(model, W), b)
-    def loss(y):
-        y = tf.reshape(y, shape=[-1, 2])
-        return digits.mse_loss(model, y)
-    return {
-        'model' : model,
-        'loss' : loss
-        }
+class UserModel(Tower):
+
+    @model_property
+    def inference(self):
+        ninputs = self.input_shape[0] * self.input_shape[1] * self.input_shape[2]
+        W = tf.get_variable('W', [ninputs, 2], initializer=tf.constant_initializer(0.0))
+        b = tf.get_variable('b', [2], initializer=tf.constant_initializer(0.0)),
+        model = tf.reshape(self.x, shape=[-1, ninputs]) * 0.004
+        model = tf.add(tf.matmul(model, W), b)
+        return model
+
+    @model_property
+    def loss(self):
+        y = tf.reshape(self.y, shape=[-1, 2])
+        return digits.mse_loss(self.inference, y)
 """
 
     @classmethod
@@ -135,11 +135,11 @@ def build_model(params):
 
     @classmethod
     def network(cls):
-        if cls.FRAMEWORK=='torch':
+        if cls.FRAMEWORK == 'torch':
             return cls.TORCH_NETWORK
-        elif cls.FRAMEWORK=='caffe':
+        elif cls.FRAMEWORK == 'caffe':
             return cls.CAFFE_NETWORK
-        elif cls.FRAMEWORK=='tensorflow':
+        elif cls.FRAMEWORK == 'tensorflow':
             return cls.TENSORFLOW_NETWORK
         else:
             raise ValueError('Unknown framework %s' % cls.FRAMEWORK)
@@ -776,6 +776,24 @@ return function(p)
 end
 """
 
+    TENSORFLOW_NETWORK = \
+        """
+class UserModel(Tower):
+
+    @model_property
+    def inference(self):
+        scale = tf.get_variable('scale', [1], initializer=tf.constant_initializer(1.0))
+        offset = tf.get_variable('offset', [1], initializer=tf.constant_initializer(0.))
+        offset = tf.Print(offset,[scale, offset], message='scale offset')
+        model = self.x + offset
+        self.model = model
+        return tf.transpose(model, (0, 3, 2, 1))  # net output expected in NCHW format
+
+    @model_property
+    def loss(self):
+        return digits.mse_loss(self.model, self.y)
+"""
+
     EXTENSION_ID = "image-processing"
     VARIABLE_SIZE_DATASET = False
     NUM_IMAGES = 100
@@ -813,9 +831,17 @@ end
         data = json.loads(rv.data)
         data_shape = np.array(data['outputs']['output']).shape
         if not self.VARIABLE_SIZE_DATASET:
-            assert data_shape == (1, self.CHANNELS, self.IMAGE_WIDTH, self.IMAGE_HEIGHT)
+            if data_shape != (1, self.CHANNELS, self.IMAGE_WIDTH, self.IMAGE_HEIGHT):
+                raise ValueError("Shapes differ: got %s expected %s" % (repr(data_shape),
+                                                                        repr((1,
+                                                                              self.CHANNELS,
+                                                                              self.IMAGE_WIDTH,
+                                                                              self.IMAGE_HEIGHT))))
 
     def test_infer_one_noresize_json(self):
+        if self.FRAMEWORK == 'tensorflow' and self.MEAN == 'image':
+            raise unittest.SkipTest('Mean image subtraction not supported on '
+                                    'variable-size input with Tensorflow')
         # create large random image
         shape = (self.CHANNELS, 10 * self.IMAGE_HEIGHT, 5 * self.IMAGE_WIDTH)
         x = np.random.randint(
@@ -841,7 +867,8 @@ end
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
         data_shape = np.array(data['outputs']['output']).shape
-        assert data_shape == (1,) + shape
+        if data_shape != (1,) + shape:
+                raise ValueError("Shapes differ: got %s expected %s" % (repr(data_shape), repr((1,) + shape)))
 
     def test_infer_db(self):
         if self.VARIABLE_SIZE_DATASET:
@@ -1282,39 +1309,54 @@ layer {
 }
 """
 
-#class TestTensorflowViews(BaseTestViews, test_utils.TensorflowMixin):
-#    # @TODO(tzaman) For TF i need to pass a proper dataset too - how to do this best?
-#    pass
 
 class TestTensorflowCreation(BaseTestCreation, test_utils.TensorflowMixin):
     pass
 
+
 class TestTensorflowCreated(BaseTestCreated, test_utils.TensorflowMixin):
     pass
 
-class TestTensorflowCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension, test_utils.TensorflowMixin):
+
+class TestTensorflowCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension,
+                                                     test_utils.TensorflowMixin):
     pass
 
-class TestTensorflowCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension, test_utils.TensorflowMixin):
+
+class TestTensorflowCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension,
+                                                             test_utils.TensorflowMixin):
     @classmethod
     def setUpClass(cls):
         super(TestTensorflowCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
-class TestTensorflowCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
-    MEAN = 'image'
 
-class TestTensorflowCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
-    MEAN = 'pixel'
+# class TestTensorflowCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension,
+#                                                                  test_utils.TensorflowMixin):
+#     MEAN = 'image'
+#
+#
+# class TestTensorflowCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension,
+#                                                                  test_utils.TensorflowMixin):
+#     MEAN = 'pixel'
+#
+#
+# class TestTensorflowCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension,
+#                                                                 test_utils.TensorflowMixin):
+#     MEAN = 'none'
 
-class TestTensorflowCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
-    MEAN = 'none'
 
 class TestTensorflowCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):
     MEAN = 'none'
     VARIABLE_SIZE_DATASET = True
 
+    @classmethod
+    def setUpClass(cls):
+        raise unittest.SkipTest('Variable-size dataset not supported in Tensorflow/DIGITS')
+
+
 class TestTensorflowCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.TensorflowMixin):
     pass
+
 
 class TestTensorflowDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.TensorflowMixin):
     pass

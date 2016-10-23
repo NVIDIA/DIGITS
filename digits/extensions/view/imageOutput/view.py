@@ -31,6 +31,7 @@ class Visualization(VisualizationInterface):
         self.channel_order = kwargs['channel_order'].upper()
         self.data_order = kwargs['data_order'].upper()
         self.normalize = (kwargs['pixel_conversion'] == 'normalize')
+        self.show_input = (kwargs['show_input'] == 'yes')
 
     @staticmethod
     def get_config_form():
@@ -70,7 +71,8 @@ class Visualization(VisualizationInterface):
           - context is a dictionary of context variables to use for rendering
           the form
         """
-        return self.view_template, {'image': digits.utils.image.embed_image_html(data)}
+        return self.view_template, {'image_input': digits.utils.image.embed_image_html(data[0]),
+                                    'image_output': digits.utils.image.embed_image_html(data[1])}
 
     @override
     def process_data(self, input_id, input_data, output_data):
@@ -78,9 +80,19 @@ class Visualization(VisualizationInterface):
         Process one inference and return data to visualize
         """
 
-        data = output_data[output_data.keys()[0]].astype('float32')
+        if self.show_input:
+            data_input = input_data.astype('float32')
+            image_input = self.process_image(self.data_order, data_input)
+        else:
+            image_input = None
 
-        if self.data_order == 'HWC':
+        data_output = output_data[output_data.keys()[0]].astype('float32')
+        image_output = self.process_image(self.data_order, data_output)
+
+        return [image_input, image_output]
+
+    def process_image(self, data_order, data):
+        if data_order == 'HWC':
             data = (data.transpose((2, 0, 1)))
 
         # assume CHW at this point

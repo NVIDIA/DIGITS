@@ -34,7 +34,10 @@ from digits import utils, log  # noqa
 import caffe.io  # noqa
 import caffe_pb2  # noqa
 
-import tensorflow as tf # @TODO(tzaman) - remove TF dependency
+if digits.config.config_value('tensorflow')['enabled']:
+    import tensorflow as tf
+else:
+    tf = None
 
 logger = logging.getLogger('digits.tools.create_db')
 
@@ -306,16 +309,20 @@ def create_db(input_file, output_dir,
 
 
 def _create_tfrecords(image_count, write_queue, batch_size, output_dir,
-        summary_queue, num_threads,
-        mean_files      = None,
-        encoding        = None,
-        lmdb_map_size   = None,
-        **kwargs):
+                      summary_queue, num_threads,
+                      mean_files=None,
+                      encoding=None,
+                      lmdb_map_size=None,
+                      **kwargs):
     """
     Creates the TFRecords database(s)
     """
     LIST_FILENAME = 'list.txt'
-    
+
+    if not tf:
+        raise ValueError("Can't create TFRecords as support for Tensorflow "
+                         "is not enabled.")
+
     wait_time = time.time()
     threads_done = 0
     images_loaded = 0
@@ -323,13 +330,12 @@ def _create_tfrecords(image_count, write_queue, batch_size, output_dir,
     image_sum = None
     compute_mean = bool(mean_files)
 
-
     os.makedirs(output_dir)
 
     # We need shards to achieve good mixing properties because TFRecords
     # is a sequential/streaming reader, and has no random access.
 
-    num_shards = 16 # @TODO(tzaman) put some logic behind this
+    num_shards = 16  # @TODO(tzaman) put some logic behind this
 
     writers = []
     with open(os.path.join(output_dir, LIST_FILENAME), 'w') as outfile:
@@ -385,7 +391,6 @@ def _create_tfrecords(image_count, write_queue, batch_size, output_dir,
 
     for writer in writers:
         writer.close()
-
 
 
 def _create_lmdb(image_count, write_queue, batch_size, output_dir,
@@ -702,10 +707,12 @@ def _initial_image_sum(width, height, channels):
 
 
 def _int64_feature(value):
-  return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
 
 def _bytes_feature(value):
-  return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
 
 def _array_to_tf_feature(image, label, encoding):
     """
@@ -725,22 +732,23 @@ def _array_to_tf_feature(image, label, encoding):
         else:
             raise ValueError('Invalid encoding type')
         image_raw = s.getvalue()
-        
-    depth = image.shape[2] if len(image.shape)>2 else 1
+
+    depth = image.shape[2] if len(image.shape) > 2 else 1
 
     example = tf.train.Example(
-            features=tf.train.Features(
-                feature={
-                    'height': _int64_feature(image.shape[0]),
-                    'width': _int64_feature(image.shape[1]),
-                    'depth': _int64_feature(depth),
-                    'label': _int64_feature(label),
-                    'image_raw': _bytes_feature(image_raw),
-                    'encoding' :  _int64_feature(encoding_id),
-                    # @TODO(tzaman) - add bitdepth flag?
-                }
-            ))
+        features=tf.train.Features(
+            feature={
+                'height': _int64_feature(image.shape[0]),
+                'width': _int64_feature(image.shape[1]),
+                'depth': _int64_feature(depth),
+                'label': _int64_feature(label),
+                'image_raw': _bytes_feature(image_raw),
+                'encoding':  _int64_feature(encoding_id),
+                # @TODO(tzaman) - add bitdepth flag?
+            }
+        ))
     return example.SerializeToString()
+
 
 def _array_to_datum(image, label, encoding):
     """
@@ -891,8 +899,8 @@ if __name__ == '__main__':
                         help='Database compression format (gzip)'
                         )
     parser.add_argument('-b', '--backend',
-            default='lmdb',
-            help='The database backend - lmdb[default], hdf5 or tfrecords')
+                        default='lmdb',
+                        help='The database backend - lmdb[default], hdf5 or tfrecords')
     parser.add_argument('--lmdb_map_size',
                         type=int,
                         help='The initial map size for LMDB (in MB)')

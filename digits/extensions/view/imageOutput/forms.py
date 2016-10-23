@@ -45,3 +45,13 @@ class ConfigForm(Form):
         tooltip='Select method to convert pixel values to the target bit '
                 'range'
     )
+
+    show_input = utils.forms.SelectField(
+        'Show input as image',
+        choices=[
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        ],
+        default='no',
+        tooltip='Show input as image'
+    )
