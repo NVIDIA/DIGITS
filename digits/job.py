@@ -22,6 +22,7 @@ class Job(StatusCls):
     Base class
     """
     SAVE_FILE = 'status.pickle'
+    NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = 3600
 
     @classmethod
     def load(cls, job_id):
@@ -348,6 +349,18 @@ class Job(StatusCls):
         Returns whether job is persistent
         """
         return self.persistent
+
+    def get_delete_timeout(self):
+        """
+        Returns how long a non-persistent job should exist for
+        """
+        return self.NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS
+
+    def set_delete_timeout(self,t):
+        """
+        Returns how long a non-persistent job should exist for
+        """
+        self.NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = t
 
     def is_read_only(self):
         """
