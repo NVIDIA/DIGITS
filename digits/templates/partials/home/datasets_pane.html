@@ -12,7 +12,7 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             {{category}} <span class="caret"></span>
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu dropdown-menu-right">
                             {% for id in options.keys()|sort %}
                             {% set option = options[id] %}
                             <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
