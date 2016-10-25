@@ -4,6 +4,8 @@ Table of Contents
 =================
 * [Introduction](#introduction)
 * [Dataset creation](#dataset-creation)
+    * [Using the text classification plug-in](#using-the-text-classification-plug-in)
+    * [Using images](#using-images)
 * [Model creation](#model-creation)
 * [Verification](#verification)
 * [Alternative Method](#alternative-method)
@@ -26,6 +28,41 @@ Download the file `dbpedia_csv.tar.gz` and extract its contents into a folder wh
 The following sample is an example from the "company" class:
 
 > "E. D. Abbott Ltd"," Abbott of Farnham E D Abbott Limited was a British coachbuilding business based in Farnham Surrey trading under that name from 1929. A major part of their output was under sub-contract to motor vehicle manufacturers. Their business closed in 1972."
+
+### Using the Text Classification plug-in
+
+> This method is available from DIGITS 5.0 onwards.
+
+If you have not done so already, install the top-level DIGITS package.
+Point the `$DIGITS_ROOT` envvar to the top of your DIGITS installation then do:
+```sh
+$ pip install -e $DIGITS_ROOT
+```
+
+Install the text classifications plug-ins:
+```sh
+$ pip install $DIGITS_ROOT/plugins/data/textClassification
+$ pip install $DIGITS_ROOT/plugins/view/textClassification
+```
+
+Restart DIGITS then on the home page, click `New Dataset > Text > Classification`:
+
+![Select data plug-in](select-data-plugin.png)
+
+On the dataset creation page:
+- point to your training set `$DBPEDIA/dbpedia_csv/train.csv`
+- point to your validation set `$DBPEDIA/dbpedia_csv/test.csv` (we will use the test set as a validation set in this example)
+- point to your `$DBPEDIA/dbpedia_csv/classes.txt`
+
+![Create dataset](create-dataset.png)
+
+When you are ready, give your dataset a name and click `Create`.
+
+### Using images
+
+> Prior to DIGITS 5.0, classification models required prior conversion of the data into images.
+This section explains how this was done.
+Move on to the next section if you are using the text classification plug-in.
 
 The first step to creating the dataset is to convert the `.csv` files to a format that DIGITS can use:
 ```sh
@@ -60,7 +97,10 @@ If you haven't done so already, install the `dpnn` Lua package:
 luarocks install dpnn
 ```
 
-On the DIGITS homepage, click `New Model > Images > Classification` then:
+If you created your dataset using the Text Classification plug-in, click `New Model > Text > Classification` on the homepage.
+If you created your dataset using images, click `New Model > Images > Classification`.
+
+On the model creation page:
 - select the dataset you just created,
 - set the Mean Subtraction method to "None",
 - select the "Custom Network" pane then click "Torch",
@@ -86,13 +126,29 @@ After a few hours of training, your network loss and accuracy may look like:
 ## Verification
 
 At the bottom of the model page, select the model snapshot that achieved the best validation accuracy (this is not necessarily the last one).
-Then in the "Test a list of images" section, upload the `test.txt` file from your dataset job folder.
+
+If you created your dataset using the text classification plug-in you will be able to enter text or upload a `.csv` file directly in DIGITS.
+Scroll down to the bottom of the model page, select the `Text Classification` visualization method and type text in the `Test a snippet` section:
+
+![inference form](inference-form.png)
+
+When you are ready, click the "Test" button.
+The output may be rendered as below:
+
+![inference](inference.png)
+
+If you want to test multiple examples at once, simply create a `.csv` file and use `Test a data file`.
+
+If you created your dataset using images you can upload the `test.txt` file from your dataset job folder in the "Test a list of images" section.
 This text file was created by DIGITS during dataset creation and is formatted in a way that allows DIGITS to extract the ground truth and compute accuracy and a confusion matrix.
 There you can also see Top-1 and Top-5 average accuracy, and per-class accuracy:
 
 ![loss](dbpedia-confusion-matrix.png)
 
 ## Alternative Method
+
+> NOTE: from DIGITS 5.0 onwards it is recommended to use the text classification plug-in instead of manually creating LMDB files.
+You may however review this section if you are interested in an example showing how to use manually created LMDBs and the REST API for inference.
 
 If you think creating image files to represent text is overkill, you might be interested in this: you can create LMDB files manually and use them in DIGITS directly.
 When you created the dataset with `create_dataset.py`, the script also created an LMDB database out of `train.csv`.
