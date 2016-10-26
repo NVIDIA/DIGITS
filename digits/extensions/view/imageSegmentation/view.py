@@ -154,8 +154,11 @@ class Visualization(VisualizationInterface):
             'input_id': data['input_id'],
             'input_image': digits.utils.image.embed_image_html(data['input_image']),
             'fill_image': digits.utils.image.embed_image_html(data['fill_image']),
+            'line_image': digits.utils.image.embed_image_html(data['line_image']),
+            'seg_image': digits.utils.image.embed_image_html(data['seg_image']),
             'mask_image': digits.utils.image.embed_image_html(data['mask_image']),
             'legend': data['legend'],
+            'is_binary': data['is_binary'],
             'class_data': json.dumps(data['class_data'].tolist()),
         }
 
@@ -167,6 +170,10 @@ class Visualization(VisualizationInterface):
         # assume the only output is a CHW image where C is the number
         # of classes, H and W are the height and width of the image
         class_data = output_data[output_data.keys()[0]].astype('float32')
+
+        # Is this binary segmentation?
+        is_binary = class_data.shape[0] == 2
+
         # retain only the top class for each pixel
         class_data = np.argmax(class_data, axis=0).astype('uint8')
 
@@ -184,15 +191,30 @@ class Visualization(VisualizationInterface):
         # Assuming that class 0 is the background
         mask = np.greater(class_data, 0)
         fill_data[:, :, 3] = mask * 255
+        line_data = fill_data.copy()
+        seg_data = fill_data.copy()
 
         # Black mask of non-segmented pixels
         mask_data = np.zeros(fill_data.shape, dtype='uint8')
         mask_data[:, :, 3] = (1 - mask) * 255
 
+        def normalize(array):
+            mn = array.min()
+            mx = array.max()
+            return (array - mn) * 255 / (mx - mn) if (mx - mn) > 0 else array * 255
+
+        try:
+            PIL.Image.fromarray(input_data)
+        except TypeError:
+            # If input_data can not be converted to an image,
+            # normalize and convert to uint8
+            input_data = normalize(input_data).astype('uint8')
+
         # Generate outlines around segmented classes
         if len(found_classes) > 1:
             # Assuming that class 0 is the background.
             line_mask = np.zeros(class_data.shape, dtype=bool)
+            max_distance = np.zeros(class_data.shape, dtype=float) + 1
             for c in (x for x in found_classes if x != 0):
                 c_mask = np.equal(class_data, c)
                 # Find the signed distance from the zero contour
@@ -200,11 +222,10 @@ class Visualization(VisualizationInterface):
                 # Accumulate the mask for all classes
                 line_width = 3
                 line_mask |= c_mask & np.less(distance, line_width)
+                max_distance = np.maximum(max_distance, distance + 128)
 
-            # add the outlines to the input image
-            for x in xrange(3):
-                input_data[:, :, x] = (input_data[:, :, x] * (1 - line_mask) +
-                                       fill_data[:, :, x] * line_mask)
+            line_data[:, :, 3] = line_mask * 255
+            seg_data[:, :, 3] = max_distance
 
         # Input image with outlines
         input_max = input_data.max()
@@ -221,6 +242,15 @@ class Visualization(VisualizationInterface):
         fill_image = PIL.Image.fromarray(fill_data)
         fill_image.format = 'png'
 
+        # Fill image
+        line_image = PIL.Image.fromarray(line_data)
+        line_image.format = 'png'
+
+        # Seg image
+        seg_image = PIL.Image.fromarray(seg_data)
+        seg_image.format = 'png'
+        seg_image.save('seg.png')
+
         # Mask image
         mask_image = PIL.Image.fromarray(mask_data)
         mask_image.format = 'png'
@@ -232,7 +262,10 @@ class Visualization(VisualizationInterface):
             'input_id': input_id,
             'input_image': input_image,
             'fill_image': fill_image,
+            'line_image': line_image,
+            'seg_image': seg_image,
             'mask_image': mask_image,
             'legend': legend,
+            'is_binary': is_binary,
             'class_data': class_data,
         }

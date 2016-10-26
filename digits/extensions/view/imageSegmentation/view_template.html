@@ -1,21 +1,20 @@
 {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
 
+{[ set_binary('{{ is_binary }}' == 'True');'' ]}
 <div>
 	<!-- table is used for the sake of the caption -->
     <table>
         <tr>
             <td>
                 <div class="vis-div">
-                    <img src="{{input_image}}"
-                         style="max-width:100%;"/>
-                    <img src="{{fill_image}}"
+                    <div ng-class="{colormap : storage.colormap}">
+                        <img src="{{input_image}}"
+                             class="gamma"
+                             style="max-width:100%;"/>
+                    </div>
+                    <img src="{{seg_image}}"
                          style="max-width:100%;"
-                         ng-style="fill_style;"
-                         class="fill overlay"/>
-                    <img src="{{mask_image}}"
-                         style="max-width:100%;"
-                         ng-style="mask_style;"
-                         class="mask overlay"
+                         class="overlay {{ 'binary-segment' if is_binary else 'segment' }}"
                          id="image-{{ input_id }}"/>
                 </div>
             </td>
@@ -39,7 +38,6 @@
 </div>
 
 <script>
-
  function get_mouse_pos(event) {
      var rect = event.target.getBoundingClientRect();
      return {
