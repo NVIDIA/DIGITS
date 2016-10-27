@@ -1,10 +1,12 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 
+
 class DigitsError(Exception):
     """
     DIGITS custom exception
     """
     pass
+
 
 class DeleteError(DigitsError):
     """
@@ -12,11 +14,13 @@ class DeleteError(DigitsError):
     """
     pass
 
+
 class LoadImageError(DigitsError):
     """
     Errors that occur while loading an image
     """
     pass
+
 
 class UnsupportedPlatformError(DigitsError):
     """

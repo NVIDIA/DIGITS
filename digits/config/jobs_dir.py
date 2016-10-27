@@ -32,4 +32,3 @@ except:
 
 
 option_list['jobs_dir'] = value
-

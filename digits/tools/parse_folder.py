@@ -18,8 +18,10 @@ from digits import utils, log
 
 logger = logging.getLogger('digits.tools.parse_folder')
 
+
 def unescape(s):
     return urllib.unquote(s)
+
 
 def validate_folder(folder):
     if utils.is_url(folder):
@@ -43,6 +45,7 @@ def validate_folder(folder):
         return False
     return True
 
+
 def validate_output_file(filename):
     if filename is None:
         return True
@@ -60,6 +63,7 @@ def validate_output_file(filename):
         return False
     return True
 
+
 def validate_input_file(filename):
     if not os.path.exists(filename) or not os.path.isfile(filename):
         logger.error('input file "%s" does not exist!' % filename)
@@ -68,6 +72,7 @@ def validate_input_file(filename):
         logger.error('you do not have read access to "%s"!' % filename)
         return False
     return True
+
 
 def validate_range(number, min_value=None, max_value=None, allow_none=False):
     if number is None:
@@ -90,17 +95,19 @@ def validate_range(number, min_value=None, max_value=None, allow_none=False):
         return False
     return True
 
+
 def calculate_percentages(labels_file,
-        train_file, percent_train,
-        val_file, percent_val,
-        test_file, percent_test,
-        **kwargs):
+                          train_file, percent_train,
+                          val_file, percent_val,
+                          test_file, percent_test,
+                          **kwargs):
     """
     Returns (percent_train, percent_val, percent_test)
     Throws exception on errors
     """
     # reject any percentages not between 0-100
-    assert all(x is None or 0 <= x <= 100 for x in [percent_train, percent_val, percent_test]), 'all percentages must be 0-100 inclusive or not specified'
+    assert all(x is None or 0 <= x <= 100 for x in [percent_train, percent_val,
+                                                    percent_test]), 'all percentages must be 0-100 inclusive or not specified'
 
     # return values
     pt = None
@@ -142,27 +149,27 @@ def calculate_percentages(labels_file,
                 assert (pt + pv) == 100, 'percentages do not sum to 100'
                 return (pt, pv, 0)
             elif pt is not None:
-                return (pt, 100-pt, 0)
+                return (pt, 100 - pt, 0)
             else:
-                return (100-pv, pv, 0)
+                return (100 - pv, pv, 0)
         elif mt and ms:
             assert not (pt is None and ps is None), 'must give percent_train or percent_test'
             if pt is not None and ps is not None:
                 assert (pt + ps) == 100, 'percentages do not sum to 100'
                 return (pt, 0, ps)
             elif pt is not None:
-                return (pt, 0, 100-pt)
+                return (pt, 0, 100 - pt)
             else:
-                return (100-ps, 0, ps)
+                return (100 - ps, 0, ps)
         elif mv and ms:
             assert not (pv is None and ps is None), 'must give percent_val or percent_test'
             if pv is not None and ps is not None:
                 assert (pv + ps) == 100, 'percentages do not sum to 100'
                 return (0, pv, ps)
             elif pv is not None:
-                return (0, pv, 100-pv)
+                return (0, pv, 100 - pv)
             else:
-                return (0, 100-ps, ps)
+                return (0, 100 - ps, ps)
     elif making == 3:
         specified = sum([pt is not None, pv is not None, ps is not None])
         assert specified >= 2, 'must specify two of percent_train, percent_val, and percent_test'
@@ -172,13 +179,14 @@ def calculate_percentages(labels_file,
         elif specified == 2:
             if pt is None:
                 assert (pv + ps) <= 100, 'percentages cannot exceed 100'
-                return (100-(pv+ps), pv, ps)
+                return (100 - (pv + ps), pv, ps)
             elif pv is None:
                 assert (pt + ps) <= 100, 'percentages cannot exceed 100'
-                return (pt, 100-(pt+ps), ps)
+                return (pt, 100 - (pt + ps), ps)
             elif ps is None:
                 assert (pt + pv) <= 100, 'percentages cannot exceed 100'
-                return (pt, pv, 100-(pt+pv))
+                return (pt, pv, 100 - (pt + pv))
+
 
 def parse_web_listing(url):
     """Utility for parse_folder()
@@ -196,7 +204,8 @@ def parse_web_listing(url):
     for line in r.content.split('\n'):
         line = line.strip()
         # Matches nginx and apache's autoindex formats
-        match = re.match(r'^.*\<a.+href\=[\'\"]([^\'\"]+)[\'\"].*\>.*(\w{1,4}-\w{1,4}-\w{1,4})', line, flags=re.IGNORECASE)
+        match = re.match(
+            r'^.*\<a.+href\=[\'\"]([^\'\"]+)[\'\"].*\>.*(\w{1,4}-\w{1,4}-\w{1,4})', line, flags=re.IGNORECASE)
         if match:
             if match.group(1).endswith('/'):
                 dirs.append(match.group(1))
@@ -204,6 +213,7 @@ def parse_web_listing(url):
             elif match.group(1).lower().endswith(utils.image.SUPPORTED_EXTENSIONS):
                 files.append(match.group(1))
     return (dirs, files)
+
 
 def web_listing_all_files(url, count=0, max_count=None):
     """Utility for parse_folder()
@@ -225,6 +235,7 @@ def web_listing_all_files(url, count=0, max_count=None):
         if max_count is not None and count >= max_count:
             break
     return urls, count
+
 
 def three_way_split_indices(size, pct_b, pct_c):
     """
@@ -248,10 +259,10 @@ def three_way_split_indices(size, pct_b, pct_c):
     elif pct_c >= 100:
         return 0, 0
     else:
-        a = int(round(float(size)*pct_a/100))
+        a = int(round(float(size) * pct_a / 100))
         if pct_a and not a:
             a = 1
-        b = int(round(float(size)*pct_b/100))
+        b = int(round(float(size) * pct_b / 100))
         if a + b > size:
             b = size - a
         if pct_b and not b:
@@ -268,16 +279,17 @@ def three_way_split_indices(size, pct_b, pct_c):
             elif a > 1:
                 a -= 1
                 c = 1
-        assert a+b+c == size
-        return a, a+b
+        assert a + b + c == size
+        return a, a + b
+
 
 def parse_folder(folder, labels_file,
-        train_file=None, percent_train=None,
-        val_file=None, percent_val=None,
-        test_file=None, percent_test=None,
-        min_per_category=2,
-        max_per_category=None,
-        ):
+                 train_file=None, percent_train=None,
+                 val_file=None, percent_val=None,
+                 test_file=None, percent_test=None,
+                 min_per_category=2,
+                 max_per_category=None,
+                 ):
     """
     Parses a folder of images into three textfiles
     Returns True on success
@@ -299,7 +311,7 @@ def parse_folder(folder, labels_file,
     create_labels = (percent_train > 0)
     labels = []
 
-    ### Read the labels from labels_file
+    # Read the labels from labels_file
 
     if not create_labels:
         with open(labels_file) as infile:
@@ -308,7 +320,7 @@ def parse_folder(folder, labels_file,
                 if line:
                     labels.append(line)
 
-    ### Verify that at least two category folders exist
+    # Verify that at least two category folders exist
 
     folder_is_url = utils.is_url(folder)
     if folder_is_url:
@@ -332,7 +344,7 @@ def parse_folder(folder, labels_file,
         logger.error('folder must contain at least two subdirectories')
         return False
 
-    ### Parse the folder
+    # Parse the folder
 
     train_count = 0
     val_count = 0
@@ -354,14 +366,14 @@ def parse_folder(folder, labels_file,
             label_name = unescape(label_name)
         else:
             label_name = os.path.basename(label_name)
-        label_name = label_name.replace('_',' ')
+        label_name = label_name.replace('_', ' ')
         if label_name.endswith('/'):
             # Remove trailing slash
             label_name = label_name[0:-1]
 
         if create_labels:
             labels.append(label_name)
-            label_index = len(labels)-1
+            label_index = len(labels) - 1
         else:
             found = False
             for i, l in enumerate(labels):
@@ -377,7 +389,7 @@ def parse_folder(folder, labels_file,
 
         lines = []
 
-        ### Read all images in the folder
+        # Read all images in the folder
 
         if folder_is_url:
             urls, _ = web_listing_all_files(folder + subdir, max_count=max_per_category)
@@ -394,7 +406,7 @@ def parse_folder(folder, labels_file,
                     logger.warning('Reached maximum limit for this category')
                     break
 
-        ### Split up the lines
+        # Split up the lines
 
         train_lines = []
         val_lines = []
@@ -429,7 +441,7 @@ def parse_folder(folder, labels_file,
             test_count += len(test_lines)
 
         subdir_index += 1
-        logger.debug('Progress: %0.2f' % (float(subdir_index)/len(subdirs)))
+        logger.debug('Progress: %0.2f' % (float(subdir_index) / len(subdirs)))
 
     if percent_train:
         train_outfile.close()
@@ -456,66 +468,66 @@ def parse_folder(folder, labels_file,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Parse-Folder tool - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument('folder',
-            help='A filesystem path or url to the folder of images'
-            )
+                        help='A filesystem path or url to the folder of images'
+                        )
     parser.add_argument('labels_file',
-            help='The file containing labels. If train_file is set, this file will be generated (output). Otherwise, this file will be read (input).'
-            )
+                        help='The file containing labels. If train_file is set, this file will be generated (output). Otherwise, this file will be read (input).'
+                        )
 
-    ### Optional arguments
+    # Optional arguments
 
     parser.add_argument('-t', '--train_file',
-            help='The output file for training images'
-            )
+                        help='The output file for training images'
+                        )
     parser.add_argument('-T', '--percent_train',
-            type=float,
-            help='Percent of images used for the training set (constant across all categories)'
-            )
+                        type=float,
+                        help='Percent of images used for the training set (constant across all categories)'
+                        )
     parser.add_argument('-v', '--val_file',
-            help='The output file for validation images'
-            )
+                        help='The output file for validation images'
+                        )
     parser.add_argument('-V', '--percent_val',
-            type=float,
-            help='Percent of images used for the validation set (constant across all categories)'
-            )
+                        type=float,
+                        help='Percent of images used for the validation set (constant across all categories)'
+                        )
     parser.add_argument('-s', '--test_file',
-            help='The output file for test images'
-            )
+                        help='The output file for test images'
+                        )
     parser.add_argument('-S', '--percent_test',
-            type=float,
-            help='Percent of images used for the test set (constant across all categories)'
-            )
+                        type=float,
+                        help='Percent of images used for the test set (constant across all categories)'
+                        )
     parser.add_argument('--min',
-            type=int,
-            metavar='MIN_PER_CATEGORY',
-            default=1,
-            help="What is the minimum allowable number of images per category? (categories which don't meet this criteria will be ignored) [default=2]"
-            )
+                        type=int,
+                        metavar='MIN_PER_CATEGORY',
+                        default=1,
+                        help="What is the minimum allowable number of images per category? (categories which don't meet this criteria will be ignored) [default=2]"
+                        )
     parser.add_argument('--max',
-            type=int,
-            metavar='MAX_PER_CATEGORY',
-            help='What is the maximum limit of images per category? (categories which exceed this limit will be trimmed down) [default=None]'
-            )
+                        type=int,
+                        metavar='MAX_PER_CATEGORY',
+                        help='What is the maximum limit of images per category? (categories which exceed this limit will be trimmed down) [default=None]'
+                        )
 
     args = vars(parser.parse_args())
 
     for valid in [
             validate_folder(args['folder']),
             validate_range(args['percent_train'],
-                min_value=0, max_value=100, allow_none=True),
+                           min_value=0, max_value=100, allow_none=True),
             validate_output_file(args['train_file']),
             validate_range(args['percent_val'],
-                min_value=0, max_value=100, allow_none=True),
+                           min_value=0, max_value=100, allow_none=True),
             validate_output_file(args['val_file']),
             validate_range(args['percent_test'],
-                min_value=0, max_value=100, allow_none=True),
+                           min_value=0, max_value=100, allow_none=True),
             validate_output_file(args['test_file']),
             validate_range(args['min'], min_value=1),
             validate_range(args['max'], min_value=1, allow_none=True),
-            ]:
+    ]:
         if not valid:
             sys.exit(1)
 
@@ -528,17 +540,16 @@ if __name__ == '__main__':
     start_time = time.time()
 
     if parse_folder(args['folder'], args['labels_file'],
-            train_file      = args['train_file'],
-            percent_train   = percent_train,
-            val_file        = args['val_file'],
-            percent_val     = percent_val,
-            test_file       = args['test_file'],
-            percent_test    = percent_test,
-            min_per_category= args['min'],
-            max_per_category= args['max'],
-            ):
+                    train_file=args['train_file'],
+                    percent_train=percent_train,
+                    val_file=args['val_file'],
+                    percent_val=percent_val,
+                    test_file=args['test_file'],
+                    percent_test=percent_test,
+                    min_per_category=args['min'],
+                    max_per_category=args['max'],
+                    ):
         logger.info('Done after %d seconds.' % (time.time() - start_time))
         sys.exit(0)
     else:
         sys.exit(1)
-

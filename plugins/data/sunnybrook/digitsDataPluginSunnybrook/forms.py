@@ -31,38 +31,38 @@ class DatasetForm(Form):
         validators=[
             validators.DataRequired(),
             validate_folder_path,
-            ],
+        ],
         tooltip="Specify the path to the image folder"
-        )
+    )
 
     contour_folder = utils.forms.StringField(
         u'Contour folder',
         validators=[
             validators.DataRequired(),
             validate_folder_path,
-            ],
+        ],
         tooltip="Specify the path to the contour folder"
-        )
+    )
 
     channel_conversion = utils.forms.SelectField(
         'Channel conversion',
         choices=[
             ('RGB', 'RGB'),
             ('L', 'Grayscale'),
-            ],
+        ],
         default='L',
         tooltip="Perform selected channel conversion."
-        )
+    )
 
     folder_pct_val = utils.forms.IntegerField(
         u'% for validation',
         default=10,
         validators=[
             validators.NumberRange(min=0, max=100)
-            ],
+        ],
         tooltip="You can choose to set apart a certain percentage of images "
                 "from the training images for the validation set."
-        )
+    )
 
 
 @subclass
@@ -85,15 +85,15 @@ class InferenceForm(Form):
         u'Image file',
         validators=[
             validate_file_path,
-            ],
+        ],
         tooltip="Provide an image"
-        )
+    )
 
     validation_record = utils.forms.SelectField(
         'Record from validation set',
         choices=[
             ('none', '- select record -'),
-            ],
+        ],
         default='none',
         tooltip="Test a record from the validation set."
-        )
+    )

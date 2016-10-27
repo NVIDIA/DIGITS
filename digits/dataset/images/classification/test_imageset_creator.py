@@ -15,8 +15,8 @@ import numpy as np
 import PIL.Image
 
 
-IMAGE_SIZE  = 10
-IMAGE_COUNT = 10 # per category
+IMAGE_SIZE = 10
+IMAGE_COUNT = 10  # per category
 
 
 def create_classification_imageset(folder, image_size=None, image_count=None, add_unbalanced_category=False):
@@ -35,13 +35,13 @@ def create_classification_imageset(folder, image_size=None, image_count=None, ad
     paths = defaultdict(list)
 
     config = [
-            ('red-to-right', 0, 0,   image_count),
-            ('green-to-top', 1, 90,  image_count),
-            ('blue-to-left', 2, 180, image_count),
-            ]
+        ('red-to-right', 0, 0,   image_count),
+        ('green-to-top', 1, 90,  image_count),
+        ('blue-to-left', 2, 180, image_count),
+    ]
 
     if add_unbalanced_category:
-        config.append( ('blue-to-bottom', 2, 270, image_count/2) )
+        config.append(('blue-to-bottom', 2, 270, image_count / 2))
 
     for class_name, pixel_index, rotation, image_count in config:
         os.makedirs(os.path.join(folder, class_name))
@@ -56,6 +56,7 @@ def create_classification_imageset(folder, image_size=None, image_count=None, ad
             paths[class_name].append(img_path)
 
     return paths
+
 
 def _create_gradient_image(size, color_from, color_to, rotation):
     """
@@ -79,20 +80,20 @@ def _create_gradient_image(size, color_from, color_to, rotation):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create-Imageset tool - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument('folder',
-            help='Where to save the images'
-            )
+                        help='Where to save the images'
+                        )
 
-    ### Optional arguments
+    # Optional arguments
 
     parser.add_argument('-s', '--image_size',
-            type=int,
-            help='Size of the images')
+                        type=int,
+                        help='Size of the images')
     parser.add_argument('-c', '--image_count',
-            type=int,
-            help='How many images')
+                        type=int,
+                        help='How many images')
 
     args = vars(parser.parse_args())
 
@@ -101,9 +102,8 @@ if __name__ == '__main__':
     start_time = time.time()
 
     create_classification_imageset(args['folder'],
-            image_size=args['image_size'],
-            image_count=args['image_count'],
-            )
+                                   image_size=args['image_size'],
+                                   image_count=args['image_count'],
+                                   )
 
     print 'Done after %s seconds' % (time.time() - start_time,)
-

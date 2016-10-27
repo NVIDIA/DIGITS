@@ -18,7 +18,7 @@ class ConfigForm(Form):
             ('dataset', 'From dataset'),
             ('paired', 'Paired (matplotlib)'),
             ('none', 'None (grayscale)'),
-            ],
+        ],
         default='dataset',
         tooltip='Set color map to use when displaying segmented image'
-        )
+    )

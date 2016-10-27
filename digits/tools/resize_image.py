@@ -15,6 +15,7 @@ from digits import utils, log
 
 logger = logging.getLogger('digits.tools.resize_image')
 
+
 def validate_output_file(filename):
     if filename is None:
         return True
@@ -33,6 +34,7 @@ def validate_output_file(filename):
         return False
     return True
 
+
 def validate_input_file(filename):
     if not os.path.exists(filename) or not os.path.isfile(filename):
         logger.error('input file "%s" does not exist' % filename)
@@ -41,6 +43,7 @@ def validate_input_file(filename):
         logger.error('you do not have read access to "%s"' % filename)
         return False
     return True
+
 
 def validate_range(number, min_value=None, max_value=None, allow_none=False):
     if number is None:
@@ -66,33 +69,33 @@ def validate_range(number, min_value=None, max_value=None, allow_none=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Resize-Image tool - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument('image',
-            help='A filesystem path or url to the image'
-            )
+                        help='A filesystem path or url to the image'
+                        )
     parser.add_argument('output',
-            help='The location to output the image'
-            )
+                        help='The location to output the image'
+                        )
     parser.add_argument('width',
-            type=int,
-            help='The new width'
-            )
+                        type=int,
+                        help='The new width'
+                        )
     parser.add_argument('height',
-            type=int,
-            help='The new height'
-            )
+                        type=int,
+                        help='The new height'
+                        )
 
-    ### Optional arguments
+    # Optional arguments
 
     parser.add_argument('-c', '--channels',
-            type=int,
-            help='The new number of channels [default is to remain unchanged]'
-            )
+                        type=int,
+                        help='The new number of channels [default is to remain unchanged]'
+                        )
     parser.add_argument('-m', '--mode',
-            default='squash',
-            help='Resize mode (squash/crop/fill/half_crop) [default is squash]'
-            )
+                        default='squash',
+                        help='Resize mode (squash/crop/fill/half_crop) [default is squash]'
+                        )
 
     args = vars(parser.parse_args())
 
@@ -100,9 +103,9 @@ if __name__ == '__main__':
             validate_range(args['width'], min_value=1),
             validate_range(args['height'], min_value=1),
             validate_range(args['channels'],
-                min_value=1, max_value=3, allow_none=True),
+                           min_value=1, max_value=3, allow_none=True),
             validate_output_file(args['output']),
-            ]:
+    ]:
         if not valid:
             sys.exit(1)
 
@@ -111,13 +114,12 @@ if __name__ == '__main__':
 
     # resize image
     image = utils.image.resize_image(image, args['height'], args['width'],
-            channels = args['channels'],
-            resize_mode = args['mode'],
-            )
+                                     channels=args['channels'],
+                                     resize_mode=args['mode'],
+                                     )
     image = PIL.Image.fromarray(image)
     try:
         image.save(args['output'])
     except KeyError:
         logger.error('Unable to save file to "%s"' % args['output'])
         sys.exit(1)
-

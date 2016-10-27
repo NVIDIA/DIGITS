@@ -6,6 +6,7 @@ import digits
 from digits.task import Task
 from digits.utils import subclass, override
 
+
 @subclass
 class UploadPretrainedModelTask(Task):
     """
@@ -57,14 +58,14 @@ class UploadPretrainedModelTask(Task):
                 return reserved_resources
         return None
 
-    def move_file(self,input_file, output):
+    def move_file(self, input_file, output):
         shutil.copy(input_file, os.path.join(self.job_dir, output))
 
     def get_labels_path(self):
         """
         Get path to label file
         """
-        return os.path.join(self.job_dir,"labels.txt")
+        return os.path.join(self.job_dir, "labels.txt")
 
     def get_model_def_path(self):
         """

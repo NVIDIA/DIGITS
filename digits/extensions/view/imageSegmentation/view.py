@@ -37,13 +37,13 @@ class Visualization(VisualizationInterface):
         # view options
         if kwargs['colormap'] == 'dataset':
             if not COLOR_PALETTE_ATTRIBUTE in dataset.extension_userdata or \
-                   not dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
+                    not dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
                 raise ValueError("No palette found in dataset - choose other colormap")
             palette = dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]
             # assume 8-bit RGB palette and convert to N*3 numpy array
-            palette = np.array(palette).reshape((len(palette)/3,3)) / 255.
+            palette = np.array(palette).reshape((len(palette) / 3, 3)) / 255.
             # normalize input pixels to [0,1]
-            norm = mpl.colors.Normalize(vmin=0,vmax=255)
+            norm = mpl.colors.Normalize(vmin=0, vmax=255)
             # create map
             cmap = mpl.colors.ListedColormap(palette)
             self.map = mpl.pyplot.cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -105,7 +105,7 @@ class Visualization(VisualizationInterface):
             else:
                 text = "Class #%d" % c
 
-            legend.append({'index':c, 'text': text, 'hex_color': hex_color})
+            legend.append({'index': c, 'text': text, 'hex_color': hex_color})
         return legend
 
     @override
@@ -182,7 +182,7 @@ class Visualization(VisualizationInterface):
 
         # convert using color map (assume 8-bit output)
         if self.map:
-            fill_data = (self.map.to_rgba(class_data)*255).astype('uint8')
+            fill_data = (self.map.to_rgba(class_data) * 255).astype('uint8')
         else:
             fill_data = np.ndarray((class_data.shape[0], class_data.shape[1], 4), dtype='uint8')
             for x in xrange(3):

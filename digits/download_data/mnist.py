@@ -9,6 +9,7 @@ import PIL.Image
 
 from downloader import DataDownloader
 
+
 class MnistDownloader(DataDownloader):
     """
     See details about the MNIST dataset here:
@@ -29,7 +30,7 @@ class MnistDownloader(DataDownloader):
                 ('train-labels-idx1-ubyte.gz',  'train-labels.bin'),
                 ('t10k-images-idx3-ubyte.gz',   'test-images.bin'),
                 ('t10k-labels-idx1-ubyte.gz',   'test-labels.bin'),
-                ]:
+        ]:
             zipped_path = os.path.join(self.outdir, zipped)
             assert os.path.exists(zipped_path), 'Expected "%s" to exist' % zipped
             unzipped_path = os.path.join(self.outdir, unzipped)
@@ -70,7 +71,7 @@ class MnistDownloader(DataDownloader):
         print 'Reading labels from %s ...' % filename
         labels = []
         with open(filename, 'rb') as infile:
-            infile.read(4) # ignore magic number
+            infile.read(4)  # ignore magic number
             count = struct.unpack('>i', infile.read(4))[0]
             data = infile.read(count)
             for byte in data:
@@ -85,16 +86,15 @@ class MnistDownloader(DataDownloader):
         print 'Reading images from %s ...' % filename
         images = []
         with open(filename, 'rb') as infile:
-            infile.read(4) # ignore magic number
-            count   = struct.unpack('>i', infile.read(4))[0]
-            rows    = struct.unpack('>i', infile.read(4))[0]
+            infile.read(4)  # ignore magic number
+            count = struct.unpack('>i', infile.read(4))[0]
+            rows = struct.unpack('>i', infile.read(4))[0]
             columns = struct.unpack('>i', infile.read(4))[0]
 
             for i in xrange(count):
-                data = infile.read(rows*columns)
+                data = infile.read(rows * columns)
                 image = np.fromstring(data, dtype=np.uint8)
                 image = image.reshape((rows, columns))
-                image = 255 - image # now black digit on white background
+                image = 255 - image  # now black digit on white background
                 images.append(PIL.Image.fromarray(image))
         return images
-

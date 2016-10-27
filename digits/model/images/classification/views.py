@@ -30,6 +30,8 @@ blueprint = flask.Blueprint(__name__, __name__)
 """
 Read image list
 """
+
+
 def read_image_list(image_list, image_folder, num_test_images):
     paths = []
     ground_truths = []
@@ -57,6 +59,7 @@ def read_image_list(image_list, image_folder, num_test_images):
             break
     return paths, ground_truths
 
+
 @blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
 def new():
@@ -72,17 +75,18 @@ def new():
 
     prev_network_snapshots = get_previous_network_snapshots()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
     return flask.render_template('models/images/classification/new.html',
-            form = form,
-            frameworks = frameworks.get_frameworks(),
-            previous_network_snapshots = prev_network_snapshots,
-            previous_networks_fullinfo = get_previous_networks_fulldetails(),
-            pretrained_networks_fullinfo = get_pretrained_networks_fulldetails(),
-            multi_gpu = config_value('caffe')['multi_gpu'],
-            )
+                                 form=form,
+                                 frameworks=frameworks.get_frameworks(),
+                                 previous_network_snapshots=prev_network_snapshots,
+                                 previous_networks_fullinfo=get_previous_networks_fulldetails(),
+                                 pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
+                                 multi_gpu=config_value('caffe')['multi_gpu'],
+                                 )
+
 
 @blueprint.route('.json', methods=['POST'])
 @blueprint.route('', methods=['POST'], strict_slashes=False)
@@ -102,7 +106,7 @@ def create():
 
     prev_network_snapshots = get_previous_network_snapshots()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
     if not form.validate_on_submit():
@@ -110,18 +114,18 @@ def create():
             return flask.jsonify({'errors': form.errors}), 400
         else:
             return flask.render_template('models/images/classification/new.html',
-                    form = form,
-                    frameworks = frameworks.get_frameworks(),
-                    previous_network_snapshots = prev_network_snapshots,
-                    previous_networks_fullinfo = get_previous_networks_fulldetails(),
-                    pretrained_networks_fullinfo = get_pretrained_networks_fulldetails(),
-                    multi_gpu = config_value('caffe')['multi_gpu'],
-                    ), 400
+                                         form=form,
+                                         frameworks=frameworks.get_frameworks(),
+                                         previous_network_snapshots=prev_network_snapshots,
+                                         previous_networks_fullinfo=get_previous_networks_fulldetails(),
+                                         pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
+                                         multi_gpu=config_value('caffe')['multi_gpu'],
+                                         ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
         raise werkzeug.exceptions.BadRequest(
-                'Unknown dataset job_id "%s"' % form.dataset.data)
+            'Unknown dataset job_id "%s"' % form.dataset.data)
 
     # sweeps will be a list of the the permutations of swept fields
     # Get swept learning_rate
@@ -150,11 +154,11 @@ def create():
         job = None
         try:
             job = ImageClassificationModelJob(
-                    username    = utils.auth.get_username(),
-                    name        = form.model_name.data + extra,
-                    group       = form.group_name.data,
-                    dataset_id  = datasetJob.id(),
-                    )
+                username=utils.auth.get_username(),
+                name=form.model_name.data + extra,
+                group=form.group_name.data,
+                dataset_id=datasetJob.id(),
+            )
             # get handle to framework object
             fw = frameworks.get_framework_by_id(form.framework.data)
 
@@ -170,12 +174,12 @@ def create():
 
                 if not found:
                     raise werkzeug.exceptions.BadRequest(
-                            'Unknown standard model "%s"' % form.standard_networks.data)
+                        'Unknown standard model "%s"' % form.standard_networks.data)
             elif form.method.data == 'previous':
                 old_job = scheduler.get_job(form.previous_networks.data)
                 if not old_job:
                     raise werkzeug.exceptions.BadRequest(
-                            'Job not found: %s' % form.previous_networks.data)
+                        'Job not found: %s' % form.previous_networks.data)
 
                 use_same_dataset = (old_job.dataset_id == job.dataset_id)
                 network = fw.get_network_from_previous(old_job.train_task().network, use_same_dataset)
@@ -195,16 +199,16 @@ def create():
 
                             if pretrained_model is None:
                                 raise werkzeug.exceptions.BadRequest(
-                                        "For the job %s, selected pretrained_model for epoch %d is invalid!"
-                                        % (form.previous_networks.data, epoch))
+                                    "For the job %s, selected pretrained_model for epoch %d is invalid!"
+                                    % (form.previous_networks.data, epoch))
                             if not (os.path.exists(pretrained_model)):
                                 raise werkzeug.exceptions.BadRequest(
-                                        "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
+                                    "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
                         break
 
             elif form.method.data == 'pretrained':
-                pretrained_job  = scheduler.get_job(form.pretrained_networks.data)
-                model_def_path  = pretrained_job.get_model_def_path()
+                pretrained_job = scheduler.get_job(form.pretrained_networks.data)
+                model_def_path = pretrained_job.get_model_def_path()
                 weights_path = pretrained_job.get_weights_path()
 
                 network = fw.get_network_from_path(model_def_path)
@@ -215,7 +219,7 @@ def create():
                 pretrained_model = form.custom_network_snapshot.data.strip()
             else:
                 raise werkzeug.exceptions.BadRequest(
-                        'Unrecognized method: "%s"' % form.method.data)
+                    'Unrecognized method: "%s"' % form.method.data)
 
             policy = {'policy': form.lr_policy.data}
             if form.lr_policy.data == 'fixed':
@@ -238,7 +242,7 @@ def create():
                 policy['gamma'] = form.lr_sigmoid_gamma.data
             else:
                 raise werkzeug.exceptions.BadRequest(
-                        'Invalid learning rate policy')
+                    'Invalid learning rate policy')
 
             if config_value('caffe')['multi_gpu']:
                 if form.select_gpus.data:
@@ -260,15 +264,15 @@ def create():
 
             # Set up data augmentation structure
             data_aug = {}
-            data_aug['flip']     = form.aug_flip.data
+            data_aug['flip'] = form.aug_flip.data
             data_aug['quad_rot'] = form.aug_quad_rot.data
-            data_aug['rot']      = form.aug_rot.data
-            data_aug['scale']    = form.aug_scale.data
-            data_aug['noise']    = form.aug_noise.data
-            data_aug['hsv_use']  = form.aug_hsv_use.data
-            data_aug['hsv_h']    = form.aug_hsv_h.data
-            data_aug['hsv_s']    = form.aug_hsv_s.data
-            data_aug['hsv_v']    = form.aug_hsv_v.data
+            data_aug['rot'] = form.aug_rot.data
+            data_aug['scale'] = form.aug_scale.data
+            data_aug['noise'] = form.aug_noise.data
+            data_aug['hsv_use'] = form.aug_hsv_use.data
+            data_aug['hsv_h'] = form.aug_hsv_h.data
+            data_aug['hsv_s'] = form.aug_hsv_s.data
+            data_aug['hsv_v'] = form.aug_hsv_v.data
 
             # Python Layer File may be on the server or copied from the client.
             fs.copy_python_layer_file(
@@ -279,30 +283,30 @@ def create():
                  else ''), form.python_layer_server_file.data)
 
             job.tasks.append(fw.create_train_task(
-                        job = job,
-                        dataset = datasetJob,
-                        train_epochs = form.train_epochs.data,
-                        snapshot_interval = form.snapshot_interval.data,
-                        learning_rate = form.learning_rate.data[0],
-                        lr_policy = policy,
-                        gpu_count = gpu_count,
-                        selected_gpus = selected_gpus,
-                        batch_size = form.batch_size.data[0],
-                        batch_accumulation = form.batch_accumulation.data,
-                        val_interval = form.val_interval.data,
-                        pretrained_model = pretrained_model,
-                        crop_size = form.crop_size.data,
-                        use_mean = form.use_mean.data,
-                        network = network,
-                        random_seed = form.random_seed.data,
-                        solver_type = form.solver_type.data,
-                        rms_decay=form.rms_decay.data,
-                        shuffle = form.shuffle.data,
-                        data_aug = data_aug,
-                        )
-                    )
+                job=job,
+                dataset=datasetJob,
+                train_epochs=form.train_epochs.data,
+                snapshot_interval=form.snapshot_interval.data,
+                learning_rate=form.learning_rate.data[0],
+                lr_policy=policy,
+                gpu_count=gpu_count,
+                selected_gpus=selected_gpus,
+                batch_size=form.batch_size.data[0],
+                batch_accumulation=form.batch_accumulation.data,
+                val_interval=form.val_interval.data,
+                pretrained_model=pretrained_model,
+                crop_size=form.crop_size.data,
+                use_mean=form.use_mean.data,
+                network=network,
+                random_seed=form.random_seed.data,
+                solver_type=form.solver_type.data,
+                rms_decay=form.rms_decay.data,
+                shuffle=form.shuffle.data,
+                data_aug=data_aug,
+            )
+            )
 
-            ## Save form data with the job so we can easily clone it later.
+            # Save form data with the job so we can easily clone it later.
             save_form_to_job(job, form)
 
             jobs.append(job)
@@ -324,11 +328,13 @@ def create():
     # If there are multiple jobs launched, go to the home page.
     return flask.redirect('/')
 
+
 def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job, framework_ids = [fw.get_id() for fw in frameworks.get_frameworks()], related_jobs=related_jobs)
+    return flask.render_template('models/images/classification/show.html', job=job, framework_ids=[fw.get_id() for fw in frameworks.get_frameworks()], related_jobs=related_jobs)
+
 
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():
@@ -338,6 +344,7 @@ def large_graph():
     job = job_from_request()
 
     return flask.render_template('models/images/classification/large_graph.html', job=job)
+
 
 @blueprint.route('/classify_one.json', methods=['POST'])
 @blueprint.route('/classify_one', methods=['POST', 'GET'])
@@ -371,13 +378,13 @@ def classify_one():
 
     # create inference job
     inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "Classify One Image",
-                model       = model_job,
-                images      = [image_path],
-                epoch       = epoch,
-                layers      = layers
-                )
+        username=utils.auth.get_username(),
+        name="Classify One Image",
+        model=model_job,
+        images=[image_path],
+        epoch=epoch,
+        layers=layers
+    )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -414,20 +421,22 @@ def classify_one():
                 # the user might have set the final fully-connected layer's num_output to
                 # too high a value
                 if i < len(labels):
-                    predictions.append( (labels[i], scores[i]) )
-            predictions = [(p[0], round(100.0*p[1],2)) for p in predictions[:5]]
+                    predictions.append((labels[i], scores[i]))
+            predictions = [(p[0], round(100.0 * p[1], 2)) for p in predictions[:5]]
 
     if request_wants_json():
         return flask.jsonify({'predictions': predictions}), status_code
     else:
         return flask.render_template('models/images/classification/classify_one.html',
-                model_job       = model_job,
-                job             = inference_job,
-                image_src       = image,
-                predictions     = predictions,
-                visualizations  = visualizations,
-                total_parameters= sum(v['param_count'] for v in visualizations if v['vis_type'] == 'Weights'),
-                ), status_code
+                                     model_job=model_job,
+                                     job=inference_job,
+                                     image_src=image,
+                                     predictions=predictions,
+                                     visualizations=visualizations,
+                                     total_parameters=sum(v['param_count']
+                                                          for v in visualizations if v['vis_type'] == 'Weights'),
+                                     ), status_code
+
 
 @blueprint.route('/classify_many.json', methods=['POST'])
 @blueprint.route('/classify_many', methods=['POST', 'GET'])
@@ -463,13 +472,13 @@ def classify_many():
 
     # create inference job
     inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "Classify Many Images",
-                model       = model_job,
-                images      = paths,
-                epoch       = epoch,
-                layers      = 'none'
-                )
+        username=utils.auth.get_username(),
+        name="Classify Many Images",
+        model=model_job,
+        images=paths,
+        epoch=epoch,
+        layers='none'
+    )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -509,7 +518,7 @@ def classify_many():
         last_output_name, last_output_data = outputs.items()[-1]
         if len(last_output_data) < 1:
             raise werkzeug.exceptions.BadRequest(
-                    'Unable to classify any image from the file')
+                'Unable to classify any image from the file')
 
         scores = last_output_data
         # take top 5
@@ -529,7 +538,7 @@ def classify_many():
         classifications = []
         n_top1_accurate = 0
         n_top5_accurate = 0
-        confusion_matrix = np.zeros((n_labels,n_labels), dtype=np.dtype(int))
+        confusion_matrix = np.zeros((n_labels, n_labels), dtype=np.dtype(int))
         for image_index, index_list in enumerate(indices):
             result = []
             if ground_truths[image_index] is not None:
@@ -538,14 +547,14 @@ def classify_many():
                 if ground_truths[image_index] in index_list:
                     n_top5_accurate += 1
                 if (0 <= ground_truths[image_index] < n_labels) and (0 <= index_list[0] < n_labels):
-                   confusion_matrix[ground_truths[image_index], index_list[0]] += 1
+                    confusion_matrix[ground_truths[image_index], index_list[0]] += 1
             for i in index_list:
                 # `i` is a category in labels and also an index into scores
                 # ignore prediction if we don't have a label for the corresponding class
                 # the user might have set the final fully-connected layer's num_output to
                 # too high a value
                 if i < len(labels):
-                    result.append((labels[i], round(100.0*scores[image_index, i],2)))
+                    result.append((labels[i], round(100.0 * scores[image_index, i], 2)))
             classifications.append(result)
 
         # accuracy
@@ -555,32 +564,34 @@ def classify_many():
             per_class_accuracy = []
             for x in xrange(n_labels):
                 n_examples = sum(confusion_matrix[x])
-                per_class_accuracy.append(round(100.0 * confusion_matrix[x,x] / n_examples, 2) if n_examples > 0 else None)
+                per_class_accuracy.append(
+                    round(100.0 * confusion_matrix[x, x] / n_examples, 2) if n_examples > 0 else None)
         else:
             top1_accuracy = None
             top5_accuracy = None
             per_class_accuracy = None
 
         # replace ground truth indices with labels
-        ground_truths = [labels[x] if x is not None and (0 <= x < n_labels ) else None for x in ground_truths]
+        ground_truths = [labels[x] if x is not None and (0 <= x < n_labels) else None for x in ground_truths]
 
     if request_wants_json():
         joined = dict(zip(paths, classifications))
         return flask.jsonify({'classifications': joined}), status_code
     else:
         return flask.render_template('models/images/classification/classify_many.html',
-                model_job          = model_job,
-                job                = inference_job,
-                paths              = paths,
-                classifications    = classifications,
-                show_ground_truth  = show_ground_truth,
-                ground_truths      = ground_truths,
-                top1_accuracy      = top1_accuracy,
-                top5_accuracy      = top5_accuracy,
-                confusion_matrix   = confusion_matrix,
-                per_class_accuracy = per_class_accuracy,
-                labels             = labels,
-                ), status_code
+                                     model_job=model_job,
+                                     job=inference_job,
+                                     paths=paths,
+                                     classifications=classifications,
+                                     show_ground_truth=show_ground_truth,
+                                     ground_truths=ground_truths,
+                                     top1_accuracy=top1_accuracy,
+                                     top5_accuracy=top5_accuracy,
+                                     confusion_matrix=confusion_matrix,
+                                     per_class_accuracy=per_class_accuracy,
+                                     labels=labels,
+                                     ), status_code
+
 
 @blueprint.route('/top_n', methods=['POST'])
 def top_n():
@@ -617,13 +628,13 @@ def top_n():
 
     # create inference job
     inference_job = ImageInferenceJob(
-                username    = utils.auth.get_username(),
-                name        = "TopN Image Classification",
-                model       = model_job,
-                images      = paths,
-                epoch       = epoch,
-                layers      = 'none'
-                )
+        username=utils.auth.get_username(),
+        name="TopN Image Classification",
+        model=model_job,
+        images=paths,
+        epoch=epoch,
+        layers='none'
+    )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -659,72 +670,81 @@ def top_n():
             for j in xrange(images_per_category):
                 result_images.append(images[indices[j][i]])
             results.append((
-                    labels[i],
-                    utils.image.embed_image_html(
-                        utils.image.vis_square(np.array(result_images),
-                            colormap='white')
-                        )
-                    ))
+                labels[i],
+                utils.image.embed_image_html(
+                    utils.image.vis_square(np.array(result_images),
+                                           colormap='white')
+                )
+            ))
 
     return flask.render_template('models/images/classification/top_n.html',
-            model_job       = model_job,
-            job             = inference_job,
-            results         = results,
-            )
+                                 model_job=model_job,
+                                 job=inference_job,
+                                 results=results,
+                                 )
+
 
 def get_datasets():
     return [(j.id(), j.name()) for j in sorted(
-        [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationDatasetJob) and (j.status.is_running() or j.status == Status.DONE)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationDatasetJob)
+         and (j.status.is_running() or j.status == Status.DONE)],
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
 
 def get_standard_networks():
     return [
-            ('lenet', 'LeNet'),
-            ('alexnet', 'AlexNet'),
-            #('vgg-16', 'VGG (16-layer)'), #XXX model won't learn
-            ('googlenet', 'GoogLeNet'),
-            ]
+        ('lenet', 'LeNet'),
+        ('alexnet', 'AlexNet'),
+        #('vgg-16', 'VGG (16-layer)'), #XXX model won't learn
+        ('googlenet', 'GoogLeNet'),
+    ]
+
 
 def get_default_standard_network():
     return 'alexnet'
 
+
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
 
 def get_previous_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
 
 def get_previous_network_snapshots():
     prev_network_snapshots = []
     for job_id, _ in get_previous_networks():
         job = scheduler.get_job(job_id)
         e = [(0, 'None')] + [(epoch, 'Epoch #%s' % epoch)
-                for _, epoch in reversed(job.train_task().snapshots)]
+                             for _, epoch in reversed(job.train_task().snapshots)]
         if job.train_task().pretrained_model:
             e.insert(0, (-1, 'Previous pretrained model'))
         prev_network_snapshots.append(e)
     return prev_network_snapshots
 
+
 def get_pretrained_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
 
 def get_pretrained_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]

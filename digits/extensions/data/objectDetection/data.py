@@ -114,7 +114,7 @@ class DataIngestion(DataIngestionInterface):
 
         bboxList = sorted(
             bboxList,
-            key=operator.itemgetter(GroundTruthObj.lmdb_format_length()-1)
+            key=operator.itemgetter(GroundTruthObj.lmdb_format_length() - 1)
         )
 
         bboxList.reverse()
@@ -132,7 +132,6 @@ class DataIngestion(DataIngestionInterface):
             0,
             max_bboxes=self.max_bboxes,
             bbox_width=GroundTruthObj.lmdb_format_length())
-
 
         return feature, label
 

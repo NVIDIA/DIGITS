@@ -15,12 +15,16 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 
 wait_time = 2
+
+
 def wait(s=wait_time):
     time.sleep(s)
+
 
 def get_page(driver, url):
     driver.get(url)
     wait()
+
 
 def create_dataset(driver, name, folder):
     dropdown_elements = driver.find_elements_by_class_name('dropdown-toggle')
@@ -88,6 +92,7 @@ def create_dataset(driver, name, folder):
         wait()
     wait()
 
+
 def create_model(driver, name, dataset_name, test_image):
     dropdown_elements = driver.find_elements_by_class_name('dropdown-toggle')
     dropdown_model = dropdown_elements[1]
@@ -135,7 +140,7 @@ def create_model(driver, name, dataset_name, test_image):
         status = json.loads(r.content)
         done = status['status'] == 'Done'
         wait()
-        #driver.refresh()
+        # driver.refresh()
 
     # test image
     print 'Testing...'
@@ -162,21 +167,21 @@ def create_model(driver, name, dataset_name, test_image):
 def main(argv):
     parser = argparse.ArgumentParser(description='Run a Selenium demo of DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument('mnist_image_folder',
-            type=str,
-            help='Path to the MNIST dataset folder')
+                        type=str,
+                        help='Path to the MNIST dataset folder')
     parser.add_argument('test_image',
-            type=str,
-            help='Image to test with')
+                        type=str,
+                        help='Image to test with')
 
-    ### Optional arguments
+    # Optional arguments
 
     parser.add_argument('-p', '--port',
-            type=int,
-            default=80,
-            help='Port the server is running on (default 80)')
+                        type=int,
+                        default=80,
+                        help='Port the server is running on (default 80)')
 
     args = vars(parser.parse_args())
 
@@ -209,7 +214,7 @@ def main(argv):
 
         print 'Done.'
 
-        #display an alert message
+        # display an alert message
         get_page(driver, "javascript:alert('Completed Walkthrough!');void(0);")
         wait()
         driver.switch_to_alert().accept()
@@ -233,4 +238,3 @@ def main(argv):
 
 if __name__ == '__main__':
     main(sys.argv)
-

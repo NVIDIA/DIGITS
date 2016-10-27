@@ -6,6 +6,7 @@ from wtforms.validators import DataRequired
 
 from digits import utils
 
+
 class DatasetForm(Form):
     """
     Defines the form used to create a new Dataset
@@ -13,9 +14,9 @@ class DatasetForm(Form):
     """
 
     dataset_name = utils.forms.StringField(u'Dataset Name',
-            validators=[DataRequired()]
-            )
+                                           validators=[DataRequired()]
+                                           )
 
     group_name = utils.forms.StringField('Group Name',
-            tooltip = "An optional group name for organization on the main page."
-            )
+                                         tooltip="An optional group name for organization on the main page."
+                                         )

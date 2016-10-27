@@ -6,109 +6,114 @@ import argparse
 import ctypes
 import platform
 
+
 class c_cudaDeviceProp(ctypes.Structure):
     """
     Passed to cudart.cudaGetDeviceProperties()
     """
     _fields_ = [
-            ('name', ctypes.c_char * 256),
-            ('totalGlobalMem', ctypes.c_size_t),
-            ('sharedMemPerBlock', ctypes.c_size_t),
-            ('regsPerBlock', ctypes.c_int),
-            ('warpSize', ctypes.c_int),
-            ('memPitch', ctypes.c_size_t),
-            ('maxThreadsPerBlock', ctypes.c_int),
-            ('maxThreadsDim', ctypes.c_int * 3),
-            ('maxGridSize', ctypes.c_int * 3),
-            ('clockRate', ctypes.c_int),
-            ('totalConstMem', ctypes.c_size_t),
-            ('major', ctypes.c_int),
-            ('minor', ctypes.c_int),
-            ('textureAlignment', ctypes.c_size_t),
-            ('texturePitchAlignment', ctypes.c_size_t),
-            ('deviceOverlap', ctypes.c_int),
-            ('multiProcessorCount', ctypes.c_int),
-            ('kernelExecTimeoutEnabled', ctypes.c_int),
-            ('integrated', ctypes.c_int),
-            ('canMapHostMemory', ctypes.c_int),
-            ('computeMode', ctypes.c_int),
-            ('maxTexture1D', ctypes.c_int),
-            ('maxTexture1DMipmap', ctypes.c_int),
-            ('maxTexture1DLinear', ctypes.c_int),
-            ('maxTexture2D', ctypes.c_int * 2),
-            ('maxTexture2DMipmap', ctypes.c_int * 2),
-            ('maxTexture2DLinear', ctypes.c_int * 3),
-            ('maxTexture2DGather', ctypes.c_int * 2),
-            ('maxTexture3D', ctypes.c_int * 3),
-            ('maxTexture3DAlt', ctypes.c_int * 3),
-            ('maxTextureCubemap', ctypes.c_int),
-            ('maxTexture1DLayered', ctypes.c_int * 2),
-            ('maxTexture2DLayered', ctypes.c_int * 3),
-            ('maxTextureCubemapLayered', ctypes.c_int * 2),
-            ('maxSurface1D', ctypes.c_int),
-            ('maxSurface2D', ctypes.c_int * 2),
-            ('maxSurface3D', ctypes.c_int * 3),
-            ('maxSurface1DLayered', ctypes.c_int * 2),
-            ('maxSurface2DLayered', ctypes.c_int * 3),
-            ('maxSurfaceCubemap', ctypes.c_int),
-            ('maxSurfaceCubemapLayered', ctypes.c_int * 2),
-            ('surfaceAlignment', ctypes.c_size_t),
-            ('concurrentKernels', ctypes.c_int),
-            ('ECCEnabled', ctypes.c_int),
-            ('pciBusID', ctypes.c_int),
-            ('pciDeviceID', ctypes.c_int),
-            ('pciDomainID', ctypes.c_int),
-            ('tccDriver', ctypes.c_int),
-            ('asyncEngineCount', ctypes.c_int),
-            ('unifiedAddressing', ctypes.c_int),
-            ('memoryClockRate', ctypes.c_int),
-            ('memoryBusWidth', ctypes.c_int),
-            ('l2CacheSize', ctypes.c_int),
-            ('maxThreadsPerMultiProcessor', ctypes.c_int),
-            ('streamPrioritiesSupported', ctypes.c_int),
-            ('globalL1CacheSupported', ctypes.c_int),
-            ('localL1CacheSupported', ctypes.c_int),
-            ('sharedMemPerMultiprocessor', ctypes.c_size_t),
-            ('regsPerMultiprocessor', ctypes.c_int),
-            ('managedMemSupported', ctypes.c_int),
-            ('isMultiGpuBoard', ctypes.c_int),
-            ('multiGpuBoardGroupID', ctypes.c_int),
-            # Extra space for new fields in future toolkits
-            ('__future_buffer', ctypes.c_int * 128),
-            # added later with cudart.cudaDeviceGetPCIBusId
-            # (needed by NVML)
-            ('pciBusID_str', ctypes.c_char * 16),
-            ]
+        ('name', ctypes.c_char * 256),
+        ('totalGlobalMem', ctypes.c_size_t),
+        ('sharedMemPerBlock', ctypes.c_size_t),
+        ('regsPerBlock', ctypes.c_int),
+        ('warpSize', ctypes.c_int),
+        ('memPitch', ctypes.c_size_t),
+        ('maxThreadsPerBlock', ctypes.c_int),
+        ('maxThreadsDim', ctypes.c_int * 3),
+        ('maxGridSize', ctypes.c_int * 3),
+        ('clockRate', ctypes.c_int),
+        ('totalConstMem', ctypes.c_size_t),
+        ('major', ctypes.c_int),
+        ('minor', ctypes.c_int),
+        ('textureAlignment', ctypes.c_size_t),
+        ('texturePitchAlignment', ctypes.c_size_t),
+        ('deviceOverlap', ctypes.c_int),
+        ('multiProcessorCount', ctypes.c_int),
+        ('kernelExecTimeoutEnabled', ctypes.c_int),
+        ('integrated', ctypes.c_int),
+        ('canMapHostMemory', ctypes.c_int),
+        ('computeMode', ctypes.c_int),
+        ('maxTexture1D', ctypes.c_int),
+        ('maxTexture1DMipmap', ctypes.c_int),
+        ('maxTexture1DLinear', ctypes.c_int),
+        ('maxTexture2D', ctypes.c_int * 2),
+        ('maxTexture2DMipmap', ctypes.c_int * 2),
+        ('maxTexture2DLinear', ctypes.c_int * 3),
+        ('maxTexture2DGather', ctypes.c_int * 2),
+        ('maxTexture3D', ctypes.c_int * 3),
+        ('maxTexture3DAlt', ctypes.c_int * 3),
+        ('maxTextureCubemap', ctypes.c_int),
+        ('maxTexture1DLayered', ctypes.c_int * 2),
+        ('maxTexture2DLayered', ctypes.c_int * 3),
+        ('maxTextureCubemapLayered', ctypes.c_int * 2),
+        ('maxSurface1D', ctypes.c_int),
+        ('maxSurface2D', ctypes.c_int * 2),
+        ('maxSurface3D', ctypes.c_int * 3),
+        ('maxSurface1DLayered', ctypes.c_int * 2),
+        ('maxSurface2DLayered', ctypes.c_int * 3),
+        ('maxSurfaceCubemap', ctypes.c_int),
+        ('maxSurfaceCubemapLayered', ctypes.c_int * 2),
+        ('surfaceAlignment', ctypes.c_size_t),
+        ('concurrentKernels', ctypes.c_int),
+        ('ECCEnabled', ctypes.c_int),
+        ('pciBusID', ctypes.c_int),
+        ('pciDeviceID', ctypes.c_int),
+        ('pciDomainID', ctypes.c_int),
+        ('tccDriver', ctypes.c_int),
+        ('asyncEngineCount', ctypes.c_int),
+        ('unifiedAddressing', ctypes.c_int),
+        ('memoryClockRate', ctypes.c_int),
+        ('memoryBusWidth', ctypes.c_int),
+        ('l2CacheSize', ctypes.c_int),
+        ('maxThreadsPerMultiProcessor', ctypes.c_int),
+        ('streamPrioritiesSupported', ctypes.c_int),
+        ('globalL1CacheSupported', ctypes.c_int),
+        ('localL1CacheSupported', ctypes.c_int),
+        ('sharedMemPerMultiprocessor', ctypes.c_size_t),
+        ('regsPerMultiprocessor', ctypes.c_int),
+        ('managedMemSupported', ctypes.c_int),
+        ('isMultiGpuBoard', ctypes.c_int),
+        ('multiGpuBoardGroupID', ctypes.c_int),
+        # Extra space for new fields in future toolkits
+        ('__future_buffer', ctypes.c_int * 128),
+        # added later with cudart.cudaDeviceGetPCIBusId
+        # (needed by NVML)
+        ('pciBusID_str', ctypes.c_char * 16),
+    ]
+
 
 class struct_c_nvmlDevice_t(ctypes.Structure):
     """
     Handle to a device in NVML
     """
-    pass # opaque handle
+    pass  # opaque handle
 c_nvmlDevice_t = ctypes.POINTER(struct_c_nvmlDevice_t)
+
 
 class c_nvmlMemory_t(ctypes.Structure):
     """
     Passed to nvml.nvmlDeviceGetMemoryInfo()
     """
     _fields_ = [
-            ('total', ctypes.c_ulonglong),
-            ('free', ctypes.c_ulonglong),
-            ('used', ctypes.c_ulonglong),
-            # Extra space for new fields in future toolkits
-            ('__future_buffer', ctypes.c_ulonglong * 8),
-            ]
+        ('total', ctypes.c_ulonglong),
+        ('free', ctypes.c_ulonglong),
+        ('used', ctypes.c_ulonglong),
+        # Extra space for new fields in future toolkits
+        ('__future_buffer', ctypes.c_ulonglong * 8),
+    ]
+
 
 class c_nvmlUtilization_t(ctypes.Structure):
     """
     Passed to nvml.nvmlDeviceGetUtilizationRates()
     """
     _fields_ = [
-            ('gpu', ctypes.c_uint),
-            ('memory', ctypes.c_uint),
-            # Extra space for new fields in future toolkits
-            ('__future_buffer', ctypes.c_uint * 8),
-            ]
+        ('gpu', ctypes.c_uint),
+        ('memory', ctypes.c_uint),
+        # Extra space for new fields in future toolkits
+        ('__future_buffer', ctypes.c_uint * 8),
+    ]
+
 
 def get_library(name):
     """
@@ -123,31 +128,33 @@ def get_library(name):
         pass
     return None
 
+
 def get_cudart():
     """
     Return the ctypes.DLL object for cudart or None
     """
     if platform.system() == 'Windows':
         arch = platform.architecture()[0]
-        for ver in range(90,50,-5):
+        for ver in range(90, 50, -5):
             cudart = get_library('cudart%s_%d.dll' % (arch[:2], ver))
             if cudart is not None:
                 return cudart
     elif platform.system() == 'Darwin':
-        for major in xrange(9,5,-1):
-            for minor in (5,0):
+        for major in xrange(9, 5, -1):
+            for minor in (5, 0):
                 cudart = get_library('libcudart.%d.%d.dylib' % (major, minor))
                 if cudart is not None:
                     return cudart
         return get_library('libcudart.dylib')
     else:
-        for major in xrange(9,5,-1):
-            for minor in (5,0):
+        for major in xrange(9, 5, -1):
+            for minor in (5, 0):
                 cudart = get_library('libcudart.so.%d.%d' % (major, minor))
                 if cudart is not None:
                     return cudart
         return get_library('libcudart.so')
     return None
+
 
 def get_nvml():
     """
@@ -166,6 +173,7 @@ def get_nvml():
     return None
 
 devices = None
+
 
 def get_devices(force_reload=False):
     """
@@ -218,11 +226,13 @@ def get_devices(force_reload=False):
         del properties
     return devices
 
+
 def get_device(device_id):
     """
     Returns a c_cudaDeviceProp
     """
     return get_devices()[int(device_id)]
+
 
 def get_nvml_info(device_id):
     """
@@ -255,18 +265,18 @@ def get_nvml_info(device_id):
         rc = nvml.nvmlDeviceGetMemoryInfo(handle, ctypes.byref(memory))
         if rc == 0:
             info['memory'] = {
-                    'total': memory.total,
-                    'used': memory.used,
-                    'free': memory.free,
-                    }
+                'total': memory.total,
+                'used': memory.used,
+                'free': memory.free,
+            }
 
         utilization = c_nvmlUtilization_t()
         rc = nvml.nvmlDeviceGetUtilizationRates(handle, ctypes.byref(utilization))
         if rc == 0:
             info['utilization'] = {
-                    'gpu': utilization.gpu,
-                    'memory': utilization.memory, # redundant
-                    }
+                'gpu': utilization.gpu,
+                'memory': utilization.memory,  # redundant
+            }
 
         temperature = ctypes.c_int()
         rc = nvml.nvmlDeviceGetTemperature(handle, 0, ctypes.byref(temperature))
@@ -295,7 +305,7 @@ if __name__ == '__main__':
             if name in ['__future_buffer']:
                 continue
             if not args.verbose and name not in [
-                    'name', 'totalGlobalMem', 'clockRate', 'major', 'minor',]:
+                    'name', 'totalGlobalMem', 'clockRate', 'major', 'minor', ]:
                 continue
 
             if 'c_int_Array' in t.__name__:
@@ -311,19 +321,18 @@ if __name__ == '__main__':
             nvml_fmt = '  %-28s %s'
             if 'memory' in info:
                 print nvml_fmt % ('Total memory',
-                        '%s MB' % (info['memory']['total'] / 2**20,))
+                                  '%s MB' % (info['memory']['total'] / 2**20,))
                 print nvml_fmt % ('Used memory',
-                        '%s MB' % (info['memory']['used'] / 2**20,))
+                                  '%s MB' % (info['memory']['used'] / 2**20,))
                 if args.verbose:
                     print nvml_fmt % ('Free memory',
-                        '%s MB' % (info['memory']['free'] / 2**20,))
+                                      '%s MB' % (info['memory']['free'] / 2**20,))
             if 'utilization' in info:
                 print nvml_fmt % ('Memory utilization',
-                        '%s%%' % info['utilization']['memory'])
+                                  '%s%%' % info['utilization']['memory'])
                 print nvml_fmt % ('GPU utilization',
-                        '%s%%' % info['utilization']['gpu'])
+                                  '%s%%' % info['utilization']['gpu'])
             if 'temperature' in info:
                 print nvml_fmt % ('Temperature',
-                        '%s C' % info['temperature'])
+                                  '%s C' % info['temperature'])
         print
-

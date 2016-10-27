@@ -5,7 +5,8 @@ import os
 
 import flask
 from flask.ext.socketio import SocketIO
-from gevent import monkey; monkey.patch_all()
+from gevent import monkey
+monkey.patch_all()
 
 from .config import config_value
 from digits import utils
@@ -13,7 +14,7 @@ from digits.utils import filesystem as fs
 from digits.utils.store import StoreCache
 import digits.scheduler
 
-### Create Flask, Scheduler and SocketIO objects
+# Create Flask, Scheduler and SocketIO objects
 
 app = flask.Flask(__name__)
 app.config['DEBUG'] = True
@@ -27,7 +28,7 @@ app.config['store_cache'] = StoreCache()
 app.config['store_url_list'] = config_value('model_store')['url_list']
 scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
-### Register filters and views
+# Register filters and views
 
 app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.globals['server_version'] = digits.__version__
@@ -52,7 +53,8 @@ app.register_blueprint(digits.dataset.generic.views.blueprint, url_prefix='/data
 import digits.dataset.images.views
 app.register_blueprint(digits.dataset.images.views.blueprint, url_prefix='/datasets/images')
 import digits.dataset.images.classification.views
-app.register_blueprint(digits.dataset.images.classification.views.blueprint, url_prefix='/datasets/images/classification')
+app.register_blueprint(digits.dataset.images.classification.views.blueprint,
+                       url_prefix='/datasets/images/classification')
 import digits.dataset.images.generic.views
 app.register_blueprint(digits.dataset.images.generic.views.blueprint, url_prefix='/datasets/images/generic')
 import digits.model.views
@@ -68,8 +70,10 @@ app.register_blueprint(digits.pretrained_model.views.blueprint, url_prefix='/pre
 import digits.store.views
 app.register_blueprint(digits.store.views.blueprint, url_prefix='/store')
 
+
 def username_decorator(f):
     from functools import wraps
+
     @wraps(f)
     def decorated(*args, **kwargs):
         this_username = flask.request.cookies.get('username', None)
@@ -80,6 +84,6 @@ def username_decorator(f):
 for endpoint, function in app.view_functions.iteritems():
     app.view_functions[endpoint] = username_decorator(function)
 
-### Setup the environment
+# Setup the environment
 
 scheduler.load_past_jobs()

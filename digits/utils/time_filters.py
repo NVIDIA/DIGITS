@@ -3,7 +3,8 @@ from __future__ import absolute_import
 
 import time
 
-def print_time(t, ref_time = None):
+
+def print_time(t, ref_time=None):
     lt = time.localtime(t)
 
     # ref_time is for testing
@@ -21,6 +22,7 @@ def print_time(t, ref_time = None):
     else:
         return time.strftime('%I:%M:%S %p', lt).decode('utf-8')
 
+
 def print_time_diff(diff):
     if diff is None:
         return '?'
@@ -29,9 +31,9 @@ def print_time_diff(diff):
         return 'Negative Time'
 
     total_seconds = int(diff)
-    days = total_seconds//(24*3600)
-    hours = (total_seconds % (24*3600))//3600
-    minutes = (total_seconds % 3600)//60
+    days = total_seconds // (24 * 3600)
+    hours = (total_seconds % (24 * 3600)) // 3600
+    minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
 
     def plural(number, name):
@@ -51,6 +53,7 @@ def print_time_diff(diff):
         return pair(minutes, 'minute', seconds, 'second')
     return plural(seconds, 'second')
 
+
 def print_time_diff_nosuffixes(diff):
     if diff is None:
         return '?'
@@ -58,6 +61,7 @@ def print_time_diff_nosuffixes(diff):
     hours, rem = divmod(diff, 3600)
     minutes, seconds = divmod(rem, 60)
     return '{:02d}:{:02d}:{:02d}'.format(int(hours), int(minutes), int(seconds))
+
 
 def print_time_since(t):
     return print_time_diff(time.time() - t)

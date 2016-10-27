@@ -134,7 +134,7 @@ def forward_pass(images, net, transformer, batch_size=None):
     dims = transformer.inputs['data'][1:]
 
     scores = None
-    for chunk in [caffe_images[x:x+batch_size] for x in xrange(0, len(caffe_images), batch_size)]:
+    for chunk in [caffe_images[x:x + batch_size] for x in xrange(0, len(caffe_images), batch_size)]:
         new_shape = (len(chunk),) + tuple(dims)
         if net.blobs['data'].data.shape != new_shape:
             net.blobs['data'].reshape(*new_shape)
@@ -219,13 +219,13 @@ def classify(caffemodel, deploy_file, image_files,
                 label = 'Class #%s' % i
             else:
                 label = labels[i]
-            result.append((label, round(100.0*scores[image_index, i], 4)))
+            result.append((label, round(100.0 * scores[image_index, i], 4)))
         classifications.append(result)
 
     for index, classification in enumerate(classifications):
         print '{:-^80}'.format(' Prediction for %s ' % image_files[index])
         for label, confidence in classification:
-            print '{:9.4%} - "{}"'.format(confidence/100.0, label)
+            print '{:9.4%} - "{}"'.format(confidence / 100.0, label)
         print
 
 

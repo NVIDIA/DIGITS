@@ -19,6 +19,6 @@ class ConfigForm(Form):
         validators=[
             validators.DataRequired(),
             validators.NumberRange(min=1),
-            ],
+        ],
         tooltip='Specify how many classes to show in classification'
-        )
+    )

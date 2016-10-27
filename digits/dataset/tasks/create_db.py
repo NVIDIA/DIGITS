@@ -14,6 +14,7 @@ from digits.utils import subclass, override
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 3
 
+
 @subclass
 class CreateDbTask(Task):
     """Creates a database"""
@@ -38,7 +39,7 @@ class CreateDbTask(Task):
         # Take keyword arguments out of kwargs
         self.image_folder = kwargs.pop('image_folder', None)
         self.shuffle = kwargs.pop('shuffle', True)
-        self.resize_mode = kwargs.pop('resize_mode' , None)
+        self.resize_mode = kwargs.pop('resize_mode', None)
         self.encoding = kwargs.pop('encoding', None)
         self.compression = kwargs.pop('compression', None)
         self.mean_file = kwargs.pop('mean_file', None)
@@ -140,14 +141,14 @@ class CreateDbTask(Task):
         args = [sys.executable, os.path.join(
             os.path.dirname(os.path.abspath(digits.__file__)),
             'tools', 'create_db.py'),
-                self.path(self.input_file),
-                self.path(self.db_name),
-                self.image_dims[1],
-                self.image_dims[0],
-                '--backend=%s' % self.backend,
-                '--channels=%s' % self.image_dims[2],
-                '--resize_mode=%s' % self.resize_mode,
-                ]
+            self.path(self.input_file),
+            self.path(self.db_name),
+            self.image_dims[1],
+            self.image_dims[0],
+            '--backend=%s' % self.backend,
+            '--channels=%s' % self.image_dims[2],
+            '--resize_mode=%s' % self.resize_mode,
+        ]
 
         if self.mean_file is not None:
             args.append('--mean_file=%s' % self.path(self.mean_file))
@@ -180,7 +181,7 @@ class CreateDbTask(Task):
         # progress
         match = re.match(r'Processed (\d+)\/(\d+)', message)
         if match:
-            self.progress = float(match.group(1))/int(match.group(2))
+            self.progress = float(match.group(1)) / int(match.group(2))
             self.emit_progress_update()
             return True
 
@@ -195,14 +196,14 @@ class CreateDbTask(Task):
             data = self.distribution_data()
             if data:
                 socketio.emit('task update',
-                        {
-                            'task': self.html_id(),
-                            'update': 'distribution',
-                            'data': data,
-                            },
-                        namespace='/jobs',
-                        room=self.job_id,
-                        )
+                              {
+                                  'task': self.html_id(),
+                                  'update': 'distribution',
+                                  'data': data,
+                              },
+                              namespace='/jobs',
+                              room=self.job_id,
+                              )
             return True
 
         # result
@@ -231,13 +232,13 @@ class CreateDbTask(Task):
 
         if self.backend == 'lmdb':
             socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'exploration-ready',
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+                          {
+                              'task': self.html_id(),
+                              'update': 'exploration-ready',
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )
 
         elif self.backend == 'hdf5':
             # add more path information to the list of h5 files
@@ -252,15 +253,15 @@ class CreateDbTask(Task):
 
         if self.mean_file:
             socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'mean-image',
-                        # XXX Can't use url_for here because we don't have a request context
-                        'data': '/files/' + self.path('mean.jpg', relative=True),
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+                          {
+                              'task': self.html_id(),
+                              'update': 'mean-image',
+                              # XXX Can't use url_for here because we don't have a request context
+                              'data': '/files/' + self.path('mean.jpg', relative=True),
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )
 
     def get_labels(self):
         """
@@ -286,7 +287,6 @@ class CreateDbTask(Task):
         self._labels = labels
         return self._labels
 
-
     def distribution_data(self):
         """
         Returns distribution data for a C3.js graph
@@ -311,15 +311,14 @@ class CreateDbTask(Task):
             titles.append(labels[int(key)])
 
         return {
-                'data': {
-                    'columns': [values],
-                    'type': 'bar'
-                    },
-                'axis': {
-                    'x': {
-                        'type': 'category',
-                        'categories': titles,
-                        }
-                    },
+            'data': {
+                'columns': [values],
+                'type': 'bar'
+            },
+            'axis': {
+                'x': {
+                    'type': 'category',
+                    'categories': titles,
                 }
-
+            },
+        }

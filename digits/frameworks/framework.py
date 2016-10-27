@@ -1,6 +1,7 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from digits.inference.tasks import InferenceTask
 
+
 class Framework(object):
 
     """
@@ -84,4 +85,3 @@ class Framework(object):
 
     def can_accumulate_gradients(self):
         return False
-

@@ -23,7 +23,7 @@ class TestGetDevices():
         device_query.get_devices(True)
 
     @unittest.skipIf(platform.system() not in ['Linux', 'Darwin'],
-            'Platform not supported')
+                     'Platform not supported')
     @mock.patch('digits.device_query.ctypes.cdll')
     def test_no_cudart(self, mock_cdll):
         mock_cdll.LoadLibrary.return_value = None
@@ -40,9 +40,8 @@ class TestGetNvmlInfo():
             raise unittest.SkipTest('NVML not found')
 
     @unittest.skipIf(len(device_query.get_devices(True)) == 0,
-            'No GPUs on system')
+                     'No GPUs on system')
     def test_memory_info_exists(self):
         for index, device in enumerate(device_query.get_devices(True)):
-            assert 'memory' in device_query.get_nvml_info(index), 'NVML should have memory information for "%s"' % device.name
-
-
+            assert 'memory' in device_query.get_nvml_info(
+                index), 'NVML should have memory information for "%s"' % device.name

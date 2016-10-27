@@ -23,7 +23,6 @@ def load_logfile_filename():
     else:
         filename = os.path.join(os.path.dirname(digits.__file__), 'digits.log')
 
-
     if filename is not None:
         try:
             filename = os.path.abspath(filename)
@@ -61,7 +60,8 @@ def load_logfile_level():
         elif level == 'critical':
             return logging.CRITICAL
         else:
-            raise ValueError('Invalid value "%s" for logfile_level. Set DIGITS_LOGFILE_LEVEL to fix       your configuration.' % level)
+            raise ValueError(
+                'Invalid value "%s" for logfile_level. Set DIGITS_LOGFILE_LEVEL to fix       your configuration.' % level)
     else:
         return logging.INFO
 
@@ -70,4 +70,3 @@ option_list['log_file'] = {
     'filename': load_logfile_filename(),
     'level': load_logfile_level(),
 }
-

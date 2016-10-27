@@ -31,6 +31,7 @@ import caffe_pb2
 logger = logging.getLogger('digits.tools.analyze_db')
 np.set_printoptions(suppress=True, precision=3)
 
+
 class DbReader(object):
     """
     Reads a database
@@ -42,8 +43,8 @@ class DbReader(object):
         location -- where is the database
         """
         self._db = lmdb.open(location,
-                map_size=1024**3, # 1MB
-                readonly=True, lock=False)
+                             map_size=1024**3,  # 1MB
+                             readonly=True, lock=False)
 
         with self._db.begin() as txn:
             self.total_entries = txn.stat()['entries']
@@ -72,6 +73,7 @@ def validate_database_path(database):
         raise ValueError('Not a directory')
     return p
 
+
 def print_datum(datum):
     """
     Utility for printing a datum
@@ -82,10 +84,10 @@ def print_datum(datum):
 
 
 def analyze_db(database,
-        only_count=False,
-        force_same_shape=False,
-        print_data=False,
-        ):
+               only_count=False,
+               force_same_shape=False,
+               print_data=False,
+               ):
     """
     Looks at the data in a prebuilt database and verifies it
         Also prints out some information about it
@@ -183,31 +185,30 @@ def analyze_db(database,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Analyze-Db tool - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument('database',
-            help='Path to the database')
+                        help='Path to the database')
 
-    ### Optional arguments
+    # Optional arguments
 
     parser.add_argument('--only-count',
-            action="store_true",
-            help="Only print the number of entries, don't analyze the data")
+                        action="store_true",
+                        help="Only print the number of entries, don't analyze the data")
     parser.add_argument('--force-same-shape',
-            action="store_true",
-            help='Throw an error if not all entries have the same shape')
+                        action="store_true",
+                        help='Throw an error if not all entries have the same shape')
     parser.add_argument('--print-data',
-            action="store_true",
-            help='Print the array for each datum (best used with --only-count)')
+                        action="store_true",
+                        help='Print the array for each datum (best used with --only-count)')
 
     args = vars(parser.parse_args())
 
     if analyze_db(args['database'],
-            only_count = args['only_count'],
-            force_same_shape = args['force_same_shape'],
-            print_data = args['print_data'],
-            ):
+                  only_count=args['only_count'],
+                  force_same_shape=args['force_same_shape'],
+                  print_data=args['print_data'],
+                  ):
         sys.exit(0)
     else:
         sys.exit(1)
-

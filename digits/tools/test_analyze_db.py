@@ -32,8 +32,8 @@ class BaseTestWithDB(object):
             if cls.SAME_SHAPE:
                 width = 10
             else:
-                width = 10+i
-            datum = cls.create_datum(10,width,3)
+                width = 10 + i
+            datum = cls.create_datum(10, width, 3)
             with cls.db.begin(write=True) as txn:
                 txn.put(str(i), datum.SerializeToString())
 
@@ -56,10 +56,11 @@ class BaseTestWithDB(object):
     def test_force_shape(self):
         assert analyze_db.analyze_db(self.db.path(), force_same_shape=True) == self.PASS_FORCE
 
+
 class TestSameShape(BaseTestWithDB):
     pass
+
 
 class TestDifferentShape(BaseTestWithDB):
     SAME_SHAPE = False
     PASS_FORCE = False
-

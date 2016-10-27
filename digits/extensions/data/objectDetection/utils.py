@@ -6,14 +6,16 @@ import os
 import numpy as np
 import PIL.Image
 
+
 class ObjectType:
 
     Dontcare, Car, Van, Truck, Bus, Pickup, VehicleWithTrailer, SpecialVehicle,\
-    Person, Person_fa, Person_unsure, People, Cyclist, Tram, Person_Sitting,\
-    Misc = range(16)
+        Person, Person_fa, Person_unsure, People, Cyclist, Tram, Person_Sitting,\
+        Misc = range(16)
 
     def __init__(self):
         pass
+
 
 class Bbox:
 
@@ -34,6 +36,7 @@ class Bbox:
 
     def get_array(self):
         return [self.xl, self.yt, self.xr, self.yb]
+
 
 class GroundTruthObj:
 
@@ -167,7 +170,6 @@ class GroundTruth:
             self._objects_all[_key] = []
 
     def load_gt_obj(self):
-
         """ load bbox ground truth from files either via the provided label directory or list of label files"""
         files = os.listdir(self.label_dir)
         files = filter(lambda x: x.endswith(self.label_ext), files)
@@ -175,7 +177,7 @@ class GroundTruth:
             raise RuntimeError('error: no label files found in %s' % self.label_dir)
         for label_file in files:
             objects_per_image = list()
-            with open( os.path.join(self.label_dir, label_file), 'rb') as flabel:
+            with open(os.path.join(self.label_dir, label_file), 'rb') as flabel:
                 for row in csv.reader(flabel, delimiter=self.label_delimiter):
                     if len(row) == 0:
                         # This can happen when you open an empty file
@@ -218,13 +220,14 @@ class GroundTruth:
 
 # return the # of pixels remaining in a
 
+
 def pad_bbox(arr, max_bboxes=64, bbox_width=16):
     if arr.shape[0] > max_bboxes:
         raise ValueError(
             'Too many bounding boxes (%d > %d)' % arr.shape[0], max_bboxes
         )
     # fill remainder with zeroes:
-    data = np.zeros((max_bboxes+1, bbox_width), dtype='float')
+    data = np.zeros((max_bboxes + 1, bbox_width), dtype='float')
     # number of bounding boxes:
     data[0][0] = arr.shape[0]
     # width of a bounding box:
@@ -267,8 +270,8 @@ def bbox_overlap(abox, bbox):
     overlap_box = list(bbox)
     overlap_box[0] = overlap_box_x1
     overlap_box[1] = overlap_box_y1
-    overlap_box[2] = overlap_box_x2-overlap_box_x1+1
-    overlap_box[3] = overlap_box_y2-overlap_box_y1+1
+    overlap_box[2] = overlap_box_x2 - overlap_box_x1 + 1
+    overlap_box[3] = overlap_box_y2 - overlap_box_y1 + 1
 
     xoverlap = max(0, overlap_box_x2 - overlap_box_x1)
     yoverlap = max(0, overlap_box_y2 - overlap_box_y1)
@@ -288,7 +291,8 @@ def pad_image(img, padding_image_height, padding_image_width):
         raise ValueError("Source image width %d is greater than padding width %d" % (src_width, padding_image_width))
 
     if padding_image_height < src_height:
-        raise ValueError("Source image height %d is greater than padding height %d" % (src_height, padding_image_height))
+        raise ValueError("Source image height %d is greater than padding height %d" %
+                         (src_height, padding_image_height))
 
     padded_img = PIL.Image.new(
         img.mode,
@@ -301,14 +305,12 @@ def pad_image(img, padding_image_height, padding_image_width):
 
 def resize_bbox_list(bboxlist, rescale_x=1, rescale_y=1):
         # this is expecting x1,y1,w,h:
-        bboxListNew = []
-        for bbox in bboxlist:
-            abox = bbox
-            abox[0] *= rescale_x
-            abox[1] *= rescale_y
-            abox[2] *= rescale_x
-            abox[3] *= rescale_y
-            bboxListNew.append(abox)
-        return bboxListNew
-
-
+    bboxListNew = []
+    for bbox in bboxlist:
+        abox = bbox
+        abox[0] *= rescale_x
+        abox[1] *= rescale_y
+        abox[2] *= rescale_x
+        abox[3] *= rescale_y
+        bboxListNew.append(abox)
+    return bboxListNew

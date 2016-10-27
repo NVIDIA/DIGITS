@@ -25,13 +25,14 @@ from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
 
+
 def from_folders(job, form):
     """
     Add tasks for creating a dataset by parsing folders of images
     """
     job.labels_file = utils.constants.LABELS_FILE
 
-    ### Add ParseFolderTask
+    # Add ParseFolderTask
 
     percent_val = form.folder_pct_val.data
     val_parents = []
@@ -47,13 +48,13 @@ def from_folders(job, form):
     max_per_class = form.folder_train_max_per_class.data
 
     parse_train_task = tasks.ParseFolderTask(
-            job_dir          = job.dir(),
-            folder           = form.folder_train.data,
-            percent_val      = percent_val,
-            percent_test     = percent_test,
-            min_per_category = min_per_class if min_per_class>0 else 1,
-            max_per_category = max_per_class if max_per_class>0 else None
-            )
+        job_dir=job.dir(),
+        folder=form.folder_train.data,
+        percent_val=percent_val,
+        percent_test=percent_test,
+        min_per_category=min_per_class if min_per_class > 0 else 1,
+        max_per_category=max_per_class if max_per_class > 0 else None
+    )
     job.tasks.append(parse_train_task)
 
     # set parents
@@ -67,14 +68,14 @@ def from_folders(job, form):
         max_per_class = form.folder_val_max_per_class.data
 
         parse_val_task = tasks.ParseFolderTask(
-                job_dir         = job.dir(),
-                parents         = parse_train_task,
-                folder          = form.folder_val.data,
-                percent_val     = 100,
-                percent_test    = 0,
-                min_per_category = min_per_class if min_per_class>0 else 1,
-                max_per_category = max_per_class if max_per_class>0 else None
-                )
+            job_dir=job.dir(),
+            parents=parse_train_task,
+            folder=form.folder_val.data,
+            percent_val=100,
+            percent_test=0,
+            min_per_category=min_per_class if min_per_class > 0 else 1,
+            max_per_category=max_per_class if max_per_class > 0 else None
+        )
         job.tasks.append(parse_val_task)
         val_parents = [parse_val_task]
 
@@ -83,82 +84,83 @@ def from_folders(job, form):
         max_per_class = form.folder_test_max_per_class.data
 
         parse_test_task = tasks.ParseFolderTask(
-                job_dir         = job.dir(),
-                parents         = parse_train_task,
-                folder          = form.folder_test.data,
-                percent_val     = 0,
-                percent_test    = 100,
-                min_per_category = min_per_class if min_per_class>0 else 1,
-                max_per_category = max_per_class if max_per_class>0 else None
-                )
+            job_dir=job.dir(),
+            parents=parse_train_task,
+            folder=form.folder_test.data,
+            percent_val=0,
+            percent_test=100,
+            min_per_category=min_per_class if min_per_class > 0 else 1,
+            max_per_category=max_per_class if max_per_class > 0 else None
+        )
         job.tasks.append(parse_test_task)
         test_parents = [parse_test_task]
 
-    ### Add CreateDbTasks
+    # Add CreateDbTasks
 
     backend = form.backend.data
     encoding = form.encoding.data
     compression = form.compression.data
 
     job.tasks.append(
-            tasks.CreateDbTask(
-                job_dir     = job.dir(),
-                parents     = parse_train_task,
-                input_file  = utils.constants.TRAIN_FILE,
-                db_name     = utils.constants.TRAIN_DB,
-                backend     = backend,
-                image_dims  = job.image_dims,
-                resize_mode = job.resize_mode,
-                encoding    = encoding,
-                compression = compression,
-                mean_file   = utils.constants.MEAN_FILE_CAFFE,
-                labels_file = job.labels_file,
-                )
-            )
+        tasks.CreateDbTask(
+            job_dir=job.dir(),
+            parents=parse_train_task,
+            input_file=utils.constants.TRAIN_FILE,
+            db_name=utils.constants.TRAIN_DB,
+            backend=backend,
+            image_dims=job.image_dims,
+            resize_mode=job.resize_mode,
+            encoding=encoding,
+            compression=compression,
+            mean_file=utils.constants.MEAN_FILE_CAFFE,
+            labels_file=job.labels_file,
+        )
+    )
 
     if percent_val > 0 or form.has_val_folder.data:
         job.tasks.append(
-                tasks.CreateDbTask(
-                    job_dir     = job.dir(),
-                    parents     = val_parents,
-                    input_file  = utils.constants.VAL_FILE,
-                    db_name     = utils.constants.VAL_DB,
-                    backend     = backend,
-                    image_dims  = job.image_dims,
-                    resize_mode = job.resize_mode,
-                    encoding    = encoding,
-                    compression = compression,
-                    labels_file = job.labels_file,
-                    )
-                )
+            tasks.CreateDbTask(
+                job_dir=job.dir(),
+                parents=val_parents,
+                input_file=utils.constants.VAL_FILE,
+                db_name=utils.constants.VAL_DB,
+                backend=backend,
+                image_dims=job.image_dims,
+                resize_mode=job.resize_mode,
+                encoding=encoding,
+                compression=compression,
+                labels_file=job.labels_file,
+            )
+        )
 
     if percent_test > 0 or form.has_test_folder.data:
         job.tasks.append(
-                tasks.CreateDbTask(
-                    job_dir     = job.dir(),
-                    parents     = test_parents,
-                    input_file  = utils.constants.TEST_FILE,
-                    db_name     = utils.constants.TEST_DB,
-                    backend     = backend,
-                    image_dims  = job.image_dims,
-                    resize_mode = job.resize_mode,
-                    encoding    = encoding,
-                    compression = compression,
-                    labels_file = job.labels_file,
-                    )
-                )
+            tasks.CreateDbTask(
+                job_dir=job.dir(),
+                parents=test_parents,
+                input_file=utils.constants.TEST_FILE,
+                db_name=utils.constants.TEST_DB,
+                backend=backend,
+                image_dims=job.image_dims,
+                resize_mode=job.resize_mode,
+                encoding=encoding,
+                compression=compression,
+                labels_file=job.labels_file,
+            )
+        )
+
 
 def from_files(job, form):
     """
     Add tasks for creating a dataset by reading textfiles
     """
-    ### labels
+    # labels
     if form.textfile_use_local_files.data:
         job.labels_file = form.textfile_local_labels_file.data.strip()
     else:
         flask.request.files[form.textfile_labels_file.name].save(
-                os.path.join(job.dir(), utils.constants.LABELS_FILE)
-                )
+            os.path.join(job.dir(), utils.constants.LABELS_FILE)
+        )
         job.labels_file = utils.constants.LABELS_FILE
 
     shuffle = bool(form.textfile_shuffle.data)
@@ -166,13 +168,13 @@ def from_files(job, form):
     encoding = form.encoding.data
     compression = form.compression.data
 
-    ### train
+    # train
     if form.textfile_use_local_files.data:
         train_file = form.textfile_local_train_images.data.strip()
     else:
         flask.request.files[form.textfile_train_images.name].save(
-                os.path.join(job.dir(), utils.constants.TRAIN_FILE)
-                )
+            os.path.join(job.dir(), utils.constants.TRAIN_FILE)
+        )
         train_file = utils.constants.TRAIN_FILE
 
     image_folder = form.textfile_train_folder.data.strip()
@@ -180,31 +182,31 @@ def from_files(job, form):
         image_folder = None
 
     job.tasks.append(
-            tasks.CreateDbTask(
-                job_dir     = job.dir(),
-                input_file  = train_file,
-                db_name     = utils.constants.TRAIN_DB,
-                backend     = backend,
-                image_dims  = job.image_dims,
-                image_folder= image_folder,
-                resize_mode = job.resize_mode,
-                encoding    = encoding,
-                compression = compression,
-                mean_file   = utils.constants.MEAN_FILE_CAFFE,
-                labels_file = job.labels_file,
-                shuffle     = shuffle,
-                )
-            )
+        tasks.CreateDbTask(
+            job_dir=job.dir(),
+            input_file=train_file,
+            db_name=utils.constants.TRAIN_DB,
+            backend=backend,
+            image_dims=job.image_dims,
+            image_folder=image_folder,
+            resize_mode=job.resize_mode,
+            encoding=encoding,
+            compression=compression,
+            mean_file=utils.constants.MEAN_FILE_CAFFE,
+            labels_file=job.labels_file,
+            shuffle=shuffle,
+        )
+    )
 
-    ### val
+    # val
 
     if form.textfile_use_val.data:
         if form.textfile_use_local_files.data:
             val_file = form.textfile_local_val_images.data.strip()
         else:
             flask.request.files[form.textfile_val_images.name].save(
-                    os.path.join(job.dir(), utils.constants.VAL_FILE)
-                    )
+                os.path.join(job.dir(), utils.constants.VAL_FILE)
+            )
             val_file = utils.constants.VAL_FILE
 
         image_folder = form.textfile_val_folder.data.strip()
@@ -212,30 +214,30 @@ def from_files(job, form):
             image_folder = None
 
         job.tasks.append(
-                tasks.CreateDbTask(
-                    job_dir     = job.dir(),
-                    input_file  = val_file,
-                    db_name     = utils.constants.VAL_DB,
-                    backend     = backend,
-                    image_dims  = job.image_dims,
-                    image_folder= image_folder,
-                    resize_mode = job.resize_mode,
-                    encoding    = encoding,
-                    compression = compression,
-                    labels_file = job.labels_file,
-                    shuffle     = shuffle,
-                    )
-                )
+            tasks.CreateDbTask(
+                job_dir=job.dir(),
+                input_file=val_file,
+                db_name=utils.constants.VAL_DB,
+                backend=backend,
+                image_dims=job.image_dims,
+                image_folder=image_folder,
+                resize_mode=job.resize_mode,
+                encoding=encoding,
+                compression=compression,
+                labels_file=job.labels_file,
+                shuffle=shuffle,
+            )
+        )
 
-    ### test
+    # test
 
     if form.textfile_use_test.data:
         if form.textfile_use_local_files.data:
             test_file = form.textfile_local_test_images.data.strip()
         else:
             flask.request.files[form.textfile_test_images.name].save(
-                    os.path.join(job.dir(), utils.constants.TEST_FILE)
-                    )
+                os.path.join(job.dir(), utils.constants.TEST_FILE)
+            )
             test_file = utils.constants.TEST_FILE
 
         image_folder = form.textfile_test_folder.data.strip()
@@ -243,20 +245,20 @@ def from_files(job, form):
             image_folder = None
 
         job.tasks.append(
-                tasks.CreateDbTask(
-                    job_dir     = job.dir(),
-                    input_file  = test_file,
-                    db_name     = utils.constants.TEST_DB,
-                    backend     = backend,
-                    image_dims  = job.image_dims,
-                    image_folder= image_folder,
-                    resize_mode = job.resize_mode,
-                    encoding    = encoding,
-                    compression = compression,
-                    labels_file = job.labels_file,
-                    shuffle     = shuffle,
-                    )
-                )
+            tasks.CreateDbTask(
+                job_dir=job.dir(),
+                input_file=test_file,
+                db_name=utils.constants.TEST_DB,
+                backend=backend,
+                image_dims=job.image_dims,
+                image_folder=image_folder,
+                resize_mode=job.resize_mode,
+                encoding=encoding,
+                compression=compression,
+                labels_file=job.labels_file,
+                shuffle=shuffle,
+            )
+        )
 
 
 @blueprint.route('/new', methods=['GET'])
@@ -267,10 +269,11 @@ def new():
     """
     form = ImageClassificationDatasetForm()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
     return flask.render_template('datasets/images/classification/new.html', form=form)
+
 
 @blueprint.route('.json', methods=['POST'])
 @blueprint.route('', methods=['POST'], strict_slashes=False)
@@ -283,7 +286,7 @@ def create():
     """
     form = ImageClassificationDatasetForm()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
     if not form.validate_on_submit():
@@ -295,16 +298,16 @@ def create():
     job = None
     try:
         job = ImageClassificationDatasetJob(
-                username    = utils.auth.get_username(),
-                name        = form.dataset_name.data,
-                group       = form.group_name.data,
-                image_dims  = (
-                    int(form.resize_height.data),
-                    int(form.resize_width.data),
-                    int(form.resize_channels.data),
-                    ),
-                resize_mode = form.resize_mode.data
-                )
+            username=utils.auth.get_username(),
+            name=form.dataset_name.data,
+            group=form.group_name.data,
+            image_dims=(
+                int(form.resize_height.data),
+                int(form.resize_width.data),
+                int(form.resize_channels.data),
+            ),
+            resize_mode=form.resize_mode.data
+        )
 
         if form.method.data == 'folder':
             from_folders(job, form)
@@ -315,7 +318,7 @@ def create():
         else:
             raise ValueError('method not supported')
 
-        ## Save form data with the job so we can easily clone it later.
+        # Save form data with the job so we can easily clone it later.
         save_form_to_job(job, form)
 
         scheduler.add_job(job)
@@ -329,11 +332,13 @@ def create():
             scheduler.delete_job(job)
         raise
 
+
 def show(job, related_jobs=None):
     """
     Called from digits.dataset.views.datasets_show()
     """
     return flask.render_template('datasets/images/classification/show.html', job=job, related_jobs=related_jobs)
+
 
 def summary(job):
     """
@@ -387,10 +392,10 @@ def explore():
     else:
         total_entries = task.distribution[str(label)]
 
-    max_page = min((total_entries-1) / size, page + 5)
+    max_page = min((total_entries - 1) / size, page + 5)
     pages = range(min_page, max_page + 1)
     for key, value in reader.entries():
-        if count >= page*size:
+        if count >= page * size:
             datum = caffe_pb2.Datum()
             datum.ParseFromString(value)
             if label is None or datum.label == label:
@@ -403,16 +408,16 @@ def explore():
                     import caffe.io
                     arr = caffe.io.datum_to_array(datum)
                     # CHW -> HWC
-                    arr = arr.transpose((1,2,0))
+                    arr = arr.transpose((1, 2, 0))
                     if arr.shape[2] == 1:
                         # HWC -> HW
-                        arr = arr[:,:,0]
+                        arr = arr[:, :, 0]
                     elif arr.shape[2] == 3:
                         # BGR -> RGB
                         # XXX see issue #59
-                        arr = arr[:,:,[2,1,0]]
+                        arr = arr[:, :, [2, 1, 0]]
                     img = PIL.Image.fromarray(arr)
-                imgs.append({"label":labels[datum.label], "b64": utils.image.embed_image_html(img)})
+                imgs.append({"label": labels[datum.label], "b64": utils.image.embed_image_html(img)})
         if label is None:
             count += 1
         else:

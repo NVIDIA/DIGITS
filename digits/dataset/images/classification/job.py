@@ -11,6 +11,7 @@ from digits.utils import subclass, override, constants
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 2
 
+
 @subclass
 class ImageClassificationDatasetJob(ImageDatasetJob):
     """
@@ -35,13 +36,13 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                         import caffe_pb2
 
                         old_blob = caffe_pb2.BlobProto()
-                        with open(task.path(task.mean_file),'rb') as infile:
+                        with open(task.path(task.mean_file), 'rb') as infile:
                             old_blob.ParseFromString(infile.read())
                         data = np.array(old_blob.data).reshape(
-                                old_blob.channels,
-                                old_blob.height,
-                                old_blob.width)
-                        data = data[[2,1,0],...] # channel swap
+                            old_blob.channels,
+                            old_blob.height,
+                            old_blob.width)
+                        data = data[[2, 1, 0], ...]  # channel swap
                         new_blob = caffe_pb2.BlobProto()
                         new_blob.num = 1
                         new_blob.channels, new_blob.height, new_blob.width = data.shape
@@ -142,7 +143,7 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                     "train_count": t.train_count,
                     "val_count":   t.val_count,
                     "test_count":  t.test_count,
-                    } for t in self.parse_folder_tasks()],
+                } for t in self.parse_folder_tasks()],
                 'CreateDbTasks': [{
                     "name":             t.name(),
                     "entries":          t.entries_count,
@@ -152,8 +153,8 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                     "backend":          t.backend,
                     "encoding":         t.encoding,
                     "compression":      t.compression,
-                                      } for t in self.create_db_tasks()],
-                })
+                } for t in self.create_db_tasks()],
+            })
         return d
 
     def parse_folder_tasks(self):
@@ -188,5 +189,3 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
             if isinstance(t, tasks.CreateDbTask) and 'val' in t.name().lower():
                 return t
         return None
-
-

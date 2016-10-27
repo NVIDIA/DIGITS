@@ -3,18 +3,19 @@ from __future__ import absolute_import
 
 import time
 
+
 class Status():
     """
     A little class to store the state of Jobs and Tasks
     It's pickle-able!
     """
 
-    ### Enum-like attributes
+    # Enum-like attributes
 
     INIT = 'I'
-    WAIT =  'W'
-    RUN =   'R'
-    DONE =  'D'
+    WAIT = 'W'
+    RUN = 'R'
+    DONE = 'D'
     ABORT = 'A'
     ERROR = 'E'
 
@@ -24,7 +25,7 @@ class Status():
     def __str__(self):
         return self.val
 
-    ### Pickling
+    # Pickling
 
     def __getstate__(self):
         return self.val
@@ -32,7 +33,7 @@ class Status():
     def __setstate__(self, state):
         self.set_dict(state)
 
-    ### Operators
+    # Operators
 
     def __eq__(self, other):
         if type(other) == type(self):
@@ -50,7 +51,7 @@ class Status():
         else:
             return True
 
-    ### Member functions
+    # Member functions
 
     def set_dict(self, val):
         self.val = val
@@ -79,6 +80,7 @@ class Status():
     def is_running(self):
         return self.val in (self.INIT, self.WAIT, self.RUN)
 
+
 class StatusCls(object):
     """
     A class that stores a history of Status updates
@@ -106,7 +108,7 @@ class StatusCls(object):
         if self.status_history and value == self.status_history[-1][0]:
             return
 
-        self.status_history.append( (value, time.time()) )
+        self.status_history.append((value, time.time()))
 
         # Remove WAIT status if waited for less than 1 second
         if value == Status.RUN and len(self.status_history) >= 2:
@@ -125,4 +127,3 @@ class StatusCls(object):
         if value != Status.INIT:
             if hasattr(self, 'on_status_update'):
                 self.on_status_update()
-

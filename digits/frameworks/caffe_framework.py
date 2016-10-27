@@ -15,6 +15,7 @@ from digits.config import config_value
 from digits.model.tasks import CaffeTrainTask
 from digits.utils import subclass, override, parse_version
 
+
 @subclass
 class CaffeFramework(Framework):
 
@@ -151,4 +152,3 @@ class CaffeFramework(Framework):
                     > parse_version('0.14.0-alpha'))
         else:
             raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
-

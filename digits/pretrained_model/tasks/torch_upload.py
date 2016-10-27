@@ -6,8 +6,10 @@ from digits.utils import subclass, override
 from digits.status import Status
 from digits.pretrained_model.tasks import UploadPretrainedModelTask
 
+
 @subclass
 class TorchUploadTask(UploadPretrainedModelTask):
+
     def __init__(self, **kwargs):
         super(TorchUploadTask, self).__init__(**kwargs)
 

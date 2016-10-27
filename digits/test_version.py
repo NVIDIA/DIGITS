@@ -51,4 +51,3 @@ class TestVersion():
         import digits.version
 
         assert digits.__version__ == digits.version.__version__
-

@@ -19,13 +19,16 @@ test_utils.skipIfNotFramework('none')
 
 
 class TestUnescape():
+
     def test_hello(self):
         assert parse_folder.unescape('hello') == 'hello'
 
     def test_space(self):
         assert parse_folder.unescape('%20') == ' '
 
+
 class TestValidateFolder():
+
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp()
@@ -50,7 +53,9 @@ class TestValidateFolder():
     def test_nonexistent_url(self):
         assert parse_folder.validate_folder('http://localhost/not-a-url') == False
 
+
 class TestValidateOutputFile():
+
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp()
@@ -84,13 +89,15 @@ class TestValidateOutputFile():
 
     def test_nonexistent_dir(self):
         assert parse_folder.validate_output_file(
-                os.path.join(
-                    os.path.abspath('not-a-dir'),
-                    'output.txt'
-                    )
-                ) == False
+            os.path.join(
+                os.path.abspath('not-a-dir'),
+                'output.txt'
+            )
+        ) == False
+
 
 class TestValidateInputFile():
+
     @classmethod
     def setUpClass(cls):
         _handle, cls.tmpfile = tempfile.mkstemp()
@@ -108,26 +115,33 @@ class TestValidateInputFile():
         mock_access.return_value = False
         assert parse_folder.validate_input_file(self.tmpfile) == False, 'should not succeed without read permission'
 
+
 class TestValidateRange():
+
     def test_no_range(self):
         assert parse_folder.validate_range(0) == True
 
     def test_min_less(self):
         assert parse_folder.validate_range(-1, min_value=0) == False
+
     def test_min_equal(self):
         assert parse_folder.validate_range(0, min_value=0) == True
+
     def test_min_more(self):
         assert parse_folder.validate_range(1, min_value=0) == True
 
     def test_max_less(self):
         assert parse_folder.validate_range(9, max_value=10) == True
+
     def test_max_equal(self):
         assert parse_folder.validate_range(10, max_value=10) == True
+
     def test_max_more(self):
         assert parse_folder.validate_range(11, max_value=10) == False
 
     def test_allow_none_true(self):
         assert parse_folder.validate_range(None, allow_none=True) == True
+
     def test_allow_none_false(self):
         assert parse_folder.validate_range(None, allow_none=False) == False
 
@@ -138,6 +152,7 @@ class TestValidateRange():
 @mock.patch('digits.tools.parse_folder.validate_output_file')
 @mock.patch('digits.tools.parse_folder.validate_input_file')
 class TestCalculatePercentages():
+
     @raises(AssertionError)
     def test_making_0(self, mock_input, mock_output):
         parse_folder.calculate_percentages(None, None, None, None, None, None, None)
@@ -153,11 +168,12 @@ class TestCalculatePercentages():
         ]
 
         for supplied, expected in expected_outputs:
-            args = {k: None for k in ['labels_file', 'train_file', 'percent_train', 'val_file', 'percent_val', 'test_file', 'percent_test']}
+            args = {k: None for k in ['labels_file', 'train_file', 'percent_train',
+                                      'val_file', 'percent_val', 'test_file', 'percent_test']}
             args.update({supplied: ''})
 
             output = parse_folder.calculate_percentages(**args)
-            assert output == expected, 'expected output of {}, got {}'.format(output, expected) 
+            assert output == expected, 'expected output of {}, got {}'.format(output, expected)
 
     def test_making_2(self, mock_input, mock_output):
         mock_input.return_value = True
@@ -167,15 +183,15 @@ class TestCalculatePercentages():
         expected_outputs = itertools.izip(permutes, itertools.repeat((32, 68)))
 
         for supplied, expected in expected_outputs:
-            args = {k: None for k in ['labels_file', 'train_file', 'percent_train', 'val_file', 'percent_val', 'test_file', 'percent_test']}
-            args.update({k+'_file': '' for k in supplied})
-            args.update({'percent_'+k: v for k, v in itertools.izip(supplied, expected)})
+            args = {k: None for k in ['labels_file', 'train_file', 'percent_train',
+                                      'val_file', 'percent_val', 'test_file', 'percent_test']}
+            args.update({k + '_file': '' for k in supplied})
+            args.update({'percent_' + k: v for k, v in itertools.izip(supplied, expected)})
 
             # Tricky line. itertools returns combinations in sorted order, always.
             # The order of the returned non-zero values should always be correct.
             output = [x for x in parse_folder.calculate_percentages(**args) if x != 0]
-            assert output == list(expected), 'expected output of {}, got {}'.format(output, expected) 
-
+            assert output == list(expected), 'expected output of {}, got {}'.format(output, expected)
 
     def test_making_3_all_given(self, mock_input, mock_output):
         mock_input.return_value = True
@@ -189,7 +205,6 @@ class TestCalculatePercentages():
             test_file='not-a-file.txt', percent_test=45
         ) == expected, 'Calculate percentages should return identical values of {}'.format(expected)
 
-
     def test_making_3_2_given(self, mock_input, mock_output):
         mock_input.return_value = True
         mock_output.return_value = True
@@ -201,7 +216,6 @@ class TestCalculatePercentages():
             val_file='not-a-file.txt', percent_val=30,
             test_file='not-a-file.txt', percent_test=None
         )[2] == expected, 'Calculate percentages should calculate third value of {}'.format(expected)
-
 
     @raises(AssertionError)
     def test_making_out_of_range(self, mock_input, mock_output):
@@ -240,7 +254,7 @@ class TestParseWebListing():
 </table</body>\n',
                     ['cat1/', 'cat2/'],
                     ['cat.jpg'],
-                    ),
+                ),
                 # Apache 2.4.7
                 (
                     '<html><head></head><body><table>\n \
@@ -251,7 +265,7 @@ class TestParseWebListing():
 </table</body></html>\n',
                     ['dog/'],
                     ['dog1.jpeg', 'dog2.png'],
-                    ),
+                ),
                 # Nginx
                 (
                     '<html><head></head><body>\n \
@@ -259,8 +273,8 @@ class TestParseWebListing():
 <a href="birds/">birds/</a> 02-Feb-1999 12:34 -',
                     ['birds/'],
                     ['bird.jpg'],
-                    ),
-                ]:
+                ),
+        ]:
             with mock.patch('digits.tools.parse_folder.requests') as mock_requests:
                 response = mock.Mock()
                 response.status_code = mock_requests.codes.ok
@@ -271,27 +285,30 @@ class TestParseWebListing():
     def check_listing(self, rc):
         assert parse_folder.parse_web_listing('any_url') == rc
 
+
 class TestSplitIndices():
+
     def test_indices(self):
         for size in [5, 22, 32]:
             for percent_b in range(0, 100, 31):
-                for percent_c in range(0, 100-percent_b, 41):
+                for percent_c in range(0, 100 - percent_b, 41):
                     yield self.check_split, size, percent_b, percent_c
 
     def check_split(self, size, pct_b, pct_c):
-        ideala = size * float(100 - pct_b - pct_c)/100.0
-        idealb = size * float(100 - pct_c)/100.0
+        ideala = size * float(100 - pct_b - pct_c) / 100.0
+        idealb = size * float(100 - pct_c) / 100.0
         idxa, idxb = parse_folder.three_way_split_indices(size, pct_b, pct_c)
 
-        assert abs(ideala-idxa) <= 2, 'split should be close to {}, is {}'.format(ideala, idxa)
-        assert abs(idealb-idxb) <= 2, 'split should be close to {}, is {}'.format(idealb, idxb)
+        assert abs(ideala - idxa) <= 2, 'split should be close to {}, is {}'.format(ideala, idxa)
+        assert abs(idealb - idxb) <= 2, 'split should be close to {}, is {}'.format(idealb, idxb)
+
 
 class TestParseFolder():
 
     def test_all_train(self):
         tmpdir = tempfile.mkdtemp()
-        img = PIL.Image.fromarray(np.zeros((10,10,3), dtype='uint8'))
-        classes = ['A','B','C']
+        img = PIL.Image.fromarray(np.zeros((10, 10, 3), dtype='uint8'))
+        classes = ['A', 'B', 'C']
         for cls in classes:
             os.makedirs(os.path.join(tmpdir, cls))
             img.save(os.path.join(tmpdir, cls, 'image1.png'))
@@ -301,11 +318,10 @@ class TestParseFolder():
         train_file = os.path.join(tmpdir, 'train.txt')
 
         parse_folder.parse_folder(tmpdir, labels_file, train_file=train_file,
-                percent_train=100, percent_val=0, percent_test=0)
+                                  percent_train=100, percent_val=0, percent_test=0)
 
         with open(labels_file) as infile:
             parsed_classes = [line.strip() for line in infile]
             assert parsed_classes == classes, '%s != %s' % (parsed_classes, classes)
 
         shutil.rmtree(tmpdir)
-

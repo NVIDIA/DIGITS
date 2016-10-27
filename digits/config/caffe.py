@@ -153,7 +153,7 @@ def get_version_and_flavor(executable):
 
     version = parse_version(version_string)
 
-    if parse_version(0,99,0) > version > parse_version(0,9,0):
+    if parse_version(0, 99, 0) > version > parse_version(0, 9, 0):
         flavor = 'NVIDIA'
         minimum_version = '0.11.0'
         if version < parse_version(minimum_version):
@@ -185,7 +185,7 @@ def get_version_from_cmdline(executable):
     pattern = 'version'
     for line in p.stdout:
         if pattern in line:
-            return line[line.find(pattern) + len(pattern)+1:].strip()
+            return line[line.find(pattern) + len(pattern) + 1:].strip()
     return None
 
 
@@ -220,7 +220,6 @@ def get_version_from_soname(executable):
         return None
 
 
-
 if 'CAFFE_ROOT' in os.environ:
     executable, version, flavor = load_from_envvar('CAFFE_ROOT')
 elif 'CAFFE_HOME' in os.environ:
@@ -232,7 +231,6 @@ option_list['caffe'] = {
     'executable': executable,
     'version': version,
     'flavor': flavor,
-    'multi_gpu': (flavor == 'BVLC' or parse_version(version) >= parse_version(0,12)),
+    'multi_gpu': (flavor == 'BVLC' or parse_version(version) >= parse_version(0, 12)),
     'cuda_enabled': (len(device_query.get_devices()) > 0),
 }
-

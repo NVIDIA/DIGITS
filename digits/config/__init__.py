@@ -12,9 +12,9 @@ from . import torch
 from . import server_name
 from . import store_option
 
+
 def config_value(option):
     """
     Return the current configuration value for the given option
     """
     return option_list[option]
-

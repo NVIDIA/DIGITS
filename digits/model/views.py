@@ -23,6 +23,7 @@ from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
 
+
 @blueprint.route('/<job_id>.json', methods=['GET'])
 @blueprint.route('/<job_id>', methods=['GET'])
 def show(job_id):
@@ -47,7 +48,8 @@ def show(job_id):
             return model_images.generic.views.show(job, related_jobs=related_jobs)
         else:
             raise werkzeug.exceptions.BadRequest(
-                    'Invalid job type')
+                'Invalid job type')
+
 
 @blueprint.route('/customize', methods=['POST'])
 def customize():
@@ -84,8 +86,8 @@ def customize():
                 snapshot = job.path(filename)
                 break
 
-    if isinstance(job,PretrainedModelJob):
-        model_def = open(job.get_model_def_path(),'r')
+    if isinstance(job, PretrainedModelJob):
+        model_def = open(job.get_model_def_path(), 'r')
         network = model_def.read()
         snapshot = job.get_weights_path()
         python_layer = job.get_python_layer_path()
@@ -94,10 +96,10 @@ def customize():
         python_layer = None
 
     return json.dumps({
-            'network': network,
-            'snapshot': snapshot,
-            'python_layer': python_layer
-            })
+        'network': network,
+        'snapshot': snapshot,
+        'python_layer': python_layer
+    })
 
 
 @blueprint.route('/view-config/<extension_id>', methods=['GET'])
@@ -127,13 +129,14 @@ def visualize_network():
 
     return ret
 
+
 @blueprint.route('/visualize-lr', methods=['POST'])
 def visualize_lr():
     """
     Returns a JSON object of data used to create the learning rate graph
     """
     policy = flask.request.form['lr_policy']
-	# There may be multiple lrs if the learning_rate is swept
+    # There may be multiple lrs if the learning_rate is swept
     lrs = map(float, flask.request.form['learning_rate'].split(','))
     if policy == 'fixed':
         pass
@@ -164,7 +167,7 @@ def visualize_lr():
             if policy == 'fixed':
                 data.append(lr)
             elif policy == 'step':
-                data.append(lr * math.pow(gamma, math.floor(float(i)/step)))
+                data.append(lr * math.pow(gamma, math.floor(float(i) / step)))
             elif policy == 'multistep':
                 if current_step < len(steps) and i >= steps[current_step]:
                     current_step += 1
@@ -174,15 +177,16 @@ def visualize_lr():
             elif policy == 'inv':
                 data.append(lr * math.pow(1.0 + gamma * i, -power))
             elif policy == 'poly':
-                data.append(lr * math.pow(1.0 - float(i)/100, power))
+                data.append(lr * math.pow(1.0 - float(i) / 100, power))
             elif policy == 'sigmoid':
                 data.append(lr / (1.0 + math.exp(gamma * (i - step))))
         datalist.append(data)
 
     return json.dumps({'data': {'columns': datalist}})
 
+
 @auth.requires_login
-@blueprint.route('/<job_id>/to_pretrained',methods=['GET', 'POST'])
+@blueprint.route('/<job_id>/to_pretrained', methods=['GET', 'POST'])
 def to_pretrained(job_id):
     job = scheduler.get_job(job_id)
 
@@ -200,7 +204,7 @@ def to_pretrained(job_id):
 
     # Write the stats of the job to json,
     # and store in tempfile (for archive)
-    info = job.json_dict(verbose=False,epoch=epoch)
+    info = job.json_dict(verbose=False, epoch=epoch)
 
     task = job.train_task()
     snapshot_filename = None
@@ -217,27 +221,27 @@ def to_pretrained(job_id):
 
     job = PretrainedModelJob(
         snapshot_filename,
-        os.path.join(job.dir(), task.model_file) ,
+        os.path.join(job.dir(), task.model_file),
         labels_path,
         info["framework"],
         info["image dimensions"][2],
         resize_mode,
         info["image dimensions"][0],
         info["image dimensions"][1],
-        username = auth.get_username(),
-        name = info["name"]
+        username=auth.get_username(),
+        name=info["name"]
     )
 
     scheduler.add_job(job)
 
-    return flask.redirect(flask.url_for('digits.views.home',tab=3)), 302
+    return flask.redirect(flask.url_for('digits.views.home', tab=3)), 302
 
 
 @blueprint.route('/<job_id>/download',
-        methods=['GET', 'POST'],
-        defaults={'extension': 'tar.gz'})
+                 methods=['GET', 'POST'],
+                 defaults={'extension': 'tar.gz'})
 @blueprint.route('/<job_id>/download.<extension>',
-        methods=['GET', 'POST'])
+                 methods=['GET', 'POST'])
 def download(job_id, extension):
     """
     Return a tarball of all files required to run the model
@@ -259,7 +263,7 @@ def download(job_id, extension):
 
     # Write the stats of the job to json,
     # and store in tempfile (for archive)
-    info = json.dumps(job.json_dict(verbose=False,epoch=epoch), sort_keys=True, indent=4, separators=(',', ': '))
+    info = json.dumps(job.json_dict(verbose=False, epoch=epoch), sort_keys=True, indent=4, separators=(',', ': '))
     info_io = io.BytesIO()
     info_io.write(info)
 
@@ -294,7 +298,9 @@ def download(job_id, extension):
     response.headers['Content-Disposition'] = 'attachment; filename=%s_epoch_%s.%s' % (job.id(), epoch, extension)
     return response
 
+
 class JobBasicInfo(object):
+
     def __init__(self, name, ID, status, time, framework_id):
         self.name = name
         self.id = ID
@@ -302,7 +308,9 @@ class JobBasicInfo(object):
         self.time = time
         self.framework_id = framework_id
 
+
 class ColumnType(object):
+
     def __init__(self, name, has_suffix, find_fn):
         self.name = name
         self.has_suffix = has_suffix
@@ -314,8 +322,9 @@ class ColumnType(object):
         else:
             return attr
 
+
 def get_column_attrs():
     job_outs = [set(j.train_task().train_outputs.keys() + j.train_task().val_outputs.keys())
-        for j in scheduler.jobs.values() if isinstance(j, ModelJob)]
+                for j in scheduler.jobs.values() if isinstance(j, ModelJob)]
 
     return reduce(lambda acc, j: acc.union(j), job_outs, set())

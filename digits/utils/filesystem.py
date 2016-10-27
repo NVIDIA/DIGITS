@@ -7,6 +7,7 @@ import platform
 import re
 import shutil
 
+
 def get_tree_size(start_path):
     """
     return size (in bytes) of filesystem tree
@@ -20,6 +21,7 @@ def get_tree_size(start_path):
             total_size += os.path.getsize(fp)
     return total_size
 
+
 def get_python_file_dst(dirname, basename):
     basename = os.path.basename(basename)
     (root, ext) = os.path.splitext(basename)
@@ -30,6 +32,7 @@ def get_python_file_dst(dirname, basename):
         ValueError('Python file, %s, already exists.' % filename)
     return filename
 
+
 def copy_python_layer_file(from_client, job_dir, client_file, server_file):
     if from_client and client_file:
         filename = get_python_file_dst(job_dir, client_file.filename)
@@ -37,6 +40,7 @@ def copy_python_layer_file(from_client, job_dir, client_file, server_file):
     elif server_file and len(server_file) > 0:
         filename = get_python_file_dst(job_dir, server_file)
         shutil.copy(server_file, filename)
+
 
 def tail(file, n=40):
     """
@@ -59,6 +63,7 @@ def tail(file, n=40):
                     tailing_lines.popleft()
         output = ''.join(tailing_lines)
     return output
+
 
 def dir_hash(dir_name):
     """

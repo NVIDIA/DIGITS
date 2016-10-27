@@ -18,6 +18,7 @@ from digits.webapp import app
 
 blueprint = flask.Blueprint(__name__, __name__)
 
+
 @blueprint.route('/resize-example', methods=['POST'])
 def resize_example():
     """
@@ -35,9 +36,9 @@ def resize_example():
         encoding = flask.request.form['encoding']
 
         image = utils.image.resize_image(image, height, width,
-                channels=channels,
-                resize_mode=resize_mode,
-                )
+                                         channels=channels,
+                                         resize_mode=resize_mode,
+                                         )
 
         if backend != 'lmdb' or encoding == 'none':
             length = len(image.tostring())
@@ -56,10 +57,9 @@ def resize_example():
         data = utils.image.embed_image_html(image)
 
         return '<img src=\"' + data + '\" style=\"width:%spx;height=%spx\" />\n<br>\n<i>Image size: %s</i>' % (
-                width,
-                height,
-                utils.sizeof_fmt(length)
-                )
+            width,
+            height,
+            utils.sizeof_fmt(length)
+        )
     except Exception as e:
         return '%s: %s' % (type(e).__name__, e)
-

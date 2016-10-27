@@ -60,6 +60,7 @@ def shrink_case(case):
 
 
 class Contour(object):
+
     def __init__(self, ctr_path):
         self.ctr_path = ctr_path
         match = re.search(r"/([^/]*)/contours-manual/IRCCI-expert/IM-0001-(\d{4})-icontour-manual.txt", ctr_path)

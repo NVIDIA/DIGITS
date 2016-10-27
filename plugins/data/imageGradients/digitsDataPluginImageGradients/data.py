@@ -33,7 +33,7 @@ class DataIngestion(DataIngestionInterface):
         label = np.array([xslope, yslope])
         a = xslope * 255 / self.image_width
         b = yslope * 255 / self.image_height
-        image = a * (self.xx - self.image_width/2) + b * (self.yy - self.image_height/2) + 127.5
+        image = a * (self.xx - self.image_width / 2) + b * (self.yy - self.image_height / 2) + 127.5
 
         image = image.astype('uint8')
 

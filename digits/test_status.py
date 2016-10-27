@@ -55,7 +55,6 @@ class TestStatus():
         assert not (s != 'I'), 'should be false.'
         assert (s != 7), 'should be true.'
 
-
     def test_pickle(self):
         # Testing __setstate__ and __getstate__
 
@@ -83,4 +82,3 @@ class TestStatus():
         s = Status.WAIT
 
         assert str(s) == 'W', 'should be W'
-

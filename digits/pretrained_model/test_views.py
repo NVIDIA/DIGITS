@@ -38,10 +38,12 @@ import caffe_pb2
 TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
 
+
 class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTestWithModel):
     """
     Tests uploading Pretrained Models
     """
+
     def test_upload_manual(self):
         # job = digits.webapp.scheduler.get_job(self.model_id)
         job = digits.webapp.scheduler.get_job(self.model_id)
@@ -51,17 +53,17 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
 
         # Write the stats of the job to json,
         # and store in tempfile (for archive)
-        info = job.json_dict(verbose=False,epoch=-1)
+        info = job.json_dict(verbose=False, epoch=-1)
         task = job.train_task()
 
         snapshot_filename = task.get_snapshot(-1)
         weights_file = open(snapshot_filename, 'r')
-        model_def_file = open(os.path.join(job.dir(),task.model_file), 'r')
-        labels_file = open(os.path.join(task.dataset.dir(),info["labels file"]), 'r')
+        model_def_file = open(os.path.join(job.dir(), task.model_file), 'r')
+        labels_file = open(os.path.join(task.dataset.dir(), info["labels file"]), 'r')
 
         rv = self.app.post(
             '/pretrained_models/new',
-            data = {
+            data={
                 'weights_file': weights_file,
                 'model_def_file': model_def_file,
                 'labels_file': labels_file,
@@ -71,8 +73,8 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
                 'width': info["image dimensions"][0],
                 'height': info["image dimensions"][1],
                 'job_name': 'test_create_pretrained_model_job'
-                }
-            )
+            }
+        )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
 
@@ -84,13 +86,13 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
         if job is None:
             raise AssertionError('Failed To Create Job')
 
-        info = json.dumps(job.json_dict(verbose=False,epoch=-1), sort_keys=True, indent=4, separators=(',', ': '))
+        info = json.dumps(job.json_dict(verbose=False, epoch=-1), sort_keys=True, indent=4, separators=(',', ': '))
         info_io = io.BytesIO()
         info_io.write(info)
 
         tmp = tempfile.NamedTemporaryFile()
 
-        tf  = tarfile.open(fileobj=tmp, mode='w:')
+        tf = tarfile.open(fileobj=tmp, mode='w:')
         for path, name in job.download_files(-1):
             tf.add(path, arcname=name)
 
@@ -103,18 +105,20 @@ class BaseTestUpload(digits.model.images.classification.test_views.BaseViewsTest
 
         rv = self.app.post(
             '/pretrained_models/upload_archive',
-            data = {
+            data={
                 'archive': tmp
-                }
-            )
+            }
+        )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         tmp.close()
 
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
 
+
 class TestCaffeUpload(BaseTestUpload, test_utils.CaffeMixin):
     pass
+
 
 class TestTorchUpload(BaseTestUpload, test_utils.TorchMixin):
     pass

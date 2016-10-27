@@ -37,6 +37,7 @@ class TestScheduler():
 
 @subclass
 class JobForTesting(Job):
+
     @override
     def job_type(self):
         return 'Job For Testing'
@@ -60,4 +61,3 @@ class TestSchedulerFlow():
             assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
             assert self.s.delete_job(job), 'failed to delete job'
             assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
-

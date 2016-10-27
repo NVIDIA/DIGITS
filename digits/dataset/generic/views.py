@@ -33,7 +33,7 @@ def new(extension_id):
 
     form = GenericDatasetForm()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     utils.forms.fill_form_if_cloned(form)
 
     extension = extensions.data.get_extension(extension_id)
@@ -41,7 +41,7 @@ def new(extension_id):
         raise ValueError("Unknown extension '%s'" % extension_id)
     extension_form = extension.get_dataset_form()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     utils.forms.fill_form_if_cloned(extension_form)
 
     template, context = extension.get_dataset_template(extension_form)
@@ -53,7 +53,7 @@ def new(extension_id):
         extension_id=extension_id,
         extension_html=rendered_extension,
         form=form
-        )
+    )
 
 
 @blueprint.route('/create/<extension_id>.json', methods=['POST'])
@@ -114,9 +114,9 @@ def create(extension_id):
             force_same_shape=form.dsopts_force_same_shape.data,
             extension_id=extension_id,
             extension_userdata=extension.get_user_data(),
-            )
+        )
 
-        ## Save form data with the job so we can easily clone it later.
+        # Save form data with the job so we can easily clone it later.
         utils.forms.save_form_to_job(job, form)
         utils.forms.save_form_to_job(job, extension_form)
 
@@ -151,9 +151,9 @@ def explore():
             and job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
         # assume single-channel 8-bit palette
         palette = job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]
-        palette = np.array(palette).reshape((len(palette)/3,3)) / 255.
+        palette = np.array(palette).reshape((len(palette) / 3, 3)) / 255.
         # normalize input pixels to [0,1]
-        norm = mpl.colors.Normalize(vmin=0,vmax=255)
+        norm = mpl.colors.Normalize(vmin=0, vmax=255)
         # create map
         cmap = mpl.pyplot.cm.ScalarMappable(norm=norm,
                                             cmap=mpl.colors.ListedColormap(palette))
@@ -170,10 +170,10 @@ def explore():
     min_page = max(0, page - 5)
     total_entries = reader.total_entries
 
-    max_page = min((total_entries-1) / size, page + 5)
+    max_page = min((total_entries - 1) / size, page + 5)
     pages = range(min_page, max_page + 1)
     for key, value in reader.entries():
-        if count >= page*size:
+        if count >= page * size:
             datum = caffe_pb2.Datum()
             datum.ParseFromString(value)
             if not datum.encoded:
@@ -184,7 +184,7 @@ def explore():
             img = PIL.Image.open(s)
             if cmap and img.mode in ['L', '1']:
                 data = np.array(img)
-                data = cmap.to_rgba(data)*255
+                data = cmap.to_rgba(data) * 255
                 data = data.astype('uint8')
                 # keep RGB values only, remove alpha channel
                 data = data[:, :, 0:3]

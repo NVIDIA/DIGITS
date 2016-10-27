@@ -32,6 +32,8 @@ logger = logging.getLogger('digits.tools.inference')
 """
 Perform inference on a list of images using the specified model
 """
+
+
 def infer(input_list,
           output_dir,
           jobs_dir,
@@ -104,14 +106,14 @@ def infer(input_list,
                 import caffe.io
                 arr = caffe.io.datum_to_array(datum)
                 # CHW -> HWC
-                arr = arr.transpose((1,2,0))
+                arr = arr.transpose((1, 2, 0))
                 if arr.shape[2] == 1:
                     # HWC -> HW
-                    arr = arr[:,:,0]
+                    arr = arr[:, :, 0]
                 elif arr.shape[2] == 3:
                     # BGR -> RGB
                     # XXX see issue #59
-                    arr = arr[:,:,[2,1,0]]
+                    arr = arr[:, :, [2, 1, 0]]
                 img = arr
             input_ids.append(key)
             input_data.append(img)
@@ -171,8 +173,8 @@ def infer(input_list,
     db = h5py.File(db_path, 'w')
 
     # write input paths and images to database
-    db.create_dataset("input_ids", data = input_ids)
-    db.create_dataset("input_data", data = input_data)
+    db.create_dataset("input_ids", data=input_ids)
+    db.create_dataset("input_data", data=input_data)
 
     # write outputs to database
     db_outputs = db.create_group("outputs")
@@ -185,7 +187,7 @@ def infer(input_list,
         dset.attrs['id'] = output_id
 
     # write visualization data
-    if visualizations is not None and len(visualizations)>0:
+    if visualizations is not None and len(visualizations) > 0:
         db_layers = db.create_group("layers")
         for idx, layer in enumerate(visualizations):
             vis = layer['vis'] if layer['vis'] is not None else np.empty(0)
@@ -209,7 +211,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Inference tool - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument(
         'input_list',
@@ -221,27 +223,27 @@ if __name__ == '__main__':
         'model',
         help='Model ID')
 
-    ### Optional arguments
+    # Optional arguments
     parser.add_argument(
         '-e',
         '--epoch',
         default='-1',
         help="Epoch (-1 for last)"
-        )
+    )
 
     parser.add_argument(
         '-j',
         '--jobs_dir',
         default='none',
         help='Jobs directory (default: from DIGITS config)',
-        )
+    )
 
     parser.add_argument(
         '-l',
         '--layers',
         default='none',
         help='Which layers to write to output ("none" [default] or "all")',
-        )
+    )
 
     parser.add_argument(
         '-b',
@@ -249,7 +251,7 @@ if __name__ == '__main__':
         type=int,
         default=1,
         help='Batch size',
-        )
+    )
 
     parser.add_argument(
         '-g',
@@ -257,13 +259,13 @@ if __name__ == '__main__':
         type=int,
         default=None,
         help='GPU to use (as in nvidia-smi output, default: None)',
-        )
+    )
 
     parser.add_argument(
         '--db',
         action='store_true',
         help='Input file is a database',
-        )
+    )
 
     parser.add_argument(
         '--resize',
@@ -291,7 +293,7 @@ if __name__ == '__main__':
             args['gpu'],
             args['db'],
             args['resize']
-            )
+        )
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))
         raise

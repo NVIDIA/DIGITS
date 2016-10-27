@@ -17,6 +17,7 @@ from digits.config import config_value
 from digits.model.tasks import TorchTrainTask
 from digits.utils import subclass, override
 
+
 @subclass
 class TorchFramework(Framework):
 
@@ -37,8 +38,8 @@ class TorchFramework(Framework):
                               'RMSPROP', 'ADADELTA', 'ADAM']
 
     SUPPORTED_DATA_TRANSFORMATION_TYPES = ['MEAN_SUBTRACTION', 'CROPPING']
-    SUPPORTED_DATA_AUGMENTATION_TYPES = ['FLIPPING', 'QUAD_ROTATION', 'ARBITRARY_ROTATION', 
-                                          'SCALING', 'NOISE', 'HSV_SHIFTING']
+    SUPPORTED_DATA_AUGMENTATION_TYPES = ['FLIPPING', 'QUAD_ROTATION', 'ARBITRARY_ROTATION',
+                                         'SCALING', 'NOISE', 'HSV_SHIFTING']
 
     def __init__(self):
         super(TorchFramework, self).__init__()
@@ -50,7 +51,7 @@ class TorchFramework(Framework):
         """
         create train task
         """
-        return TorchTrainTask(framework_id = self.framework_id, **kwargs)
+        return TorchTrainTask(framework_id=self.framework_id, **kwargs)
 
     @override
     def get_standard_network_desc(self, network):
@@ -98,12 +99,12 @@ class TorchFramework(Framework):
         return previous_network
 
     @override
-    def get_network_from_path(self,path):
+    def get_network_from_path(self, path):
         """
         return network object from a file path
         """
         with open(path, 'r') as f:
-            network=f.read()
+            network = f.read()
         return network
 
     @override
@@ -123,27 +124,28 @@ class TorchFramework(Framework):
         os.write(temp_network_handle, desc)
         os.close(temp_network_handle)
 
-        try: # do this in a try..finally clause to make sure we delete the temp file
+        try:  # do this in a try..finally clause to make sure we delete the temp file
             # build command line
             torch_bin = config_value('torch')['executable']
 
             args = [torch_bin,
-                    os.path.join(os.path.dirname(digits.__file__),'tools','torch','main.lua'),
+                    os.path.join(os.path.dirname(digits.__file__), 'tools', 'torch', 'main.lua'),
                     '--network=%s' % os.path.splitext(os.path.basename(temp_network_path))[0],
                     '--networkDirectory=%s' % os.path.dirname(temp_network_path),
-                    '--subtractMean=none', # we are not providing a mean image
+                    '--subtractMean=none',  # we are not providing a mean image
                     '--visualizeModel=yes',
                     '--type=float'
                     ]
 
             # execute command
             p = subprocess.Popen(args,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        close_fds=True,
-                        )
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 close_fds=True,
+                                 )
 
-            regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+            # TODO: need to include regular expression for MAC color codes
+            regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)
 
             # the network description will be accumulated from the command output
             # when collecting_net_definition==True
@@ -179,8 +181,3 @@ class TorchFramework(Framework):
                 return output
         finally:
             os.remove(temp_network_path)
-
-
-
-
-

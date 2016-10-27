@@ -20,6 +20,7 @@ caffe = CaffeFramework()
 #  utility functions
 #
 
+
 def get_frameworks():
     """
     return list of all available framework instances
@@ -30,6 +31,7 @@ def get_frameworks():
         frameworks.append(torch)
     return frameworks
 
+
 def get_framework_by_id(framework_id):
     """
     return framework instance associated with given id
@@ -38,5 +40,3 @@ def get_framework_by_id(framework_id):
         if fw.get_id() == framework_id:
             return fw
     return None
-
-

@@ -101,8 +101,8 @@ def create_lmdbs(folder, file_list, image_count=None, db_batch_size=None):
 
         for i in xrange(image_count):
             # pick up random indices from image list
-            index1 = random.randint(0, len(images)-1)
-            index2 = random.randint(0, len(images)-1)
+            index1 = random.randint(0, len(images) - 1)
+            index2 = random.randint(0, len(images) - 1)
             # label=1 if images are from the same class otherwise label=0
             label = 1 if int(images[index1][1]) == int(images[index2][1]) else 0
             # load images from files
@@ -145,7 +145,7 @@ def create_lmdbs(folder, file_list, image_count=None, db_batch_size=None):
                 image_batch = []
                 label_batch = []
 
-            if i % (image_count/20) == 0:
+            if i % (image_count / 20) == 0:
                 print "%d/%d" % (i, image_count)
 
         # close databases
@@ -177,7 +177,7 @@ def _write_batch_to_lmdb(db, batch):
     except lmdb.MapFullError:
         # double the map_size
         curr_limit = db.info()['map_size']
-        new_limit = curr_limit*2
+        new_limit = curr_limit * 2
         try:
             db.set_mapsize(new_limit)  # double it
         except AttributeError as e:

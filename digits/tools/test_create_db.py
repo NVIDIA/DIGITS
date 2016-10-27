@@ -40,13 +40,13 @@ class BaseTest():
 
         # Create a color image
         cls.color_image_file = tempfile.mkstemp(suffix='.png')
-        cls.numpy_image_color = np.ones((8,10,3), dtype='uint8')
+        cls.numpy_image_color = np.ones((8, 10, 3), dtype='uint8')
         cls.pil_image_color = PIL.Image.fromarray(cls.numpy_image_color)
         cls.pil_image_color.save(cls.color_image_file[1])
 
         # Create a grayscale image
         cls.gray_image_file = tempfile.mkstemp(suffix='.png')
-        cls.numpy_image_gray = np.ones((8,10), dtype='uint8')
+        cls.numpy_image_gray = np.ones((8, 10), dtype='uint8')
         cls.pil_image_gray = PIL.Image.fromarray(cls.numpy_image_gray)
         cls.pil_image_gray.save(cls.gray_image_file[1])
 
@@ -90,9 +90,10 @@ class TestFillLoadQueue(BaseTest):
     def check_empty_file(self, shuffle):
         queue = Queue.Queue()
         nose.tools.assert_raises(
-                create_db.BadInputFileError,
-                create_db._fill_load_queue,
-                self.empty_file[1], queue, shuffle)
+            create_db.BadInputFileError,
+            create_db._fill_load_queue,
+            self.empty_file[1], queue, shuffle)
+
 
 class TestParseLine():
 
@@ -103,7 +104,7 @@ class TestParseLine():
                 (2, 'image.jpg 2\n'),
                 (3, 'image.jpg           3'),
                 (4, 'spaces in filename.jpg 4'),
-                ]:
+        ]:
             yield self.check_good_line, line, label
 
     def check_good_line(self, line, label):
@@ -117,25 +118,26 @@ class TestParseLine():
                 'nolabel.jpg',
                 'non-number.jpg five',
                 'negative.jpg -1',
-                ]:
+        ]:
             yield self.check_bad_line, line
 
     def check_bad_line(self, line):
         nose.tools.assert_raises(
-                create_db.ParseLineError,
-                create_db._parse_line,
-                line, Counter()
-                )
+            create_db.ParseLineError,
+            create_db._parse_line,
+            line, Counter()
+        )
 
 
 class TestCalculateBatchSize():
+
     def test(self):
         for count, batch_size in [
                 (1, 1),
                 (50, 50),
                 (100, 100),
                 (200, 100),
-                ]:
+        ]:
             yield self.check, count, batch_size
 
     def check(self, count, batch_size):
@@ -143,6 +145,7 @@ class TestCalculateBatchSize():
 
 
 class TestCalculateNumThreads():
+
     def test(self):
         for batch_size, shuffle, num in [
                 (1000, True, 10),
@@ -152,15 +155,16 @@ class TestCalculateNumThreads():
                 (50, True, 7),
                 (4, True, 2),
                 (1, True, 1),
-                ]:
+        ]:
             yield self.check, batch_size, shuffle, num
 
     def check(self, batch_size, shuffle, num):
         assert create_db._calculate_num_threads(
-                batch_size, shuffle) == num
+            batch_size, shuffle) == num
 
 
 class TestInitialImageSum():
+
     def test_color(self):
         s = create_db._initial_image_sum(10, 10, 3)
         assert s.shape == (10, 10, 3)
@@ -173,6 +177,7 @@ class TestInitialImageSum():
 
 
 class TestImageToDatum(BaseTest):
+
     def test(self):
         for compression in None, 'png', 'jpg':
             yield self.check_color, compression
@@ -192,7 +197,9 @@ class TestImageToDatum(BaseTest):
         assert d.channels == 1
         assert d.encoded == bool(compression)
 
+
 class TestSaveMeans():
+
     def test(self):
         for color in True, False:
             d = tempfile.mkdtemp()
@@ -203,12 +210,13 @@ class TestSaveMeans():
     def check(self, directory, filename, color):
         filename = os.path.join(directory, filename)
         if color:
-            s = np.ones((8,10,3),dtype='float64')
+            s = np.ones((8, 10, 3), dtype='float64')
         else:
-            s = np.ones((8,10),dtype='float64')
+            s = np.ones((8, 10), dtype='float64')
 
         create_db._save_means(s, 2, [filename])
         assert os.path.exists(filename)
+
 
 class BaseCreationTest(BaseTest):
 
@@ -219,21 +227,23 @@ class BaseCreationTest(BaseTest):
 
     def check_image_sizes(self, width, channels, shuffle):
         create_db.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
-                width, 10, channels, self.BACKEND)
+                            width, 10, channels, self.BACKEND)
 
     def test_no_shuffle(self):
         create_db.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
-                10, 10, 1, self.BACKEND, shuffle=False)
+                            10, 10, 1, self.BACKEND, shuffle=False)
 
     def test_means(self):
         mean_files = []
-        for suffix in 'jpg','npy','png','binaryproto':
+        for suffix in 'jpg', 'npy', 'png', 'binaryproto':
             mean_files.append(os.path.join(self.empty_dir, 'mean.%s' % suffix))
         create_db.create_db(self.good_file[1], os.path.join(self.empty_dir, 'db'),
-                10, 10, 1, self.BACKEND, mean_files=mean_files)
+                            10, 10, 1, self.BACKEND, mean_files=mean_files)
+
 
 class TestLmdbCreation(BaseCreationTest):
     BACKEND = 'lmdb'
+
 
 class TestHdf5Creation(BaseCreationTest):
     BACKEND = 'hdf5'
@@ -241,8 +251,7 @@ class TestHdf5Creation(BaseCreationTest):
     def test_dset_limit(self):
         db_dir = os.path.join(self.empty_dir, 'db')
         create_db.create_db(self.good_file[1], db_dir,
-                10, 10, 1, 'hdf5', hdf5_dset_limit=10*10)
+                            10, 10, 1, 'hdf5', hdf5_dset_limit=10 * 10)
         with open(os.path.join(db_dir, 'list.txt')) as infile:
             lines = infile.readlines()
             assert len(lines) == self.image_count, '%d != %d' % (len(lines), self.image_count)
-

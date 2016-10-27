@@ -9,6 +9,7 @@ from wtforms.compat import string_types
 
 from digits.utils.routing import get_request_arg
 
+
 def validate_required_iff(**kwargs):
     """
     Used as a validator within a wtforms.Form
@@ -27,9 +28,9 @@ def validate_required_iff(**kwargs):
             # Verify that data exists
             if field.data is None \
                     or (isinstance(field.data, (str, unicode))
-                            and not field.data.strip()) \
+                        and not field.data.strip()) \
                     or (isinstance(field.data, FileStorage)
-                            and not field.data.filename.strip()):
+                        and not field.data.filename.strip()):
                 raise validators.ValidationError('This field is required.')
         else:
             # This field is not required, ignore other errors
@@ -37,6 +38,7 @@ def validate_required_iff(**kwargs):
             raise validators.StopValidation()
 
     return _validator
+
 
 def validate_required_if_set(other_field, **kwargs):
     """
@@ -52,9 +54,9 @@ def validate_required_if_set(other_field, **kwargs):
             # Verify that data exists
             if field.data is None \
                     or (isinstance(field.data, (str, unicode))
-                            and not field.data.strip()) \
+                        and not field.data.strip()) \
                     or (isinstance(field.data, FileStorage)
-                            and not field.data.filename.strip()):
+                        and not field.data.filename.strip()):
                 raise validators.ValidationError('This field is required if %s is set.' % other_field)
         else:
             # This field is not required, ignore other errors
@@ -62,6 +64,7 @@ def validate_required_if_set(other_field, **kwargs):
             raise validators.StopValidation()
 
     return _validator
+
 
 def validate_greater_than(fieldname):
     """
@@ -80,10 +83,12 @@ def validate_greater_than(fieldname):
             raise validators.ValidationError(message)
     return _validator
 
+
 class Tooltip(object):
     """
     An HTML form tooltip.
     """
+
     def __init__(self, field_id, for_name, text):
         self.field_id = field_id
         self.text = text
@@ -105,19 +110,21 @@ class Tooltip(object):
             kwargs.setdefault('for', self.field_id)
 
         return wtforms.widgets.HTMLString(
-                    ('<span name="%s_explanation"'
-                    '    class="explanation-tooltip glyphicon glyphicon-question-sign"'
-                    '    data-container="body"'
-                    '    title="%s"'
-                    '    ></span>') % (self.for_name, self.text))
+            ('<span name="%s_explanation"'
+             '    class="explanation-tooltip glyphicon glyphicon-question-sign"'
+             '    data-container="body"'
+             '    title="%s"'
+             '    ></span>') % (self.for_name, self.text))
 
     def __repr__(self):
         return 'Tooltip(%r, %r, %r)' % (self.field_id, self.for_name, self.text)
+
 
 class Explanation(object):
     """
     An HTML form explanation.
     """
+
     def __init__(self, field_id, for_name, filename):
         self.field_id = field_id
         self.file = filename
@@ -146,21 +153,23 @@ class Explanation(object):
         with app.app_context():
             html = flask.render_template(file if file else self.file)
 
-        if len(html) == 0: return ''
+        if len(html) == 0:
+            return ''
 
         return wtforms.widgets.HTMLString(
             ('<div id="%s_explanation" style="display:none;">\n'
              '%s'
              '</div>\n'
              '<a href=# onClick="bootbox.alert($(\'#%s_explanation\').html()); return false;"><span class="glyphicon glyphicon-question-sign"></span></a>\n'
-         ) % (self.for_name, html, self.for_name))
+             ) % (self.for_name, html, self.for_name))
 
     def __repr__(self):
         return 'Explanation(%r, %r, %r)' % (self.field_id, self.for_name, self.file)
 
+
 class IntegerField(wtforms.IntegerField):
 
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(IntegerField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
@@ -168,7 +177,8 @@ class IntegerField(wtforms.IntegerField):
 
 
 class FloatField(wtforms.FloatField):
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(FloatField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
@@ -176,7 +186,8 @@ class FloatField(wtforms.FloatField):
 
 
 class SelectField(wtforms.SelectField):
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(SelectField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
@@ -184,7 +195,8 @@ class SelectField(wtforms.SelectField):
 
 
 class SelectMultipleField(wtforms.SelectMultipleField):
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(SelectMultipleField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
@@ -192,7 +204,8 @@ class SelectMultipleField(wtforms.SelectMultipleField):
 
 
 class TextField(wtforms.TextField):
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(TextField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
@@ -200,7 +213,8 @@ class TextField(wtforms.TextField):
 
 
 class StringField(wtforms.StringField):
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(StringField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
@@ -227,29 +241,35 @@ class FileInput(object):
                           wtforms.widgets.html_params(name=field.name, type='file', **kwargs),
                           wtforms.widgets.html_params(id=field.id + '_text', name=field.name + '_text', type='text')))
 
+
 class FileField(wtforms.FileField):
     # Comment out the following line to use the native file input
     widget = FileInput()
 
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(FileField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
 
+
 class TextAreaField(wtforms.TextAreaField):
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(TextAreaField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
 
+
 class BooleanField(wtforms.BooleanField):
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(BooleanField, self).__init__(label, validators, **kwargs)
 
         self.tooltip = Tooltip(self.id, self.short_name, tooltip)
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
+
 
 class MultiIntegerField(wtforms.Field):
     """
@@ -265,7 +285,7 @@ class MultiIntegerField(wtforms.Field):
         except:
             return False
 
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(MultiIntegerField, self).__init__(label, validators, **kwargs)
         self.tooltip = Tooltip(self.id, self.short_name, tooltip + ' (accepts comma separated list)')
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
@@ -296,6 +316,7 @@ class MultiIntegerField(wtforms.Field):
                 self.data = [None]
                 raise ValueError(self.gettext('Not a valid integer value'))
 
+
 class MultiFloatField(wtforms.Field):
     """
     A text field, except all input is coerced to one of more floats.
@@ -310,7 +331,7 @@ class MultiFloatField(wtforms.Field):
         except:
             return False
 
-    def __init__(self, label='', validators=None, tooltip='', explanation_file = '', **kwargs):
+    def __init__(self, label='', validators=None, tooltip='', explanation_file='', **kwargs):
         super(MultiFloatField, self).__init__(label, validators, **kwargs)
         self.tooltip = Tooltip(self.id, self.short_name, tooltip + ' (accepts comma separated list)')
         self.explanation = Explanation(self.id, self.short_name, explanation_file)
@@ -347,6 +368,7 @@ class MultiFloatField(wtforms.Field):
         else:
             return [self.data]
 
+
 class MultiNumberRange(object):
     """
     Validates that a number is of a minimum and/or maximum value, inclusive.
@@ -364,6 +386,7 @@ class MultiNumberRange(object):
         interpolated using `%(min)s` and `%(max)s` if desired. Useful defaults
         are provided depending on the existence of min and max.
     """
+
     def __init__(self, min=None, max=None, min_inclusive=True, max_inclusive=True, message=None):
         self.min = min
         self.max = max
@@ -386,18 +409,19 @@ class MultiNumberRange(object):
                 if message is None:
                     # we use %(min)s interpolation to support floats, None, and
                     # Decimals without throwing a formatting exception.
-                    if flags & 1<<0:
+                    if flags & 1 << 0:
                         message = field.gettext('No data.')
-                    elif flags & 1<<1:
+                    elif flags & 1 << 1:
                         message = field.gettext('Number %(data)s must be at least %(min)s.')
-                    elif flags & 1<<2:
+                    elif flags & 1 << 2:
                         message = field.gettext('Number %(data)s must be at most %(max)s.')
-                    elif flags & 1<<3:
+                    elif flags & 1 << 3:
                         message = field.gettext('Number %(data)s must be greater than %(min)s.')
-                    elif flags & 1<<4:
+                    elif flags & 1 << 4:
                         message = field.gettext('Number %(data)s must be less than %(max)s.')
 
                 raise validators.ValidationError(message % dict(data=data, min=self.min, max=self.max))
+
 
 class MultiOptional(object):
     """
@@ -426,19 +450,24 @@ class MultiOptional(object):
             field.errors[:] = []
             raise validators.StopValidation()
 
-## Used to save data to populate forms when cloning
+# Used to save data to populate forms when cloning
+
+
 def add_warning(form, warning):
     if not hasattr(form, 'warnings'):
         form.warnings = tuple([])
     form.warnings += tuple([warning])
     return True
 
-## Iterate over the form looking for field data to either save to or
-## get from the job depending on function.
-def iterate_over_form(job, form, function, prefix = ['form'], indent = ''):
+# Iterate over the form looking for field data to either save to or
+# get from the job depending on function.
+
+
+def iterate_over_form(job, form, function, prefix=['form'], indent=''):
 
     warnings = False
-    if not hasattr(form, '__dict__'): return False
+    if not hasattr(form, '__dict__'):
+        return False
 
     # This is the list of Field types to save. SubmitField and
     # FileField is excluded. SubmitField would cause it to post and
@@ -456,53 +485,65 @@ def iterate_over_form(job, form, function, prefix = ['form'], indent = ''):
             continue
         attr = getattr(form, attr_name)
         if isinstance(attr, object):
-            if isinstance(attr, SubmitField): continue
+            if isinstance(attr, SubmitField):
+                continue
             warnings |= iterate_over_form(job, attr, function, prefix + [attr_name], indent + '    ')
         if hasattr(attr, 'data') and hasattr(attr, 'type'):
             if (isinstance(attr.data, int) or
                 isinstance(attr.data, float) or
                 isinstance(attr.data, basestring) or
-                attr.type in whitelist_fields):
+                    attr.type in whitelist_fields):
                 key = '%s.%s.data' % ('.'.join(prefix), attr_name)
                 warnings |= function(job, attr, key, attr.data)
 
             # Warn if certain field types are not cloned
             if (len(attr.type) > 5 and attr.type[-5:] == 'Field' and
                 attr.type not in whitelist_fields and
-                attr.type not in blacklist_fields):
+                    attr.type not in blacklist_fields):
                 warnings |= add_warning(attr, 'Field type, %s, not cloned' % attr.type)
     return warnings
 
-## function to pass to iterate_over_form to save data to job
+# function to pass to iterate_over_form to save data to job
+
+
 def set_data(job, form, key, value):
-    if not hasattr(job, 'form_data'): job.form_data = dict()
+    if not hasattr(job, 'form_data'):
+        job.form_data = dict()
     job.form_data[key] = value
 
     if isinstance(value, basestring):
         value = '\'' + value + '\''
     return False
 
-## function to pass to iterate_over_form to get data from job
-## Don't warn if key is not in job.form_data
+# function to pass to iterate_over_form to get data from job
+# Don't warn if key is not in job.form_data
+
+
 def get_data(job, form, key, value):
     if key in job.form_data.keys():
         form.data = job.form_data[key]
     return False
 
-## Save to form field data in form to the job so the form can later be
-## populated with the sae settings during a clone event.
+# Save to form field data in form to the job so the form can later be
+# populated with the sae settings during a clone event.
+
+
 def save_form_to_job(job, form):
     iterate_over_form(job, form, set_data)
 
-## Populate the form with form field data saved in the job
+# Populate the form with form field data saved in the job
+
+
 def fill_form_from_job(job, form):
     form.warnings = iterate_over_form(job, form, get_data)
 
-## This logic if used in several functions where ?clone=<job_id> may
-## be added to the url. If ?clone=<job_id> is specified in the url,
-## fill the form with that job.
+# This logic if used in several functions where ?clone=<job_id> may
+# be added to the url. If ?clone=<job_id> is specified in the url,
+# fill the form with that job.
+
+
 def fill_form_if_cloned(form):
-    ## is there a request to clone a job.
+    # is there a request to clone a job.
     from digits.webapp import scheduler
     clone = get_request_arg('clone')
     if clone is not None:
