@@ -16,7 +16,7 @@ app.controller('display_controller',
                         colormap: false,
                     });
                     $scope.is_binary = false;
-                    $scope.build_segment = function () {
+                    $scope.build_segment = function() {
                         var c = new Array(256);
                         var a = new Array(256);
                         // The segmentation boundary distance 128
@@ -32,22 +32,23 @@ app.controller('display_controller',
                         var alpha = a.join(',');
                         // For some reason, the tableValues can not reference an angular variable, so set it here.
                         if ($scope.is_binary) {
-                            document.getElementById("binary-segment-r").setAttribute("tableValues", color);
-                            document.getElementById("binary-segment-g").setAttribute("tableValues", color);
-                            document.getElementById("binary-segment-b").setAttribute("tableValues", color);
-                            document.getElementById("binary-segment-a").setAttribute("tableValues", alpha);
+                            document.getElementById('binary-segment-r').setAttribute('tableValues', color);
+                            document.getElementById('binary-segment-g').setAttribute('tableValues', color);
+                            document.getElementById('binary-segment-b').setAttribute('tableValues', color);
+                            document.getElementById('binary-segment-a').setAttribute('tableValues', alpha);
                         } else {
-                            document.getElementById("segment-a").setAttribute("tableValues", alpha);
+                            document.getElementById('segment-a').setAttribute('tableValues', alpha);
                         }
                     };
                     $scope.build_segment();
-                    $scope.set_binary = function (v) {
+                    $scope.set_binary = function(v) {
                         if ($scope.is_binary == v) return;
                         $scope.is_binary = v;
                         $scope.build_segment();
                     };
                     $scope.$watch(function() {
-                        return [$localStorage.opacity, $localStorage.mask, $localStorage.line_width, $localStorage.threshold].join(',');
+                        return [$localStorage.opacity, $localStorage.mask,
+                            $localStorage.line_width, $localStorage.threshold].join(',');
                     }, function() {
                         $scope.build_segment();
                     });
