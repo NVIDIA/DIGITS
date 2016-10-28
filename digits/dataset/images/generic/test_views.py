@@ -1,24 +1,11 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import itertools
 import json
 import os
-import shutil
 import tempfile
-import time
-import unittest
-import urllib
-
-# Find the best implementation available
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
 from bs4 import BeautifulSoup
-import PIL.Image
-from urlparse import urlparse
 
 from .test_lmdb_creator import create_lmdbs
 from digits import test_utils
@@ -30,6 +17,7 @@ TIMEOUT_DATASET = 45
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)
 ################################################################################
+
 
 class BaseViewsTest(digits.test_views.BaseViewsTest):
     """
@@ -57,6 +45,7 @@ class BaseViewsTest(digits.test_views.BaseViewsTest):
     @classmethod
     def delete_dataset(cls, job_id):
         return cls.delete_job(job_id, job_type='datasets')
+
 
 class BaseViewsTestWithImageset(BaseViewsTest):
     """
@@ -93,15 +82,15 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         **kwargs -- data to be sent with POST request
         """
         data = {
-                'dataset_name':     'test_dataset',
-                'group_name':       'test_group',
-                'method':           'prebuilt',
-                'prebuilt_train_images': os.path.join(cls.imageset_folder, 'train_images'),
-                'prebuilt_train_labels': os.path.join(cls.imageset_folder, 'train_labels'),
-                'prebuilt_val_images': os.path.join(cls.imageset_folder, 'val_images'),
-                'prebuilt_val_labels': os.path.join(cls.imageset_folder, 'val_labels'),
-                'prebuilt_mean_file': os.path.join(cls.imageset_folder, 'train_mean.binaryproto'),
-                }
+            'dataset_name':     'test_dataset',
+            'group_name':       'test_group',
+            'method':           'prebuilt',
+            'prebuilt_train_images': os.path.join(cls.imageset_folder, 'train_images'),
+            'prebuilt_train_labels': os.path.join(cls.imageset_folder, 'train_labels'),
+            'prebuilt_val_images': os.path.join(cls.imageset_folder, 'val_images'),
+            'prebuilt_val_labels': os.path.join(cls.imageset_folder, 'val_labels'),
+            'prebuilt_mean_file': os.path.join(cls.imageset_folder, 'train_mean.binaryproto'),
+        }
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -134,6 +123,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         cls.created_datasets.append(job_id)
         return job_id
 
+
 class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
     """
     Provides a dataset and some functions
@@ -148,10 +138,12 @@ class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
 # Test classes
 ################################################################################
 
+
 class TestViews(BaseViewsTest, test_utils.DatasetMixin):
     """
     Tests which don't require an imageset or a dataset
     """
+
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/images/generic/new')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
@@ -165,11 +157,12 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
     """
     Dataset creation tests
     """
+
     def test_bad_path(self):
         try:
-            job_id = self.create_dataset(
-                    prebuilt_train_images = '/not-a-directory'
-                    )
+            self.create_dataset(
+                prebuilt_train_images='/not-a-directory'
+            )
         except RuntimeError:
             return
         raise AssertionError('Should have failed')
@@ -210,7 +203,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content1 = json.loads(rv.data)
 
-        ## Clone job1 as job2
+        # Clone job1 as job2
         options_2 = {
             'clone': job1_id,
         }
@@ -221,7 +214,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content2 = json.loads(rv.data)
 
-        ## These will be different
+        # These will be different
         content1.pop('id')
         content2.pop('id')
         content1.pop('directory')
@@ -233,10 +226,12 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
         assert (job1.form_data == job2.form_data), 'form content does not match'
 
+
 class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
     """
     Tests on a dataset that has already been created
     """
+
     def test_index_json(self):
         rv = self.app.get('/index.json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
@@ -256,9 +251,9 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
 
     def test_edit_name(self):
         status = self.edit_job(
-                self.dataset_id,
-                name='new name'
-                )
+            self.dataset_id,
+            name='new name'
+        )
         assert status == 200, 'failed with %s' % status
         rv = self.app.get('/datasets/summary?job_id=%s' % self.dataset_id)
         assert rv.status_code == 200
@@ -266,8 +261,7 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
 
     def test_edit_notes(self):
         status = self.edit_job(
-                self.dataset_id,
-                notes='new notes'
-                )
+            self.dataset_id,
+            notes='new notes'
+        )
         assert status == 200, 'failed with %s' % status
-

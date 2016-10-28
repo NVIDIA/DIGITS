@@ -3,3 +3,4 @@ from __future__ import absolute_import
 
 from .inference import InferenceTask
 
+__all__ = ['InferenceTask']

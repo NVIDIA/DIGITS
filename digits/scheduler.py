@@ -3,13 +3,11 @@ from __future__ import absolute_import
 
 from collections import OrderedDict
 import os
-import re
 import shutil
 import signal
 import time
 import traceback
 
-import flask
 import gevent
 import gevent.event
 import gevent.queue
@@ -30,6 +28,7 @@ deleting completed non-persistent jobs
 """
 NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS = 3600
 
+
 class Resource(object):
     """
     Stores information about which tasks are using a resource
@@ -39,6 +38,7 @@ class Resource(object):
         """
         Marks that a task is using [part of] a resource
         """
+
         def __init__(self, task, value):
             """
             Arguments:
@@ -75,7 +75,7 @@ class Resource(object):
             raise RuntimeError('Resource is already maxed out at %s/%s' % (
                 self.remaining(),
                 self.max_value)
-                )
+            )
         self.allocations.append(self.ResourceAllocation(task, value))
 
     def deallocate(self, task):
@@ -87,6 +87,7 @@ class Resource(object):
                 self.allocations.pop(i)
                 return True
         return False
+
 
 class Scheduler:
     """
@@ -104,14 +105,14 @@ class Scheduler:
 
         # Keeps track of resource usage
         self.resources = {
-                # TODO: break this into CPU cores, memory usage, IO usage, etc.
-                'parse_folder_task_pool': [Resource()],
-                'create_db_task_pool': [Resource(max_value=2)],
-                'analyze_db_task_pool': [Resource(max_value=4)],
-                'inference_task_pool': [Resource(max_value=4)],
-                'gpus': [Resource(identifier=index)
-                    for index in gpu_list.split(',')] if gpu_list else [],
-                }
+            # TODO: break this into CPU cores, memory usage, IO usage, etc.
+            'parse_folder_task_pool': [Resource()],
+            'create_db_task_pool': [Resource(max_value=2)],
+            'analyze_db_task_pool': [Resource(max_value=4)],
+            'inference_task_pool': [Resource(max_value=4)],
+            'gpus': [Resource(identifier=index)
+                     for index in gpu_list.split(',')] if gpu_list else [],
+        }
 
         self.running = False
         self.shutdown = gevent.event.Event()
@@ -145,7 +146,7 @@ class Scheduler:
 
         # add DatasetJobs or PretrainedModelJobs
         for job in loaded_jobs:
-            if isinstance(job, DatasetJob) or isinstance(job,PretrainedModelJob):
+            if isinstance(job, DatasetJob) or isinstance(job, PretrainedModelJob):
                 self.jobs[job.id()] = job
 
         # add ModelJobs
@@ -189,7 +190,7 @@ class Scheduler:
                               },
                               namespace='/jobs',
                               room='job_management',
-                          )
+                              )
 
             if 'DIGITS_MODE_TEST' not in os.environ:
                 # Let the scheduler do a little work before returning
@@ -260,15 +261,16 @@ class Scheduler:
                 # check for dependencies
                 for j in self.jobs.values():
                     if isinstance(j, ModelJob) and j.dataset_id == job.id():
-                        logger.error('Cannot delete "%s" (%s) because "%s" (%s) depends on it.' % (job.name(), job.id(), j.name(), j.id()))
+                        logger.error('Cannot delete "%s" (%s) because "%s" (%s) depends on it.' %
+                                     (job.name(), job.id(), j.name(), j.id()))
                         dependent_jobs.append(j.name())
-            if len(dependent_jobs)>0:
+            if len(dependent_jobs) > 0:
                 error_message = 'Cannot delete "%s" because %d model%s depend%s on it: %s' % (
-                        job.name(),
-                        len(dependent_jobs),
-                        ('s' if len(dependent_jobs) != 1 else ''),
-                        ('s' if len(dependent_jobs) == 1 else ''),
-                        ', '.join(['"%s"' % j for j in dependent_jobs]))
+                    job.name(),
+                    len(dependent_jobs),
+                    ('s' if len(dependent_jobs) != 1 else ''),
+                    ('s' if len(dependent_jobs) == 1 else ''),
+                    ', '.join(['"%s"' % j for j in dependent_jobs]))
                 raise errors.DeleteError(error_message)
             self.jobs.pop(job_id, None)
             job.abort()
@@ -283,7 +285,7 @@ class Scheduler:
                           },
                           namespace='/jobs',
                           room='job_management',
-            )
+                          )
             return True
 
         # see if the folder exists on disk
@@ -298,30 +300,30 @@ class Scheduler:
     def running_dataset_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs.values() if isinstance(j, DatasetJob) and j.status.is_running()],
-                cmp=lambda x,y: cmp(y.id(), x.id())
-                )
+            [j for j in self.jobs.values() if isinstance(j, DatasetJob) and j.status.is_running()],
+            cmp=lambda x, y: cmp(y.id(), x.id())
+        )
 
     def completed_dataset_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs.values() if isinstance(j, DatasetJob) and not j.status.is_running()],
-                cmp=lambda x,y: cmp(y.id(), x.id())
-                )
+            [j for j in self.jobs.values() if isinstance(j, DatasetJob) and not j.status.is_running()],
+            cmp=lambda x, y: cmp(y.id(), x.id())
+        )
 
     def running_model_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs.values() if isinstance(j, ModelJob) and j.status.is_running()],
-                cmp=lambda x,y: cmp(y.id(), x.id())
-                )
+            [j for j in self.jobs.values() if isinstance(j, ModelJob) and j.status.is_running()],
+            cmp=lambda x, y: cmp(y.id(), x.id())
+        )
 
     def completed_model_jobs(self):
         """a query utility"""
         return sorted(
-                [j for j in self.jobs.values() if isinstance(j, ModelJob) and not j.status.is_running()],
-                cmp=lambda x,y: cmp(y.id(), x.id())
-                )
+            [j for j in self.jobs.values() if isinstance(j, ModelJob) and not j.status.is_running()],
+            cmp=lambda x, y: cmp(y.id(), x.id())
+        )
 
     def start(self):
         """
@@ -400,7 +402,7 @@ class Scheduler:
                                     else:
                                         if self.reserve_resources(task, requested_resources):
                                             gevent.spawn(self.run_task,
-                                                    task, requested_resources)
+                                                         task, requested_resources)
                             elif task.status == Status.RUN:
                                 # job is not done
                                 alldone = False
@@ -420,12 +422,14 @@ class Scheduler:
                             job.save()
 
                 # save running jobs every 15 seconds
-                if not last_saved or time.time()-last_saved > 15:
+                if not last_saved or time.time() - last_saved > 15:
                     for job in self.jobs.values():
                         if job.status.is_running():
                             if job.is_persistent():
                                 job.save()
-                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS):
+                        elif (not job.is_persistent() and
+                              (time.time() - job.status_history[-1][1] >
+                               NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS)):
                             # job has been unclaimed for far too long => proceed to garbage collection
                             self.delete_job(job)
                     last_saved = time.time()
@@ -524,4 +528,4 @@ class Scheduler:
                       },
                       namespace='/jobs',
                       room='job_management'
-                  )
+                      )

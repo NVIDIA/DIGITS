@@ -12,6 +12,7 @@ from digits.utils import subclass, override
 # NOTE: Increment this everytime the pickled object
 PICKLE_VERSION = 1
 
+
 @subclass
 class AnalyzeDbTask(Task):
     """
@@ -78,8 +79,8 @@ class AnalyzeDbTask(Task):
         args = [sys.executable, os.path.join(
             os.path.dirname(os.path.abspath(digits.__file__)),
             'tools', 'analyze_db.py'),
-                self.database,
-                ]
+            self.database,
+        ]
         if self.force_same_shape:
             args.append('--force-same-shape')
         else:
@@ -104,7 +105,7 @@ class AnalyzeDbTask(Task):
         # progress
         match = re.match(r'Progress: (\d+)\/(\d+)', message)
         if match:
-            self.progress = float(match.group(1))/float(match.group(2))
+            self.progress = float(match.group(1)) / float(match.group(2))
             self.emit_progress_update()
             return True
 
@@ -117,7 +118,7 @@ class AnalyzeDbTask(Task):
         # image dimensions
         match = re.match(r'(\d+) entries found with shape ((\d+)x(\d+)x(\d+))', message)
         if match:
-            count = int(match.group(1))
+            # count = int(match.group(1))
             dims = match.group(2)
             self.image_width = int(match.group(3))
             self.image_height = int(match.group(4))

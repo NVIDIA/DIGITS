@@ -27,33 +27,39 @@ import PIL.Image
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import digits.config
-from digits import utils, log
+import digits.config  # noqa
+from digits import utils, log  # noqa
 
 # Import digits.config first to set the path to Caffe
-import caffe.io
-import caffe_pb2
+import caffe.io  # noqa
+import caffe_pb2  # noqa
 
 logger = logging.getLogger('digits.tools.create_db')
 
+
 class Error(Exception):
     pass
+
 
 class BadInputFileError(Error):
     """Input file is empty"""
     pass
 
+
 class ParseLineError(Error):
     """Failed to parse a line in the input file"""
     pass
+
 
 class LoadError(Error):
     """Failed to load image[s]"""
     pass
 
+
 class WriteError(Error):
     """Failed to write image[s]"""
     pass
+
 
 class Hdf5DatasetExtendError(Error):
     """Failed to extend an hdf5 dataset"""
@@ -79,9 +85,11 @@ class DbWriter(object):
     def count(self):
         return self._count
 
+
 class LmdbWriter(DbWriter):
     # TODO
     pass
+
 
 class Hdf5Writer(DbWriter):
     """
@@ -103,7 +111,7 @@ class Hdf5Writer(DbWriter):
 
         if self._dset_limit is not None:
             self._max_count = self._dset_limit / (
-                    self._image_height * self._image_width * self._image_channels)
+                self._image_height * self._image_width * self._image_channels)
         else:
             self._max_count = None
 
@@ -111,13 +119,12 @@ class Hdf5Writer(DbWriter):
         # convert batch to numpy arrays
         if batch[0][0].ndim == 2:
             # add channel axis for grayscale images
-            data_batch = np.array([i[0][...,np.newaxis] for i in batch])
+            data_batch = np.array([i[0][..., np.newaxis] for i in batch])
         else:
             data_batch = np.array([i[0] for i in batch])
         # Transpose to (channels, height, width)
-        data_batch = data_batch.transpose((0,3,1,2))
+        data_batch = data_batch.transpose((0, 3, 1, 2))
         label_batch = np.array([i[1] for i in batch])
-
 
         # first batch
         if self._db is None:
@@ -131,8 +138,8 @@ class Hdf5Writer(DbWriter):
 
         # will fit in current dataset
         if current_count + len(batch) <= self._max_count:
-            self._db['data'].resize(current_count+len(batch),axis=0)
-            self._db['label'].resize(current_count+len(batch),axis=0)
+            self._db['data'].resize(current_count + len(batch), axis=0)
+            self._db['label'].resize(current_count + len(batch), axis=0)
             self._db['data'][-len(batch):] = data_batch
             self._db['label'][-len(batch):] = label_batch
             self._count += len(batch)
@@ -143,8 +150,8 @@ class Hdf5Writer(DbWriter):
 
         if split > 0:
             # put what we can into the current dataset
-            self._db['data'].resize(self._max_count,axis=0)
-            self._db['label'].resize(self._max_count,axis=0)
+            self._db['data'].resize(self._max_count, axis=0)
+            self._db['label'].resize(self._max_count, axis=0)
             self._db['data'][-split:] = data_batch[:split]
             self._db['label'][-split:] = label_batch[:split]
             self._count += split
@@ -156,8 +163,8 @@ class Hdf5Writer(DbWriter):
 
     def _create_new_file(self, initial_count):
         assert self._max_count is None or initial_count <= self._max_count, \
-                'Your batch size is too large for your dataset limit - %d vs %d' % \
-                (initial_count, self._max_count)
+            'Your batch size is too large for your dataset limit - %d vs %d' % \
+            (initial_count, self._max_count)
 
         # close the old file
         if self._db is not None:
@@ -169,7 +176,7 @@ class Hdf5Writer(DbWriter):
         # get the filename
         filename = self._new_filename()
         logger.info('Creating HDF5 database at "%s" ...' %
-                os.path.join(*filename.split(os.sep)[-2:]))
+                    os.path.join(*filename.split(os.sep)[-2:]))
 
         # update the list
         with open(self._list_filename(), mode) as outfile:
@@ -180,16 +187,15 @@ class Hdf5Writer(DbWriter):
 
         # initialize the datasets
         self._db.create_dataset('data',
-                (initial_count,self._image_channels,
-                    self._image_height,self._image_width),
-                maxshape=(self._max_count,self._image_channels,
-                    self._image_height,self._image_width),
-                chunks=True, compression=self._compression, dtype=self.DTYPE)
+                                (initial_count, self._image_channels,
+                                 self._image_height, self._image_width),
+                                maxshape=(self._max_count, self._image_channels,
+                                          self._image_height, self._image_width),
+                                chunks=True, compression=self._compression, dtype=self.DTYPE)
         self._db.create_dataset('label',
-                (initial_count,),
-                maxshape=(self._max_count,),
-                chunks=True, compression=self._compression, dtype=self.DTYPE)
-
+                                (initial_count,),
+                                maxshape=(self._max_count,),
+                                chunks=True, compression=self._compression, dtype=self.DTYPE)
 
     def _list_filename(self):
         return os.path.join(self._dir, self.LIST_FILENAME)
@@ -199,13 +205,13 @@ class Hdf5Writer(DbWriter):
 
 
 def create_db(input_file, output_dir,
-        image_width, image_height, image_channels,
-        backend,
-        resize_mode     = None,
-        image_folder    = None,
-        shuffle         = True,
-        mean_files      = None,
-        **kwargs):
+              image_width, image_height, image_channels,
+              backend,
+              resize_mode=None,
+              image_folder=None,
+              shuffle=True,
+              mean_files=None,
+              **kwargs):
     """
     Create a database of images from a list of image paths
     Raises exceptions on errors
@@ -223,7 +229,7 @@ def create_db(input_file, output_dir,
     shuffle -- if True, shuffle the images in the list before creating
     mean_files -- a list of mean files to save
     """
-    ### Validate arguments
+    # Validate arguments
 
     if not os.path.exists(input_file):
         raise ValueError('input_file does not exist')
@@ -237,7 +243,7 @@ def create_db(input_file, output_dir,
         raise ValueError('invalid image width')
     if image_height <= 0:
         raise ValueError('invalid image height')
-    if image_channels not in [1,3]:
+    if image_channels not in [1, 3]:
         raise ValueError('invalid number of channels')
     if resize_mode not in [None, 'crop', 'squash', 'fill', 'half_crop']:
         raise ValueError('invalid resize_mode')
@@ -255,7 +261,7 @@ def create_db(input_file, output_dir,
                     raise ValueError('Cannot save mean file at "%s"' % mean_file)
     compute_mean = bool(mean_files)
 
-    ### Load lines from input_file into a load_queue
+    # Load lines from input_file into a load_queue
 
     load_queue = Queue.Queue()
     image_count = _fill_load_queue(input_file, load_queue, shuffle)
@@ -263,20 +269,20 @@ def create_db(input_file, output_dir,
     # Start some load threads
 
     batch_size = _calculate_batch_size(image_count,
-            bool(backend=='hdf5'), kwargs.get('hdf5_dset_limit'),
-            image_channels, image_height, image_width)
+                                       bool(backend == 'hdf5'), kwargs.get('hdf5_dset_limit'),
+                                       image_channels, image_height, image_width)
     num_threads = _calculate_num_threads(batch_size, shuffle)
-    write_queue = Queue.Queue(2*batch_size)
+    write_queue = Queue.Queue(2 * batch_size)
     summary_queue = Queue.Queue()
 
     for _ in xrange(num_threads):
         p = threading.Thread(target=_load_thread,
-                args=(load_queue, write_queue, summary_queue,
-                    image_width, image_height, image_channels,
-                    resize_mode, image_folder, compute_mean),
-                kwargs={'backend': backend,
-                    'encoding': kwargs.get('encoding', None)},
-                )
+                             args=(load_queue, write_queue, summary_queue,
+                                   image_width, image_height, image_channels,
+                                   resize_mode, image_folder, compute_mean),
+                             kwargs={'backend': backend,
+                                     'encoding': kwargs.get('encoding', None)},
+                             )
         p.daemon = True
         p.start()
 
@@ -284,24 +290,25 @@ def create_db(input_file, output_dir,
 
     if backend == 'lmdb':
         _create_lmdb(image_count, write_queue, batch_size, output_dir,
-                summary_queue, num_threads,
-                mean_files, **kwargs)
+                     summary_queue, num_threads,
+                     mean_files, **kwargs)
     elif backend == 'hdf5':
         _create_hdf5(image_count, write_queue, batch_size, output_dir,
-                image_width, image_height, image_channels,
-                summary_queue, num_threads,
-                mean_files, **kwargs)
+                     image_width, image_height, image_channels,
+                     summary_queue, num_threads,
+                     mean_files, **kwargs)
     else:
         raise ValueError('invalid backend')
 
     logger.info('Database created after %d seconds.' % (time.time() - start))
 
+
 def _create_lmdb(image_count, write_queue, batch_size, output_dir,
-        summary_queue, num_threads,
-        mean_files      = None,
-        encoding        = None,
-        lmdb_map_size   = None,
-        **kwargs):
+                 summary_queue, num_threads,
+                 mean_files=None,
+                 encoding=None,
+                 lmdb_map_size=None,
+                 **kwargs):
     """
     Create an LMDB
 
@@ -318,9 +325,9 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
     compute_mean = bool(mean_files)
 
     db = lmdb.open(output_dir,
-            map_size=lmdb_map_size,
-            map_async=True,
-            max_dbs=0)
+                   map_size=lmdb_map_size,
+                   map_async=True,
+                   max_dbs=0)
 
     while (threads_done < num_threads) or not write_queue.empty():
 
@@ -373,13 +380,14 @@ def _create_lmdb(image_count, write_queue, batch_size, output_dir,
 
     db.close()
 
+
 def _create_hdf5(image_count, write_queue, batch_size, output_dir,
-        image_width, image_height, image_channels,
-        summary_queue, num_threads,
-        mean_files      = None,
-        compression     = None,
-        hdf5_dset_limit = None,
-        **kwargs):
+                 image_width, image_height, image_channels,
+                 summary_queue, num_threads,
+                 mean_files=None,
+                 compression=None,
+                 hdf5_dset_limit=None,
+                 **kwargs):
     """
     Create an HDF5 file
 
@@ -395,13 +403,13 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
     compute_mean = bool(mean_files)
 
     writer = Hdf5Writer(
-            output_dir      = output_dir,
-            image_height    = image_height,
-            image_width     = image_width,
-            image_channels  = image_channels,
-            dset_limit      = hdf5_dset_limit,
-            compression     = compression,
-            )
+        output_dir=output_dir,
+        image_height=image_height,
+        image_width=image_width,
+        image_channels=image_channels,
+        dset_limit=hdf5_dset_limit,
+        compression=compression,
+    )
 
     while (threads_done < num_threads) or not write_queue.empty():
 
@@ -453,6 +461,7 @@ def _create_hdf5(image_count, write_queue, batch_size, output_dir,
     if compute_mean:
         _save_means(image_sum, images_written, mean_files)
 
+
 def _fill_load_queue(filename, queue, shuffle):
     """
     Fill the queue with data from the input file
@@ -468,7 +477,7 @@ def _fill_load_queue(filename, queue, shuffle):
 
     with open(filename) as infile:
         if shuffle:
-            lines = infile.readlines() # less memory efficient
+            lines = infile.readlines()  # less memory efficient
             random.shuffle(lines)
             for line in lines:
                 total_lines += 1
@@ -479,7 +488,7 @@ def _fill_load_queue(filename, queue, shuffle):
                 except ParseLineError:
                     pass
         else:
-            for line in infile: # more memory efficient
+            for line in infile:  # more memory efficient
                 total_lines += 1
                 try:
                     result = _parse_line(line, distribution)
@@ -497,6 +506,7 @@ def _fill_load_queue(filename, queue, shuffle):
         logger.debug('Category %s has %d images.' % (key, distribution[key]))
 
     return valid_lines
+
 
 def _parse_line(line, distribution):
     """
@@ -518,15 +528,17 @@ def _parse_line(line, distribution):
 
     return path, label
 
+
 def _calculate_batch_size(image_count, is_hdf5=False, hdf5_dset_limit=None,
-        image_channels=None, image_height=None, image_width=None):
+                          image_channels=None, image_height=None, image_width=None):
     """
     Calculates an appropriate batch size for creating this database
     """
     if is_hdf5 and hdf5_dset_limit is not None:
-        return min(100, image_count, hdf5_dset_limit/(image_channels*image_height*image_width))
+        return min(100, image_count, hdf5_dset_limit / (image_channels * image_height * image_width))
     else:
         return min(100, image_count)
+
 
 def _calculate_num_threads(batch_size, shuffle):
     """
@@ -535,14 +547,15 @@ def _calculate_num_threads(batch_size, shuffle):
     if shuffle:
         return min(10, int(round(math.sqrt(batch_size))))
     else:
-        #XXX This is the only way to preserve order for now
+        # XXX This is the only way to preserve order for now
         # This obviously hurts performance considerably
         return 1
 
+
 def _load_thread(load_queue, write_queue, summary_queue,
-        image_width, image_height, image_channels,
-        resize_mode, image_folder, compute_mean,
-        backend=None, encoding=None):
+                 image_width, image_height, image_channels,
+                 resize_mode, image_folder, compute_mean,
+                 backend=None, encoding=None):
     """
     Consumes items in load_queue
     Produces items to write_queue
@@ -567,14 +580,14 @@ def _load_thread(load_queue, write_queue, summary_queue,
         try:
             image = utils.image.load_image(path)
         except utils.errors.LoadImageError as e:
-            logger.warning('[%s] %s: %s' % (path, type(e).__name__, e) )
+            logger.warning('[%s] %s: %s' % (path, type(e).__name__, e))
             continue
 
         image = utils.image.resize_image(image,
-                image_height, image_width,
-                channels    = image_channels,
-                resize_mode = resize_mode,
-                )
+                                         image_height, image_width,
+                                         channels=image_channels,
+                                         resize_mode=resize_mode,
+                                         )
 
         if compute_mean:
             image_sum += image
@@ -589,6 +602,7 @@ def _load_thread(load_queue, write_queue, summary_queue,
 
     summary_queue.put((images_added, image_sum))
 
+
 def _initial_image_sum(width, height, channels):
     """
     Returns an array of zeros that will be used to store the accumulated sum of images
@@ -598,6 +612,7 @@ def _initial_image_sum(width, height, channels):
     else:
         return np.zeros((height, width, channels), np.float64)
 
+
 def _array_to_datum(image, label, encoding):
     """
     Create a caffe Datum from a numpy.ndarray
@@ -606,14 +621,14 @@ def _array_to_datum(image, label, encoding):
         # Transform to caffe's format requirements
         if image.ndim == 3:
             # Transpose to (channels, height, width)
-            image = image.transpose((2,0,1))
+            image = image.transpose((2, 0, 1))
             if image.shape[0] == 3:
                 # channel swap
                 # XXX see issue #59
-                image = image[[2,1,0],...]
+                image = image[[2, 1, 0], ...]
         elif image.ndim == 2:
             # Add a channels axis
-            image = image[np.newaxis,:,:]
+            image = image[np.newaxis, :, :]
         else:
             raise Exception('Image has unrecognized shape: "%s"' % image.shape)
         datum = caffe.io.array_to_datum(image, label)
@@ -638,6 +653,7 @@ def _array_to_datum(image, label, encoding):
         datum.encoded = True
     return datum
 
+
 def _write_batch_lmdb(db, batch, image_count):
     """
     Write a batch to an LMDB database
@@ -651,17 +667,18 @@ def _write_batch_lmdb(db, batch, image_count):
     except lmdb.MapFullError:
         # double the map_size
         curr_limit = db.info()['map_size']
-        new_limit = curr_limit*2
+        new_limit = curr_limit * 2
         try:
-            db.set_mapsize(new_limit) # double it
+            db.set_mapsize(new_limit)  # double it
         except AttributeError as e:
             version = tuple(int(x) for x in lmdb.__version__.split('.'))
-            if version < (0,87):
+            if version < (0, 87):
                 raise Error('py-lmdb is out of date (%s vs 0.87)' % lmdb.__version__)
             else:
                 raise e
         # try again
         _write_batch_lmdb(db, batch, image_count)
+
 
 def _save_means(image_sum, image_count, mean_files):
     """
@@ -676,14 +693,14 @@ def _save_means(image_sum, image_count, mean_files):
             # Transform to caffe's format requirements
             if data.ndim == 3:
                 # Transpose to (channels, height, width)
-                data = data.transpose((2,0,1))
+                data = data.transpose((2, 0, 1))
                 if data.shape[0] == 3:
                     # channel swap
                     # XXX see issue #59
-                    data = data[[2,1,0],...]
+                    data = data[[2, 1, 0], ...]
             elif mean.ndim == 2:
                 # Add a channels axis
-                data = data[np.newaxis,:,:]
+                data = data[np.newaxis, :, :]
 
             blob = caffe_pb2.BlobProto()
             blob.num = 1
@@ -705,55 +722,55 @@ def _save_means(image_sum, image_count, mean_files):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create-Db tool - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument('input_file',
-            help='An input file of labeled images')
+                        help='An input file of labeled images')
     parser.add_argument('output_dir',
-            help='Path to the output database')
+                        help='Path to the output database')
     parser.add_argument('width',
-            type=int,
-            help='width of resized images'
-            )
+                        type=int,
+                        help='width of resized images'
+                        )
     parser.add_argument('height',
-            type=int,
-            help='height of resized images'
-            )
+                        type=int,
+                        help='height of resized images'
+                        )
 
-    ### Optional arguments
+    # Optional arguments
 
     parser.add_argument('-c', '--channels',
-            type=int,
-            default=3,
-            help='channels of resized images (1 for grayscale, 3 for color [default])'
-            )
+                        type=int,
+                        default=3,
+                        help='channels of resized images (1 for grayscale, 3 for color [default])'
+                        )
     parser.add_argument('-r', '--resize_mode',
-            help='resize mode for images (must be "crop", "squash" [default], "fill" or "half_crop")'
-            )
+                        help='resize mode for images (must be "crop", "squash" [default], "fill" or "half_crop")'
+                        )
     parser.add_argument('-m', '--mean_file', action='append',
-            help="location to output the image mean (doesn't save mean if not specified)")
+                        help="location to output the image mean (doesn't save mean if not specified)")
     parser.add_argument('-f', '--image_folder',
-            help='folder containing the images (if the paths in input_file are not absolute)')
+                        help='folder containing the images (if the paths in input_file are not absolute)')
     parser.add_argument('-s', '--shuffle',
-            action='store_true',
-            help='Shuffle images before saving'
-            )
+                        action='store_true',
+                        help='Shuffle images before saving'
+                        )
     parser.add_argument('-e', '--encoding',
-            help = 'Image encoding format (jpg/png)'
-            )
+                        help='Image encoding format (jpg/png)'
+                        )
     parser.add_argument('-C', '--compression',
-            help = 'Database compression format (gzip)'
-            )
+                        help='Database compression format (gzip)'
+                        )
     parser.add_argument('-b', '--backend',
-            default='lmdb',
-            help = 'The database backend - lmdb[default] or hdf5')
+                        default='lmdb',
+                        help='The database backend - lmdb[default] or hdf5')
     parser.add_argument('--lmdb_map_size',
-            type=int,
-            help = 'The initial map size for LMDB (in MB)')
+                        type=int,
+                        help='The initial map size for LMDB (in MB)')
     parser.add_argument('--hdf5_dset_limit',
-            type=int,
-            default=2**31,
-            help = 'The size limit for HDF5 datasets')
+                        type=int,
+                        default=2**31,
+                        help='The size limit for HDF5 datasets')
 
     args = vars(parser.parse_args())
 
@@ -763,18 +780,17 @@ if __name__ == '__main__':
 
     try:
         create_db(args['input_file'], args['output_dir'],
-                args['width'], args['height'], args['channels'],
-                args['backend'],
-                resize_mode     = args['resize_mode'],
-                image_folder    = args['image_folder'],
-                shuffle         = args['shuffle'],
-                mean_files      = args['mean_file'],
-                encoding        = args['encoding'],
-                compression     = args['compression'],
-                lmdb_map_size   = args['lmdb_map_size'],
-                hdf5_dset_limit = args['hdf5_dset_limit'],
-                )
+                  args['width'], args['height'], args['channels'],
+                  args['backend'],
+                  resize_mode=args['resize_mode'],
+                  image_folder=args['image_folder'],
+                  shuffle=args['shuffle'],
+                  mean_files=args['mean_file'],
+                  encoding=args['encoding'],
+                  compression=args['compression'],
+                  lmdb_map_size=args['lmdb_map_size'],
+                  hdf5_dset_limit=args['hdf5_dset_limit'],
+                  )
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))
         raise
-

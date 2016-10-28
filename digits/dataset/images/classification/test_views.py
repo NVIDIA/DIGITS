@@ -1,14 +1,10 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import itertools
 import json
 import os
 import shutil
 import tempfile
-import time
-import unittest
-import urllib
 
 # Find the best implementation available
 try:
@@ -18,9 +14,8 @@ except ImportError:
 
 from bs4 import BeautifulSoup
 import PIL.Image
-from urlparse import urlparse
 
-from .test_imageset_creator import create_classification_imageset, IMAGE_SIZE as DUMMY_IMAGE_SIZE, IMAGE_COUNT as DUMMY_IMAGE_COUNT
+from .test_imageset_creator import create_classification_imageset, IMAGE_COUNT as DUMMY_IMAGE_COUNT
 from digits import test_utils
 import digits.test_views
 
@@ -30,6 +25,7 @@ TIMEOUT_DATASET = 45
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)
 ################################################################################
+
 
 class BaseViewsTest(digits.test_views.BaseViewsTest):
     """
@@ -62,17 +58,18 @@ class BaseViewsTest(digits.test_views.BaseViewsTest):
     def delete_dataset(cls, job_id):
         return cls.delete_job(job_id, job_type='datasets')
 
+
 class BaseViewsTestWithImageset(BaseViewsTest):
     """
     Provides an imageset and some functions
     """
     # Inherited classes may want to override these default attributes
-    IMAGE_HEIGHT    = 10
-    IMAGE_WIDTH     = 10
-    IMAGE_CHANNELS  = 3
-    BACKEND         = 'lmdb'
-    ENCODING        = 'png'
-    COMPRESSION     = 'none'
+    IMAGE_HEIGHT = 10
+    IMAGE_WIDTH = 10
+    IMAGE_CHANNELS = 3
+    BACKEND = 'lmdb'
+    ENCODING = 'png'
+    COMPRESSION = 'none'
 
     UNBALANCED_CATEGORY = False
 
@@ -105,17 +102,17 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         **kwargs -- data to be sent with POST request
         """
         data = {
-                'dataset_name':     'test_dataset',
-                'group_name':       'test_group',
-                'method':           'folder',
-                'folder_train':     cls.imageset_folder,
-                'resize_channels':  cls.IMAGE_CHANNELS,
-                'resize_width':     cls.IMAGE_WIDTH,
-                'resize_height':    cls.IMAGE_HEIGHT,
-                'backend':          cls.BACKEND,
-                'encoding':         cls.ENCODING,
-                'compression':      cls.COMPRESSION,
-                }
+            'dataset_name':     'test_dataset',
+            'group_name':       'test_group',
+            'method':           'folder',
+            'folder_train':     cls.imageset_folder,
+            'resize_channels':  cls.IMAGE_CHANNELS,
+            'resize_width':     cls.IMAGE_WIDTH,
+            'resize_height':    cls.IMAGE_HEIGHT,
+            'backend':          cls.BACKEND,
+            'encoding':         cls.ENCODING,
+            'compression':      cls.COMPRESSION,
+        }
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -152,6 +149,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
     def categoryCount(cls):
         return len(cls.imageset_paths.keys())
 
+
 class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
     """
     Provides a dataset and some functions
@@ -183,7 +181,7 @@ class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content1 = json.loads(rv.data)
 
-        ## Clone job1 as job2
+        # Clone job1 as job2
         options_2 = {
             'clone': job1_id,
         }
@@ -194,7 +192,7 @@ class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content2 = json.loads(rv.data)
 
-        ## These will be different
+        # These will be different
         content1.pop('id')
         content2.pop('id')
         content1.pop('directory')
@@ -209,10 +207,12 @@ class BaseViewsTestWithDataset(BaseViewsTestWithImageset):
 # Test classes
 ################################################################################
 
+
 class TestViews(BaseViewsTest, test_utils.DatasetMixin):
     """
     Tests which don't require an imageset or a dataset
     """
+
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/images/classification/new')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
@@ -226,11 +226,12 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
     """
     Dataset creation tests
     """
+
     def test_nonexistent_folder(self):
         try:
-            job_id = self.create_dataset(
-                    folder_train = '/not-a-directory'
-                    )
+            self.create_dataset(
+                folder_train='/not-a-directory'
+            )
         except RuntimeError:
             return
         raise AssertionError('Should have failed')
@@ -282,9 +283,9 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
             label_id += 1
 
         data = {
-                'method': 'textfile',
-                'textfile_use_val': 'y',
-                }
+            'method': 'textfile',
+            'textfile_use_val': 'y',
+        }
 
         if local_path:
             train_file = os.path.join(self.imageset_folder, "local_train.txt")
@@ -327,7 +328,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 class TestImageCount(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
     def test_image_count(self):
-        for type in ['train','val','test']:
+        for type in ['train', 'val', 'test']:
             yield self.check_image_count, type
 
     def check_image_count(self, type):
@@ -366,15 +367,17 @@ class TestImageCount(BaseViewsTestWithImageset, test_utils.DatasetMixin):
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
+
 class TestMaxPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
+
     def test_max_per_class(self):
-        for type in ['train','val','test']:
+        for type in ['train', 'val', 'test']:
             yield self.check_max_per_class, type
 
     def check_max_per_class(self, type):
         # create dataset, asking for at most DUMMY_IMAGE_COUNT/2 images per class
-        assert DUMMY_IMAGE_COUNT%2 == 0
-        max_per_class = DUMMY_IMAGE_COUNT/2
+        assert DUMMY_IMAGE_COUNT % 2 == 0
+        max_per_class = DUMMY_IMAGE_COUNT / 2
         data = {'folder_pct_val': 0}
         if type == 'train':
             data['folder_train_max_per_class'] = max_per_class
@@ -403,18 +406,19 @@ class TestMaxPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
+
 class TestMinPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
     UNBALANCED_CATEGORY = True
 
     def test_min_per_class(self):
-        for type in ['train','val','test']:
+        for type in ['train', 'val', 'test']:
             yield self.check_min_per_class, type
 
     def check_min_per_class(self, type):
         # create dataset, asking for one more image per class
         # than available in the "unbalanced" category
-        min_per_class = DUMMY_IMAGE_COUNT/2+1
+        min_per_class = DUMMY_IMAGE_COUNT / 2 + 1
         data = {'folder_pct_val': 0}
         if type == 'train':
             data['folder_train_min_per_class'] = min_per_class
@@ -438,7 +442,7 @@ class TestMinPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
             assert len(info['ParseFolderTasks']) == 2, 'expected exactly two ParseFolderTasks'
             parse_info = info['ParseFolderTasks'][1]
 
-        assert self.categoryCount() == parse_info['label_count']+1
+        assert self.categoryCount() == parse_info['label_count'] + 1
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
@@ -447,6 +451,7 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
     """
     Tests on a dataset that has already been created
     """
+
     def test_index_json(self):
         rv = self.app.get('/index.json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
@@ -484,9 +489,9 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
 
     def test_edit_notes(self):
         status = self.edit_job(
-                self.dataset_id,
-                notes='new notes'
-                )
+            self.dataset_id,
+            notes='new notes'
+        )
         assert status == 200, 'failed with %s' % status
 
     def test_backend_selection(self):
@@ -515,24 +520,31 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
             assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
             assert 'Items per page' in rv.data, 'unexpected page format'
 
+
 class TestCreatedGrayscale(TestCreated, test_utils.DatasetMixin):
     IMAGE_CHANNELS = 1
+
 
 class TestCreatedWide(TestCreated, test_utils.DatasetMixin):
     IMAGE_WIDTH = 20
 
+
 class TestCreatedTall(TestCreated, test_utils.DatasetMixin):
     IMAGE_HEIGHT = 20
+
 
 class TestCreatedJPEG(TestCreated, test_utils.DatasetMixin):
     ENCODING = 'jpg'
 
+
 class TestCreatedRaw(TestCreated, test_utils.DatasetMixin):
     ENCODING = 'none'
+
 
 class TestCreatedRawGrayscale(TestCreated, test_utils.DatasetMixin):
     ENCODING = 'none'
     IMAGE_CHANNELS = 1
+
 
 class TestCreatedHdf5(TestCreated, test_utils.DatasetMixin):
     BACKEND = 'hdf5'
@@ -542,6 +554,7 @@ class TestCreatedHdf5(TestCreated, test_utils.DatasetMixin):
         content = json.loads(rv.data)
         for task in content['CreateDbTasks']:
             assert task['compression'] == self.COMPRESSION
+
 
 class TestCreatedHdf5Gzip(TestCreatedHdf5, test_utils.DatasetMixin):
     COMPRESSION = 'gzip'

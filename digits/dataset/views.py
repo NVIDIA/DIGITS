@@ -11,6 +11,7 @@ from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
 
+
 @blueprint.route('/<job_id>.json', methods=['GET'])
 @blueprint.route('/<job_id>', methods=['GET'])
 def show(job_id):

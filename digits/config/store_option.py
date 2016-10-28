@@ -6,6 +6,7 @@ from urlparse import urlparse
 
 from . import option_list
 
+
 def validate(value):
     if value == '':
         return value
@@ -18,6 +19,7 @@ def validate(value):
             else:
                 raise ValueError('"%s" is not a valid URL' % url)
     return ','.join(valid_url_list)
+
 
 def load_url_list():
     """
@@ -34,4 +36,3 @@ def load_url_list():
 option_list['model_store'] = {
     'url_list': load_url_list()
 }
-

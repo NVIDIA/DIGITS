@@ -10,7 +10,9 @@ from digits.config import config_value
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+
 class JobIdLogger(logging.Logger):
+
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None):
         """
         Customizing it to set a default value for extra['job_id']
@@ -25,6 +27,7 @@ class JobIdLogger(logging.Logger):
             rv.__dict__['job_id'] = ''
         return rv
 
+
 class JobIdLoggerAdapter(logging.LoggerAdapter):
     """
     Accepts an optional keyword argument: 'job_id'
@@ -37,6 +40,7 @@ class JobIdLoggerAdapter(logging.LoggerAdapter):
             adapter = JobIdLoggerAdapter(logger, {})
             adapter.debug(msg, job_id=id)
     """
+
     def process(self, msg, kwargs):
         if 'job_id' in kwargs:
             if 'extra' not in kwargs:
@@ -49,16 +53,17 @@ class JobIdLoggerAdapter(logging.LoggerAdapter):
             kwargs['extra']['job_id'] = ' [%s]' % self.extra['job_id']
         return msg, kwargs
 
+
 def setup_logging():
     # Set custom logger
     logging.setLoggerClass(JobIdLogger)
 
     formatter = logging.Formatter(
-            fmt="%(asctime)s%(job_id)s [%(levelname)-5s] %(message)s",
-            datefmt=DATE_FORMAT,
-            )
+        fmt="%(asctime)s%(job_id)s [%(levelname)-5s] %(message)s",
+        datefmt=DATE_FORMAT,
+    )
 
-    ### digits logger
+    # digits logger
 
     main_logger = logging.getLogger('digits')
     main_logger.setLevel(logging.DEBUG)
@@ -68,7 +73,7 @@ def setup_logging():
     stdoutHandler.setLevel(logging.DEBUG)
     main_logger.addHandler(stdoutHandler)
 
-    ### digits.webapp logger
+    # digits.webapp logger
 
     logfile_filename = config_value('log_file')['filename']
     logfile_level = config_value('log_file')['level']
@@ -78,15 +83,15 @@ def setup_logging():
         webapp_logger.setLevel(logging.DEBUG)
         # Log to file
         fileHandler = logging.handlers.RotatingFileHandler(
-                logfile_filename,
-                maxBytes=(1024*1024*10), # 10 MB
-                backupCount=10,
-                )
+            logfile_filename,
+            maxBytes=(1024 * 1024 * 10),  # 10 MB
+            backupCount=10,
+        )
         fileHandler.setFormatter(formatter)
         fileHandler.setLevel(logfile_level)
         webapp_logger.addHandler(fileHandler)
 
-        ### Useful shortcut for the webapp, which may set job_id
+        # Useful shortcut for the webapp, which may set job_id
 
         return JobIdLoggerAdapter(webapp_logger, {})
     else:
@@ -95,4 +100,3 @@ def setup_logging():
 
 # Do it when this module is loaded
 logger = setup_logging()
-

@@ -11,7 +11,6 @@ import sys
 from . import option_list
 from digits import device_query
 from digits.utils import parse_version
-from digits.utils.errors import UnsupportedPlatformError
 
 
 def load_from_envvar(envvar):
@@ -93,7 +92,7 @@ def is_pycaffe_in_dir(dirname=None):
         sys.path = [dirname]  # temporarily replace sys.path
     try:
         imp.find_module('caffe')
-    except ImportError as e:
+    except ImportError:
         return False
     finally:
         sys.path = old_path
@@ -118,7 +117,7 @@ def import_pycaffe(dirname=None):
 
     # for Windows environment, loading h5py before caffe solves the issue mentioned in
     # https://github.com/NVIDIA/DIGITS/issues/47#issuecomment-206292824
-    import h5py
+    import h5py  # noqa
     try:
         import caffe
     except ImportError:
@@ -153,7 +152,7 @@ def get_version_and_flavor(executable):
 
     version = parse_version(version_string)
 
-    if parse_version(0,99,0) > version > parse_version(0,9,0):
+    if parse_version(0, 99, 0) > version > parse_version(0, 9, 0):
         flavor = 'NVIDIA'
         minimum_version = '0.11.0'
         if version < parse_version(minimum_version):
@@ -167,7 +166,6 @@ def get_version_and_flavor(executable):
 
 
 def get_version_from_pycaffe():
-    import caffe
     try:
         from caffe import __version__ as version
         return version
@@ -185,7 +183,7 @@ def get_version_from_cmdline(executable):
     pattern = 'version'
     for line in p.stdout:
         if pattern in line:
-            return line[line.find(pattern) + len(pattern)+1:].strip()
+            return line[line.find(pattern) + len(pattern) + 1:].strip()
     return None
 
 
@@ -220,7 +218,6 @@ def get_version_from_soname(executable):
         return None
 
 
-
 if 'CAFFE_ROOT' in os.environ:
     executable, version, flavor = load_from_envvar('CAFFE_ROOT')
 elif 'CAFFE_HOME' in os.environ:
@@ -232,7 +229,6 @@ option_list['caffe'] = {
     'executable': executable,
     'version': version,
     'flavor': flavor,
-    'multi_gpu': (flavor == 'BVLC' or parse_version(version) >= parse_version(0,12)),
+    'multi_gpu': (flavor == 'BVLC' or parse_version(version) >= parse_version(0, 12)),
     'cuda_enabled': (len(device_query.get_devices()) > 0),
 }
-

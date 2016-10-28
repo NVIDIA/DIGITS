@@ -114,7 +114,7 @@ class TorchTrainTask(TrainTask):
         self.image_mean = None
         self.classifier = None
 
-    ### Task overrides
+    # Task overrides
 
     @override
     def name(self):
@@ -137,16 +137,17 @@ class TorchTrainTask(TrainTask):
         # don't recreate file if it already exists
         if not os.path.exists(filename):
             mean_file = self.dataset.get_mean_file()
-            assert mean_file != None and mean_file.endswith('.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
+            assert mean_file is not None and mean_file.endswith('.binaryproto'), \
+                'Mean subtraction required but dataset has no mean file in .binaryproto format'
             blob = caffe_pb2.BlobProto()
-            with open(self.dataset.path(mean_file),'rb') as infile:
+            with open(self.dataset.path(mean_file), 'rb') as infile:
                 blob.ParseFromString(infile.read())
             data = np.array(blob.data, dtype=np.uint8).reshape(blob.channels, blob.height, blob.width)
             if blob.channels == 3:
                 # converting from BGR to RGB
-                data = data[[2,1,0],...] # channel swap
+                data = data[[2, 1, 0], ...]  # channel swap
                 # convert to (height, width, channels)
-                data = data.transpose((1,2,0))
+                data = data.transpose((1, 2, 0))
             else:
                 assert blob.channels == 1
                 # convert to (height, width)
@@ -159,7 +160,7 @@ class TorchTrainTask(TrainTask):
     @override
     def task_arguments(self, resources, env):
         dataset_backend = self.dataset.get_backend()
-        assert dataset_backend=='lmdb' or dataset_backend=='hdf5'
+        assert dataset_backend == 'lmdb' or dataset_backend == 'hdf5'
 
         args = [config_value('torch')['executable'],
                 os.path.join(
@@ -200,7 +201,7 @@ class TorchTrainTask(TrainTask):
         if val_label_db_path:
             args.append('--validation_labels=%s' % val_label_db_path)
 
-        #learning rate policy input parameters
+        # learning rate policy input parameters
         if self.lr_policy['policy'] == 'fixed':
             pass
         elif self.lr_policy['policy'] == 'step':
@@ -305,8 +306,8 @@ class TorchTrainTask(TrainTask):
 
     @override
     def process_output(self, line):
-        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
-        line=regex.sub('', line).strip()
+        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)  # TODO: need to include regular expression for MAC color codes
+        line = regex.sub('', line).strip()
         self.torch_log.write('%s\n' % line)
         self.torch_log.flush()
 
@@ -335,11 +336,12 @@ class TorchTrainTask(TrainTask):
         float_exp = '([-]?inf|nan|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         # loss and learning rate updates
-        match = re.match(r'Training \(epoch (\d+\.?\d*)\): \w*loss\w* = %s, lr = %s'  % (float_exp, float_exp), message)
+        match = re.match(r'Training \(epoch (\d+\.?\d*)\): \w*loss\w* = %s, lr = %s' % (float_exp, float_exp), message)
         if match:
             index = float(match.group(1))
             l = match.group(2)
-            assert not('inf' in l or 'nan' in l), 'Network reported %s for training loss. Try decreasing your learning rate.'  % l
+            assert not('inf' in l or 'nan' in l), \
+                'Network reported %s for training loss. Try decreasing your learning rate.' % l
             l = float(l)
             lr = match.group(4)
             lr = float(lr)
@@ -353,13 +355,16 @@ class TorchTrainTask(TrainTask):
             return True
 
         # testing loss and accuracy updates
-        match = re.match(r'Validation \(epoch (\d+\.?\d*)\): \w*loss\w* = %s(, accuracy = %s)?' % (float_exp,float_exp), message, flags=re.IGNORECASE)
+        match = re.match(r'Validation \(epoch (\d+\.?\d*)\): \w*loss\w* = %s(, accuracy = %s)?' %
+                         (float_exp, float_exp), message, flags=re.IGNORECASE)
         if match:
             index = float(match.group(1))
             l = match.group(2)
             a = match.group(5)
-            # note: validation loss could have diverged however if the training loss is still finite, there is a slim possibility
-            # that the network keeps learning something useful, so we don't treat infinite validation loss as a fatal error
+            # note: validation loss could have diverged however
+            # if the training loss is still finite, there is a slim possibility
+            # that the network keeps learning something useful, so we don't treat
+            # infinite validation loss as a fatal error
             if not('inf' in l or 'nan' in l):
                 l = float(l)
                 self.logger.debug('Network validation loss #%s: %s' % (index, l))
@@ -375,7 +380,9 @@ class TorchTrainTask(TrainTask):
         # snapshot saved
         if self.saving_snapshot:
             if not message.startswith('Snapshot saved'):
-                self.logger.warning('Torch output format seems to have changed. Expected "Snapshot saved..." after "Snapshotting to..."')
+                self.logger.warning(
+                    'Torch output format seems to have changed. '
+                    'Expected "Snapshot saved..." after "Snapshotting to..."')
             else:
                 self.logger.info('Snapshot saved.')  # to print file name here, you can use "message"
             self.detect_snapshots()
@@ -421,11 +428,10 @@ class TorchTrainTask(TrainTask):
                 level = 'warning'
             elif level == 'ERROR':
                 level = 'error'
-            elif level == 'FAIL': #FAIL
+            elif level == 'FAIL':  # FAIL
                 level = 'critical'
             return (timestamp, level, message)
         else:
-            #self.logger.warning('Unrecognized task output "%s"' % line)
             return (None, None, None)
 
     def send_snapshot_update(self):
@@ -436,16 +442,16 @@ class TorchTrainTask(TrainTask):
         from digits.webapp import socketio
 
         socketio.emit('task update',
-                {
-                    'task': self.html_id(),
-                    'update': 'snapshots',
-                    'data': self.snapshot_list(),
-                    },
-                namespace='/jobs',
-                room=self.job_id,
-                )
+                      {
+                          'task': self.html_id(),
+                          'update': 'snapshots',
+                          'data': self.snapshot_list(),
+                      },
+                      namespace='/jobs',
+                      room=self.job_id,
+                      )
 
-    ### TrainTask overrides
+    # TrainTask overrides
     @override
     def after_run(self):
         if self.temp_unrecognized_output:
@@ -468,7 +474,7 @@ class TorchTrainTask(TrainTask):
                 if message:
                     lines.append(message)
             # return the last 20 lines
-            traceback = '\n\nLast output:\n' + '\n'.join(lines[len(lines)-20:]) if len(lines)>0 else ''
+            traceback = '\n\nLast output:\n' + '\n'.join(lines[len(lines) - 20:]) if len(lines) > 0 else ''
             if self.traceback:
                 self.traceback = self.traceback + traceback
             else:
@@ -486,18 +492,19 @@ class TorchTrainTask(TrainTask):
 
         for filename in os.listdir(snapshot_dir):
             # find models
-            match = re.match(r'%s_(\d+)\.?(\d*)(_Weights|_Model)\.t7' % os.path.basename(self.snapshot_prefix), filename)
+            match = re.match(r'%s_(\d+)\.?(\d*)(_Weights|_Model)\.t7' %
+                             os.path.basename(self.snapshot_prefix), filename)
             if match:
                 epoch = 0
                 if match.group(2) == '':
                     epoch = int(match.group(1))
                 else:
                     epoch = float(match.group(1) + '.' + match.group(2))
-                snapshots.append( (
-                        os.path.join(snapshot_dir, filename),
-                        epoch
-                        )
-                    )
+                snapshots.append((
+                    os.path.join(snapshot_dir, filename),
+                    epoch
+                )
+                )
 
         self.snapshots = sorted(snapshots, key=lambda tup: tup[1])
 
@@ -564,7 +571,7 @@ class TorchTrainTask(TrainTask):
 
         if self.use_mean != 'none':
             filename = self.create_mean_file()
-            args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+            args.append('--mean=%s' % filename)
 
         if self.use_mean == 'pixel':
             args.append('--subtractMean=pixel')
@@ -577,14 +584,14 @@ class TorchTrainTask(TrainTask):
             args.append('--crop=yes')
             args.append('--croplen=%d' % self.crop_size)
 
-        if layers=='all':
+        if layers == 'all':
             args.append('--visualization=yes')
             args.append('--save=%s' % self.job_dir)
 
         # Convert them all to strings
         args = [str(x) for x in args]
 
-        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+        regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)  # TODO: need to include regular expression for MAC color codes
         self.logger.info('%s classify one task started.' % self.get_framework_id())
 
         unrecognized_output = []
@@ -601,26 +608,29 @@ class TorchTrainTask(TrainTask):
             args.append('--type=float')
 
         p = subprocess.Popen(args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.job_dir,
-                close_fds=True,
-                env=env,
-                )
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT,
+                             cwd=self.job_dir,
+                             close_fds=True,
+                             env=env,
+                             )
 
         try:
             while p.poll() is None:
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        raise digits.inference.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                        raise digits.inference.errors.InferenceError(
+                            '%s classify one task got aborted. error code - %d'
+                            % (self.get_framework_id(), p.returncode))
 
                     if line is not None:
                         # Remove color codes and whitespace
-                        line=regex.sub('', line).strip()
+                        line = regex.sub('', line).strip()
                     if line:
                         if not self.process_test_output(line, predictions, 'one'):
-                            self.logger.warning('%s classify one task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
+                            self.logger.warning('%s classify one task unrecognized input: %s' %
+                                                (self.get_framework_id(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
@@ -632,7 +642,8 @@ class TorchTrainTask(TrainTask):
             if type(e) == digits.inference.errors.InferenceError:
                 error_message = e.__str__()
             else:
-                error_message = '%s classify one task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
+                error_message = '%s classify one task failed with error code %d \n %s' % (
+                    self.get_framework_id(), p.returncode, str(e))
             self.logger.error(error_message)
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
@@ -656,7 +667,7 @@ class TorchTrainTask(TrainTask):
 
         visualizations = []
 
-        if layers=='all' and self.visualization_file:
+        if layers == 'all' and self.visualization_file:
             vis_db = h5py.File(self.visualization_file, 'r')
             # the HDF5 database is organized as follows:
             # <root>
@@ -666,7 +677,7 @@ class TorchTrainTask(TrainTask):
             #    |  |- activations
             #    |  |- weights
             #    |- 2
-            for layer_id,layer in vis_db['layers'].items():
+            for layer_id, layer in vis_db['layers'].items():
                 layer_desc = layer['name'][...].tostring()
                 if 'Sequential' in layer_desc or 'Parallel' in layer_desc:
                     # ignore containers
@@ -676,24 +687,24 @@ class TorchTrainTask(TrainTask):
                 if 'activations' in layer:
                     data = np.array(layer['activations'][...])
                     # skip batch dimension
-                    if len(data.shape)>1 and data.shape[0]==1:
+                    if len(data.shape) > 1 and data.shape[0] == 1:
                         data = data[0]
                     vis = utils.image.get_layer_vis_square(data)
                     mean, std, hist = self.get_layer_statistics(data)
                     visualizations.append(
-                                             {
-                                                 'id':         idx,
-                                                 'name':       layer_desc,
-                                                 'vis_type':   'Activations',
-                                                 'vis': vis,
-                                                 'data_stats': {
-                                                                  'shape':      data.shape,
-                                                                  'mean':       mean,
-                                                                  'stddev':     std,
-                                                                  'histogram':  hist,
-                                                 }
-                                             }
-                                         )
+                        {
+                            'id':         idx,
+                            'name':       layer_desc,
+                            'vis_type':   'Activations',
+                            'vis': vis,
+                            'data_stats': {
+                                'shape':      data.shape,
+                                'mean':       mean,
+                                'stddev':     std,
+                                'histogram':  hist,
+                            }
+                        }
+                    )
                 # weights
                 if 'weights' in layer:
                     data = np.array(layer['weights'][...])
@@ -709,23 +720,23 @@ class TorchTrainTask(TrainTask):
                         bias = np.array(layer['bias'][...])
                         parameter_count += reduce(operator.mul, bias.shape, 1)
                     visualizations.append(
-                                           {
-                                               'id':          idx,
-                                               'name':        layer_desc,
-                                               'vis_type':    'Weights',
-                                               'vis':  vis,
-                                               'param_count': parameter_count,
-                                               'data_stats': {
-                                                                 'shape':      data.shape,
-                                                                 'mean':       mean,
-                                                                 'stddev':     std,
-                                                                 'histogram':  hist,
-                                               }
-                                           }
-                                         )
+                        {
+                            'id':          idx,
+                            'name':        layer_desc,
+                            'vis_type':    'Weights',
+                            'vis':  vis,
+                            'param_count': parameter_count,
+                            'data_stats': {
+                                'shape':      data.shape,
+                                'mean':       mean,
+                                'stddev':     std,
+                                'histogram':  hist,
+                            }
+                        }
+                    )
             # sort by layer ID
-            visualizations = sorted(visualizations,key=lambda x:x['id'])
-        return (predictions,visualizations)
+            visualizations = sorted(visualizations, key=lambda x: x['id'])
+        return (predictions, visualizations)
 
     def get_layer_statistics(self, data):
         """
@@ -741,11 +752,10 @@ class TorchTrainTask(TrainTask):
         std = np.std(data)
         y, x = np.histogram(data, bins=20)
         y = list(y)
-        ticks = x[[0,len(x)/2,-1]]
-        x = [(x[i]+x[i+1])/2.0 for i in xrange(len(x)-1)]
+        ticks = x[[0, len(x) / 2, -1]]
+        x = [(x[i] + x[i + 1]) / 2.0 for i in xrange(len(x) - 1)]
         ticks = list(ticks)
         return (mean, std, [y, x, ticks])
-
 
     def after_test_run(self, temp_image_path):
         try:
@@ -767,11 +777,12 @@ class TorchTrainTask(TrainTask):
         float_exp = '([-]?inf|nan|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         # format of output while testing single image
-        match = re.match(r'For image \d+, predicted class \d+: \d+ \((.*?)\) %s'  % (float_exp), message)
+        match = re.match(r'For image \d+, predicted class \d+: \d+ \((.*?)\) %s' % (float_exp), message)
         if match:
             label = match.group(1)
             confidence = match.group(2)
-            assert not('inf' in confidence or 'nan' in confidence), 'Network reported %s for confidence value. Please check image and network'  % label
+            assert not('inf' in confidence or 'nan' in confidence), \
+                'Network reported %s for confidence value. Please check image and network' % label
             confidence = float(confidence)
             predictions.append((label, confidence))
             return True
@@ -800,7 +811,9 @@ class TorchTrainTask(TrainTask):
             return True
 
         if level in ['error', 'critical']:
-            raise digits.inference.errors.InferenceError('%s classify %s task failed with error message - %s' % (self.get_framework_id(), test_category, message))
+            raise digits.inference.errors.InferenceError(
+                '%s classify %s task failed with error message - %s'
+                % (self.get_framework_id(), test_category, message))
 
         return True           # control never reach this line. It can be removed.
 
@@ -830,11 +843,11 @@ class TorchTrainTask(TrainTask):
         # create a temporary folder to store images and a temporary file
         # to store a list of paths to the images
         temp_dir_path = tempfile.mkdtemp()
-        try: # this try...finally clause is used to clean up the temp directory in any case
+        try:  # this try...finally clause is used to clean up the temp directory in any case
             temp_imglist_handle, temp_imglist_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
             for image in images:
                 temp_image_handle, temp_image_path = tempfile.mkstemp(
-                        dir=temp_dir_path, suffix='.png')
+                    dir=temp_dir_path, suffix='.png')
                 image = PIL.Image.fromarray(image)
                 try:
                     image.save(temp_image_path, format='png')
@@ -854,7 +867,7 @@ class TorchTrainTask(TrainTask):
                         'tools', 'torch', 'wrapper.lua'),
                     'test.lua',
                     '--testMany=yes',
-                    '--allPredictions=yes',   #all predictions are grabbed and formatted as required by DIGITS
+                    '--allPredictions=yes',  # all predictions are grabbed and formatted as required by DIGITS
                     '--image=%s' % str(temp_imglist_path),
                     '--network=%s' % self.model_file.split(".")[0],
                     '--networkDirectory=%s' % self.job_dir,
@@ -866,7 +879,7 @@ class TorchTrainTask(TrainTask):
 
             if self.use_mean != 'none':
                 filename = self.create_mean_file()
-                args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+                args.append('--mean=%s' % filename)
 
             if self.use_mean == 'pixel':
                 args.append('--subtractMean=pixel')
@@ -881,7 +894,8 @@ class TorchTrainTask(TrainTask):
             # Convert them all to strings
             args = [str(x) for x in args]
 
-            regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)   #TODO: need to include regular expression for MAC color codes
+            # TODO: need to include regular expression for MAC color codes
+            regex = re.compile('\x1b\[[0-9;]*m', re.UNICODE)
             self.logger.info('%s classify many task started.' % self.name())
 
             env = os.environ.copy()
@@ -895,27 +909,32 @@ class TorchTrainTask(TrainTask):
             unrecognized_output = []
             predictions = []
             p = subprocess.Popen(args,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    cwd=self.job_dir,
-                    close_fds=True,
-                    env=env
-                    )
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 cwd=self.job_dir,
+                                 close_fds=True,
+                                 env=env
+                                 )
 
             try:
                 while p.poll() is None:
                     for line in utils.nonblocking_readlines(p.stdout):
                         if self.aborted.is_set():
                             p.terminate()
-                            raise digits.inference.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                            raise digits.inference.errors.InferenceError(
+                                '%s classify many task got aborted. error code - %d'
+                                % (self.get_framework_id(), p.returncode))
 
                         if line is not None:
-                            # Remove whitespace and color codes. color codes are appended to beginning and end of line by torch binary i.e., 'th'. Check the below link for more information
-                            # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
-                            line=regex.sub('', line).strip()
+                            # Remove whitespace and color codes.
+                            # Color codes are appended to beginning and end of line by torch binary
+                            # i.e., 'th'. Check the below link for more information
+                            # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ  # noqa
+                            line = regex.sub('', line).strip()
                         if line:
                             if not self.process_test_output(line, predictions, 'many'):
-                                self.logger.warning('%s classify many task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
+                                self.logger.warning('%s classify many task unrecognized input: %s' %
+                                                    (self.get_framework_id(), line.strip()))
                                 unrecognized_output.append(line)
                         else:
                             time.sleep(0.05)
@@ -926,7 +945,8 @@ class TorchTrainTask(TrainTask):
                 if type(e) == digits.inference.errors.InferenceError:
                     error_message = e.__str__()
                 else:
-                    error_message = '%s classify many task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
+                    error_message = '%s classify many task failed with error code %d \n %s' % (
+                        self.get_framework_id(), p.returncode, str(e))
                 self.logger.error(error_message)
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
@@ -934,7 +954,8 @@ class TorchTrainTask(TrainTask):
                 raise digits.inference.errors.InferenceError(error_message)
 
             if p.returncode != 0:
-                error_message = '%s classify many task failed with error code %d' % (self.get_framework_id(), p.returncode)
+                error_message = '%s classify many task failed with error code %d' % (
+                    self.get_framework_id(), p.returncode)
                 self.logger.error(error_message)
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
@@ -960,20 +981,20 @@ class TorchTrainTask(TrainTask):
         return paths to model files
         """
         return {
-                "Network": self.model_file
-                }
+            "Network": self.model_file
+        }
 
     @override
     def get_network_desc(self):
         """
         return text description of network
         """
-        with open (os.path.join(self.job_dir,TORCH_MODEL_FILE), "r") as infile:
+        with open(os.path.join(self.job_dir, TORCH_MODEL_FILE), "r") as infile:
             desc = infile.read()
         return desc
 
     @override
-    def get_task_stats(self,epoch=-1):
+    def get_task_stats(self, epoch=-1):
         """
         return a dictionary of task statistics
         """
@@ -988,13 +1009,13 @@ class TorchTrainTask(TrainTask):
             "framework": "torch"
         }
 
-        if hasattr(self,"digits_version"):
+        if hasattr(self, "digits_version"):
             stats.update({"digits version": self.digits_version})
 
-        if hasattr(self.dataset,"resize_mode"):
+        if hasattr(self.dataset, "resize_mode"):
             stats.update({"image resize mode": self.dataset.resize_mode})
 
-        if hasattr(self.dataset,"labels_file"):
+        if hasattr(self.dataset, "labels_file"):
             stats.update({"labels file": self.dataset.labels_file})
 
         return stats

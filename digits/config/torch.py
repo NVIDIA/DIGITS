@@ -53,4 +53,3 @@ else:
         'enabled': True,
         'executable': executable,
     }
-

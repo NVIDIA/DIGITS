@@ -9,6 +9,7 @@ from digits.utils import subclass, override
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
 
+
 @subclass
 class ImageClassificationModelJob(ImageModelJob):
     """
@@ -37,13 +38,11 @@ class ImageClassificationModelJob(ImageModelJob):
         # add other files
         download_files.extend([
             (task.dataset.path(task.dataset.labels_file),
-                    os.path.basename(task.dataset.labels_file)),
-                (task.dataset.path(task.dataset.get_mean_file()),
-                    os.path.basename(task.dataset.get_mean_file())),
-                (snapshot_filename,
-                    os.path.basename(snapshot_filename)),
-            ])
-
+             os.path.basename(task.dataset.labels_file)),
+            (task.dataset.path(task.dataset.get_mean_file()),
+             os.path.basename(task.dataset.get_mean_file())),
+            (snapshot_filename,
+             os.path.basename(snapshot_filename)),
+        ])
 
         return download_files
-

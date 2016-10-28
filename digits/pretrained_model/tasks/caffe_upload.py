@@ -1,13 +1,14 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 import os
-import digits
 from digits.utils import subclass, override
 from digits.status import Status
 from digits.pretrained_model.tasks import UploadPretrainedModelTask
 
+
 @subclass
 class CaffeUploadTask(UploadPretrainedModelTask):
+
     def __init__(self, **kwargs):
         super(CaffeUploadTask, self).__init__(**kwargs)
 
@@ -29,7 +30,6 @@ class CaffeUploadTask(UploadPretrainedModelTask):
         """
         return os.path.join(self.job_dir, "model.caffemodel")
 
-
     @override
     def __setstate__(self, state):
         super(CaffeUploadTask, self).__setstate__(state)
@@ -44,9 +44,9 @@ class CaffeUploadTask(UploadPretrainedModelTask):
             self.move_file(self.labels_path, "labels.txt")
         tmp_dir = os.path.dirname(self.weights_path)
         python_layer_file_name = 'digits_python_layers.py'
-        if os.path.exists(os.path.join(tmp_dir,python_layer_file_name)):
-            self.move_file(os.path.join(tmp_dir,python_layer_file_name), python_layer_file_name)
-        elif os.path.exists(os.path.join(tmp_dir,python_layer_file_name+'c')):
-            self.move_file(os.path.join(tmp_dir,python_layer_file_name+'c'), python_layer_file_name+'c')
+        if os.path.exists(os.path.join(tmp_dir, python_layer_file_name)):
+            self.move_file(os.path.join(tmp_dir, python_layer_file_name), python_layer_file_name)
+        elif os.path.exists(os.path.join(tmp_dir, python_layer_file_name + 'c')):
+            self.move_file(os.path.join(tmp_dir, python_layer_file_name + 'c'), python_layer_file_name + 'c')
 
         self.status = Status.DONE

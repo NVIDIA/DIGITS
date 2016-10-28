@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 import logging
 import os
-import sys
 
 from . import option_list
 import digits
@@ -22,7 +21,6 @@ def load_logfile_filename():
         throw_error = True
     else:
         filename = os.path.join(os.path.dirname(digits.__file__), 'digits.log')
-
 
     if filename is not None:
         try:
@@ -61,7 +59,9 @@ def load_logfile_level():
         elif level == 'critical':
             return logging.CRITICAL
         else:
-            raise ValueError('Invalid value "%s" for logfile_level. Set DIGITS_LOGFILE_LEVEL to fix       your configuration.' % level)
+            raise ValueError(
+                'Invalid value "%s" for logfile_level. '
+                'Set DIGITS_LOGFILE_LEVEL to fix your configuration.' % level)
     else:
         return logging.INFO
 
@@ -70,4 +70,3 @@ option_list['log_file'] = {
     'filename': load_logfile_filename(),
     'level': load_logfile_level(),
 }
-

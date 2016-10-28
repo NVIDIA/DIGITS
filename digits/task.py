@@ -20,6 +20,7 @@ import digits.log
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 1
 
+
 class Task(StatusCls):
     """
     Base class for Tasks
@@ -47,7 +48,7 @@ class Task(StatusCls):
         self.traceback = None
         self.aborted = gevent.event.Event()
         self.set_logger()
-        self.p = None # Subprocess object for training
+        self.p = None  # Subprocess object for training
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -70,9 +71,9 @@ class Task(StatusCls):
 
     def set_logger(self):
         self.logger = digits.log.JobIdLoggerAdapter(
-                logging.getLogger('digits.webapp'),
-                {'job_id': self.job_id},
-                )
+            logging.getLogger('digits.webapp'),
+            {'job_id': self.job_id},
+        )
 
     def name(self):
         """
@@ -94,25 +95,25 @@ class Task(StatusCls):
 
         # Send socketio updates
         message = {
-                'task': self.html_id(),
-                'update': 'status',
-                'status': self.status.name,
-                'css': self.status.css,
-                'show': (self.status in [Status.RUN, Status.ERROR]),
-                'running': self.status.is_running(),
-                }
+            'task': self.html_id(),
+            'update': 'status',
+            'status': self.status.name,
+            'css': self.status.css,
+            'show': (self.status in [Status.RUN, Status.ERROR]),
+            'running': self.status.is_running(),
+        }
         with app.app_context():
             message['html'] = flask.render_template('status_updates.html',
-                    updates     = self.status_history,
-                    exception   = self.exception,
-                    traceback   = self.traceback,
-                    )
+                                                    updates=self.status_history,
+                                                    exception=self.exception,
+                                                    traceback=self.traceback,
+                                                    )
 
         socketio.emit('task update',
-                message,
-                namespace='/jobs',
-                room=self.job_id,
-                )
+                      message,
+                      namespace='/jobs',
+                      room=self.job_id,
+                      )
 
         from digits.webapp import scheduler
         job = scheduler.get_job(self.job_id)
@@ -138,7 +139,7 @@ class Task(StatusCls):
             path = os.path.join(self.job_dir, filename)
             if relative:
                 path = os.path.relpath(path, config_value('jobs_dir'))
-        return str(path).replace("\\","/")
+        return str(path).replace("\\", "/")
 
     def ready_to_queue(self):
         """
@@ -204,7 +205,7 @@ class Task(StatusCls):
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
 
-        #https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
+        # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         if platform.system() == 'Windows':
             args = ' '.join(args)
             self.logger.info('Task subprocess args: "{}"'.format(args))
@@ -212,16 +213,16 @@ class Task(StatusCls):
             self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
         self.p = subprocess.Popen(args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.job_dir,
-                close_fds=False if platform.system() == 'Windows' else True,
-                env=env,
-                )
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  cwd=self.job_dir,
+                                  close_fds=False if platform.system() == 'Windows' else True,
+                                  env=env,
+                                  )
 
         try:
-            sigterm_time = None # When was the SIGTERM signal sent
-            sigterm_timeout = 2 # When should the SIGKILL signal be sent
+            sigterm_time = None  # When was the SIGTERM signal sent
+            sigterm_timeout = 2  # When should the SIGKILL signal be sent
             while self.p.poll() is None:
                 for line in utils.nonblocking_readlines(self.p.stdout):
                     if self.aborted.is_set():
@@ -280,7 +281,6 @@ class Task(StatusCls):
         if self.status.is_running():
             self.aborted.set()
 
-
     def preprocess_output_digits(self, line):
         """
         Takes line of output and parses it according to DIGITS's log format
@@ -307,7 +307,6 @@ class Task(StatusCls):
             return (timestamp, level, message)
         else:
             return (None, None, None)
-
 
     def process_output(self, line):
         """
@@ -346,15 +345,15 @@ class Task(StatusCls):
         """
         from digits.webapp import socketio
         socketio.emit('task update',
-                {
-                    'task': self.html_id(),
-                    'update': 'progress',
-                    'percentage': int(round(100*self.progress)),
-                    'eta': utils.time_filters.print_time_diff(self.est_done()),
-                    },
-                namespace='/jobs',
-                room=self.job_id,
-                )
+                      {
+                          'task': self.html_id(),
+                          'update': 'progress',
+                          'percentage': int(round(100 * self.progress)),
+                          'eta': utils.time_filters.print_time_diff(self.est_done()),
+                      },
+                      namespace='/jobs',
+                      room=self.job_id,
+                      )
 
         from digits.webapp import scheduler
         job = scheduler.get_job(self.job_id)

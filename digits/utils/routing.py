@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import flask
 import werkzeug.exceptions
 
+
 def job_from_request():
     """
     Returns the job after grabbing job_id from request.args or request.form
@@ -22,6 +23,8 @@ def job_from_request():
         return job
 
 # Adapted from http://flask.pocoo.org/snippets/45/
+
+
 def request_wants_json():
     """
     Returns True if the response should be JSON
@@ -36,6 +39,8 @@ def request_wants_json():
         flask.request.accept_mimetypes['text/html']
 
 # check for arguments pass to url
+
+
 def get_request_arg(key):
     value = None
     if key in flask.request.args:

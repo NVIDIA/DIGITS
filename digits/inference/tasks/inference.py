@@ -10,12 +10,10 @@ import re
 import sys
 
 import digits
-from digits import device_query
 from digits.task import Task
 from digits.utils import subclass, override
 from digits.utils.image import embed_image_html
-from digits.status import Status
-from ..errors import InferenceError
+
 
 @subclass
 class InferenceTask(Task):
@@ -92,7 +90,7 @@ class InferenceTask(Task):
         # progress
         match = re.match(r'Processed (\d+)\/(\d+)', message)
         if match:
-            self.progress = float(match.group(1))/int(match.group(2))
+            self.progress = float(match.group(1)) / int(match.group(2))
             return True
 
         # path to inference data
@@ -127,7 +125,7 @@ class InferenceTask(Task):
                 output_name = base64.urlsafe_b64decode(str(output_key))
                 o.append({'id': output_data.attrs['id'], 'name': output_name, 'data': output_data[...]})
             # sort outputs by ID
-            o = sorted(o, key=lambda x:x['id'])
+            o = sorted(o, key=lambda x: x['id'])
             # retain only data (using name as key)
             for output in o:
                 outputs[output['name']] = output['data']
@@ -147,7 +145,7 @@ class InferenceTask(Task):
                                 layer.attrs['histogram_y'].tolist(),
                                 layer.attrs['histogram_x'].tolist(),
                                 layer.attrs['histogram_ticks'].tolist(),
-                                ]
+                            ]
                         }
                     }
                     if 'param_count' in layer.attrs:
@@ -159,7 +157,7 @@ class InferenceTask(Task):
                         visualization['image_html'] = embed_image_html(vis)
                     visualizations.append(visualization)
                 # sort by layer ID (as HDF5 ASCII sorts)
-                visualizations = sorted(visualizations,key=lambda x:x['id'])
+                visualizations = sorted(visualizations, key=lambda x: x['id'])
             db.close()
             # save inference data for further use
             self.inference_inputs = {'ids': input_ids, 'data': input_data}
@@ -192,14 +190,14 @@ class InferenceTask(Task):
     def task_arguments(self, resources, env):
 
         args = [sys.executable,
-            os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'inference.py'),
-            self.image_list_path if self.image_list_path is not None else self.images,
-            self.job_dir,
-            self.model.id(),
-            '--jobs_dir=%s' % digits.config.config_value('jobs_dir'),
-            ]
+                os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'inference.py'),
+                self.image_list_path if self.image_list_path is not None else self.images,
+                self.job_dir,
+                self.model.id(),
+                '--jobs_dir=%s' % digits.config.config_value('jobs_dir'),
+                ]
 
-        if self.epoch != None:
+        if self.epoch is not None:
             args.append('--epoch=%s' % repr(self.epoch))
 
         if self.layers == 'all':
@@ -217,5 +215,3 @@ class InferenceTask(Task):
             args.append('--no-resize')
 
         return args
-
-

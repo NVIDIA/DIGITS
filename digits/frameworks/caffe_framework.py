@@ -15,6 +15,7 @@ from digits.config import config_value
 from digits.model.tasks import CaffeTrainTask
 from digits.utils import subclass, override, parse_version
 
+
 @subclass
 class CaffeFramework(Framework):
 
@@ -140,7 +141,9 @@ class CaffeFramework(Framework):
         # Throws an error if name is None
         if not net.name:
             net.name = 'Network'
-        return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
+        return ('<image src="data:image/png;base64,' +
+                caffe.draw.draw_net(net, 'UD').encode('base64') +
+                '" style="max-width:100%" />')
 
     @override
     def can_accumulate_gradients(self):
@@ -151,4 +154,3 @@ class CaffeFramework(Framework):
                     > parse_version('0.14.0-alpha'))
         else:
             raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
-

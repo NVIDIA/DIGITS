@@ -18,13 +18,13 @@ import threading
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import digits.config
-from digits import extensions, log
-from digits.job import Job
+import digits.config  # noqa
+from digits import extensions, log  # noqa
+from digits.job import Job  # noqa
 
 # Import digits.config first to set the path to Caffe
-import caffe.io
-import caffe_pb2
+import caffe.io  # noqa
+import caffe_pb2  # noqa
 
 logger = logging.getLogger('digits.tools.create_dataset')
 
@@ -198,7 +198,7 @@ class LmdbWriter(DbWriter):
         except lmdb.MapFullError:
             # double the map_size
             curr_limit = db.info()['map_size']
-            new_limit = curr_limit*2
+            new_limit = curr_limit * 2
             try:
                 db.set_mapsize(new_limit)  # double it
             except AttributeError as e:
@@ -212,6 +212,7 @@ class LmdbWriter(DbWriter):
 
 
 class Encoder(threading.Thread):
+
     def __init__(self, queue, writer, extension, error_queue, force_same_shape):
         self.extension = extension
         self.queue = queue
@@ -248,9 +249,11 @@ class Encoder(threading.Thread):
                         self.label_shape = label.shape
                     if self.force_same_shape:
                         if self.feature_shape != feature.shape:
-                            raise ValueError("Feature shape mismatch (last:%s, previous:%s)" % (repr(feature.shape), repr(self.feature_shape)))
+                            raise ValueError("Feature shape mismatch (last:%s, previous:%s)" %
+                                             (repr(feature.shape), repr(self.feature_shape)))
                         if self.label_shape != label.shape:
-                            raise ValueError("Label shape mismatch (last:%s, previous:%s)" % (repr(label.shape), repr(self.label_shape)))
+                            raise ValueError("Label shape mismatch (last:%s, previous:%s)" %
+                                             (repr(label.shape), repr(self.label_shape)))
                         if self.feature_sum is None:
                             self.feature_sum = np.zeros(self.feature_shape, dtype=np.float64)
                         # accumulate sum for mean file calculation
@@ -267,6 +270,7 @@ class Encoder(threading.Thread):
             except Exception as e:
                 self.error_queue.put('%s: %s' % (type(e).__name__, e.message))
                 raise
+
 
 class DbCreator(object):
 
@@ -339,9 +343,11 @@ class DbCreator(object):
                     logger.info('Label shape for stage %s: %s' % (stage, repr(label_shape)))
                 if force_same_shape:
                     if encoder.feature_shape and feature_shape != encoder.feature_shape:
-                        raise ValueError("Feature shape mismatch (last:%s, previous:%s)" % (repr(feature_shape), repr(encoder.feature_shape)))
+                        raise ValueError("Feature shape mismatch (last:%s, previous:%s)" %
+                                         (repr(feature_shape), repr(encoder.feature_shape)))
                     if encoder.label_shape and label_shape != encoder.label_shape:
-                        raise ValueError("Label shape mismatch (last:%s, previous:%s)" % (repr(label_shape), repr(encoder.label_shape)))
+                        raise ValueError("Label shape mismatch (last:%s, previous:%s)" %
+                                         (repr(label_shape), repr(encoder.label_shape)))
                     if feature_sum is None:
                         feature_sum = encoder.feature_sum
                     elif encoder.feature_sum is not None:
@@ -358,10 +364,10 @@ class DbCreator(object):
 
             if processed_count != entry_count:
                 # TODO: handle this more gracefully
-                raise ValueError('Number of processed entries (%d) does not match entry count (%d)' % (processed_count, entry_count))
+                raise ValueError('Number of processed entries (%d) does not match entry count (%d)' %
+                                 (processed_count, entry_count))
 
             logger.info('Found %d entries for stage %s' % (processed_count, stage))
-
 
     def save_mean(self, feature_sum, entry_count, dataset_dir, stage):
         """
@@ -437,26 +443,26 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='DB creation tool - DIGITS')
 
-    ### Positional arguments
+    # Positional arguments
 
     parser.add_argument(
         'dataset',
         help='Dataset Job ID')
 
-    ### Optional arguments
+    # Optional arguments
     parser.add_argument(
         '-j',
         '--jobs_dir',
         default='none',
         help='Jobs directory (default: from DIGITS config)',
-        )
+    )
 
     parser.add_argument(
         '-s',
         '--stage',
         default='train',
         help='Stage (train, val, test)',
-        )
+    )
 
     args = vars(parser.parse_args())
 
@@ -465,7 +471,7 @@ if __name__ == '__main__':
             args['jobs_dir'],
             args['dataset'],
             args['stage']
-            )
+        )
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))
         raise

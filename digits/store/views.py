@@ -19,8 +19,10 @@ from digits.webapp import app, scheduler, socketio
 
 blueprint = flask.Blueprint(__name__, __name__)
 
+
 class Progress(object):
     """class to emit download progress"""
+
     def __init__(self, model_id):
         self._model_id = model_id
         self._file = 0
@@ -49,7 +51,7 @@ class Progress(object):
                       },
                       namespace='/jobs',
                       room='job_management'
-                     )
+                      )
         # micro sleep so that emit is broadcast to the client
         time.sleep(0.001)
 
@@ -63,6 +65,7 @@ class Progress(object):
                 self.emit(progress)
                 self._last_progress = progress
 
+
 def save_binary(url, file_name, tmp_dir, progress):
     r = requests.get(os.path.join(url, file_name), stream=True)
     chunk_size = 1024
@@ -70,11 +73,12 @@ def save_binary(url, file_name, tmp_dir, progress):
     n_chuncks = (total_length / chunk_size) + bool(total_length % chunk_size)
     progress.set_n_chunks(n_chuncks)
     full_path = os.path.join(tmp_dir, file_name)
-    with open(full_path,'wb') as f:
+    with open(full_path, 'wb') as f:
         for chunk in progress.incr(r.iter_content(chunk_size=chunk_size)):
             if chunk:  # filter out keep-alive new chunks
                 f.write(chunk)
     return full_path
+
 
 def retrieve_files(url, directory, progress):
     model_url = os.path.join(url, directory)
@@ -103,6 +107,7 @@ def retrieve_files(url, directory, progress):
         python_layer = None
     meta_data = info
     return weights, model, label, meta_data, python_layer
+
 
 @blueprint.route('/push', methods=['GET'])
 def push():
@@ -138,6 +143,7 @@ def push():
         scheduler.add_job(job)
         response = flask.make_response(job.id())
         return response
+
 
 @blueprint.route('/models', methods=['GET'])
 def models():

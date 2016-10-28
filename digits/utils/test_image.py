@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 import os
-import platform
 import tempfile
 
 # Find the best implementation available
@@ -32,15 +31,15 @@ class TestLoadImage():
                 'some string',
                 '/tmp/not-a-file',
                 'http://not-a-url',
-                ]:
+        ]:
             yield self.check_none, path
 
     def check_none(self, path):
         assert_raises(
-                errors.LoadImageError,
-                image_utils.load_image,
-                path,
-                )
+            errors.LoadImageError,
+            image_utils.load_image,
+            path,
+        )
 
     def test_good_file(self):
         for args in [
@@ -56,17 +55,17 @@ class TestLoadImage():
                 ('RGB', 'png',  (127, 127, 127),        'RGB'),
                 ('RGB', 'jpg',  (127, 127, 127),        'RGB'),
                 ('RGB', 'ppm',  (127, 127, 127),        'RGB'),
-                ('RGBA','png',  (127, 127, 127, 255),   'RGB'),
+                ('RGBA', 'png',  (127, 127, 127, 255),   'RGB'),
                 ('P',   'png',  127,                    'RGB'),
-                ('CMYK','jpg',  (127, 127, 127, 127),   'RGB'),
-                ('YCbCr','jpg', (127, 127, 127),        'RGB'),
-                ]:
+                ('CMYK', 'jpg',  (127, 127, 127, 127),   'RGB'),
+                ('YCbCr', 'jpg', (127, 127, 127),        'RGB'),
+        ]:
             yield self.check_good_file, args
 
     def check_good_file(self, args):
         orig_mode, suffix, pixel, new_mode = args
 
-        orig = PIL.Image.new(orig_mode, (10,10), pixel)
+        orig = PIL.Image.new(orig_mode, (10, 10), pixel)
 
         # temp files cause permission errors so just generate the name
         tmp = tempfile.mkstemp(suffix='.' + suffix)
@@ -102,7 +101,7 @@ class TestLoadImage():
         assert img is not None
 
     def test_corrupted_file(self):
-        image = PIL.Image.fromarray(np.zeros((10,10,3),dtype=np.uint8))
+        image = PIL.Image.fromarray(np.zeros((10, 10, 3), dtype=np.uint8))
 
         # Save image to a JPEG buffer.
         buffer_io = StringIO()
@@ -112,31 +111,32 @@ class TestLoadImage():
 
         # Corrupt the second half of the image buffer.
         size = len(encoded)
-        corrupted = encoded[:size/2] + encoded[size/2:][::-1]
+        corrupted = encoded[:size / 2] + encoded[size / 2:][::-1]
 
         # Save the corrupted image to a temporary file.
         fname = tempfile.mkstemp(suffix='.bin')
-        f = os.fdopen(fname[0],'wb')
+        f = os.fdopen(fname[0], 'wb')
         fname = fname[1]
 
         f.write(corrupted)
         f.close()
 
         assert_raises(
-                errors.LoadImageError,
-                image_utils.load_image,
-                fname,
-                )
+            errors.LoadImageError,
+            image_utils.load_image,
+            fname,
+        )
 
         os.remove(fname)
+
 
 class TestResizeImage():
 
     @classmethod
     def setup_class(cls):
-        cls.np_gray = np.random.randint(0, 255, (10,10)).astype('uint8')
+        cls.np_gray = np.random.randint(0, 255, (10, 10)).astype('uint8')
         cls.pil_gray = PIL.Image.fromarray(cls.np_gray)
-        cls.np_color = np.random.randint(0, 255, (10,10,3)).astype('uint8')
+        cls.np_color = np.random.randint(0, 255, (10, 10, 3)).astype('uint8')
         cls.pil_color = PIL.Image.fromarray(cls.np_color)
 
     def test_configs(self):
@@ -170,7 +170,8 @@ class TestResizeImage():
         else:
             i = self.pil_color
         r = image_utils.resize_image(i, h, w, c, m)
-        assert r.shape == s, 'Resized PIL.Image (orig=%s) should have been %s, but was %s %s' % (i.size, s, r.shape, self.args_to_str(args))
+        assert r.shape == s, 'Resized PIL.Image (orig=%s) should have been %s, but was %s %s' % (
+            i.size, s, r.shape, self.args_to_str(args))
         assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
 
     def verify_np(self, args):
@@ -181,7 +182,8 @@ class TestResizeImage():
         else:
             i = self.np_color
         r = image_utils.resize_image(i, h, w, c, m)
-        assert r.shape == s, 'Resized np.ndarray (orig=%s) should have been %s, but was %s %s' % (i.shape, s, r.shape, self.args_to_str(args))
+        assert r.shape == s, 'Resized np.ndarray (orig=%s) should have been %s, but was %s %s' % (
+            i.shape, s, r.shape, self.args_to_str(args))
         assert r.dtype == np.uint8, 'image.dtype should be uint8, not %s' % r.dtype
 
     def args_to_str(self, args):

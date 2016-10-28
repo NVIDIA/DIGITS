@@ -8,9 +8,11 @@ import werkzeug.exceptions
 
 from .routing import get_request_arg, request_wants_json
 
+
 def get_username():
     return get_request_arg('username') or \
-            flask.request.cookies.get('username', None)
+        flask.request.cookies.get('username', None)
+
 
 def validate_username(username):
     """
@@ -22,6 +24,7 @@ def validate_username(username):
         raise ValueError('Must start with a lowercase letter')
     if not re.match('[a-z0-9\.\-_]+$', username):
         raise ValueError('Only lowercase letters, numbers, periods, dashes and underscores allowed')
+
 
 def requires_login(f=None, redirect=True):
     """
@@ -52,6 +55,7 @@ def requires_login(f=None, redirect=True):
         return f(*args, **kwargs)
     return decorated
 
+
 def has_permission(job, action, username=None):
     """
     Returns True if username can perform action on job
@@ -74,4 +78,3 @@ def has_permission(job, action, username=None):
     if not job.username:
         return True
     return username == job.username
-

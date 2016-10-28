@@ -6,6 +6,7 @@ import digits.frameworks
 from digits.job import Job
 from digits.utils import subclass, override
 
+
 @subclass
 class InferenceJob(Job):
     """
@@ -20,7 +21,7 @@ class InferenceJob(Job):
         epoch   -- epoch of model snapshot to use
         layers  -- layers to import ('all' or 'none')
         """
-        super(InferenceJob, self).__init__(persistent = False, **kwargs)
+        super(InferenceJob, self).__init__(persistent=False, **kwargs)
 
         # get handle to framework object
         fw_id = model.train_task().framework_id
@@ -34,7 +35,7 @@ class InferenceJob(Job):
             epoch=epoch,
             layers=layers,
             resize=resize,
-            ))
+        ))
 
     @override
     def __getstate__(self):

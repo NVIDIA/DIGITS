@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 
 from ..job import InferenceJob
-from digits.job import Job
 from digits.utils import subclass, override
+
 
 @subclass
 class ImageInferenceJob(InferenceJob):

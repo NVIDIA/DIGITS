@@ -9,6 +9,7 @@ from digits.utils import subclass, override
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
 
+
 @subclass
 class GenericImageModelJob(ImageModelJob):
     """
@@ -41,7 +42,6 @@ class GenericImageModelJob(ImageModelJob):
 
         # add snapshot
         download_files.append((snapshot_filename,
-                    os.path.basename(snapshot_filename)))
+                               os.path.basename(snapshot_filename)))
 
         return download_files
-

@@ -48,7 +48,7 @@ class BaseTestGradientsExtension(BaseTest):
         "test_image_count": 10,
         "image_width": 256,
         "image_height": 128
-        }
+    }
     FORCE_SAME_SHAPE = True
 
     def create_db(self, stage):
@@ -71,6 +71,7 @@ class BaseTestGradientsExtension(BaseTest):
 
 class TestGradientsExtension(BaseTestGradientsExtension):
     FORCE_SAME_SHAPE = True
+
 
 class TestGradientsExtensionDontForceSameShape(BaseTestGradientsExtension):
     FORCE_SAME_SHAPE = False

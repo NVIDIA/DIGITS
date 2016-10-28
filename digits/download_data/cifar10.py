@@ -8,6 +8,7 @@ import PIL.Image
 
 from downloader import DataDownloader
 
+
 class Cifar10Downloader(DataDownloader):
     """
     See details about the CIFAR10 dataset here:
@@ -50,7 +51,7 @@ class Cifar10Downloader(DataDownloader):
                 ('data_batch_4', 'train'),
                 ('data_batch_5', 'train'),
                 ('test_batch', 'test'),
-                ]:
+        ]:
             filepath = os.path.join(self.outdir, 'cifar-10-batches-py', filename)
             assert os.path.exists(filepath), 'Expected "%s" to exist' % filename
 
@@ -70,7 +71,7 @@ class Cifar10Downloader(DataDownloader):
         # Read the pickle file
         with open(input_file, 'rb') as infile:
             pickleObj = cPickle.load(infile)
-            #print 'Batch -', pickleObj['batch_label']
+            # print 'Batch -', pickleObj['batch_label']
             data = pickleObj['data']
             assert data.shape == (10000, 3072), 'Expected data.shape to be (10000, 3072), not %s' % (data.shape,)
             count = data.shape[0]
@@ -101,4 +102,3 @@ class Cifar10Downloader(DataDownloader):
                 # Save the image
                 PIL.Image.fromarray(image).save(filename)
                 outfile.write('%s %s\n' % (filename, labels[index]))
-

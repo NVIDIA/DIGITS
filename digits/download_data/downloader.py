@@ -4,6 +4,7 @@ import os
 import shutil
 import urllib
 
+
 class DataDownloader(object):
     """Base class for downloading data and setting it up for DIGITS"""
 
@@ -77,4 +78,3 @@ class DataDownloader(object):
             else:
                 return
         os.mkdir(d)
-

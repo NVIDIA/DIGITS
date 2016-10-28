@@ -42,14 +42,14 @@ def create_images(folder, image_count, image_size, grid_size):
         draw.polygon(
             triangle,
             outline=0,
-            )
+        )
         # draw a full triangle
         draw = PIL.ImageDraw.Draw(image_target)
         draw.polygon(
             triangle,
             outline=0,
             fill=0
-            )
+        )
         # save images
         input_fname = os.path.join(input_folder, "%08d.png" % idx)
         target_fname = os.path.join(target_folder, "%08d.png" % idx)
@@ -70,7 +70,7 @@ def create_images(folder, image_count, image_size, grid_size):
             draw.polygon(
                 triangle,
                 outline=0,
-                )
+            )
     image_grid.save(os.path.join(folder, "grid.png"))
     return
 

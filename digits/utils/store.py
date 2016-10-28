@@ -4,14 +4,16 @@ from __future__ import absolute_import
 from HTMLParser import HTMLParser
 import time
 
+
 class StoreCache():
+
     def __init__(self, ttl=86400):
-        self.expiration_time = time.time()+ttl
+        self.expiration_time = time.time() + ttl
         self.ttl = ttl
         self.cache = None
 
     def reset(self):
-        self.expiration_time = time.time()+self.ttl
+        self.expiration_time = time.time() + self.ttl
         self.cache = None
 
     def read(self):
@@ -20,10 +22,12 @@ class StoreCache():
         return self.cache
 
     def write(self, data):
-        self.expiration_time = time.time()+self.ttl
+        self.expiration_time = time.time() + self.ttl
         self.cache = data
 
+
 class StoreParser(HTMLParser):
+
     def __init__(self):
         HTMLParser.__init__(self)
         self.starting = False
@@ -47,7 +51,7 @@ class StoreParser(HTMLParser):
             self.starting = False
 
     def handle_data(self, data):
-        if self.starting and data[-1]=='/':
+        if self.starting and data[-1] == '/':
             self.dirs.append(data)
 
     def get_child_dirs(self):

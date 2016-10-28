@@ -12,4 +12,3 @@ else:
     value = platform.node()
 
 option_list['server_name'] = value
-

@@ -6,6 +6,7 @@ from ..job import DatasetJob
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
 
+
 class ImageDatasetJob(DatasetJob):
     """
     A Job that creates an image dataset
@@ -35,4 +36,3 @@ class ImageDatasetJob(DatasetJob):
     def resize_mode_name(self):
         c = dict(self.resize_mode_choices())
         return c[self.resize_mode]
-

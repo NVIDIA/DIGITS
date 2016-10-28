@@ -7,7 +7,6 @@ import math
 import operator
 import os
 import re
-import subprocess
 import sys
 import time
 
@@ -39,12 +38,14 @@ CAFFE_SNAPSHOT_PREFIX = 'snapshot'
 CAFFE_DEPLOY_FILE = 'deploy.prototxt'
 CAFFE_PYTHON_LAYER_FILE = 'digits_python_layers.py'
 
+
 @subclass
 class DigitsTransformer(caffe.io.Transformer):
     """
     A subclass of caffe.io.Transformer (an old-style class)
     Handles cases when we don't want to resize inputs
     """
+
     def __init__(self, resize, **kwargs):
         """
         Arguments:
@@ -87,10 +88,12 @@ class DigitsTransformer(caffe.io.Transformer):
 class Error(Exception):
     pass
 
+
 @subclass
 class CaffeTrainSanityCheckError(Error):
     """A sanity check failed"""
     pass
+
 
 @subclass
 class CaffeTrainTask(TrainTask):
@@ -102,7 +105,7 @@ class CaffeTrainTask(TrainTask):
 
     @staticmethod
     def upgrade_network(network):
-        #TODO
+        # TODO
         pass
 
     @staticmethod
@@ -136,8 +139,8 @@ class CaffeTrainTask(TrainTask):
         self.log_file = self.CAFFE_LOG
 
         self.digits_version = digits.__version__
-        self.caffe_version  = config_value('caffe')['version']
-        self.caffe_flavor   = config_value('caffe')['flavor']
+        self.caffe_version = config_value('caffe')['version']
+        self.caffe_flavor = config_value('caffe')['flavor']
 
     def __getstate__(self):
         state = super(CaffeTrainTask, self).__getstate__()
@@ -186,7 +189,7 @@ class CaffeTrainTask(TrainTask):
                 pass
 
         if state['pickver_task_caffe_train'] <= 4:
-            if hasattr(self,"original_file"):
+            if hasattr(self, "original_file"):
                 self.model_file = self.original_file
                 del self.original_file
             else:
@@ -201,7 +204,7 @@ class CaffeTrainTask(TrainTask):
         # These things don't get pickled
         self.image_mean = None
 
-    ### Task overrides
+    # Task overrides
 
     @override
     def name(self):
@@ -225,7 +228,7 @@ class CaffeTrainTask(TrainTask):
         self.last_train_update = None
         return True
 
-    def get_mean_image(self, mean_file, resize = False):
+    def get_mean_image(self, mean_file, resize=False):
         mean_image = None
         with open(self.dataset.path(mean_file), 'rb') as f:
             blob = caffe_pb2.BlobProto()
@@ -237,7 +240,7 @@ class CaffeTrainTask(TrainTask):
                                         self.dataset.get_feature_dims()[0],
                                         self.dataset.get_feature_dims()[1],
                                     )
-                                )
+                                    )
 
             # Resize the mean image if crop_size exists
             if mean_image is not None and resize:
@@ -254,7 +257,7 @@ class CaffeTrainTask(TrainTask):
 
                 # Get the image
                 mean_image = mean_image.astype('uint8')
-                mean_image = mean_image.transpose(1,2,0)
+                mean_image = mean_image.transpose(1, 2, 0)
 
                 shape = list(mean_image.shape)
                 # imresize will not resize if the depth is anything
@@ -263,10 +266,10 @@ class CaffeTrainTask(TrainTask):
                 if (len(shape) == 2 or (len(shape) == 3 and (shape[2] == 3 or shape[2] == 4))):
                     mean_image = scipy.misc.imresize(mean_image, (data_shape[2], data_shape[3]))
                 else:
-                    mean_image = scipy.misc.imresize(mean_image[:,:,0],
+                    mean_image = scipy.misc.imresize(mean_image[:, :, 0],
                                                      (data_shape[2], data_shape[3]))
                     mean_image = np.expand_dims(mean_image, axis=2)
-                mean_image = mean_image.transpose(2,0,1)
+                mean_image = mean_image.transpose(2, 0, 1)
                 mean_image = mean_image.astype('float')
 
         return mean_image
@@ -314,7 +317,7 @@ class CaffeTrainTask(TrainTask):
         network = cleanedUpClassificationNetwork(self.network, len(self.get_labels()))
         data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
 
-        ### Write train_val file
+        # Write train_val file
 
         train_val_network = caffe_pb2.NetParameter()
 
@@ -382,10 +385,10 @@ class CaffeTrainTask(TrainTask):
             layer_type = 'Data'
             if dataset_backend == 'hdf5':
                 layer_type = 'HDF5Data'
-            train_data_layer = train_val_network.layer.add(type = layer_type, name = 'data')
+            train_data_layer = train_val_network.layer.add(type=layer_type, name='data')
             train_data_layer.top.append('data')
             train_data_layer.top.append('label')
-            train_data_layer.include.add(phase = caffe_pb2.TRAIN)
+            train_data_layer.include.add(phase=caffe_pb2.TRAIN)
             if dataset_backend == 'lmdb':
                 train_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
             elif dataset_backend == 'hdf5':
@@ -394,10 +397,10 @@ class CaffeTrainTask(TrainTask):
                 assert dataset_backend != 'hdf5', 'HDF5Data layer does not support cropping'
                 train_data_layer.transform_param.crop_size = self.crop_size
             if has_val_set:
-                val_data_layer = train_val_network.layer.add(type = layer_type, name = 'data')
+                val_data_layer = train_val_network.layer.add(type=layer_type, name='data')
                 val_data_layer.top.append('data')
                 val_data_layer.top.append('label')
-                val_data_layer.include.add(phase = caffe_pb2.TEST)
+                val_data_layer.include.add(phase=caffe_pb2.TEST)
                 if dataset_backend == 'lmdb':
                     val_data_layer.data_param.batch_size = constants.DEFAULT_BATCH_SIZE
                 elif dataset_backend == 'hdf5':
@@ -411,9 +414,11 @@ class CaffeTrainTask(TrainTask):
                 val_data_layer.data_param.source = self.dataset.get_feature_db_path(constants.VAL_DB)
                 val_data_layer.data_param.backend = caffe_pb2.DataParameter.LMDB
         elif dataset_backend == 'hdf5':
-            train_data_layer.hdf5_data_param.source = os.path.join(self.dataset.get_feature_db_path(constants.TRAIN_DB), 'list.txt')
+            train_data_layer.hdf5_data_param.source = os.path.join(
+                self.dataset.get_feature_db_path(constants.TRAIN_DB), 'list.txt')
             if val_data_layer is not None and has_val_set:
-                val_data_layer.hdf5_data_param.source = os.path.join(self.dataset.get_feature_db_path(constants.VAL_DB), 'list.txt')
+                val_data_layer.hdf5_data_param.source = os.path.join(
+                    self.dataset.get_feature_db_path(constants.VAL_DB), 'list.txt')
 
         if self.use_mean == 'pixel':
             assert dataset_backend != 'hdf5', 'HDF5Data layer does not support mean subtraction'
@@ -445,7 +450,8 @@ class CaffeTrainTask(TrainTask):
             elif dataset_backend == 'hdf5':
                 if not train_data_layer.hdf5_data_param.HasField('batch_size'):
                     train_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
-                if val_data_layer is not None and has_val_set and not val_data_layer.hdf5_data_param.HasField('batch_size'):
+                if (val_data_layer is not None and has_val_set and
+                        not val_data_layer.hdf5_data_param.HasField('batch_size')):
                     val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
         # Non-data layers
@@ -462,7 +468,7 @@ class CaffeTrainTask(TrainTask):
             self.logger.debug("Network sanity check - val")
             CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
 
-        ### Write deploy file
+        # Write deploy file
 
         deploy_network = caffe_pb2.NetParameter()
 
@@ -493,9 +499,11 @@ class CaffeTrainTask(TrainTask):
             if layer.type == 'Softmax':
                 found_softmax = True
                 break
-        assert found_softmax, 'Your deploy network is missing a Softmax layer! Read the documentation for custom networks and/or look at the standard networks for examples.'
+        assert found_softmax, \
+            ('Your deploy network is missing a Softmax layer! '
+             'Read the documentation for custom networks and/or look at the standard networks for examples.')
 
-        ### Write solver file
+        # Write solver file
 
         solver = caffe_pb2.SolverParameter()
         # get enum value for solver type
@@ -517,30 +525,33 @@ class CaffeTrainTask(TrainTask):
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(float(self.dataset.get_entry_count(
+            constants.TRAIN_DB)) / train_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
-            solver.snapshot = 1 # don't round down
+            solver.snapshot = 1  # don't round down
         elif 1 < snapshot_interval < solver.max_iter:
             solver.snapshot = int(snapshot_interval)
         else:
-            solver.snapshot = 0 # only take one snapshot at the end
+            solver.snapshot = 0  # only take one snapshot at the end
 
         if has_val_set and self.val_interval:
-            solver.test_iter.append(int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) / val_data_layer.data_param.batch_size)))
+            solver.test_iter.append(
+                int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) /
+                              val_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
-                solver.test_interval = 1 # don't round down
+                solver.test_interval = 1  # don't round down
             elif 1 < val_interval < solver.max_iter:
                 solver.test_interval = int(val_interval)
             else:
-                solver.test_interval = solver.max_iter # only test once at the end
+                solver.test_interval = solver.max_iter  # only test once at the end
 
         # Learning rate
         solver.base_lr = self.learning_rate
         solver.lr_policy = self.lr_policy['policy']
-        scale = float(solver.max_iter)/100.0
+        scale = float(solver.max_iter) / 100.0
         if solver.lr_policy == 'fixed':
             pass
         elif solver.lr_policy == 'step':
@@ -554,7 +565,7 @@ class CaffeTrainTask(TrainTask):
             solver.gamma = self.lr_policy['gamma']
         elif solver.lr_policy == 'exp':
             # gamma = gamma^(1/scale)
-            solver.gamma = math.pow(self.lr_policy['gamma'], 1.0/scale)
+            solver.gamma = math.pow(self.lr_policy['gamma'], 1.0 / scale)
         elif solver.lr_policy == 'inv':
             # gamma = gamma / scale
             solver.gamma = self.lr_policy['gamma'] / scale
@@ -586,16 +597,16 @@ class CaffeTrainTask(TrainTask):
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
-                int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
-                int(math.ceil(5000.0 / train_data_layer.data_param.batch_size))
-                ))
+            int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
+            int(math.ceil(5000.0 / train_data_layer.data_param.batch_size))
+        ))
 
         if self.random_seed is not None:
             solver.random_seed = self.random_seed
 
         with open(self.path(self.solver_file), 'w') as outfile:
             text_format.PrintMessage(solver, outfile)
-        self.solver = solver # save for later
+        self.solver = solver  # save for later
 
         return True
 
@@ -614,12 +625,12 @@ class CaffeTrainTask(TrainTask):
         with open(self.path(self.model_file), 'w') as outfile:
             text_format.PrintMessage(self.network, outfile)
 
-        ### Split up train_val and deploy layers
+        # Split up train_val and deploy layers
 
         network = cleanedUpGenericNetwork(self.network)
         data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
 
-        ### Write train_val file
+        # Write train_val file
 
         train_val_network = caffe_pb2.NetParameter()
 
@@ -691,7 +702,7 @@ class CaffeTrainTask(TrainTask):
             self.logger.debug("Network sanity check - val")
             CaffeTrainTask.net_sanity_check(train_val_network, caffe_pb2.TEST)
 
-        ### Write deploy file
+        # Write deploy file
 
         deploy_network = caffe_pb2.NetParameter()
 
@@ -699,15 +710,15 @@ class CaffeTrainTask(TrainTask):
         deploy_network.input.append('data')
         shape = deploy_network.input_shape.add()
         shape.dim.append(1)
-        shape.dim.append(self.dataset.get_feature_dims()[2]) # channels
+        shape.dim.append(self.dataset.get_feature_dims()[2])  # channels
         if train_image_data_layer.transform_param.HasField('crop_size'):
             shape.dim.append(
-                    train_image_data_layer.transform_param.crop_size)
+                train_image_data_layer.transform_param.crop_size)
             shape.dim.append(
-                    train_image_data_layer.transform_param.crop_size)
+                train_image_data_layer.transform_param.crop_size)
         else:
-            shape.dim.append(self.dataset.get_feature_dims()[0]) # height
-            shape.dim.append(self.dataset.get_feature_dims()[1]) # width
+            shape.dim.append(self.dataset.get_feature_dims()[0])  # height
+            shape.dim.append(self.dataset.get_feature_dims()[1])  # width
 
         # Layers
         deploy_network.MergeFrom(deploy_layers)
@@ -720,7 +731,7 @@ class CaffeTrainTask(TrainTask):
         self.logger.debug("Network sanity check - deploy")
         CaffeTrainTask.net_sanity_check(deploy_network, caffe_pb2.TEST)
 
-        ### Write solver file
+        # Write solver file
 
         solver = caffe_pb2.SolverParameter()
         # get enum value for solver type
@@ -742,30 +753,32 @@ class CaffeTrainTask(TrainTask):
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) / train_image_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) /
+                                   train_image_data_layer.data_param.batch_size))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
-            solver.snapshot = 1 # don't round down
+            solver.snapshot = 1  # don't round down
         elif 1 < snapshot_interval < solver.max_iter:
             solver.snapshot = int(snapshot_interval)
         else:
-            solver.snapshot = 0 # only take one snapshot at the end
+            solver.snapshot = 0  # only take one snapshot at the end
 
         if val_image_data_layer:
-            solver.test_iter.append(int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) / val_image_data_layer.data_param.batch_size)))
+            solver.test_iter.append(int(math.ceil(float(self.dataset.get_entry_count(
+                constants.VAL_DB)) / val_image_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
-                solver.test_interval = 1 # don't round down
+                solver.test_interval = 1  # don't round down
             elif 1 < val_interval < solver.max_iter:
                 solver.test_interval = int(val_interval)
             else:
-                solver.test_interval = solver.max_iter # only test once at the end
+                solver.test_interval = solver.max_iter  # only test once at the end
 
         # Learning rate
         solver.base_lr = self.learning_rate
         solver.lr_policy = self.lr_policy['policy']
-        scale = float(solver.max_iter)/100.0
+        scale = float(solver.max_iter) / 100.0
         if solver.lr_policy == 'fixed':
             pass
         elif solver.lr_policy == 'step':
@@ -779,7 +792,7 @@ class CaffeTrainTask(TrainTask):
             solver.gamma = self.lr_policy['gamma']
         elif solver.lr_policy == 'exp':
             # gamma = gamma^(1/scale)
-            solver.gamma = math.pow(self.lr_policy['gamma'], 1.0/scale)
+            solver.gamma = math.pow(self.lr_policy['gamma'], 1.0 / scale)
         elif solver.lr_policy == 'inv':
             # gamma = gamma / scale
             solver.gamma = self.lr_policy['gamma'] / scale
@@ -807,16 +820,16 @@ class CaffeTrainTask(TrainTask):
 
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
-                int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
-                int(math.ceil(5000.0 / train_image_data_layer.data_param.batch_size))
-                ))
+            int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
+            int(math.ceil(5000.0 / train_image_data_layer.data_param.batch_size))
+        ))
 
         if self.random_seed is not None:
             solver.random_seed = self.random_seed
 
         with open(self.path(self.solver_file), 'w') as outfile:
             text_format.PrintMessage(solver, outfile)
-        self.solver = solver # save for later
+        self.solver = solver  # save for later
 
         return True
 
@@ -830,7 +843,7 @@ class CaffeTrainTask(TrainTask):
         orig_layer -- a LayerParameter supplied by the user (or None)
         """
         if db_path is None:
-            #TODO allow user to specify a standard data layer even if it doesn't exist in the dataset
+            # TODO allow user to specify a standard data layer even if it doesn't exist in the dataset
             return None
         layer = caffe_pb2.LayerParameter()
         if orig_layer is not None:
@@ -861,7 +874,7 @@ class CaffeTrainTask(TrainTask):
         if name == 'data' and self.dataset.get_mean_file():
             if self.use_mean == 'pixel':
                 mean_pixel = self.get_mean_pixel(self.dataset.path(self.dataset.get_mean_file()))
-                ## remove any values that may already be in the network
+                # remove any values that may already be in the network
                 self.set_mean_value(layer, mean_pixel)
             elif self.use_mean == 'image':
                 self.set_mean_file(layer, self.dataset.path(self.dataset.get_mean_file()))
@@ -928,9 +941,9 @@ class CaffeTrainTask(TrainTask):
                 else:
                     raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
         if self.pretrained_model:
-            args.append('--weights=%s' % ','.join(map(lambda x: self.path(x), self.pretrained_model.split(os.path.pathsep))))
+            args.append('--weights=%s' % ','.join(map(lambda x: self.path(x),
+                                                      self.pretrained_model.split(os.path.pathsep))))
         return args
-
 
     def _pycaffe_args(self, gpu_id):
         """
@@ -944,11 +957,11 @@ class CaffeTrainTask(TrainTask):
         # TODO: Remove this once caffe.exe works fine with Python Layer
         solver_type_mapping = {
             'ADADELTA': 'AdaDeltaSolver',
-            'ADAGRAD' : 'AdaGradSolver',
-            'ADAM'    : 'AdamSolver',
+            'ADAGRAD': 'AdaGradSolver',
+            'ADAM': 'AdamSolver',
             'NESTEROV': 'NesterovSolver',
-            'RMSPROP' : 'RMSPropSolver',
-            'SGD'     : 'SGDSolver'}
+            'RMSPROP': 'RMSPropSolver',
+            'SGD': 'SGDSolver'}
         try:
             solver_type = solver_type_mapping[self.solver_type]
         except KeyError:
@@ -970,8 +983,8 @@ class CaffeTrainTask(TrainTask):
             "solv.solve()" \
             .format(gpu_script=gpu_script,
                     solver=solver_type,
-                    solver_file = self.solver_file, loading_script=loading_script)
-        args = [sys.executable + ' -c '+ '\"' + command_script + '\"']
+                    solver_file=self.solver_file, loading_script=loading_script)
+        args = [sys.executable + ' -c ' + '\"' + command_script + '\"']
         return args
 
     @override
@@ -995,10 +1008,11 @@ class CaffeTrainTask(TrainTask):
         match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
         if match:
             phase = match.group(1)
-            index = int(match.group(2))
+            # index = int(match.group(2))
             name = match.group(3)
             value = match.group(4)
-            assert value.lower() != 'nan', 'Network outputted NaN for "%s" (%s phase). Try decreasing your learning rate.' % (name, phase)
+            assert value.lower() != 'nan', \
+                'Network outputted NaN for "%s" (%s phase). Try decreasing your learning rate.' % (name, phase)
             value = float(value)
 
             # Find the layer type
@@ -1025,7 +1039,9 @@ class CaffeTrainTask(TrainTask):
         # snapshot saved
         if self.saving_snapshot:
             if not message.startswith('Snapshotting solver state'):
-                self.logger.warning('caffe output format seems to have changed. Expected "Snapshotting solver state..." after "Snapshotting to..."')
+                self.logger.warning(
+                    'caffe output format seems to have changed. '
+                    'Expected "Snapshotting solver state..." after "Snapshotting to..."')
             else:
                 self.logger.debug('Snapshot saved.')
             self.detect_snapshots()
@@ -1065,12 +1081,11 @@ class CaffeTrainTask(TrainTask):
                 level = 'warning'
             elif level == 'E':
                 level = 'error'
-            elif level == 'F': #FAIL
+            elif level == 'F':  # FAIL
                 level = 'critical'
             timestamp = time.mktime(time.strptime(timestr, '%Y%m%d %H:%M:%S'))
             return (timestamp, level, message)
         else:
-            #self.logger.warning('Unrecognized task output "%s"' % line)
             return (None, None, None)
 
     def new_iteration(self, it):
@@ -1090,14 +1105,14 @@ class CaffeTrainTask(TrainTask):
         from digits.webapp import socketio
 
         socketio.emit('task update',
-                {
-                    'task': self.html_id(),
-                    'update': 'snapshots',
-                    'data': self.snapshot_list(),
-                    },
-                namespace='/jobs',
-                room=self.job_id,
-                )
+                      {
+                          'task': self.html_id(),
+                          'update': 'snapshots',
+                          'data': self.snapshot_list(),
+                      },
+                      namespace='/jobs',
+                      room=self.job_id,
+                      )
 
     @override
     def after_run(self):
@@ -1116,14 +1131,14 @@ class CaffeTrainTask(TrainTask):
                 if message:
                     lines.append(message)
             # return the last 20 lines
-            self.traceback = '\n'.join(lines[len(lines)-20:])
+            self.traceback = '\n'.join(lines[len(lines) - 20:])
             if 'DIGITS_MODE_TEST' in os.environ:
                 print output
 
-    ### TrainTask overrides
+    # TrainTask overrides
 
     @override
-    def get_task_stats(self,epoch=-1):
+    def get_task_stats(self, epoch=-1):
         """
         return a dictionary of task statistics
         """
@@ -1141,7 +1156,7 @@ class CaffeTrainTask(TrainTask):
         }
 
         # These attributes only available in more recent jobs:
-        if hasattr(self,"model_file"):
+        if hasattr(self, "model_file"):
             if self.model_file is not None:
                 stats.update({
                     "caffe flavor": self.caffe_flavor,
@@ -1150,17 +1165,17 @@ class CaffeTrainTask(TrainTask):
                     "digits version": self.digits_version
                 })
 
-        if hasattr(self.dataset,"resize_mode"):
+        if hasattr(self.dataset, "resize_mode"):
             stats.update({"image resize mode": self.dataset.resize_mode})
 
-        if hasattr(self.dataset,"labels_file"):
+        if hasattr(self.dataset, "labels_file"):
             stats.update({"labels file": self.dataset.labels_file})
 
         # Add this if python layer file exists
         if os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)):
             stats.update({"python layer file": CAFFE_PYTHON_LAYER_FILE})
-        elif os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')):
-            stats.update({"python layer file": CAFFE_PYTHON_LAYER_FILE+'c'})
+        elif os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE + 'c')):
+            stats.update({"python layer file": CAFFE_PYTHON_LAYER_FILE + 'c'})
 
         return stats
 
@@ -1177,30 +1192,30 @@ class CaffeTrainTask(TrainTask):
             match = re.match(r'%s_iter_(\d+)\.caffemodel' % os.path.basename(self.snapshot_prefix), filename)
             if match:
                 iteration = int(match.group(1))
-                epoch = float(iteration) / (float(self.solver.max_iter)/self.train_epochs)
+                epoch = float(iteration) / (float(self.solver.max_iter) / self.train_epochs)
                 # assert epoch.is_integer(), '%s is not an integer' % epoch
-                epoch = round(epoch,3)
+                epoch = round(epoch, 3)
                 # if epoch is int
                 if epoch == math.ceil(epoch):
                     # print epoch,math.ceil(epoch),int(epoch)
                     epoch = int(epoch)
-                snapshots.append( (
-                        os.path.join(snapshot_dir, filename),
-                        epoch
-                        )
-                    )
+                snapshots.append((
+                    os.path.join(snapshot_dir, filename),
+                    epoch
+                )
+                )
             # find solverstates
             match = re.match(r'%s_iter_(\d+)\.solverstate' % os.path.basename(self.snapshot_prefix), filename)
             if match:
-                solverstates.append( (
-                        os.path.join(snapshot_dir, filename),
-                        int(match.group(1))
-                        )
-                    )
+                solverstates.append((
+                    os.path.join(snapshot_dir, filename),
+                    int(match.group(1))
+                )
+                )
 
         # delete all but the most recent solverstate
         for filename, iteration in sorted(solverstates, key=lambda tup: tup[1])[:-1]:
-            #print 'Removing "%s"' % filename
+            # print 'Removing "%s"' % filename
             os.remove(filename)
 
         self.snapshots = sorted(snapshots, key=lambda tup: tup[1])
@@ -1212,7 +1227,7 @@ class CaffeTrainTask(TrainTask):
         if self.status != Status.RUN or self.current_iteration == 0:
             return None
         elapsed = time.time() - self.status_updates[-1][1]
-        next_snapshot_iteration = (1 + self.current_iteration//self.snapshot_interval) * self.snapshot_interval
+        next_snapshot_iteration = (1 + self.current_iteration // self.snapshot_interval) * self.snapshot_interval
         return (next_snapshot_iteration - self.current_iteration) * elapsed // self.current_iteration
 
     @override
@@ -1227,11 +1242,11 @@ class CaffeTrainTask(TrainTask):
                   gpu=None,
                   resize=True):
         return self.infer_one_image(data,
-                snapshot_epoch=snapshot_epoch,
-                layers=layers,
-                gpu=gpu,
-                resize=resize
-                )
+                                    snapshot_epoch=snapshot_epoch,
+                                    layers=layers,
+                                    gpu=gpu,
+                                    resize=resize
+                                    )
 
     def infer_one_image(self,
                         image,
@@ -1257,10 +1272,10 @@ class CaffeTrainTask(TrainTask):
 
         # process image
         if image.ndim == 2:
-            image = image[:,:,np.newaxis]
+            image = image[:, :, np.newaxis]
 
         preprocessed = self.get_transformer(resize).preprocess(
-                'data', image)
+            'data', image)
 
         # reshape net input (if necessary)
         test_shape = (1,) + preprocessed.shape
@@ -1294,27 +1309,27 @@ class CaffeTrainTask(TrainTask):
                         if bottom in net.blobs and bottom not in added_activations:
                             data = net.blobs[bottom].data[0]
                             vis = utils.image.get_layer_vis_square(data,
-                                    allow_heatmap=bool(bottom != 'data'),
-                                    channel_order = 'BGR')
+                                                                   allow_heatmap=bool(bottom != 'data'),
+                                                                   channel_order='BGR')
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
-                                    {
-                                        'name': str(bottom),
-                                        'vis_type': 'Activation',
-                                        'vis': vis,
-                                        'data_stats': {
-                                            'shape': data.shape,
-                                            'mean': mean,
-                                            'stddev': std,
-                                            'histogram': hist,
-                                            },
-                                        }
-                                    )
+                                {
+                                    'name': str(bottom),
+                                    'vis_type': 'Activation',
+                                    'vis': vis,
+                                    'data_stats': {
+                                        'shape': data.shape,
+                                        'mean': mean,
+                                        'stddev': std,
+                                        'histogram': hist,
+                                    },
+                                }
+                            )
                             added_activations.append(bottom)
                     if layer.name in net.params:
                         data = net.params[layer.name][0].data
                         if layer.type not in ['InnerProduct']:
-                            vis = utils.image.get_layer_vis_square(data, channel_order = 'BGR')
+                            vis = utils.image.get_layer_vis_square(data, channel_order='BGR')
                         else:
                             vis = None
                         mean, std, hist = self.get_layer_statistics(data)
@@ -1326,20 +1341,20 @@ class CaffeTrainTask(TrainTask):
                             bias_count = 0
                         parameter_count = weight_count + bias_count
                         visualizations.append(
-                                {
-                                    'name': str(layer.name),
-                                    'vis_type': 'Weights',
-                                    'layer_type': layer.type,
-                                    'param_count': parameter_count,
-                                    'vis': vis,
-                                    'data_stats': {
-                                        'shape': data.shape,
-                                        'mean': mean,
-                                        'stddev': std,
-                                        'histogram': hist,
-                                        },
-                                    }
-                                )
+                            {
+                                'name': str(layer.name),
+                                'vis_type': 'Weights',
+                                'layer_type': layer.type,
+                                'param_count': parameter_count,
+                                'vis': vis,
+                                'data_stats': {
+                                    'shape': data.shape,
+                                    'mean': mean,
+                                    'stddev': std,
+                                    'histogram': hist,
+                                },
+                            }
+                        )
                     for top in layer.top:
                         if top in net.blobs and top not in added_activations:
                             data = net.blobs[top].data[0]
@@ -1348,23 +1363,23 @@ class CaffeTrainTask(TrainTask):
                             if layer.type == 'Softmax':
                                 normalize = False
                             vis = utils.image.get_layer_vis_square(data,
-                                    normalize = normalize,
-                                    allow_heatmap = bool(top != 'data'),
-                                    channel_order = 'BGR')
+                                                                   normalize=normalize,
+                                                                   allow_heatmap=bool(top != 'data'),
+                                                                   channel_order='BGR')
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
-                                    {
-                                        'name': str(top),
-                                        'vis_type': 'Activation',
-                                        'vis': vis,
-                                        'data_stats': {
-                                            'shape': data.shape,
-                                            'mean': mean,
-                                            'stddev': std,
-                                            'histogram': hist,
-                                            },
-                                        }
-                                    )
+                                {
+                                    'name': str(top),
+                                    'vis_type': 'Activation',
+                                    'vis': vis,
+                                    'data_stats': {
+                                        'shape': data.shape,
+                                        'mean': mean,
+                                        'stddev': std,
+                                        'histogram': hist,
+                                    },
+                                }
+                            )
                             added_activations.append(top)
             else:
                 raise NotImplementedError
@@ -1385,8 +1400,8 @@ class CaffeTrainTask(TrainTask):
         std = np.std(data).astype(np.float32)
         y, x = np.histogram(data, bins=20)
         y = list(y.astype(np.float32))
-        ticks = x[[0,len(x)/2,-1]]
-        x = [((x[i]+x[i+1])/2.0).astype(np.float32) for i in xrange(len(x)-1)]
+        ticks = x[[0, len(x) / 2, -1]]
+        x = [((x[i] + x[i + 1]) / 2.0).astype(np.float32) for i in xrange(len(x) - 1)]
         ticks = list(ticks.astype(np.float32))
         return (mean, std, [y, x, ticks])
 
@@ -1420,7 +1435,7 @@ class CaffeTrainTask(TrainTask):
         caffe_images = []
         for image in images:
             if image.ndim == 2:
-                caffe_images.append(image[:,:,np.newaxis])
+                caffe_images.append(image[:, :, np.newaxis])
             else:
                 caffe_images.append(image)
 
@@ -1433,13 +1448,13 @@ class CaffeTrainTask(TrainTask):
             data_shape = (constants.DEFAULT_BATCH_SIZE,) + data_shape
 
         outputs = None
-        for chunk in [caffe_images[x:x+data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
+        for chunk in [caffe_images[x:x + data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
             new_shape = (len(chunk),) + data_shape[1:]
             if net.blobs['data'].data.shape != new_shape:
                 net.blobs['data'].reshape(*new_shape)
             for index, image in enumerate(chunk):
                 net.blobs['data'].data[index] = self.get_transformer(resize).preprocess(
-                        'data', image)
+                    'data', image)
             o = net.forward()
 
             # order output in prototxt order
@@ -1451,7 +1466,7 @@ class CaffeTrainTask(TrainTask):
             if outputs is None:
                 outputs = copy.deepcopy(output)
             else:
-                for name,blob in output.iteritems():
+                for name, blob in output.iteritems():
                     outputs[name] = np.vstack((outputs[name], blob))
             print 'Processed %s/%s images' % (len(outputs[outputs.keys()[0]]), len(caffe_images))
 
@@ -1496,9 +1511,9 @@ class CaffeTrainTask(TrainTask):
 
         # Load the model
         self._caffe_net = caffe.Net(
-                self.path(self.deploy_file),
-                file_to_load,
-                caffe.TEST)
+            self.path(self.deploy_file),
+            file_to_load,
+            caffe.TEST)
 
         # Remove job_dir from PATH
         sys.path.remove(self.job_dir)
@@ -1534,7 +1549,7 @@ class CaffeTrainTask(TrainTask):
         if self.dataset.get_feature_dims()[2] == 3:
             # BGR when there are three channels
             # XXX see issue #59
-            channel_swap = (2,1,0)
+            channel_swap = (2, 1, 0)
 
         if self.dataset.get_mean_file():
             if self.use_mean == 'pixel':
@@ -1545,10 +1560,10 @@ class CaffeTrainTask(TrainTask):
         t = DigitsTransformer(
             inputs={'data': tuple(data_shape)},
             resize=resize
-            )
+        )
 
         # transpose to (channels, height, width)
-        t.set_transpose('data', (2,0,1))
+        t.set_transpose('data', (2, 0, 1))
 
         if channel_swap is not None:
             # swap color channels
@@ -1560,7 +1575,7 @@ class CaffeTrainTask(TrainTask):
         elif self.use_mean == 'image' and mean_image is not None:
             t.set_mean('data', mean_image)
 
-        #t.set_raw_scale('data', 255) # [0,255] range instead of [0,1]
+        # t.set_raw_scale('data', 255) # [0,255] range instead of [0,1]
 
         self._transformer = t
         return self._transformer
@@ -1571,15 +1586,15 @@ class CaffeTrainTask(TrainTask):
         return paths to model files
         """
         model_files = {
-                "Solver": self.solver_file,
-                "Network (train/val)": self.train_val_file,
-                "Network (deploy)": self.deploy_file
-            }
+            "Solver": self.solver_file,
+            "Network (train/val)": self.train_val_file,
+            "Network (deploy)": self.deploy_file
+        }
         if os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)):
             model_files.update({"Python layer": os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE)})
-        elif os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')):
-            model_files.update({"Python layer": os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE+'c')})
-        if hasattr(self,"model_file"):
+        elif os.path.exists(os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE + 'c')):
+            model_files.update({"Python layer": os.path.join(self.job_dir, CAFFE_PYTHON_LAYER_FILE + 'c')})
+        if hasattr(self, "model_file"):
             if self.model_file is not None:
                 model_files.update({"Network (original)": self.model_file})
         return model_files
@@ -1602,18 +1617,18 @@ class CaffeTrainTask(TrainTask):
         layers = []
         tops = []
         for layer in net.layer:
-            if len(layer.include)>0:
-                mask = 0 # include none by default
+            if len(layer.include) > 0:
+                mask = 0  # include none by default
                 for rule in layer.include:
-                    mask = mask | (1<<rule.phase)
-            elif len(layer.exclude)>0:
+                    mask = mask | (1 << rule.phase)
+            elif len(layer.exclude) > 0:
                 # include and exclude rules are mutually exclusive as per Caffe spec
-                mask = (1<<caffe_pb2.TRAIN) | (1<<caffe_pb2.TEST) # include all by default
+                mask = (1 << caffe_pb2.TRAIN) | (1 << caffe_pb2.TEST)  # include all by default
                 for rule in layer.exclude:
-                    mask = mask & ~(1<<rule.phase)
+                    mask = mask & ~(1 << rule.phase)
             else:
-                mask = (1<<caffe_pb2.TRAIN) | (1<<caffe_pb2.TEST)
-            if mask & (1<<phase):
+                mask = (1 << caffe_pb2.TRAIN) | (1 << caffe_pb2.TEST)
+            if mask & (1 << phase):
                 # layer will be included at this stage
                 layers.append(layer)
                 tops.extend(layer.top)
@@ -1623,10 +1638,15 @@ class CaffeTrainTask(TrainTask):
         for layer in layers:
             for bottom in layer.bottom:
                 if bottom not in tops:
-                    raise CaffeTrainSanityCheckError("Layer '%s' references bottom '%s' at the %s stage however " \
-                                                     "this blob is not included at that stage. Please consider " \
-                                                     "using an include directive to limit the scope of this layer." % (
-                                                       layer.name, bottom, "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"))
+                    raise CaffeTrainSanityCheckError(
+                        "Layer '%s' references bottom '%s' at the %s stage however "
+                        "this blob is not included at that stage. Please consider "
+                        "using an include directive to limit the scope of this layer."
+                        % (
+                            layer.name, bottom,
+                            "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"
+                        )
+                    )
 
 
 def cleanedUpClassificationNetwork(original_network, num_categories):
@@ -1648,8 +1668,8 @@ def cleanedUpClassificationNetwork(original_network, num_categories):
 
         elif layer.type == 'Accuracy':
             # Check to see if top_k > num_categories
-            if ( layer.accuracy_param.HasField('top_k') and
-                    layer.accuracy_param.top_k > num_categories ):
+            if (layer.accuracy_param.HasField('top_k') and
+                    layer.accuracy_param.top_k > num_categories):
                 del network.layer[i]
 
         elif layer.type == 'InnerProduct':
@@ -1797,6 +1817,7 @@ def _stateMeetsRule(state, rule):
             return False
 
     return True
+
 
 def _setLayerRule(layer, rule=None):
     """

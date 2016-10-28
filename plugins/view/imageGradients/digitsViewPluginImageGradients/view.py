@@ -106,8 +106,8 @@ class Visualization(VisualizationInterface):
         grad_rotated_90 = np.array([-grad[1], grad[0]])
         center = np.array([self.width / 2, self.height / 2])
         arrow = grad * (self.arrow_size / 100.)
-        arrow_tip = center + arrow/2
-        arrow_tail = center - arrow/2
+        arrow_tip = center + arrow / 2
+        arrow_tail = center - arrow / 2
         # arrow tail (anticlockwise)
         at_acw = arrow_tail + 0.1 * grad_rotated_90
         # arrow tail (clockwise)

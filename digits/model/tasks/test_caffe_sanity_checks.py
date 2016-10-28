@@ -1,20 +1,20 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from .caffe_train import CaffeTrainTask,CaffeTrainSanityCheckError
+from .caffe_train import CaffeTrainTask, CaffeTrainSanityCheckError
 
 from google.protobuf import text_format
-from digits.config import config_value
 from digits import test_utils
 
 # Must import after importing digit.config
-import caffe
 import caffe_pb2
+
 
 def check_positive(desc, stage):
     network = caffe_pb2.NetParameter()
     text_format.Merge(desc, network)
     CaffeTrainTask.net_sanity_check(network, stage)
+
 
 def check_negative(desc, stage):
     network = caffe_pb2.NetParameter()
@@ -23,6 +23,7 @@ def check_negative(desc, stage):
         CaffeTrainTask.net_sanity_check(network, stage)
     except CaffeTrainSanityCheckError:
         pass
+
 
 class TestCaffeNetSanityCheck(test_utils.CaffeMixin):
 
@@ -161,7 +162,6 @@ class TestCaffeNetSanityCheck(test_utils.CaffeMixin):
             """
         check_negative(desc, caffe_pb2.TRAIN)
 
-
     def test_error_ref_unincluded_blob(self):
         desc = \
             """
@@ -225,8 +225,3 @@ class TestCaffeNetSanityCheck(test_utils.CaffeMixin):
             }
             """
         check_negative(desc, caffe_pb2.TEST)
-
-
-
-
-

@@ -112,6 +112,6 @@ class Visualization(VisualizationInterface):
 
         indices = (-scores).argsort()
         predictions = [(self.class_labels[i] if self.class_labels else '#%d' % i,
-                       round(100.0*scores[i], 2)) for i in indices[:self.max_classes]]
+                        round(100.0 * scores[i], 2)) for i in indices[:self.max_classes]]
 
         return {'input': input_string, 'predictions': predictions}

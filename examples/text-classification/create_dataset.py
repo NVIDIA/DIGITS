@@ -58,7 +58,7 @@ def create_dataset(folder, input_file_name, db_batch_size=None, create_images=Fa
                     if char in cdict:
                         sample[count] = cdict[char]
                     count += 1
-                    if count >= FEATURE_LEN-1:
+                    if count >= FEATURE_LEN - 1:
                         break
             samples[label].append(sample)
         samples_per_class = None
@@ -121,7 +121,7 @@ def _write_batch_to_lmdb(db, batch):
     except lmdb.MapFullError:
         # double the map_size
         curr_limit = db.info()['map_size']
-        new_limit = curr_limit*2
+        new_limit = curr_limit * 2
         try:
             db.set_mapsize(new_limit)  # double it
         except AttributeError as e:

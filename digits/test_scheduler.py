@@ -1,9 +1,6 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import mock
-from nose.tools import assert_raises
-
 from . import scheduler
 from .config import config_value
 from .job import Job
@@ -37,6 +34,7 @@ class TestScheduler():
 
 @subclass
 class JobForTesting(Job):
+
     @override
     def job_type(self):
         return 'Job For Testing'
@@ -60,4 +58,3 @@ class TestSchedulerFlow():
             assert len(self.s.jobs) == 1, 'scheduler has %d jobs' % len(self.s.jobs)
             assert self.s.delete_job(job), 'failed to delete job'
             assert len(self.s.jobs) == 0, 'scheduler has %d jobs' % len(self.s.jobs)
-

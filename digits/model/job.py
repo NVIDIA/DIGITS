@@ -8,6 +8,7 @@ from digits.utils import override
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
 
+
 class ModelJob(Job):
     """
     A Job that creates a neural network model
@@ -42,7 +43,7 @@ class ModelJob(Job):
         if verbose:
             d.update({
                 'snapshots': [s[1] for s in self.train_task().snapshots],
-                })
+            })
         return d
 
     def load_dataset(self):

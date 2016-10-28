@@ -18,14 +18,18 @@ else:
 
 HTTP_TIMEOUT = 6.05
 
+
 def is_url(url):
     return url is not None and urlparse(url).scheme != "" and not os.path.exists(url)
+
 
 def wait_time():
     """Wait a random number of seconds"""
     return uniform(0.3, 0.5)
 
 # From http://code.activestate.com/recipes/578900-non-blocking-readlines/
+
+
 def nonblocking_readlines(f):
     """Generator which yields lines from F (a file object, used only for
        its fileno()) without blocking.  If there is no data, you get an
@@ -60,17 +64,19 @@ def nonblocking_readlines(f):
         while True:
             r = buf.find(b'\r')
             n = buf.find(b'\n')
-            if r == -1 and n == -1: break
+            if r == -1 and n == -1:
+                break
 
             if r == -1 or r > n:
-                yield buf[:(n+1)].decode(enc)
-                buf = buf[(n+1):]
+                yield buf[:(n + 1)].decode(enc)
+                buf = buf[(n + 1):]
             elif n == -1 or n > r:
                 yield buf[:r].decode(enc) + '\n'
-                if n == r+1:
-                    buf = buf[(r+2):]
+                if n == r + 1:
+                    buf = buf[(r + 2):]
                 else:
-                    buf = buf[(r+1):]
+                    buf = buf[(r + 1):]
+
 
 def subclass(cls):
     """
@@ -90,6 +96,7 @@ def subclass(cls):
             assert found, '"%s.%s" not found in any base class' % (cls.__name__, name)
     return cls
 
+
 def override(method):
     """
     Decorator implementing method overriding in python
@@ -97,6 +104,7 @@ def override(method):
     """
     method.override = True
     return method
+
 
 def sizeof_fmt(size, suffix='B'):
     """
@@ -113,19 +121,20 @@ def sizeof_fmt(size, suffix='B'):
         return '0 %s' % suffix
 
     size_name = ('', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-    i = int(math.floor(math.log(size,1024)))
+    i = int(math.floor(math.log(size, 1024)))
     if i >= len(size_name):
-        i = len(size_name)-1
-    p = math.pow(1024,i)
-    s = size/p
+        i = len(size_name) - 1
+    p = math.pow(1024, i)
+    s = size / p
     # round to 3 significant digits
-    s = round(s, 2-int(math.floor(math.log10(s))))
+    s = round(s, 2 - int(math.floor(math.log10(s))))
     if s.is_integer():
         s = int(s)
     if s > 0:
         return '%s %s%s' % (s, size_name[i], suffix)
     else:
         return '0 %s' % suffix
+
 
 def parse_version(*args):
     """
@@ -153,7 +162,6 @@ def parse_version(*args):
         return pkg_resources.parse_version(v)
 
 
-### Import the other utility functions
+# Import the other utility functions
 
-from . import constants, image, time_filters, errors, forms, routing, auth
-
+from . import constants, image, time_filters, errors, forms, routing, auth  # noqa
