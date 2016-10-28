@@ -368,7 +368,7 @@ def explore():
 
     page = int(flask.request.args.get('page', 0))
     size = int(flask.request.args.get('size', 25))
-    label = flask.request.args.get('label', None)
+    label = flask.request.args.get('label')
 
     if label is not None:
         try:

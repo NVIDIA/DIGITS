@@ -275,7 +275,7 @@ def create_db(input_file, output_dir,
                     image_width, image_height, image_channels,
                     resize_mode, image_folder, compute_mean),
                 kwargs={'backend': backend,
-                    'encoding': kwargs.get('encoding', None)},
+                    'encoding': kwargs.get('encoding')},
                 )
         p.daemon = True
         p.start()

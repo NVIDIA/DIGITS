@@ -9,8 +9,7 @@ import werkzeug.exceptions
 from .routing import get_request_arg, request_wants_json
 
 def get_username():
-    return get_request_arg('username') or \
-            flask.request.cookies.get('username', None)
+    return get_request_arg('username') or flask.request.cookies.get('username')
 
 def validate_username(username):
     """

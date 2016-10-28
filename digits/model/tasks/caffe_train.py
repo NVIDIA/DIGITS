@@ -1486,7 +1486,7 @@ class CaffeTrainTask(TrainTask):
         sys.path.append(self.job_dir)
 
         # Attempt to force a reload of the "digits_python_layers" module
-        loaded_module = sys.modules.get('digits_python_layers', None)
+        loaded_module = sys.modules.get('digits_python_layers')
         if loaded_module:
             try:
                 reload(loaded_module)

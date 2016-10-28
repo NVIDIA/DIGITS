@@ -203,7 +203,7 @@ class Scheduler:
         """
         if job_id is None:
             return None
-        return self.jobs.get(job_id, None)
+        return self.jobs.get(job_id)
 
     def get_related_jobs(self, job):
         """
@@ -254,7 +254,7 @@ class Scheduler:
             raise ValueError('called delete_job with a %s' % type(job))
         dependent_jobs = []
         # try to find the job
-        job = self.jobs.get(job_id, None)
+        job = self.jobs.get(job_id)
         if job:
             if isinstance(job, DatasetJob):
                 # check for dependencies
