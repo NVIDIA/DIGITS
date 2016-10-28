@@ -29,7 +29,7 @@ class DataIngestion(DataIngestionInterface):
 
         self.random_indices = None
 
-        if not 'seed' in self.userdata:
+        if 'seed' not in self.userdata:
             # choose random seed and add to userdata so it gets persisted
             self.userdata['seed'] = random.randint(0, 1000)
 

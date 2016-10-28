@@ -137,8 +137,8 @@ class TorchTrainTask(TrainTask):
         # don't recreate file if it already exists
         if not os.path.exists(filename):
             mean_file = self.dataset.get_mean_file()
-            assert mean_file != None and mean_file.endswith(
-                '.binaryproto'), 'Mean subtraction required but dataset has no mean file in .binaryproto format'
+            assert mean_file is not None and mean_file.endswith('.binaryproto'), \
+                'Mean subtraction required but dataset has no mean file in .binaryproto format'
             blob = caffe_pb2.BlobProto()
             with open(self.dataset.path(mean_file), 'rb') as infile:
                 blob.ParseFromString(infile.read())
@@ -340,7 +340,8 @@ class TorchTrainTask(TrainTask):
         if match:
             index = float(match.group(1))
             l = match.group(2)
-            assert not('inf' in l or 'nan' in l), 'Network reported %s for training loss. Try decreasing your learning rate.' % l
+            assert not('inf' in l or 'nan' in l), \
+                'Network reported %s for training loss. Try decreasing your learning rate.' % l
             l = float(l)
             lr = match.group(4)
             lr = float(lr)
@@ -360,7 +361,8 @@ class TorchTrainTask(TrainTask):
             index = float(match.group(1))
             l = match.group(2)
             a = match.group(5)
-            # note: validation loss could have diverged however if the training loss is still finite, there is a slim possibility
+            # note: validation loss could have diverged however
+            # if the training loss is still finite, there is a slim possibility
             # that the network keeps learning something useful, so we don't treat
             # infinite validation loss as a fatal error
             if not('inf' in l or 'nan' in l):
@@ -379,7 +381,8 @@ class TorchTrainTask(TrainTask):
         if self.saving_snapshot:
             if not message.startswith('Snapshot saved'):
                 self.logger.warning(
-                    'Torch output format seems to have changed. Expected "Snapshot saved..." after "Snapshotting to..."')
+                    'Torch output format seems to have changed. '
+                    'Expected "Snapshot saved..." after "Snapshotting to..."')
             else:
                 self.logger.info('Snapshot saved.')  # to print file name here, you can use "message"
             self.detect_snapshots()
@@ -429,7 +432,6 @@ class TorchTrainTask(TrainTask):
                 level = 'critical'
             return (timestamp, level, message)
         else:
-            #self.logger.warning('Unrecognized task output "%s"' % line)
             return (None, None, None)
 
     def send_snapshot_update(self):
@@ -569,7 +571,7 @@ class TorchTrainTask(TrainTask):
 
         if self.use_mean != 'none':
             filename = self.create_mean_file()
-            args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+            args.append('--mean=%s' % filename)
 
         if self.use_mean == 'pixel':
             args.append('--subtractMean=pixel')
@@ -619,7 +621,8 @@ class TorchTrainTask(TrainTask):
                     if self.aborted.is_set():
                         p.terminate()
                         raise digits.inference.errors.InferenceError(
-                            '%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                            '%s classify one task got aborted. error code - %d'
+                            % (self.get_framework_id(), p.returncode))
 
                     if line is not None:
                         # Remove color codes and whitespace
@@ -778,8 +781,8 @@ class TorchTrainTask(TrainTask):
         if match:
             label = match.group(1)
             confidence = match.group(2)
-            assert not(
-                'inf' in confidence or 'nan' in confidence), 'Network reported %s for confidence value. Please check image and network' % label
+            assert not('inf' in confidence or 'nan' in confidence), \
+                'Network reported %s for confidence value. Please check image and network' % label
             confidence = float(confidence)
             predictions.append((label, confidence))
             return True
@@ -809,7 +812,8 @@ class TorchTrainTask(TrainTask):
 
         if level in ['error', 'critical']:
             raise digits.inference.errors.InferenceError(
-                '%s classify %s task failed with error message - %s' % (self.get_framework_id(), test_category, message))
+                '%s classify %s task failed with error message - %s'
+                % (self.get_framework_id(), test_category, message))
 
         return True           # control never reach this line. It can be removed.
 
@@ -875,7 +879,7 @@ class TorchTrainTask(TrainTask):
 
             if self.use_mean != 'none':
                 filename = self.create_mean_file()
-                args.append('--mean=%s' % os.path.join(self.job_dir, constants.MEAN_FILE_IMAGE))
+                args.append('--mean=%s' % filename)
 
             if self.use_mean == 'pixel':
                 args.append('--subtractMean=pixel')
@@ -918,11 +922,14 @@ class TorchTrainTask(TrainTask):
                         if self.aborted.is_set():
                             p.terminate()
                             raise digits.inference.errors.InferenceError(
-                                '%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                                '%s classify many task got aborted. error code - %d'
+                                % (self.get_framework_id(), p.returncode))
 
                         if line is not None:
-                            # Remove whitespace and color codes. color codes are appended to beginning and end of line by torch binary i.e., 'th'. Check the below link for more information
-                            # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
+                            # Remove whitespace and color codes.
+                            # Color codes are appended to beginning and end of line by torch binary
+                            # i.e., 'th'. Check the below link for more information
+                            # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ  # noqa
                             line = regex.sub('', line).strip()
                         if line:
                             if not self.process_test_output(line, predictions, 'many'):

@@ -118,7 +118,7 @@ class AnalyzeDbTask(Task):
         # image dimensions
         match = re.match(r'(\d+) entries found with shape ((\d+)x(\d+)x(\d+))', message)
         if match:
-            count = int(match.group(1))
+            # count = int(match.group(1))
             dims = match.group(2)
             self.image_width = int(match.group(3))
             self.image_height = int(match.group(4))

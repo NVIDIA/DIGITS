@@ -7,7 +7,6 @@ import math
 import operator
 import os
 import re
-import subprocess
 import sys
 import time
 
@@ -451,7 +450,8 @@ class CaffeTrainTask(TrainTask):
             elif dataset_backend == 'hdf5':
                 if not train_data_layer.hdf5_data_param.HasField('batch_size'):
                     train_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
-                if val_data_layer is not None and has_val_set and not val_data_layer.hdf5_data_param.HasField('batch_size'):
+                if (val_data_layer is not None and has_val_set and
+                        not val_data_layer.hdf5_data_param.HasField('batch_size')):
                     val_data_layer.hdf5_data_param.batch_size = constants.DEFAULT_BATCH_SIZE
 
         # Non-data layers
@@ -499,7 +499,9 @@ class CaffeTrainTask(TrainTask):
             if layer.type == 'Softmax':
                 found_softmax = True
                 break
-        assert found_softmax, 'Your deploy network is missing a Softmax layer! Read the documentation for custom networks and/or look at the standard networks for examples.'
+        assert found_softmax, \
+            ('Your deploy network is missing a Softmax layer! '
+             'Read the documentation for custom networks and/or look at the standard networks for examples.')
 
         # Write solver file
 
@@ -536,7 +538,8 @@ class CaffeTrainTask(TrainTask):
 
         if has_val_set and self.val_interval:
             solver.test_iter.append(
-                int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) / val_data_layer.data_param.batch_size)))
+                int(math.ceil(float(self.dataset.get_entry_count(constants.VAL_DB)) /
+                              val_data_layer.data_param.batch_size)))
             val_interval = self.val_interval * train_iter
             if 0 < val_interval <= 1:
                 solver.test_interval = 1  # don't round down
@@ -1005,10 +1008,11 @@ class CaffeTrainTask(TrainTask):
         match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
         if match:
             phase = match.group(1)
-            index = int(match.group(2))
+            # index = int(match.group(2))
             name = match.group(3)
             value = match.group(4)
-            assert value.lower() != 'nan', 'Network outputted NaN for "%s" (%s phase). Try decreasing your learning rate.' % (name, phase)
+            assert value.lower() != 'nan', \
+                'Network outputted NaN for "%s" (%s phase). Try decreasing your learning rate.' % (name, phase)
             value = float(value)
 
             # Find the layer type
@@ -1036,7 +1040,8 @@ class CaffeTrainTask(TrainTask):
         if self.saving_snapshot:
             if not message.startswith('Snapshotting solver state'):
                 self.logger.warning(
-                    'caffe output format seems to have changed. Expected "Snapshotting solver state..." after "Snapshotting to..."')
+                    'caffe output format seems to have changed. '
+                    'Expected "Snapshotting solver state..." after "Snapshotting to..."')
             else:
                 self.logger.debug('Snapshot saved.')
             self.detect_snapshots()
@@ -1081,7 +1086,6 @@ class CaffeTrainTask(TrainTask):
             timestamp = time.mktime(time.strptime(timestr, '%Y%m%d %H:%M:%S'))
             return (timestamp, level, message)
         else:
-            #self.logger.warning('Unrecognized task output "%s"' % line)
             return (None, None, None)
 
     def new_iteration(self, it):
@@ -1634,10 +1638,15 @@ class CaffeTrainTask(TrainTask):
         for layer in layers:
             for bottom in layer.bottom:
                 if bottom not in tops:
-                    raise CaffeTrainSanityCheckError("Layer '%s' references bottom '%s' at the %s stage however "
-                                                     "this blob is not included at that stage. Please consider "
-                                                     "using an include directive to limit the scope of this layer." % (
-                                                         layer.name, bottom, "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"))
+                    raise CaffeTrainSanityCheckError(
+                        "Layer '%s' references bottom '%s' at the %s stage however "
+                        "this blob is not included at that stage. Please consider "
+                        "using an include directive to limit the scope of this layer."
+                        % (
+                            layer.name, bottom,
+                            "TRAIN" if phase == caffe_pb2.TRAIN else "TEST"
+                        )
+                    )
 
 
 def cleanedUpClassificationNetwork(original_network, num_categories):

@@ -19,7 +19,7 @@ from digits.status import Status
 from digits.utils import filesystem as fs
 from digits.utils import constants
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils.routing import get_request_arg, request_wants_json, job_from_request
+from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
@@ -164,7 +164,9 @@ def create(extension_id=None):
                                     % (form.previous_networks.data, epoch))
                             if not (os.path.exists(pretrained_model)):
                                 raise werkzeug.exceptions.BadRequest(
-                                    "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
+                                    "Pretrained_model for the selected epoch doesn't exist. "
+                                    "May be deleted by another user/process. "
+                                    "Please restart the server to load the correct pretrained_model details.")
                         break
             elif form.method.data == 'pretrained':
                 pretrained_job = scheduler.get_job(form.pretrained_networks.data)
@@ -280,7 +282,7 @@ def create(extension_id=None):
             raise
 
     if request_wants_json():
-        return flask.jsonify(jobs=[job.json_dict() for job in jobs])
+        return flask.jsonify(jobs=[j.json_dict() for j in jobs])
 
     # If there are multiple jobs launched, go to the home page.
     return flask.redirect('/')
@@ -520,7 +522,7 @@ def infer_db():
     """
     model_job = job_from_request()
 
-    if not 'db_path' in flask.request.form or flask.request.form['db_path'] is None:
+    if 'db_path' not in flask.request.form or flask.request.form['db_path'] is None:
         raise werkzeug.exceptions.BadRequest('db_path is a required field')
 
     db_path = flask.request.form['db_path']

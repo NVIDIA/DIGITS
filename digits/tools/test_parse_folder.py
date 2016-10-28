@@ -2,7 +2,6 @@
 
 import itertools
 import os
-import platform
 import shutil
 import tempfile
 
@@ -42,16 +41,16 @@ class TestValidateFolder():
             pass
 
     def test_dir(self):
-        assert parse_folder.validate_folder(self.tmpdir) == True
+        assert parse_folder.validate_folder(self.tmpdir) is True
 
     def test_file(self):
-        assert parse_folder.validate_folder(self.tmpfile) == False
+        assert parse_folder.validate_folder(self.tmpfile) is False
 
     def test_nonexistent_dir(self):
-        assert parse_folder.validate_folder(os.path.abspath('not-a-directory')) == False
+        assert parse_folder.validate_folder(os.path.abspath('not-a-directory')) is False
 
     def test_nonexistent_url(self):
-        assert parse_folder.validate_folder('http://localhost/not-a-url') == False
+        assert parse_folder.validate_folder('http://localhost/not-a-url') is False
 
 
 class TestValidateOutputFile():
@@ -69,23 +68,23 @@ class TestValidateOutputFile():
             pass
 
     def test_missing_file(self):
-        assert parse_folder.validate_output_file(None) == True, 'all new files should be valid'
+        assert parse_folder.validate_output_file(None) is True, 'all new files should be valid'
 
     def test_file(self):
-        assert parse_folder.validate_output_file(os.path.join(self.tmpdir, 'output.txt')) == True
+        assert parse_folder.validate_output_file(os.path.join(self.tmpdir, 'output.txt')) is True
 
     @mock.patch('os.access')
     def test_local_file(self, mock_access):
         mock_access.return_value = True
-        assert parse_folder.validate_output_file('not-a-file.txt') == True, 'relative paths should be accepted'
+        assert parse_folder.validate_output_file('not-a-file.txt') is True, 'relative paths should be accepted'
 
     @mock.patch('os.access')
     def test_not_writeable(self, mock_access):
         mock_access.return_value = False
-        assert parse_folder.validate_output_file(self.tmpfile) == False, 'should not succeed without write permission'
+        assert parse_folder.validate_output_file(self.tmpfile) is False, 'should not succeed without write permission'
 
     def test_existing_file(self):
-        assert parse_folder.validate_output_file(self.tmpfile) == False
+        assert parse_folder.validate_output_file(self.tmpfile) is False
 
     def test_nonexistent_dir(self):
         assert parse_folder.validate_output_file(
@@ -93,7 +92,7 @@ class TestValidateOutputFile():
                 os.path.abspath('not-a-dir'),
                 'output.txt'
             )
-        ) == False
+        ) is False
 
 
 class TestValidateInputFile():
@@ -108,45 +107,45 @@ class TestValidateInputFile():
         os.remove(cls.tmpfile)
 
     def test_missing_file(self):
-        assert parse_folder.validate_input_file('not-a-file.txt') == False, 'should not pass on missing file'
+        assert parse_folder.validate_input_file('not-a-file.txt') is False, 'should not pass on missing file'
 
     @mock.patch('os.access')
     def test_not_readable(self, mock_access):
         mock_access.return_value = False
-        assert parse_folder.validate_input_file(self.tmpfile) == False, 'should not succeed without read permission'
+        assert parse_folder.validate_input_file(self.tmpfile) is False, 'should not succeed without read permission'
 
 
 class TestValidateRange():
 
     def test_no_range(self):
-        assert parse_folder.validate_range(0) == True
+        assert parse_folder.validate_range(0) is True
 
     def test_min_less(self):
-        assert parse_folder.validate_range(-1, min_value=0) == False
+        assert parse_folder.validate_range(-1, min_value=0) is False
 
     def test_min_equal(self):
-        assert parse_folder.validate_range(0, min_value=0) == True
+        assert parse_folder.validate_range(0, min_value=0) is True
 
     def test_min_more(self):
-        assert parse_folder.validate_range(1, min_value=0) == True
+        assert parse_folder.validate_range(1, min_value=0) is True
 
     def test_max_less(self):
-        assert parse_folder.validate_range(9, max_value=10) == True
+        assert parse_folder.validate_range(9, max_value=10) is True
 
     def test_max_equal(self):
-        assert parse_folder.validate_range(10, max_value=10) == True
+        assert parse_folder.validate_range(10, max_value=10) is True
 
     def test_max_more(self):
-        assert parse_folder.validate_range(11, max_value=10) == False
+        assert parse_folder.validate_range(11, max_value=10) is False
 
     def test_allow_none_true(self):
-        assert parse_folder.validate_range(None, allow_none=True) == True
+        assert parse_folder.validate_range(None, allow_none=True) is True
 
     def test_allow_none_false(self):
-        assert parse_folder.validate_range(None, allow_none=False) == False
+        assert parse_folder.validate_range(None, allow_none=False) is False
 
     def test_string(self):
-        assert parse_folder.validate_range('foo') == False
+        assert parse_folder.validate_range('foo') is False
 
 
 @mock.patch('digits.tools.parse_folder.validate_output_file')

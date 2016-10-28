@@ -6,12 +6,9 @@ import json
 import numpy as np
 import os
 import PIL.Image
-import re
-import shutil
 import tempfile
 import time
 import unittest
-import urllib
 
 # Find the best implementation available
 try:
@@ -20,10 +17,6 @@ except ImportError:
     from StringIO import StringIO
 
 from bs4 import BeautifulSoup
-import flask
-import mock
-import PIL.Image
-from urlparse import urlparse
 
 from digits import extensions
 from digits.config import config_value
@@ -31,13 +24,8 @@ import digits.dataset.images.generic.test_views
 import digits.dataset.generic.test_views
 import digits.test_views
 from digits import test_utils
-from digits.utils import constants
 import digits.webapp
 
-# Must import after importing digit.config
-import caffe_pb2
-
-import numpy as np
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -852,7 +840,7 @@ class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
         assert not self.dataset_exists(dataset_id), 'dataset exists after delete'
 
         try:
-            model_id = self.create_model(dataset=dataset_id)
+            self.create_model(dataset=dataset_id)
         except RuntimeError:
             return
         assert False, 'Should have failed'
@@ -1002,30 +990,36 @@ class TestCaffeCreated(BaseTestCreated, test_utils.CaffeMixin):
     pass
 
 
-class TestCaffeCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension, test_utils.CaffeMixin):
+class TestCaffeCreatedWithGradientDataExtension(
+        BaseTestCreatedWithGradientDataExtension, test_utils.CaffeMixin):
     pass
 
 
-class TestCaffeCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension, test_utils.CaffeMixin):
+class TestCaffeCreatedWithGradientDataExtensionNoValSet(
+        BaseTestCreatedWithGradientDataExtension, test_utils.CaffeMixin):
 
     @classmethod
     def setUpClass(cls):
         super(TestCaffeCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
 
-class TestCaffeCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
+class TestCaffeCreatedWithImageProcessingExtensionMeanImage(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'image'
 
 
-class TestCaffeCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
+class TestCaffeCreatedWithImageProcessingExtensionMeanPixel(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'pixel'
 
 
-class TestCaffeCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
+class TestCaffeCreatedWithImageProcessingExtensionMeanNone(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'none'
 
 
-class TestCaffeCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
+class TestCaffeCreatedVariableSizeDataset(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.CaffeMixin):
     MEAN = 'none'
     VARIABLE_SIZE_DATASET = True
 
@@ -1054,30 +1048,36 @@ class TestTorchCreated(BaseTestCreated, test_utils.TorchMixin):
     pass
 
 
-class TestTorchCreatedWithGradientDataExtension(BaseTestCreatedWithGradientDataExtension, test_utils.TorchMixin):
+class TestTorchCreatedWithGradientDataExtension(
+        BaseTestCreatedWithGradientDataExtension, test_utils.TorchMixin):
     pass
 
 
-class TestTorchCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWithGradientDataExtension, test_utils.TorchMixin):
+class TestTorchCreatedWithGradientDataExtensionNoValSet(
+        BaseTestCreatedWithGradientDataExtension, test_utils.TorchMixin):
 
     @classmethod
     def setUpClass(cls):
         super(TestTorchCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
 
-class TestTorchCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
+class TestTorchCreatedWithImageProcessingExtensionMeanImage(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'image'
 
 
-class TestTorchCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
+class TestTorchCreatedWithImageProcessingExtensionMeanPixel(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'pixel'
 
 
-class TestTorchCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
+class TestTorchCreatedWithImageProcessingExtensionMeanNone(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'none'
 
 
-class TestTorchCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
+class TestTorchCreatedVariableSizeDataset(
+        BaseTestCreatedWithImageProcessingExtension, test_utils.TorchMixin):
     MEAN = 'none'
     VARIABLE_SIZE_DATASET = True
 

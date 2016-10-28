@@ -27,12 +27,12 @@ import PIL.Image
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import digits.config
-from digits import utils, log
+import digits.config  # noqa
+from digits import utils, log  # noqa
 
 # Import digits.config first to set the path to Caffe
-import caffe.io
-import caffe_pb2
+import caffe.io  # noqa
+import caffe_pb2  # noqa
 
 logger = logging.getLogger('digits.tools.create_db')
 

@@ -53,7 +53,8 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                     self.status = Status.ERROR
                     for task in self.tasks:
                         task.status = Status.ERROR
-                        task.exception = 'This dataset was created with unencoded RGB channels. Caffe requires BGR input.'
+                        task.exception = ('This dataset was created with unencoded '
+                                          'RGB channels. Caffe requires BGR input.')
 
         self.pickver_job_dataset_image_classification = PICKLE_VERSION
 

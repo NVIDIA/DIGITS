@@ -1,24 +1,11 @@
 # Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import itertools
 import json
 import os
-import shutil
 import tempfile
-import time
-import unittest
-import urllib
-
-# Find the best implementation available
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
 from bs4 import BeautifulSoup
-import PIL.Image
-from urlparse import urlparse
 
 from .test_lmdb_creator import create_lmdbs
 from digits import test_utils
@@ -173,7 +160,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
     def test_bad_path(self):
         try:
-            job_id = self.create_dataset(
+            self.create_dataset(
                 prebuilt_train_images='/not-a-directory'
             )
         except RuntimeError:

@@ -4,11 +4,9 @@ from __future__ import absolute_import
 from .caffe_train import CaffeTrainTask, CaffeTrainSanityCheckError
 
 from google.protobuf import text_format
-from digits.config import config_value
 from digits import test_utils
 
 # Must import after importing digit.config
-import caffe
 import caffe_pb2
 
 

@@ -13,8 +13,8 @@ import urllib
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import digits.config
-from digits import utils, log
+import digits.config  # noqa
+from digits import utils, log  # noqa
 
 logger = logging.getLogger('digits.tools.parse_folder')
 
@@ -106,8 +106,9 @@ def calculate_percentages(labels_file,
     Throws exception on errors
     """
     # reject any percentages not between 0-100
-    assert all(x is None or 0 <= x <= 100 for x in [percent_train, percent_val,
-                                                    percent_test]), 'all percentages must be 0-100 inclusive or not specified'
+    assert all(x is None or 0 <= x <= 100
+               for x in [percent_train, percent_val, percent_test]), \
+        'all percentages must be 0-100 inclusive or not specified'
 
     # return values
     pt = None
@@ -470,47 +471,52 @@ if __name__ == '__main__':
 
     # Positional arguments
 
-    parser.add_argument('folder',
-                        help='A filesystem path or url to the folder of images'
-                        )
-    parser.add_argument('labels_file',
-                        help='The file containing labels. If train_file is set, this file will be generated (output). Otherwise, this file will be read (input).'
-                        )
+    parser.add_argument(
+        'folder',
+        help='A filesystem path or url to the folder of images'
+    )
+    parser.add_argument(
+        'labels_file',
+        help=('The file containing labels. If train_file is set, this file '
+              'will be generated (output). Otherwise, this file will be read (input).')
+    )
 
     # Optional arguments
 
-    parser.add_argument('-t', '--train_file',
-                        help='The output file for training images'
-                        )
-    parser.add_argument('-T', '--percent_train',
-                        type=float,
-                        help='Percent of images used for the training set (constant across all categories)'
-                        )
-    parser.add_argument('-v', '--val_file',
-                        help='The output file for validation images'
-                        )
-    parser.add_argument('-V', '--percent_val',
-                        type=float,
-                        help='Percent of images used for the validation set (constant across all categories)'
-                        )
-    parser.add_argument('-s', '--test_file',
-                        help='The output file for test images'
-                        )
-    parser.add_argument('-S', '--percent_test',
-                        type=float,
-                        help='Percent of images used for the test set (constant across all categories)'
-                        )
-    parser.add_argument('--min',
-                        type=int,
-                        metavar='MIN_PER_CATEGORY',
-                        default=1,
-                        help="What is the minimum allowable number of images per category? (categories which don't meet this criteria will be ignored) [default=2]"
-                        )
-    parser.add_argument('--max',
-                        type=int,
-                        metavar='MAX_PER_CATEGORY',
-                        help='What is the maximum limit of images per category? (categories which exceed this limit will be trimmed down) [default=None]'
-                        )
+    parser.add_argument(
+        '-t', '--train_file',
+        help='The output file for training images'
+    )
+    parser.add_argument(
+        '-T', '--percent_train', type=float,
+        help='Percent of images used for the training set (constant across all categories)'
+    )
+    parser.add_argument(
+        '-v', '--val_file',
+        help='The output file for validation images'
+    )
+    parser.add_argument(
+        '-V', '--percent_val', type=float,
+        help='Percent of images used for the validation set (constant across all categories)'
+    )
+    parser.add_argument(
+        '-s', '--test_file',
+        help='The output file for test images'
+    )
+    parser.add_argument(
+        '-S', '--percent_test', type=float,
+        help='Percent of images used for the test set (constant across all categories)'
+    )
+    parser.add_argument(
+        '--min', type=int, metavar='MIN_PER_CATEGORY', default=1,
+        help=("What is the minimum allowable number of images per category? "
+              "(categories which don't meet this criteria will be ignored) [default=2]")
+    )
+    parser.add_argument(
+        '--max', type=int, metavar='MAX_PER_CATEGORY',
+        help=("What is the maximum limit of images per category? "
+              "(categories which exceed this limit will be trimmed down) [default=None]")
+    )
 
     args = vars(parser.parse_args())
 

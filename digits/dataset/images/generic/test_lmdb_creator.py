@@ -7,7 +7,6 @@ Used in test_views
 from __future__ import absolute_import
 
 import argparse
-from collections import defaultdict
 import os
 import sys
 import time
@@ -25,10 +24,10 @@ import PIL.Image
 if __name__ == '__main__':
     dirname = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(dirname, '..', '..', '..', '..'))
-    import digits.config
+    import digits.config  # noqa
 
 # Import digits.config first to set the path to Caffe
-import caffe_pb2
+import caffe_pb2  # noqa
 
 
 IMAGE_SIZE = 10
@@ -85,7 +84,6 @@ def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
             image = image.astype('uint8')
 
             pil_img = PIL.Image.fromarray(image)
-            #pil_img.save(os.path.join(folder, '%s_%d.png' % (phase, i)))
 
             # create image Datum
             image_datum = caffe_pb2.Datum()

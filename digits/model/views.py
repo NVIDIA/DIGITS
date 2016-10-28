@@ -1,13 +1,11 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from datetime import timedelta
 import io
 import json
 import math
 import os
 import tarfile
-import tempfile
 import zipfile
 
 import flask
@@ -17,7 +15,7 @@ from . import images as model_images
 from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
 from digits import frameworks, extensions
-from digits.utils import time_filters, auth
+from digits.utils import auth
 from digits.utils.routing import request_wants_json
 from digits.webapp import scheduler
 
@@ -266,10 +264,6 @@ def download(job_id, extension):
     info = json.dumps(job.json_dict(verbose=False, epoch=epoch), sort_keys=True, indent=4, separators=(',', ': '))
     info_io = io.BytesIO()
     info_io.write(info)
-
-    task = job.train_task()
-    snapshot_filename = None
-    snapshot_filename = task.get_snapshot(epoch)
 
     b = io.BytesIO()
     if extension in ['tar', 'tar.gz', 'tgz', 'tar.bz2']:

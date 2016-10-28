@@ -1,7 +1,6 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import os
 import datetime
 from ..job import ModelJob
 from digits.utils import subclass, override
@@ -10,6 +9,7 @@ from digits.utils import subclass, override
 PICKLE_VERSION = 1
 
 
+@subclass
 class ImageModelJob(ModelJob):
     """
     A Job that creates an image model

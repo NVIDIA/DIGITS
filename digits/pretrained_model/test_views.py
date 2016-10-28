@@ -1,38 +1,19 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
-import itertools
+
 import json
 import os
-import re
-import shutil
 import tempfile
-import time
-import unittest
-import urllib
 import io
 import tarfile
 
-# Find the best implementation available
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
-
 from bs4 import BeautifulSoup
-import flask
-import mock
-import PIL.Image
-from urlparse import urlparse
 
-from digits.config import config_value
-from digits.pretrained_model import PretrainedModelJob
 import digits.webapp
 import digits.dataset.images.classification.test_views
 import digits.model.images.classification.test_views
 from digits import test_utils
 import digits.test_views
 
-# Must import after importing digit.config
-import caffe_pb2
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45

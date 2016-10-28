@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 import logging
 import os
-import sys
 
 from . import option_list
 import digits
@@ -61,7 +60,8 @@ def load_logfile_level():
             return logging.CRITICAL
         else:
             raise ValueError(
-                'Invalid value "%s" for logfile_level. Set DIGITS_LOGFILE_LEVEL to fix       your configuration.' % level)
+                'Invalid value "%s" for logfile_level. '
+                'Set DIGITS_LOGFILE_LEVEL to fix your configuration.' % level)
     else:
         return logging.INFO
 

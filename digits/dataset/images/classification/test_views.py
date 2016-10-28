@@ -1,14 +1,10 @@
 # Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import itertools
 import json
 import os
 import shutil
 import tempfile
-import time
-import unittest
-import urllib
 
 # Find the best implementation available
 try:
@@ -18,9 +14,8 @@ except ImportError:
 
 from bs4 import BeautifulSoup
 import PIL.Image
-from urlparse import urlparse
 
-from .test_imageset_creator import create_classification_imageset, IMAGE_SIZE as DUMMY_IMAGE_SIZE, IMAGE_COUNT as DUMMY_IMAGE_COUNT
+from .test_imageset_creator import create_classification_imageset, IMAGE_COUNT as DUMMY_IMAGE_COUNT
 from digits import test_utils
 import digits.test_views
 
@@ -234,7 +229,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
     def test_nonexistent_folder(self):
         try:
-            job_id = self.create_dataset(
+            self.create_dataset(
                 folder_train='/not-a-directory'
             )
         except RuntimeError:

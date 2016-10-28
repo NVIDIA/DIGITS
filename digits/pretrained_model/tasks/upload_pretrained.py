@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 import os
 import shutil
-import digits
 from digits.task import Task
 from digits.utils import subclass, override
 

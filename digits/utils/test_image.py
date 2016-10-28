@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 import os
-import platform
 import tempfile
 
 # Find the best implementation available

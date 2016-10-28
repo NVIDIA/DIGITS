@@ -378,7 +378,6 @@ def explore():
     if label is not None:
         try:
             label = int(label)
-            label_str = labels[label]
         except ValueError:
             label = None
 
@@ -428,4 +427,7 @@ def explore():
         if len(imgs) >= size:
             break
 
-    return flask.render_template('datasets/images/explore.html', page=page, size=size, job=job, imgs=imgs, labels=labels, pages=pages, label=label, total_entries=total_entries, db=db)
+    return flask.render_template(
+        'datasets/images/explore.html',
+        page=page, size=size, job=job, imgs=imgs, labels=labels,
+        pages=pages, label=label, total_entries=total_entries, db=db)

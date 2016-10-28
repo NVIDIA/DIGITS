@@ -160,7 +160,8 @@ class Explanation(object):
             ('<div id="%s_explanation" style="display:none;">\n'
              '%s'
              '</div>\n'
-             '<a href=# onClick="bootbox.alert($(\'#%s_explanation\').html()); return false;"><span class="glyphicon glyphicon-question-sign"></span></a>\n'
+             '<a href=# onClick="bootbox.alert($(\'#%s_explanation\').html()); '
+             'return false;"><span class="glyphicon glyphicon-question-sign"></span></a>\n'
              ) % (self.for_name, html, self.for_name))
 
     def __repr__(self):

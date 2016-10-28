@@ -36,7 +36,7 @@ class Visualization(VisualizationInterface):
 
         # view options
         if kwargs['colormap'] == 'dataset':
-            if not COLOR_PALETTE_ATTRIBUTE in dataset.extension_userdata or \
+            if COLOR_PALETTE_ATTRIBUTE not in dataset.extension_userdata or \
                     not dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
                 raise ValueError("No palette found in dataset - choose other colormap")
             palette = dataset.extension_userdata[COLOR_PALETTE_ATTRIBUTE]

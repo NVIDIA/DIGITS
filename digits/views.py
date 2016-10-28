@@ -579,7 +579,8 @@ def clone_job(clone):
         raise werkzeug.exceptions.NotFound('Job not found')
 
     if isinstance(job, dataset.GenericDatasetJob):
-        return flask.redirect(flask.url_for('digits.dataset.generic.views.new', extension_id=job.extension_id) + '?clone=' + clone)
+        return flask.redirect(
+            flask.url_for('digits.dataset.generic.views.new', extension_id=job.extension_id) + '?clone=' + clone)
     if isinstance(job, dataset.ImageClassificationDatasetJob):
         return flask.redirect(flask.url_for('digits.dataset.images.classification.views.new') + '?clone=' + clone)
     if isinstance(job, dataset.GenericImageDatasetJob):

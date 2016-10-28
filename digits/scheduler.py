@@ -3,13 +3,11 @@ from __future__ import absolute_import
 
 from collections import OrderedDict
 import os
-import re
 import shutil
 import signal
 import time
 import traceback
 
-import flask
 import gevent
 import gevent.event
 import gevent.queue
@@ -429,7 +427,9 @@ class Scheduler:
                         if job.status.is_running():
                             if job.is_persistent():
                                 job.save()
-                        elif (not job.is_persistent()) and (time.time() - job.status_history[-1][1] > NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS):
+                        elif (not job.is_persistent() and
+                              (time.time() - job.status_history[-1][1] >
+                               NON_PERSISTENT_JOB_DELETE_TIMEOUT_SECONDS)):
                             # job has been unclaimed for far too long => proceed to garbage collection
                             self.delete_job(job)
                     last_saved = time.time()

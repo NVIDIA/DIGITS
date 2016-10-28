@@ -6,6 +6,12 @@ from .framework import Framework
 from .torch_framework import TorchFramework
 from digits.config import config_value
 
+__all__ = [
+    'Framework',
+    'CaffeFramework',
+    'TorchFramework',
+]
+
 #
 #  create framework instances
 #

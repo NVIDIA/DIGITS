@@ -4,12 +4,10 @@ from __future__ import absolute_import
 import itertools
 import json
 import os
-import re
 import shutil
 import tempfile
 import time
 import unittest
-import urllib
 
 # Find the best implementation available
 try:
@@ -18,10 +16,6 @@ except ImportError:
     from StringIO import StringIO
 
 from bs4 import BeautifulSoup
-import flask
-import mock
-import PIL.Image
-from urlparse import urlparse
 
 from digits.config import config_value
 import digits.dataset.images.classification.test_views
@@ -29,8 +23,6 @@ import digits.test_views
 from digits import test_utils
 import digits.webapp
 
-# Must import after importing digit.config
-import caffe_pb2
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -833,7 +825,7 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
                 data={'image_file': image_upload}
             )
-            data = json.loads(rv.data)
+            json.loads(rv.data)
             assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         finally:
             self.delete_model(job2_id)
@@ -851,7 +843,7 @@ class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
         assert not self.dataset_exists(dataset_id), 'dataset exists after delete'
 
         try:
-            model_id = self.create_model(dataset=dataset_id)
+            self.create_model(dataset=dataset_id)
         except RuntimeError:
             return
         assert False, 'Should have failed'

@@ -14,7 +14,6 @@ import PIL.Image
 
 import digits
 from digits import utils
-from digits.webapp import app
 
 blueprint = flask.Blueprint(__name__, __name__)
 

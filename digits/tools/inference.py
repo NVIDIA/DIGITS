@@ -16,15 +16,14 @@ except ImportError:
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import digits.config
-from digits import utils, log
-from digits.inference.errors import InferenceError
-from digits.job import Job
-from digits.utils.lmdbreader import DbReader
+import digits.config  # noqa
+from digits import utils, log  # noqa
+from digits.inference.errors import InferenceError  # noqa
+from digits.job import Job  # noqa
+from digits.utils.lmdbreader import DbReader  # noqa
 
 # Import digits.config before caffe to set the path
-import caffe.io
-import caffe_pb2
+import caffe_pb2  # noqa
 
 logger = logging.getLogger('digits.tools.inference')
 
@@ -147,7 +146,6 @@ def infer(input_list,
 
     # perform inference
     visualizations = None
-    predictions = []
 
     if n_input_samples == 0:
         raise InferenceError("Unable to load any image from file '%s'" % repr(input_list))

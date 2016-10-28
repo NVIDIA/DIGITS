@@ -4,8 +4,6 @@ from __future__ import absolute_import
 import re
 import time
 
-from nose.tools import assert_raises
-
 from digits import test_utils
 from digits import utils
 

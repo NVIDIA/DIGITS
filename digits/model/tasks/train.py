@@ -112,9 +112,9 @@ class TrainTask(Task):
                     state['val_outputs']['accuracy'] = NetworkOutput('Accuracy', [x[1] / 100 for x in va])
                 state['val_outputs']['loss'] = NetworkOutput('SoftmaxWithLoss', [x[1] for x in vl])
 
-        if state['use_mean'] == True:
+        if state['use_mean'] is True:
             state['use_mean'] = 'pixel'
-        elif state['use_mean'] == False:
+        elif state['use_mean'] is False:
             state['use_mean'] = 'none'
 
         state['pickver_task_train'] = PICKLE_VERSION

@@ -9,7 +9,7 @@ import tempfile
 
 import flask
 
-from .errors import Error, NetworkVisualizationError, BadNetworkError
+from .errors import NetworkVisualizationError
 from .framework import Framework
 import digits
 from digits import utils
@@ -155,8 +155,10 @@ class TorchFramework(Framework):
             while p.poll() is None:
                 for line in utils.nonblocking_readlines(p.stdout):
                     if line is not None:
-                        # Remove whitespace and color codes. color codes are appended to beginning and end of line by torch binary i.e., 'th'. Check the below link for more information
-                        # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ
+                        # Remove whitespace and color codes.
+                        # Color codes are appended to beginning and end of line by torch binary
+                        # i.e., 'th'. Check the below link for more information
+                        # https://groups.google.com/forum/#!searchin/torch7/color$20codes/torch7/8O_0lSgSzuA/Ih6wYg9fgcwJ  # noqa
                         line = regex.sub('', line)
                         timestamp, level, message = TorchTrainTask.preprocess_output_torch(line.strip())
                         if message:

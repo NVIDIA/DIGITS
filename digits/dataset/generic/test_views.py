@@ -198,6 +198,7 @@ class GenericViewsTest(BaseViewsTest):
 
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/generic/new/%s' % self.EXTENSION_ID)
+        print rv.data
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         assert extensions.data.get_extension(self.EXTENSION_ID).get_title() in rv.data, 'unexpected page format'
 

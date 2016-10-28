@@ -8,11 +8,11 @@ from flask.ext.socketio import SocketIO
 from gevent import monkey
 monkey.patch_all()
 
-from .config import config_value
-from digits import utils
-from digits.utils import filesystem as fs
-from digits.utils.store import StoreCache
-import digits.scheduler
+from .config import config_value  # noqa
+from digits import utils  # noqa
+from digits.utils import filesystem as fs  # noqa
+from digits.utils.store import StoreCache  # noqa
+import digits.scheduler  # noqa
 
 # Create Flask, Scheduler and SocketIO objects
 
@@ -44,30 +44,30 @@ app.jinja_env.filters['has_permission'] = utils.auth.has_permission
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
-import digits.views
+import digits.views  # noqa
 app.register_blueprint(digits.views.blueprint)
-import digits.dataset.views
+import digits.dataset.views  # noqa
 app.register_blueprint(digits.dataset.views.blueprint, url_prefix='/datasets')
-import digits.dataset.generic.views
+import digits.dataset.generic.views  # noqa
 app.register_blueprint(digits.dataset.generic.views.blueprint, url_prefix='/datasets/generic')
-import digits.dataset.images.views
+import digits.dataset.images.views  # noqa
 app.register_blueprint(digits.dataset.images.views.blueprint, url_prefix='/datasets/images')
-import digits.dataset.images.classification.views
+import digits.dataset.images.classification.views  # noqa
 app.register_blueprint(digits.dataset.images.classification.views.blueprint,
                        url_prefix='/datasets/images/classification')
-import digits.dataset.images.generic.views
+import digits.dataset.images.generic.views  # noqa
 app.register_blueprint(digits.dataset.images.generic.views.blueprint, url_prefix='/datasets/images/generic')
-import digits.model.views
+import digits.model.views  # noqa
 app.register_blueprint(digits.model.views.blueprint, url_prefix='/models')
-import digits.model.images.views
+import digits.model.images.views  # noqa
 app.register_blueprint(digits.model.images.views.blueprint, url_prefix='/models/images')
-import digits.model.images.classification.views
+import digits.model.images.classification.views  # noqa
 app.register_blueprint(digits.model.images.classification.views.blueprint, url_prefix='/models/images/classification')
-import digits.model.images.generic.views
+import digits.model.images.generic.views  # noqa
 app.register_blueprint(digits.model.images.generic.views.blueprint, url_prefix='/models/images/generic')
-import digits.pretrained_model.views
+import digits.pretrained_model.views  # noqa
 app.register_blueprint(digits.pretrained_model.views.blueprint, url_prefix='/pretrained_models')
-import digits.store.views
+import digits.store.views  # noqa
 app.register_blueprint(digits.store.views.blueprint, url_prefix='/store')
 
 

@@ -9,7 +9,7 @@ from digits import utils
 from digits.dataset import tasks
 from digits.webapp import scheduler
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils.routing import request_wants_json, job_from_request
+from digits.utils.routing import request_wants_json
 
 blueprint = flask.Blueprint(__name__, __name__)
 

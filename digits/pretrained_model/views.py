@@ -7,14 +7,10 @@ import json
 
 import os
 import shutil
-import h5py
-import numpy as np
 
-from digits import dataset, extensions, model, utils
-from digits.webapp import app, scheduler
-from digits.pretrained_model import PretrainedModelJob
-from digits.utils.routing import request_wants_json, job_from_request
 from digits import utils
+from digits.webapp import scheduler
+from digits.pretrained_model import PretrainedModelJob
 import werkzeug.exceptions
 
 blueprint = flask.Blueprint(__name__, __name__)

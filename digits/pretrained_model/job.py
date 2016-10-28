@@ -2,8 +2,6 @@
 from __future__ import absolute_import
 import os
 
-from . import tasks
-import digits.frameworks
 from digits.job import Job
 from digits.utils import subclass, override
 from digits.pretrained_model.tasks import CaffeUploadTask, TorchUploadTask

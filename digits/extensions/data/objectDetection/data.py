@@ -8,7 +8,6 @@ import random
 import StringIO
 
 import numpy as np
-import PIL.Image
 
 import digits
 from digits.utils import subclass, override, constants
@@ -99,7 +98,7 @@ class DataIngestion(DataIngestionInterface):
         # make sure label exists
         label_id = os.path.splitext(os.path.basename(entry))[0]
 
-        if not label_id in self.datasrc_annotation_dict:
+        if label_id not in self.datasrc_annotation_dict:
             raise ValueError("Label key %s not found in label folder" % label_id)
         annotations = self.datasrc_annotation_dict[label_id]
 

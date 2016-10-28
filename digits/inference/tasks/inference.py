@@ -10,12 +10,9 @@ import re
 import sys
 
 import digits
-from digits import device_query
 from digits.task import Task
 from digits.utils import subclass, override
 from digits.utils.image import embed_image_html
-from digits.status import Status
-from ..errors import InferenceError
 
 
 @subclass
@@ -200,7 +197,7 @@ class InferenceTask(Task):
                 '--jobs_dir=%s' % digits.config.config_value('jobs_dir'),
                 ]
 
-        if self.epoch != None:
+        if self.epoch is not None:
             args.append('--epoch=%s' % repr(self.epoch))
 
         if self.layers == 'all':

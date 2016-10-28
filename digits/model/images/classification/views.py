@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 import os
-import random
 import re
 import tempfile
 
@@ -12,7 +11,6 @@ import werkzeug.exceptions
 
 from .forms import ImageClassificationModelForm
 from .job import ImageClassificationModelJob
-import digits
 from digits import frameworks
 from digits import utils
 from digits.config import config_value
@@ -23,7 +21,7 @@ from digits.status import Status
 from digits.utils import filesystem as fs
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
-from digits.webapp import app, scheduler
+from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -203,7 +201,9 @@ def create():
                                     % (form.previous_networks.data, epoch))
                             if not (os.path.exists(pretrained_model)):
                                 raise werkzeug.exceptions.BadRequest(
-                                    "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
+                                    "Pretrained_model for the selected epoch doesn't exist. "
+                                    "May be deleted by another user/process. "
+                                    "Please restart the server to load the correct pretrained_model details.")
                         break
 
             elif form.method.data == 'pretrained':
@@ -323,7 +323,7 @@ def create():
             raise
 
     if request_wants_json():
-        return flask.jsonify(jobs=[job.json_dict() for job in jobs])
+        return flask.jsonify(jobs=[j.json_dict() for j in jobs])
 
     # If there are multiple jobs launched, go to the home page.
     return flask.redirect('/')
@@ -333,7 +333,15 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
-    return flask.render_template('models/images/classification/show.html', job=job, framework_ids=[fw.get_id() for fw in frameworks.get_frameworks()], related_jobs=related_jobs)
+    return flask.render_template(
+        'models/images/classification/show.html',
+        job=job,
+        framework_ids=[
+            fw.get_id()
+            for fw in frameworks.get_frameworks()
+        ],
+        related_jobs=related_jobs
+    )
 
 
 @blueprint.route('/large_graph', methods=['GET'])
@@ -697,7 +705,6 @@ def get_standard_networks():
     return [
         ('lenet', 'LeNet'),
         ('alexnet', 'AlexNet'),
-        #('vgg-16', 'VGG (16-layer)'), #XXX model won't learn
         ('googlenet', 'GoogLeNet'),
     ]
 

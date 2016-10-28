@@ -1,7 +1,6 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 import os
-import digits
 from digits.utils import subclass, override
 from digits.status import Status
 from digits.pretrained_model.tasks import UploadPretrainedModelTask

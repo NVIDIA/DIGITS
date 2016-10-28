@@ -145,7 +145,6 @@ def explore():
     # Get LMDB
     db = job.path(flask.request.args.get('db'))
     db_path = job.path(db)
-    labels = []
 
     if COLOR_PALETTE_ATTRIBUTE in job.extension_userdata \
             and job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
@@ -194,7 +193,10 @@ def explore():
         if len(imgs) >= size:
             break
 
-    return flask.render_template('datasets/images/explore.html', page=page, size=size, job=job, imgs=imgs, labels=None, pages=pages, label=None, total_entries=total_entries, db=db)
+    return flask.render_template(
+        'datasets/images/explore.html',
+        page=page, size=size, job=job, imgs=imgs, labels=None,
+        pages=pages, label=None, total_entries=total_entries, db=db)
 
 
 def show(job, related_jobs=None):

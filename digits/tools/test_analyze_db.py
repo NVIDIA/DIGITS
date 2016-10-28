@@ -12,7 +12,6 @@ from digits import test_utils
 
 # Must import after importing digits.config
 import caffe.io
-import caffe_pb2
 
 
 test_utils.skipIfNotFramework('none')

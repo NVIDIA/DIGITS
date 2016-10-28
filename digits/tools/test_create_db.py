@@ -2,19 +2,10 @@
 
 from collections import Counter
 import os.path
-import platform
 import shutil
 import tempfile
-import unittest
 import Queue
 
-# Find the best implementation available
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
-
-import mock
 import nose.tools
 import numpy as np
 import PIL.Image
