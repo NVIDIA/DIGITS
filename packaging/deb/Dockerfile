@@ -9,7 +9,7 @@ RUN apt-get update \
         lintian \
     && rm -rf /var/lib/apt/lists/*
 
-ENV DEBFULLNAME "NVIDIA CORPORATION"
+ENV DEBFULLNAME "DIGITS Development Team"
 ENV DEBEMAIL "digits@nvidia.com"
 
 ARG UPSTREAM_VERSION
