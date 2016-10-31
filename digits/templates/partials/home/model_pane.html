@@ -150,19 +150,22 @@
                             {[ job.id ]}
                         </td>
                         <td ng-if="storage.model_fields[2].show">
+                            <small>{[ job.extension ]}</small>
+                        </td>
+                        <td ng-if="storage.model_fields[3].show">
                             <dg-framework></dg-framework>
                         </td>
-                        <td ng-if="storage.model_fields[3].show"
+                        <td ng-if="storage.model_fields[4].show"
                             class="text-{[job.status_css]}">
                             {[ job.status ]}
                         </td>
-                        <td ng-if="storage.model_fields[4].show"
+                        <td ng-if="storage.model_fields[5].show"
                             start="{[job.elapsed]}">
                             <small title="{[ print_time_diff(job.elapsed) ]}">
                                 {[ print_time_diff_terse(job.elapsed) ]}
                             </small>
                         </td>
-                        <td ng-if="storage.model_fields[5].show"
+                        <td ng-if="storage.model_fields[6].show"
                             start="{[job.submitted]}">
                             <small ng-if="!is_today(job.submitted)"
                                    title="{[ job.submitted * 1000 | date:'medium' ]}">
