@@ -38,9 +38,26 @@ matrix:
                       - devscripts
                       - debhelper
                       - dput
-          install: true
+                      - gnupg
+          install:
+              - git fetch --tags
           script:
-              - ./scripts/travis/deb-build.sh
+              - DEBIAN_REVISION=1ppa1~trusty ./packaging/deb/build.sh
+              - DEBIAN_REVISION=1ppa1~xenial ./packaging/deb/build.sh
+          deploy:
+              - provider: script
+                skip_cleanup: true
+                script: ./scripts/travis/ppa-upload.sh stable
+                on:
+                    repo: NVIDIA/DIGITS
+                    tags: true
+              - provider: script
+                skip_cleanup: true
+                script: ./scripts/travis/ppa-upload.sh dev
+                on:
+                    repo: NVIDIA/DIGITS
+                    branch: master
+
 
 cache:
     apt: true
