@@ -1,3 +1,4 @@
+include requirements*.txt
 recursive-include digits/templates *
 recursive-include digits/static *
 recursive-include digits/standard-networks *
