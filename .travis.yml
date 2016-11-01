@@ -27,10 +27,13 @@ matrix:
               apt:
                   packages:
                       - closure-linter
+                      - luarocks
                       - python-flake8
-          install: true
+          install:
+              - sudo luarocks install luacheck
           script:
               - ./digits-lint
+              - luacheck ./digits/tools/torch/ || true
 
         - env: DIST
           services: docker
