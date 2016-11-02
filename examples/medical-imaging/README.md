@@ -169,6 +169,8 @@ class Dice(caffe.Layer):
     def setup(self, bottom, top):
         if len(bottom) != 2:
             raise Exception("Need two inputs to compute Dice coefficient.")
+        # compute sum over all axes but the batch and channel axes
+        self.sum_axes = tuple(range(1, bottom[0].data.ndim - 1))
 
     def reshape(self, bottom, top):
         # check input dimensions match
@@ -182,13 +184,13 @@ class Dice(caffe.Layer):
         # compute prediction
         prediction = np.argmax(bottom[0].data, axis=1)
         # area of predicted contour
-        a_p = np.count_nonzero(prediction)
+        a_p = np.sum(prediction, axis=self.sum_axes)
         # area of contour in label
-        a_l = np.count_nonzero(label)
+        a_l = np.sum(label, axis=self.sum_axes)
         # area of intersection
-        a_pl = np.count_nonzero(prediction * label)
+        a_pl = np.sum(prediction * label, axis=self.sum_axes)
         # dice coefficient
-        dice_coeff = 2.*a_pl/(a_p + a_l)
+        dice_coeff = np.mean(2.*a_pl/(a_p + a_l))
         top[0].data[...] = dice_coeff
 
     def backward(self, top, propagate_down, bottom):
