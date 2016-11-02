@@ -87,16 +87,16 @@ def get_all_contours(contour_path):
 def load_contour(contour, img_path):
     filename = "IM-%s-%04d.dcm" % (SAX_SERIES[contour.case], contour.img_no)
     full_path = os.path.join(img_path, contour.case, filename)
-    f = dicom.read_file(full_path)
-    img = f.pixel_array.astype(np.int)
+    img = load_image(full_path)
     ctrs = np.loadtxt(contour.ctr_path, delimiter=" ").astype(np.int)
     label = np.zeros_like(img, dtype="uint8")
     cv2.fillPoly(label, [ctrs], 1)
     return img, label
 
-#
-# Main class
-#
+
+def load_image(full_path):
+    f = dicom.read_file(full_path)
+    return f.pixel_array.astype(np.int)
 
 
 @subclass
@@ -130,7 +130,12 @@ class DataIngestion(DataIngestionInterface):
 
     @override
     def encode_entry(self, entry):
-        img, label = load_contour(entry, self.image_folder)
+        if isinstance(entry, basestring):
+            img = load_image(entry)
+            label = np.array([0])
+        else:
+            img, label = load_contour(entry, self.image_folder)
+            label = label[np.newaxis, ...]
 
         if self.userdata['channel_conversion'] == 'L':
             feature = img[np.newaxis, ...]
@@ -140,8 +145,6 @@ class DataIngestion(DataIngestionInterface):
             feature[0] = img
             feature[1] = img
             feature[2] = img
-
-        label = label[np.newaxis, ...]
 
         return feature, label
 
@@ -213,6 +216,14 @@ class DataIngestion(DataIngestionInterface):
                 entries = ctrs[:n_val_entries]
         elif stage == constants.TEST_DB:
             if self.userdata['validation_record'] != 'none':
+                if self.userdata['test_image_file']:
+                    raise ValueError("Specify either an image or a record "
+                                     "from the validation set.")
+                # test record from validation set
                 entries = [ctrs[int(self.validation_record)]]
+
+            else:
+                # test image file
+                entries = [self.userdata['test_image_file']]
 
         return entries
