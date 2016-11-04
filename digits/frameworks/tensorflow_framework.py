@@ -1,22 +1,19 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import numpy as np
 import os
 import re
 import subprocess
-import time
 import tempfile
 
-import flask
-
-from .errors import Error, NetworkVisualizationError, BadNetworkError
+from .errors import NetworkVisualizationError
 from .framework import Framework
 import digits
 from digits import utils
 from digits.config import config_value
 from digits.model.tasks import TensorflowTrainTask
 from digits.utils import subclass, override, constants
+
 
 @subclass
 class TensorflowFramework(Framework):
@@ -35,7 +32,7 @@ class TensorflowFramework(Framework):
     SUPPORTS_PYTHON_LAYERS_FILE = False
     SUPPORTS_TIMELINE_TRACING = True
 
-    SUPPORTED_SOLVER_TYPES = ['SGD','ADADELTA','ADAGRAD','ADAGRADDA','MOMENTUM','ADAM','FTRL','RMSPROP']
+    SUPPORTED_SOLVER_TYPES = ['SGD', 'ADADELTA', 'ADAGRAD', 'ADAGRADDA', 'MOMENTUM', 'ADAM', 'FTRL', 'RMSPROP']
 
     SUPPORTED_DATA_TRANSFORMATION_TYPES = ['MEAN_SUBTRACTION', 'CROPPING']
     SUPPORTED_DATA_AUGMENTATION_TYPES = ['FLIPPING', 'NOISE', 'CONTRAST', 'WHITENING', 'HSV_SHIFTING']
@@ -50,7 +47,7 @@ class TensorflowFramework(Framework):
         """
         create train task
         """
-        return TensorflowTrainTask(framework_id = self.framework_id, **kwargs)
+        return TensorflowTrainTask(framework_id=self.framework_id, **kwargs)
 
     @override
     def get_standard_network_desc(self, network):
@@ -126,10 +123,10 @@ class TensorflowFramework(Framework):
         # Another for the HTML
         _, temp_html_path = tempfile.mkstemp(suffix='.html')
 
-        try: # do this in a try..finally clause to make sure we delete the temp file
+        try:  # do this in a try..finally clause to make sure we delete the temp file
             # build command line
             args = [config_value('tensorflow')['executable'],
-                    os.path.join(os.path.dirname(digits.__file__),'tools','tensorflow','main.py'),
+                    os.path.join(os.path.dirname(digits.__file__), 'tools', 'tensorflow', 'main.py'),
                     '--network=%s' % os.path.basename(temp_network_path),
                     '--networkDirectory=%s' % os.path.dirname(temp_network_path),
                     '--visualizeModelPath=%s' % temp_graphdef_path,
@@ -141,7 +138,7 @@ class TensorflowFramework(Framework):
 
             if use_mean and use_mean != 'none':
                 mean_file = dataset.get_mean_file()
-                assert mean_file != None, 'Failed to retrieve mean file.'
+                assert mean_file is not None, 'Failed to retrieve mean file.'
                 args.append('--subtractMean=%s' % use_mean)
                 args.append('--mean=%s' % dataset.path(mean_file))
 
@@ -163,15 +160,14 @@ class TensorflowFramework(Framework):
 
             env = os.environ.copy()
             # make only a selected number of GPUs visible. The ID is not important for just the vis
-            env['CUDA_VISIBLE_DEVICES'] = ",".join([str(i) for i in range(0,int(num_gpus))])
+            env['CUDA_VISIBLE_DEVICES'] = ",".join([str(i) for i in range(0, int(num_gpus))])
 
             # execute command
             p = subprocess.Popen(args,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        close_fds=True,
-                        env=env
-                        )
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 close_fds=True,
+                                 env=env)
 
             stdout_log = ''
             while p.poll() is None:
@@ -181,7 +177,7 @@ class TensorflowFramework(Framework):
                         stdout_log += line
             if p.returncode:
                 raise NetworkVisualizationError(stdout_log)
-            else: # Success!
+            else:  # Success!
                 return repr(str(open(temp_graphdef_path).read()))
         finally:
             os.remove(temp_network_path)

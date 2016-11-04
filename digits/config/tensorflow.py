@@ -3,18 +3,19 @@ from __future__ import absolute_import
 
 import os
 import platform
-from subprocess import Popen,PIPE
+from subprocess import Popen, PIPE
 
 from . import option_list
 
 VARNAME_ENV_TFPY = 'TENSORFLOW_PYTHON'
-DEFAULT_PYTHON_EXE = 'python2' # @TODO(tzaman) - use the python executable that was used to launch digits?
+DEFAULT_PYTHON_EXE = 'python2'  # @TODO(tzaman) - use the python executable that was used to launch digits?
 
 if platform.system() == 'Darwin':
     # DYLD_LIBRARY_PATH and LD_LIBRARY_PATH is sometimes stripped, and the cuda libraries might need it
-    if not "DYLD_LIBRARY_PATH" in os.environ:
+    if "DYLD_LIBRARY_PATH" not in os.environ:
         if "CUDA_HOME" in os.environ:
             os.environ["DYLD_LIBRARY_PATH"] = str(os.environ["CUDA_HOME"] + '/lib')
+
 
 def test_tf_import(python_exe):
     """
@@ -22,7 +23,7 @@ def test_tf_import(python_exe):
     """
     p = Popen([python_exe, "-c", "import tensorflow"], stdout=PIPE, stderr=PIPE)
     (out, err) = p.communicate()
-    return p.returncode==0, str(err)
+    return p.returncode == 0, str(err)
 
 if VARNAME_ENV_TFPY in os.environ:
     tf_python_exe = os.environ[VARNAME_ENV_TFPY]

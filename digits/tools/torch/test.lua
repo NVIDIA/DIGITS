@@ -341,6 +341,7 @@ else
             inputs[j] = inputs[1] -- replicate the first image in entire inputs tensor
         end
     end
+    counter = 1 -- here counter is set, so that predictBatch() method displays only the predictions of first image
     predictBatch(inputs, model)
     if opt.visualization=='yes' then
         local filename = paths.concat(opt.save, 'vis.h5')

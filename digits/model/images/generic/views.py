@@ -229,7 +229,7 @@ def create(extension_id=None):
             data_aug['scale'] = form.aug_scale.data
             data_aug['noise'] = form.aug_noise.data
             data_aug['contrast'] = form.aug_contrast.data
-            data_aug['whitening']= form.aug_whitening.data
+            data_aug['whitening'] = form.aug_whitening.data
             data_aug['hsv_use'] = form.aug_hsv_use.data
             data_aug['hsv_h'] = form.aug_hsv_h.data
             data_aug['hsv_s'] = form.aug_hsv_s.data
@@ -320,6 +320,7 @@ def show(job, related_jobs=None):
         inference_form_html=inference_form_html,
     )
 
+
 @blueprint.route('/timeline_tracing', methods=['GET'])
 def timeline_tracing():
     """
@@ -328,6 +329,7 @@ def timeline_tracing():
     job = job_from_request()
 
     return flask.render_template('models/timeline_tracing.html', job=job)
+
 
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():
@@ -777,13 +779,12 @@ def create_inference_db(model_job):
 def get_datasets(extension_id):
     if extension_id:
         jobs = [j for j in scheduler.jobs.values()
-                if isinstance(j, GenericDatasetJob)
-                and j.extension_id == extension_id
-                and (j.status.is_running() or j.status == Status.DONE)]
+                if isinstance(j, GenericDatasetJob) and
+                j.extension_id == extension_id and (j.status.is_running() or j.status == Status.DONE)]
     else:
         jobs = [j for j in scheduler.jobs.values()
-                if (isinstance(j, GenericImageDatasetJob) or isinstance(j, GenericDatasetJob))
-                and (j.status.is_running() or j.status == Status.DONE)]
+                if (isinstance(j, GenericImageDatasetJob) or isinstance(j, GenericDatasetJob)) and
+                (j.status.is_running() or j.status == Status.DONE)]
     return [(j.id(), j.name())
             for j in sorted(jobs, cmp=lambda x, y: cmp(y.id(), x.id()))]
 

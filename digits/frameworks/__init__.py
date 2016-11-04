@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 from .caffe_framework import CaffeFramework
 from .framework import Framework
-from .tensorflow_framework import TensorflowFramework
 from .torch_framework import TorchFramework
 from digits.config import config_value
 
@@ -12,6 +11,10 @@ __all__ = [
     'CaffeFramework',
     'TorchFramework',
 ]
+
+if config_value('tensorflow')['enabled']:
+    from .tensorflow_framework import TensorflowFramework
+    __all__.append('TensorflowFramework')
 
 #
 #  create framework instances
