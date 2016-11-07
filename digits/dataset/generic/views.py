@@ -130,7 +130,6 @@ def create(extension_id):
             scheduler.delete_job(job)
         raise
 
-
 def get_database_visualizations(dataset, inputs, outputs):
     # form data may be passed through the query
     form_data = get_request_arg('form_data')
