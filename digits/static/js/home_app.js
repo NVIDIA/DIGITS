@@ -534,6 +534,7 @@ try {
         $scope.title = 'Datasets';
         $scope.fields = [{name: 'name', show: true},
                          {name: 'refs', show: true},
+                         {name: 'extension', show: true, min_width: 150},
                          {name: 'backend', show: true},
                          {name: 'status', show: true},
                          {name: 'elapsed', show: true},
@@ -543,15 +544,33 @@ try {
     app.controller('models_controller', function($scope, $localStorage, $controller) {
         $controller('job_controller', {$scope: $scope});
         $scope.title = 'Models';
+        var model_fields = [
+            {name: 'name', show: true, min_width: 100},
+            {name: 'id', show: false, min_width: 200},
+            {name: 'extension', show: true, min_width: 150},
+            {name: 'framework', show: true, min_width: 50},
+            {name: 'status', show: true, min_width: 50},
+            {name: 'elapsed', show: true, min_width: 50},
+            {name: 'submitted', show: true, min_width: 50}
+        ];
+        for (var i = 0; i < model_fields.length; i++) {
+            var index = $localStorage.model_fields.findIndex(
+                function(item) {
+                    return item.name == model_fields[i].name;
+                });
+            if (index > -1) {
+                model_fields[i] = $localStorage.model_fields[index];
+                for (var attr in $localStorage.model_fields[index]) {
+                    if (model_fields[i].hasOwnProperty(attr))
+                        model_fields[i][attr] = $localStorage.model_fields[index][attr];
+                }
+            }
+        }
         $scope.storage = $localStorage.$default({
             model_output_fields: [],
-            model_fields: [{name: 'name', show: true, min_width: 100},
-                           {name: 'id', show: false, min_width: 200},
-                           {name: 'framework', show: true, min_width: 50},
-                           {name: 'status', show: true, min_width: 50},
-                           {name: 'elapsed', show: true, min_width: 50},
-                           {name: 'submitted', show: true, min_width: 50}],
+            model_fields: model_fields,
         });
+        $scope.storage.model_fields = model_fields.slice();
     });
 
     app.controller('pretrained_models_controller', function($scope, $localStorage, $controller) {
@@ -717,7 +736,6 @@ try {
     });
 
     app.directive('dgHasLabels', function() {
-        console.log('has-labels');
         return {
             restrict: 'AE',
             replace: true,

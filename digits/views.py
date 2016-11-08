@@ -188,6 +188,18 @@ def json_dict(job, model_output_fields):
             'dataset_id': job.dataset_id,
         })
 
+    if hasattr(job, 'extension_id'):
+        d.update({
+            'extension': job.extension_id,
+        })
+    else:
+        if hasattr(job, 'dataset_id'):
+            ds = scheduler.get_job(job.dataset_id)
+            if ds and hasattr(ds, 'extension_id'):
+                d.update({
+                    'extension': ds.extension_id,
+                })
+
     if isinstance(job, dataset.DatasetJob):
         d.update({'type': 'dataset'})
 
