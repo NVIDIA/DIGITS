@@ -86,7 +86,7 @@ class InferenceForm(Form):
         validators=[
             validate_file_path,
         ],
-        tooltip="Provide an image"
+        tooltip="Provide the (server) path to an image."
     )
 
     validation_record = utils.forms.SelectField(
