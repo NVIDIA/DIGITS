@@ -15,22 +15,18 @@ import numpy as np
 import PIL.Image
 
 
-IMAGE_SIZE = 10
-IMAGE_COUNT = 10  # per category
-
-
-def create_classification_imageset(folder, image_size=None, image_count=None, add_unbalanced_category=False):
+def create_classification_imageset(
+        folder,
+        image_size=10,
+        image_count=10,
+        add_unbalanced_category=False,
+):
     """
     Creates a folder of folders of images for classification
 
     If requested to add an unbalanced category then a category is added with
     half the number of samples of other categories
     """
-    if image_size is None:
-        image_size = IMAGE_SIZE
-    if image_count is None:
-        image_count = IMAGE_COUNT
-
     # Stores the relative path of each image of the dataset
     paths = defaultdict(list)
 

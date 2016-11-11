@@ -15,7 +15,7 @@ except ImportError:
 from bs4 import BeautifulSoup
 import PIL.Image
 
-from .test_imageset_creator import create_classification_imageset, IMAGE_COUNT as DUMMY_IMAGE_COUNT
+from .test_imageset_creator import create_classification_imageset
 from digits import test_utils
 import digits.test_views
 
@@ -64,6 +64,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
     Provides an imageset and some functions
     """
     # Inherited classes may want to override these default attributes
+    IMAGE_COUNT = 10  # per class
     IMAGE_HEIGHT = 10
     IMAGE_WIDTH = 10
     IMAGE_CHANNELS = 3
@@ -78,8 +79,11 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         super(BaseViewsTestWithImageset, cls).setUpClass()
         cls.imageset_folder = tempfile.mkdtemp()
         # create imageset
-        cls.imageset_paths = create_classification_imageset(cls.imageset_folder,
-                                                            add_unbalanced_category=cls.UNBALANCED_CATEGORY)
+        cls.imageset_paths = create_classification_imageset(
+            cls.imageset_folder,
+            image_count=cls.IMAGE_COUNT,
+            add_unbalanced_category=cls.UNBALANCED_CATEGORY,
+        )
         cls.created_datasets = []
 
     @classmethod
@@ -363,7 +367,7 @@ class TestImageCount(BaseViewsTestWithImageset, test_utils.DatasetMixin):
                 assert parse_info['val_count'] == 0
                 image_count = parse_info['test_count']
         assert self.categoryCount() == parse_info['label_count']
-        assert image_count == DUMMY_IMAGE_COUNT * parse_info['label_count'], 'image count mismatch'
+        assert image_count == self.IMAGE_COUNT * parse_info['label_count'], 'image count mismatch'
         assert self.delete_dataset(job_id) == 200, 'delete failed'
         assert not self.dataset_exists(job_id), 'dataset exists after delete'
 
@@ -375,9 +379,9 @@ class TestMaxPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
             yield self.check_max_per_class, type
 
     def check_max_per_class(self, type):
-        # create dataset, asking for at most DUMMY_IMAGE_COUNT/2 images per class
-        assert DUMMY_IMAGE_COUNT % 2 == 0
-        max_per_class = DUMMY_IMAGE_COUNT / 2
+        # create dataset, asking for at most IMAGE_COUNT/2 images per class
+        assert self.IMAGE_COUNT % 2 == 0
+        max_per_class = self.IMAGE_COUNT / 2
         data = {'folder_pct_val': 0}
         if type == 'train':
             data['folder_train_max_per_class'] = max_per_class
@@ -418,7 +422,7 @@ class TestMinPerClass(BaseViewsTestWithImageset, test_utils.DatasetMixin):
     def check_min_per_class(self, type):
         # create dataset, asking for one more image per class
         # than available in the "unbalanced" category
-        min_per_class = DUMMY_IMAGE_COUNT / 2 + 1
+        min_per_class = self.IMAGE_COUNT / 2 + 1
         data = {'folder_pct_val': 0}
         if type == 'train':
             data['folder_train_min_per_class'] = min_per_class
