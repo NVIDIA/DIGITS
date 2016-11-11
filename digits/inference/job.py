@@ -27,6 +27,11 @@ class InferenceJob(Job):
         fw_id = model.train_task().framework_id
         fw = digits.frameworks.get_framework_by_id(fw_id)
 
+        if fw is None:
+            raise RuntimeError(
+                'The "%s" framework cannot be found. Check your server configuration.'
+                % fw_id)
+
         # create inference task
         self.tasks.append(fw.create_inference_task(
             job_dir=self.dir(),
