@@ -556,7 +556,7 @@ try {
         if ($localStorage.model_fields) {
             for (var i = 0; i < model_fields.length; i++) {
                 var index = $localStorage.model_fields.findIndex(
-                    function (item) {
+                    function(item) {
                         return item.name == model_fields[i].name;
                     });
                 if (index > -1) {
