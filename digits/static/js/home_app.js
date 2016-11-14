@@ -553,16 +553,18 @@ try {
             {name: 'elapsed', show: true, min_width: 50},
             {name: 'submitted', show: true, min_width: 50}
         ];
-        for (var i = 0; i < model_fields.length; i++) {
-            var index = $localStorage.model_fields.findIndex(
-                function(item) {
-                    return item.name == model_fields[i].name;
-                });
-            if (index > -1) {
-                model_fields[i] = $localStorage.model_fields[index];
-                for (var attr in $localStorage.model_fields[index]) {
-                    if (model_fields[i].hasOwnProperty(attr))
-                        model_fields[i][attr] = $localStorage.model_fields[index][attr];
+        if ($localStorage.model_fields) {
+            for (var i = 0; i < model_fields.length; i++) {
+                var index = $localStorage.model_fields.findIndex(
+                    function (item) {
+                        return item.name == model_fields[i].name;
+                    });
+                if (index > -1) {
+                    model_fields[i] = $localStorage.model_fields[index];
+                    for (var attr in $localStorage.model_fields[index]) {
+                        if (model_fields[i].hasOwnProperty(attr))
+                            model_fields[i][attr] = $localStorage.model_fields[index][attr];
+                    }
                 }
             }
         }
