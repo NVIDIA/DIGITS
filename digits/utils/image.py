@@ -311,8 +311,8 @@ def embed_image_html(image):
     # Read format from the image
     fmt = image.format
     if not fmt:
-        # default to JPEG
-        fmt = 'jpeg'
+        # default to PNG
+        fmt = 'png'
     else:
         fmt = fmt.lower()
 
