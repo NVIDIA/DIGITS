@@ -1,9 +1,51 @@
 {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
 
+<form>
 {% extends "job.html" %}
+</form>
 {% from "helper.html" import serve_file %}
 
-{% macro print_create_db_task(task) %}
+{% block option_details %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4>Explore Options</h4>
+        </div>
+        <div class="panel-body">
+            <label for="view_extension_id">Select Visualization Method</label>
+            <div class="form-group">
+                <select id="view_extension_id" name="view_extension_id" class="form-control">
+                    {% for key in view_extensions.keys()|sort %}
+                        <option value="{{ key }}">{{ view_extensions[key] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <label>Visualization Options</label>
+            <div id="view_extension-details">
+            </div>
+            <script>
+                $("#view_extension_id").change(function() {
+                    if ($(this).val()) {
+                        $.ajax("/models/view-config/" + $(this).val(),
+                            {
+                                type: "GET",
+                                }
+                            )
+                        .done(function(data) {
+                            $("#view_extension-details").html(data);
+                            })
+                        .fail(function(data) {
+                            $("#view_extension-details").html("");
+                            errorAlert(data);
+                            });
+                        }
+                    });
+                $("#view_extension_id").change();
+            </script>
+        </div>
+    </div>
+{% endblock %}
+
+{% macro print_create_db_task(task, index) %}
 <div class="panel-heading">
     <h4>{{task.name()}}</h4>
 </div>
@@ -14,7 +56,7 @@
         {{ task.entry_count }}
         </dd>
         {% if task.entry_count > 0 %}
-            <dt>Feature shape
+            <dt>Features Shape
                 <span class="explanation-tooltip glyphicon glyphicon-question-sign" data-container="body"
                       title="Shown below is the shape of a sample entry in the database. Other entries might
                              have a different shape if the dataset has variable entry shapes."></span>
@@ -22,7 +64,7 @@
             <dd>
             {{ task.feature_shape }}
             </dd>
-            <dt>Label shape
+            <dt>Labels Shape
                 <span class="explanation-tooltip glyphicon glyphicon-question-sign" data-container="body"
                       title="Shown below is the shape of a sample entry in the database. Other entries might
                              have a different shape if the dataset has variable entry shapes."></span>
@@ -30,17 +72,22 @@
             <dd>
             {{ task.label_shape }}
             </dd>
-            {% for name,path in task.dbs.iteritems() %}
-                <dt>{{ name }} DB</dt>
+            {% for name, path in task.dbs|dictsort %}
+                <dt>{{ name|title }} DB</dt>
                 <dd>{{ job.path(path) }}</dd>
-                <dd>
-                    {% if task.status=='D' and task.get_encoding(name)!='none' %}
-                    <div>
-                        <a href="{{url_for('digits.dataset.generic.views.explore', job_id=job.id(), db=path)}}" class="btn btn-primary">Explore the db</a>
-                    </div>
-                    {% endif %}
-                </dd>
             {% endfor %}
+            {% if task.status=='D' and can_explore %}
+                <dd>
+                    <button name="explore-db-btn"
+                        formaction="{{url_for('digits.dataset.generic.views.explore', job_id=job.id(), feature_db=task.dbs['features'], label_db=task.dbs['labels'])}}"
+                        formmethod="post"
+                        formenctype="multipart/form-data"
+                        formtarget="_blank"
+                        class="btn btn-primary">
+                        Explore the db
+                    </button>
+                </dd>
+            {% endif %}
         {% endif %}
         {% if task.create_db_log_file %}
         <dt>DB create log file</dt>
@@ -52,6 +99,19 @@
         {% endif %}
     </dl>
 </div>
+<script>
+    $('#view_extension_id_{{ index }}').on("change", function(){
+        var view_extension_id= $(this).val();
+        var href = "{{url_for('digits.dataset.generic.views.explore')}}" +
+                "?job_id={{ job.id() }}"+
+                "&feature_db={{ task.dbs['features'] }}" +
+                "&label_db={{ task.dbs['labels'] }}" +
+                "&view_extension_id=" + view_extension_id;
+        $("#explore-button-{{ index }}").attr('href', href);
+    });
+    $('#view_extension_id_{{ index }}').trigger('change');
+</script>
+
 {% endmacro %}
 
 {% block job_content %}
@@ -79,12 +139,11 @@
     <div class="col-sm-12">
         {% if task.status != 'D' or task.entry_count > 0 %}
             <div id="{{task.html_id()}}" class="panel panel-default">
-                {{ print_create_db_task(task) }}
+                {{ print_create_db_task(task, loop.index) }}
             </div>
         {% endif %}
     </div>
 </div>
 {% endfor %}
-
 {% endblock %}
 

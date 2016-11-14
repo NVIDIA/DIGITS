@@ -110,3 +110,27 @@ class DataIngestionInterface(object):
         this function in no particular order
         """
         raise NotImplementedError
+
+    @staticmethod
+    def can_explore():
+        """
+        To be overridden
+        :return: True if explore methods are provided
+        """
+        return False
+
+    @staticmethod
+    def get_data(feature_db_path, label_db_path, page, size):
+        """
+        Retrieves a page worth of data from the databases and returns
+        data to be passed to a view extension
+        :param feature_db_path: full path to features database
+        :param label_db_path: full path to labels database
+        :param page: page number requested
+        :param size: number of items per page
+        :return: (inputs, outputs, total_entries)
+            - inputs: features
+            - output: labels
+            - total_entries: number of entries in the database
+        """
+        raise NotImplementedError

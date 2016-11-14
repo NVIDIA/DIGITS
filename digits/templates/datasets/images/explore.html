@@ -3,67 +3,124 @@
 {% extends "layout.html" %}
 
 {% block title %}
-{{job.name()}} - Explorer
+    {{ job.name() }} - Explorer
 {% endblock %}
 
 {% block head %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/3rdparty/angular-1.5.3.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ url_for('static', filename='js/3rdparty/ngStorage-0.3.10.min.js', ver=dir_hash) }}"></script>
 {% endblock %}
 
 {% block nav %}
-<li class="active"><a href="{{ url_for('digits.views.show_job', job_id=job.id()) }}">{{job.job_type()}}</a></li>
+    <li class="active"><a href="{{ url_for('digits.views.show_job', job_id=job.id()) }}">{{ job.job_type() }}</a></li>
 {% endblock %}
 
 {% block content %}
-    <div class="row">
-        <h2>Exploring {{job.name()}} ({{ db }}) images</h2>
-    </div>
-    <div class="row">
+    {% set url_query = 'job_id=' ~ job.id() ~ '&feature_db=' ~ feature_db ~ '&label_db=' ~ label_db  ~ '&form_data=' ~ form_data %}
+    <div>
+    <h2>Exploring {{ job.name() }}</h2>
+    {% if feature_db %}
+        <div>
+            Feature Database
+            <small>{{ feature_db }}</small>
+        </div>
+    {% endif %}
+    {% if label_db %}
+        <div>
+            Label Database
+            <small>{{ label_db }}</small>
+        </div>
+    {% endif %}
+    <br/>
+    <div>
         <ul class="list-unstyled list-inline">
-            <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}">Show all images</a></li>
-        {% if labels %}
-            <li>or</li>
-            <li><h5>filter by class:</h5></li>
-            {% for l in labels %}
-                <li><a {% if label==loop.index0 %}class="active"{% endif %} href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{loop.index0}}">{{l}}</a></li>
-            {% endfor %}
-        {% endif %}
+            <li><a href="?{{ url_query }}&page=0&size={{ size }}">Show all images</a></li>
+            {% if labels %}
+                <li>or</li>
+                <li><h5>filter by class:</h5></li>
+                {% for l in labels %}
+                    <li><a {% if label==loop.index0 %}class="active"{% endif %}
+                           href="?{{ url_query }}&page=0&size={{ size }}&label={{ loop.index0 }}">{{ l }}</a></li>
+                {% endfor %}
+            {% endif %}
         </ul>
     </div>
-    <div class="row">Items per page: <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=10&label={{label}}" {% if size==10 %}class="active"{% endif %}>10</a> - <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=25&label={{label}}" {% if size==25 %}class="active"{% endif %}>25</a> - <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=50&label={{label}}" {% if size==50 %}class="active"{% endif %}>50</a> - <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=100&label={{label}}" {% if size==100 %}class="active"{% endif %}>100</a></div>
-    <div class="row">
-    <ul class="pagination">
-        <li {% if page == 0 %}class="disabled"{%endif%}>
-          <a href="?job_id={{job.id()}}&page={{ page - 1 }}&size={{size}}&db={{db}}&label={{label}}" aria-label="Previous">
-            <span aria-hidden="true">&laquo;</span>
-          </a>
-        </li>
-        {% if pages[0] != 0 %}
-        <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{label}}">0</a></li>
-        <li class="disabled"><a href="#">...</a></li>
-        {% endif %}
-        {% for p in pages %}
-        <li {% if p == page %}class="active"{% endif %}><a href="?job_id={{job.id()}}&page={{ p }}&size={{size}}&db={{db}}&label={{label}}">{{p}}</a></li>
-        {% endfor %}
-        {% if pages[-1] != (total_entries-1)//size %}
-        <li class="disabled"><a href="#">...</a></li>
-        <li><a href="?job_id={{job.id()}}&page={{(total_entries-1)//size}}&size={{size}}&db={{db}}&label={{label}}">{{(total_entries-1)//size}}</a></li>
-        {% endif %}
-        {% if page != (total_entries-1)//size %}<li>
-          <a href="?job_id={{job.id()}}&page={{ page + 1 }}&size={{size}}&db={{db}}&label={{label}}" aria-label="Next">
-            <span aria-hidden="true">&raquo;</span>
-          </a>
-        </li>{%endif %}
-    </ul>
+    <div>
+        Items per page:
+        <a href="?{{ url_query }}&page=0&size=10&label={{ label }}" {% if size==10 %}class="active"{% endif %}>10</a>
+        -
+        <a href="?{{ url_query }}&page=0&size=25&label={{ label }}" {% if size==25 %}class="active"{% endif %}>25</a>
+        -
+        <a href="?{{ url_query }}&page=0&size=50&label={{ label }}" {% if size==50 %}class="active"{% endif %}>50</a>
+        -
+        <a href="?{{ url_query }}&page=0&size=100&label={{ label }}" {% if size==100 %}class="active"{% endif %}>100</a>
     </div>
-    <div class="row">
-    {% for i in imgs %}
-        <div class="col-sm-3">
-            <div class="row text-center"><img src="{{ i.b64 }}" class="img-responsive"/></div>
-            {% if i.label %}
-                <div class="row text-center"><h5>{{ i.label }}</h5></div>
+    <div>
+        <ul class="pagination">
+            <li {% if page == 0 %}class="disabled"{% endif %}>
+                <a href="?{{ url_query }}&page={{ page - 1 }}&size={{ size }}&label={{ label }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% if pages[0] != 0 %}
+                <li><a href="?{{ url_query }}&page=0&size={{ size }}&label={{ label }}">0</a></li>
+                <li class="disabled"><a href="#">...</a></li>
             {% endif %}
-            <br/>
-        </div>
-    {% endfor %}
+            {% for p in pages %}
+                <li {% if p == page %}class="active"{% endif %}><a
+                        href="?{{ url_query }}&page={{ p }}&size={{ size }}&label={{ label }}">{{ p }}</a></li>
+            {% endfor %}
+            {% if pages[-1] != (total_entries-1)//size %}
+                <li class="disabled"><a href="#">...</a></li>
+                <li>
+                    <a href="?{{ url_query }}&page={{ (total_entries-1)//size }}&size={{ size }}&label={{ label }}">
+                        {{ (total_entries-1)//size }}
+                    </a>
+                </li>
+            {% endif %}
+            {% if page != (total_entries-1)//size %}
+                <li>
+                    <a href="?{{ url_query }}&page={{ page + 1 }}&size={{ size }}&label={{ label }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>{% endif %}
+        </ul>
     </div>
+
+    {% if header %}
+        <div>
+            {{ header|safe }}
+        </div>
+    {% endif %}
+
+    {% if app_begin %}
+        {{ app_begin|safe }}
+    {% endif %}
+
+    {% if visualizations %}
+        <div>
+            <h3>Database</h3>
+            <div style="overflow:scroll; height:800px;">
+                <table class="table">
+                    <tr>
+                        {% for vis in visualizations %}
+                            <td>
+                                {{ vis|safe }}
+                            </td>
+                            {% if loop.index % 4 == 0 %}
+                                </tr>
+                                <tr>
+                            {% endif %}
+                        {% endfor %}
+                        </tr>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if app_end %}
+        {{ app_end|safe }}
+    {% endif %}
+
 {% endblock %}

@@ -1,16 +1,24 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+from collections import OrderedDict
 import math
 import os
 import random
 
+import caffe_pb2
 import numpy as np
 import PIL.Image
 import PIL.ImagePalette
 
 from digits.utils import image, subclass, override, constants
 from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
+from digits.utils.lmdbreader import DbReader
 from ..interface import DataIngestionInterface
 from .forms import DatasetForm
 
@@ -226,3 +234,69 @@ class DataIngestion(DataIngestionInterface):
             return filelist[n_val_entries:]
         else:
             raise ValueError("Unknown stage: %s" % stage)
+
+    @staticmethod
+    @override
+    def can_explore():
+        return True
+
+    @staticmethod
+    def get_data_from_db(db_path, page, size):
+        reader = DbReader(db_path)
+        data = []
+        count = 0
+        for key, value in reader.entries():
+            if count >= page * size:
+                datum = caffe_pb2.Datum()
+                datum.ParseFromString(value)
+                if not datum.encoded:
+                    raise RuntimeError("Expected encoded database")
+                s = StringIO()
+                s.write(datum.data)
+                s.seek(0)
+                datum = PIL.Image.open(s)
+                datum = np.array(datum)
+                data.append(datum)
+            count += 1
+            if len(data) >= size:
+                break
+        return data, reader.total_entries
+
+    @staticmethod
+    def convert(data):
+        """
+        Convert the labael data to look like inference data
+        :param data: label data
+        :return: output
+        - output is the data converted to look like inference data
+        """
+        idxs = np.unique(data)
+        mx = np.max(idxs[np.where(idxs != 255)])
+        output = [np.equal(data, i).astype('float') for i in range(mx + 1)]
+        output = np.array(output)
+        return output
+
+    @staticmethod
+    @override
+    def get_data(feature_db_path, label_db_path, page, size):
+        """
+        Retrieve data from databases and return it as if it were inference data
+        so that view extensions can present it in the Explore DB pages.
+        :param feature_db_path: feature database path
+        :param label_db_path: label database path
+        :param page: which page
+        :param size: number of items per page
+        :return: (inputs, outputs, total_entries)
+        - inputs are the feature data
+        - outputs are the label data made to look like inference data
+        - total_entries is the number of entries in the feature database
+        """
+        features, total_entries = DataIngestion.get_data_from_db(feature_db_path, page, size)
+        inputs = {'data': features, 'ids': range(len(features))}
+
+        labels, _ = DataIngestion.get_data_from_db(label_db_path, page, size)
+        labels = [DataIngestion.convert(label) for label in labels]
+        labels = np.array(labels)
+        outputs = OrderedDict([('score', labels)])
+
+        return inputs, outputs, total_entries
