@@ -1,5 +1,7 @@
 # Using DIGITS to train a Semantic Segmentation neural network
 
+> NOTE: refer to this [Parallel-For-All blog post](https://devblogs.nvidia.com/parallelforall/image-segmentation-using-digits-5/) for a detailed review of Fully Convolutional Neworks for semantic segmentation.
+
 Table of Contents
 =================
 * [Introduction](#introduction)
@@ -22,7 +24,6 @@ For example in the image below a picture representing a horse rider is segmented
 In the resulting image mask, the person and the horse are correctly depicted using the color codes from the legend.
 
 ![example](example.png)
-
 
 ## Dataset creation
 
