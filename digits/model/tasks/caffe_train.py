@@ -525,8 +525,10 @@ class CaffeTrainTask(TrainTask):
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(self.dataset.get_entry_count(
-            constants.TRAIN_DB)) / train_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(
+            float(self.dataset.get_entry_count(constants.TRAIN_DB)) /
+            (train_data_layer.data_param.batch_size * solver.iter_size)
+        ))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
@@ -598,7 +600,7 @@ class CaffeTrainTask(TrainTask):
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
             int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
-            int(math.ceil(5000.0 / train_data_layer.data_param.batch_size))
+            int(math.ceil(5000.0 / (train_data_layer.data_param.batch_size * solver.iter_size)))
         ))
 
         if self.random_seed is not None:
@@ -753,8 +755,10 @@ class CaffeTrainTask(TrainTask):
             solver.iter_size = self.batch_accumulation
 
         # Epochs -> Iterations
-        train_iter = int(math.ceil(float(self.dataset.get_entry_count(constants.TRAIN_DB)) /
-                                   train_image_data_layer.data_param.batch_size))
+        train_iter = int(math.ceil(
+            float(self.dataset.get_entry_count(constants.TRAIN_DB)) /
+            (train_image_data_layer.data_param.batch_size * solver.iter_size)
+        ))
         solver.max_iter = train_iter * self.train_epochs
         snapshot_interval = self.snapshot_interval * train_iter
         if 0 < snapshot_interval <= 1:
@@ -821,7 +825,7 @@ class CaffeTrainTask(TrainTask):
         # Display 8x per epoch, or once per 5000 images, whichever is more frequent
         solver.display = max(1, min(
             int(math.floor(float(solver.max_iter) / (self.train_epochs * 8))),
-            int(math.ceil(5000.0 / train_image_data_layer.data_param.batch_size))
+            int(math.ceil(5000.0 / (train_image_data_layer.data_param.batch_size * solver.iter_size)))
         ))
 
         if self.random_seed is not None:

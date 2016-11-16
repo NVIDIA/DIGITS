@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import itertools
 import json
+import math
 import os
 import shutil
 import tempfile
@@ -16,13 +17,16 @@ except ImportError:
     from StringIO import StringIO
 
 from bs4 import BeautifulSoup
+from google.protobuf import text_format
 
 from digits.config import config_value
 import digits.dataset.images.classification.test_views
+from digits.frameworks import CaffeFramework
 import digits.test_views
 from digits import test_utils
 import digits.webapp
 
+import caffe_pb2
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -100,6 +104,10 @@ end
     @classmethod
     def model_status(cls, job_id):
         return cls.job_status(job_id, 'models')
+
+    @classmethod
+    def model_info(cls, job_id):
+        return cls.job_info(job_id, 'models')
 
     @classmethod
     def abort_model(cls, job_id):
@@ -1254,3 +1262,33 @@ class TestSweepCreation(BaseViewsTestWithDataset, test_utils.CaffeMixin):
             assert self.model_wait_completion(job_id) == 'Done', 'create failed'
             assert self.delete_model(job_id) == 200, 'delete failed'
             assert not self.model_exists(job_id), 'model exists after delete'
+
+
+@unittest.skipIf(
+    not CaffeFramework().can_accumulate_gradients(),
+    'This version of Caffe cannot accumulate gradients')
+class TestBatchAccumulationCaffe(BaseViewsTestWithDataset, test_utils.CaffeMixin):
+    TRAIN_EPOCHS = 1
+    IMAGE_COUNT = 10  # per class
+
+    def test_batch_accumulation_calculations(self):
+        batch_size = 10
+        batch_accumulation = 2
+
+        job_id = self.create_model(
+            batch_size=batch_size,
+            batch_accumulation=batch_accumulation,
+        )
+        assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.model_info(job_id)
+        solver = caffe_pb2.SolverParameter()
+        with open(os.path.join(info['directory'], info['solver file']), 'r') as infile:
+            text_format.Merge(infile.read(), solver)
+        assert solver.iter_size == batch_accumulation, \
+            'iter_size is %d instead of %d' % (solver.iter_size, batch_accumulation)
+        max_iter = int(math.ceil(
+            float(self.TRAIN_EPOCHS * self.IMAGE_COUNT * 3) /
+            (batch_size * batch_accumulation)
+        ))
+        assert solver.max_iter == max_iter,\
+            'max_iter is %d instead of %d' % (solver.max_iter, max_iter)
