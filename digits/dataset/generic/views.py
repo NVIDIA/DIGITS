@@ -10,6 +10,7 @@ except ImportError:
 import caffe_pb2
 import flask
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import PIL.Image
 
@@ -154,8 +155,8 @@ def explore():
         # normalize input pixels to [0,1]
         norm = mpl.colors.Normalize(vmin=0, vmax=255)
         # create map
-        cmap = mpl.pyplot.cm.ScalarMappable(norm=norm,
-                                            cmap=mpl.colors.ListedColormap(palette))
+        cmap = plt.cm.ScalarMappable(norm=norm,
+                                     cmap=mpl.colors.ListedColormap(palette))
     else:
         cmap = None
 
