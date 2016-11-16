@@ -10,9 +10,6 @@ env:
     global:
         - CAFFE_ROOT=~/caffe
         - TORCH_ROOT=~/torch
-        # Fixes for Torch and OpenBLAS
-        - OMP_NUM_THREADS=1
-        - OPENBLAS_MAIN_FREE=1
         - secure: "WSqrE+PQm76DdoRLRGKTK6fRWfXZjIb0BWCZm3IgHgFO7OE6fcK2tBnpDNNw4XQjmo27FFWlEhxN32g18P84n5PvErHaH65IuS9Nv6FkLlPXZlVqGNxbPmEA4oTkD/6Y6kZyZWZtLh2+/1ijuzQAPnIy/4BEuL8pdO+PsoJ9hYM="
     matrix:
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=NVIDIA
@@ -83,6 +80,7 @@ addons:
             - cython
             - git
             - graphviz
+            - libatlas-base-dev
             - libboost-filesystem-dev
             - libboost-python-dev
             - libboost-system-dev
@@ -92,7 +90,6 @@ addons:
             - libhdf5-serial-dev
             - libleveldb-dev
             - liblmdb-dev
-            - libopenblas-dev
             - libopencv-dev
             - libprotobuf-dev
             - libsnappy-dev
