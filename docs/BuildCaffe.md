@@ -1,7 +1,7 @@
 # Building Caffe
 
 DIGITS requires a build of Caffe.
-We officially only support recent releases from [NVIDIA/caffe](https://github.com/NVIDIA/caffe) (NVcaffe), but any recent build of [BVLC/caffe](https://github.com/NVIDIA/caffe) will probably work too.
+We officially only support recent releases from [NVIDIA/caffe](https://github.com/NVIDIA/caffe) (NVcaffe), but any recent build of [BVLC/caffe](https://github.com/BVLC/caffe) will probably work too.
 
 ## Dependencies
 
