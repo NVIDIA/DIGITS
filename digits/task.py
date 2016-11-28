@@ -30,13 +30,18 @@ class Task(StatusCls):
 
     def __init__(self, job_dir, parents=None):
         # Detect if slurm is available
+        # This should be moved to a better location that contains system infor
+        # as this should contain only job based information
         # TODO add other systems to the detection
         self.system_type = self.detect_task_system()
 
         super(Task, self).__init__()
         self.pickver_task = PICKLE_VERSION
+
+        # vars for slurm job details
         self.node = ""
         self.job_num = ""
+
         self.job_dir = job_dir
         self.job_id = os.path.basename(job_dir)
 
