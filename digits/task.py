@@ -29,9 +29,14 @@ class Task(StatusCls):
     """
 
     def __init__(self, job_dir, parents=None):
+        # Detect if slurm is available
+        # TODO add other systems to the detection
+        self.system_type = self.detect_task_system()
+
         super(Task, self).__init__()
         self.pickver_task = PICKLE_VERSION
-
+        self.node = ""
+        self.job_num = ""
         self.job_dir = job_dir
         self.job_id = os.path.basename(job_dir)
 
@@ -49,6 +54,13 @@ class Task(StatusCls):
         self.aborted = gevent.event.Event()
         self.set_logger()
         self.p = None  # Subprocess object for training
+
+    def detect_task_system(self):
+        if subprocess.call('slurm',stdout=None) == 0:
+            system_type = "slurm"
+        else:
+            sytem_type = "int"
+        return system_type
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -101,6 +113,8 @@ class Task(StatusCls):
             'css': self.status.css,
             'show': (self.status in [Status.RUN, Status.ERROR]),
             'running': self.status.is_running(),
+            'node':self.node,
+            'job_num':self.job_num
         }
         with app.app_context():
             message['html'] = flask.render_template('status_updates.html',
@@ -207,18 +221,17 @@ class Task(StatusCls):
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
 
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
+        if self.system_type == 'slurm':
+            # limit to 3 gpus as it is the max for our nodes
+            gpus = len(args[len(args)-1].split(','))
+            if(gpus > 3):
+                gpus = 3;
+            args = ['salloc', '-c 10' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
         if platform.system() == 'Windows':
             args = ' '.join(args)
-
             self.logger.info('Task subprocess args: "{}"'.format(args))
-
         else:
              print args
-             gpus = len(args[len(args)-1].split(','))
-             if(gpus > 3):
-                 gpus = 3;
-
-             args = ['salloc', '-c 10' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
              print self.job_dir
              self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
@@ -243,9 +256,16 @@ class Task(StatusCls):
                         if sigterm_time is None:
                             print "graceful shutdown"
                             # Attempt graceful shutdown
-                            self.p.send_signal(signal.SIGTERM)
-                            sigterm_time = time.time()
-                            self.status = Status.ABORT
+                            if self.job_num:
+                                #slurm job cancel
+                                args = ['scancel',self.job_num]
+                                subprocess.call(args)
+                                sigterm_time = time.time()
+                                self.status = Status.ABORT
+                            else:
+                                self.p.send_signal(signal.SIGTERM)
+                                sigterm_time = time.time()
+                                self.status = Status.ABORT
                         break
 
                     if line is not None:
@@ -254,7 +274,11 @@ class Task(StatusCls):
 
 
                     if line:
+                        if line.find('allocation') > 1:
+                            jobNums = [int(s) for s in line.split() if s.isdigit()]
+                            self.job_num = str(jobNums[0])
                         print line
+                        print self.job_num
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
                             unrecognized_output.append(line)
@@ -305,9 +329,14 @@ class Task(StatusCls):
         Takes line of output and parses it according to DIGITS's log format
         Returns (timestamp, level, message) or (None, None, None)
         """
+        print "PROCESSING THE OUTPUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         # NOTE: This must change when the logging format changes
         # YYYY-MM-DD HH:MM:SS [LEVEL] message
+        if line.find('allocation') > 1:
+            jobNums = [int(s) for s in line.split() if s.isdigit()]
+            self.job_num = str(jobNums[0])
         match = re.match(r'(\S{10} \S{8}) \[(\w+)\s*\] (.*)$', line)
+
         if match:
             timestr = match.group(1)
             timestamp = time.mktime(time.strptime(timestr, digits.log.DATE_FORMAT))
