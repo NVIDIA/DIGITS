@@ -21,6 +21,9 @@ env:
         - DIGITS_TEST_FRAMEWORK=none
 
 matrix:
+    allow_failures:
+        - env: DIGITS_TEST_FRAMEWORK=torch
+    fast_finsh: true
     include:
         - env: LINT_CHECK
           addons:
