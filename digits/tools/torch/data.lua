@@ -151,11 +151,11 @@ end
 local rot90 = function(im, rotFlag)
     local rot
     if rotFlag == 2 then
-        rot = im:transpose(2,3) --switch X and Y dimentions
+        rot = im:transpose(2,3) --switch X and Y dimensions
         rot = image.vflip(rot)
         return rot
     elseif rotFlag == 3 then
-        rot = im:transpose(2,3) --switch X and Y dimentions
+        rot = im:transpose(2,3) --switch X and Y dimensions
         rot = image.hflip(rot)
         return rot
     elseif rotFlag == 4 then -- vflip+hflip=180 deg rotation

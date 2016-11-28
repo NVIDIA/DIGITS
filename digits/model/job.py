@@ -5,7 +5,7 @@ from . import tasks
 from digits.job import Job
 from digits.utils import override
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 1
 
 

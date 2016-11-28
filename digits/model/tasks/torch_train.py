@@ -22,7 +22,7 @@ from digits.utils import subclass, override, constants
 # Must import after importing digit.config
 import caffe_pb2
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 1
 
 # Constants

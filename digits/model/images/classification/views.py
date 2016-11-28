@@ -663,7 +663,7 @@ def top_n():
         scores = last_output_data
 
         if scores is None:
-            raise RuntimeError('An error occured while processing the images')
+            raise RuntimeError('An error occurred while processing the images')
 
         labels = model_job.train_task().get_labels()
         images = inputs['data']

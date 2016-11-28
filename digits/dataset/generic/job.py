@@ -5,7 +5,7 @@ from ..job import DatasetJob
 from digits.dataset import tasks
 from digits.utils import subclass, override, constants
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 1
 
 

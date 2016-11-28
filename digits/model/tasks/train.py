@@ -13,7 +13,7 @@ from digits import device_query
 from digits.task import Task
 from digits.utils import subclass, override
 
-# NOTE: Increment this everytime the picked object changes
+# NOTE: Increment this every time the picked object changes
 PICKLE_VERSION = 2
 
 # Used to store network outputs

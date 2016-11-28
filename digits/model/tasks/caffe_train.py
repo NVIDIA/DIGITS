@@ -27,7 +27,7 @@ from digits.utils.filesystem import tail
 import caffe
 import caffe_pb2
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 5
 
 # Constants
