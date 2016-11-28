@@ -74,6 +74,19 @@ Shut down the server before installing a driver, and then restart it afterwards:
 The DIGITS server runs as `www-data`, so keep in mind that prebuilt LMDB datasets used for generic models need to be readable by the `www-data` user.
 In particular, the entire chain of directories from `/` to your data must be readable by `www-data`.
 
+#### Torch and cusparse
+
+There is at least one Torch package which is missing a required dependency on cusparse.
+If you see this error:
+```
+/usr/share/lua/5.1/cunn/THCUNN.lua:7: libcusparse.so.7.5: cannot open shared object file: No such file or directory
+```
+The simplest fix is to manually install the missing library:
+```sh
+% sudo apt-get install cuda-cusparse-7-5
+% sudo ldconfig
+```
+
 #### Other
 
 If you run into an issue not addressed here, try searching through the [GitHub issues](https://github.com/NVIDIA/DIGITS/issues) and/or the [user group](https://groups.google.com/d/forum/digits-users).
