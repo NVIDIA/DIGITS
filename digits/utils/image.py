@@ -427,7 +427,7 @@ def vis_square(images,
             if C is not set, a heatmap is computed for the result
 
     Keyword arguments:
-    padsize -- how many pixels go inbetween the tiles
+    padsize -- how many pixels go between the tiles
     normalize -- if true, scales (min, max) across all images out to (0, 1)
     colormap -- a string representing one of the supported colormaps
     """

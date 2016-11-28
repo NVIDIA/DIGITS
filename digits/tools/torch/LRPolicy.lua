@@ -42,7 +42,7 @@ function LRPolicy:__init(...)
     if self.policy == 'step' or self.policy == 'sigmoid' then
       self.step_size = self.step_values[1]     -- if the policy is not multistep, then even though multiple step values are provided as input, we will consider only the first value.
     elseif self.policy == 'multistep' then
-      self.current_step = 1       -- this counter is important to take arbitary steps
+      self.current_step = 1       -- this counter is important to take arbitrary steps
       self.stepvalue_size = #self.step_values
     end
 

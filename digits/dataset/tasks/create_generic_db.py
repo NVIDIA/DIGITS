@@ -9,7 +9,7 @@ import digits
 from digits.task import Task
 from digits.utils import subclass, override
 
-# NOTE: Increment this everytime the pickled version changes
+# NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 1
 
 
