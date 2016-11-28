@@ -180,6 +180,7 @@ class Task(StatusCls):
         pass
 
     def run(self, resources):
+
         """
         Execute the task
 
@@ -208,9 +209,19 @@ class Task(StatusCls):
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         if platform.system() == 'Windows':
             args = ' '.join(args)
+
             self.logger.info('Task subprocess args: "{}"'.format(args))
+
         else:
-            self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
+             print args
+             gpus = len(args[len(args)-1].split(','))
+             if(gpus > 3):
+                 gpus = 3;
+
+             args = ['salloc', '-c 10' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
+             print self.job_dir
+             self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
+
 
         self.p = subprocess.Popen(args,
                                   stdout=subprocess.PIPE,
@@ -220,6 +231,9 @@ class Task(StatusCls):
                                   env=env,
                                   )
 
+        print "SUBPROCESS IS OPEN"
+
+
         try:
             sigterm_time = None  # When was the SIGTERM signal sent
             sigterm_timeout = 2  # When should the SIGKILL signal be sent
@@ -227,6 +241,7 @@ class Task(StatusCls):
                 for line in utils.nonblocking_readlines(self.p.stdout):
                     if self.aborted.is_set():
                         if sigterm_time is None:
+                            print "graceful shutdown"
                             # Attempt graceful shutdown
                             self.p.send_signal(signal.SIGTERM)
                             sigterm_time = time.time()
@@ -237,18 +252,22 @@ class Task(StatusCls):
                         # Remove whitespace
                         line = line.strip()
 
+
                     if line:
+                        print line
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
                 if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+                    print "sending sigterm"
                     self.p.send_signal(signal.SIGKILL)
                     self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
                     time.sleep(0.1)
                 time.sleep(0.01)
         except:
+            print "exception"
             self.p.terminate()
             self.after_run()
             raise
@@ -258,7 +277,7 @@ class Task(StatusCls):
         if self.status != Status.RUN:
             return False
         elif self.p.returncode != 0:
-            self.logger.error('%s task failed with error code %d' % (self.name(), self.p.returncode))
+            self.logger.error('%s %s task failed with error code %d' % (self.name(), self.p.returncode))
             if self.exception is None:
                 self.exception = 'error code %d' % self.p.returncode
                 if unrecognized_output:
@@ -309,6 +328,7 @@ class Task(StatusCls):
             return (None, None, None)
 
     def process_output(self, line):
+        print "ASDGSDAJKLASDHSHADJKASDHjkl"
         """
         Process a line of output from the task
         Returns True if the output was able to be processed
