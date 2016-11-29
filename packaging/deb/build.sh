@@ -84,7 +84,7 @@ git archive --prefix "digits/" -o $TARBALL_DIR/digits.orig.tar.gz HEAD
 
 cd $LOCAL_DIR
 DOCKER_BUILD_ID="digits-debuild"
-docker build -t $DOCKER_BUILD_ID \
+docker build --pull -t $DOCKER_BUILD_ID \
     --build-arg UPSTREAM_VERSION=$UPSTREAM_VERSION \
     --build-arg DEBIAN_VERSION=$DEBIAN_VERSION \
     .
