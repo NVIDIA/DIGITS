@@ -76,6 +76,9 @@ def new():
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
+    if config_value('system_type') == 'slurm':
+        print config_value('caffe')['multi_gpu']
+        config_value('caffe')['multi_gpu'] = True
     return flask.render_template('models/images/classification/new.html',
                                  form=form,
                                  frameworks=frameworks.get_frameworks(),

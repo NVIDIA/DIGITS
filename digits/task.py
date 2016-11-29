@@ -33,7 +33,7 @@ class Task(StatusCls):
         # This should be moved to a better location that contains system infor
         # as this should contain only job based information
         # TODO add other systems to the detection
-        self.system_type = self.detect_task_system()
+        self.system_type = config_value('system_type')
 
         super(Task, self).__init__()
         self.pickver_task = PICKLE_VERSION
@@ -60,12 +60,7 @@ class Task(StatusCls):
         self.set_logger()
         self.p = None  # Subprocess object for training
 
-    def detect_task_system(self):
-        if subprocess.call('slurm',stdout=None) == 0:
-            system_type = "slurm"
-        else:
-            sytem_type = "int"
-        return system_type
+
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -229,8 +224,12 @@ class Task(StatusCls):
         if self.system_type == 'slurm':
             # limit to 3 gpus as it is the max for our nodes
             gpus = len(args[len(args)-1].split(','))
-            if(gpus > 3):
-                gpus = 3;
+
+            # setting gpu to 3 until we allocate the correct gpus
+            gpus = 3
+            # if(gpus > 3):
+            #     gpus = 3;
+
             args = ['salloc', '-c 10' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
         if platform.system() == 'Windows':
             args = ' '.join(args)
@@ -362,7 +361,7 @@ class Task(StatusCls):
             return (None, None, None)
 
     def process_output(self, line):
-        print "ASDGSDAJKLASDHSHADJKASDHjkl"
+
         """
         Process a line of output from the task
         Returns True if the output was able to be processed

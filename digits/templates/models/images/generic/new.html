@@ -644,8 +644,9 @@ setFramework("{{form.framework.data}}");
                 {% endfor %}
             </div>
             {% endif %}
-            {% if form.select_gpus.choices| length > 1 and multi_gpu %}
+
             <div class="form-group{{mark_errors([form.select_gpu_count])}}">
+
                 {{form.select_gpu_count.label}}
                 {{form.select_gpu_count(class='form-control')}}
             </div>
@@ -660,7 +661,7 @@ setFramework("{{form.framework.data}}");
                 $("#select_gpus").change(function(){ $("#select_gpu_count").val(null);});
                 $("#select_gpu_count").change(function(){ $("#select_gpus").val(null);});
             </script>
-            {% endif %}
+
             <div class="form-group{{mark_errors([form.group_name])}}">
                 {{form.group_name.label}}
                 {{form.group_name.tooltip}}

@@ -348,13 +348,21 @@ class ModelForm(Form):
             field.data = form.select_gpus_list.data.split(',')
 
     # Use next available N GPUs
-    select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
-                                            validators=[
-                                                validators.NumberRange(min=1, max=len(
-                                                    config_value('gpu_list').split(',')))
-                                            ],
-                                            default=1,
-                                            )
+    if config_value('system_type') == 'slurm':
+        select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
+                                                validators=[
+                                                    validators.NumberRange(min=1, max=3)
+                                                ],
+                                                default=1,
+                                                )
+    else:
+        select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
+                                                validators=[
+                                                    validators.NumberRange(min=1, max=len(
+                                                        config_value('gpu_list').split(',')))
+                                                ],
+                                                default=1,
+                                                )
 
     def validate_select_gpu_count(form, field):
         if field.data is None:
