@@ -122,6 +122,7 @@ def infer(input_list,
         paths = None
         with open(input_list) as infile:
             paths = infile.readlines()
+            print paths
         # load and resize images
         for idx, path in enumerate(paths):
             path = path.strip()

@@ -687,12 +687,14 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
                 {{form.select_gpu_count.label}}
                 {{form.select_gpu_count(class='form-control')}}
             </div>
+                {% if form.select_gpu.choices|length > 1 and not multi_gpu %}
             <p class="text-center"><i>or</i></p>
             <div class="form-group{{mark_errors([form.select_gpus])}}">
                 {{form.select_gpus.label}}
                 {{form.select_gpus.tooltip}}
                 {{form.select_gpus(class='form-control', size=4)}}
             </div>
+             {% endif %}
             <script type="text/javascript">
                 // Only allow one of these to be selected
                 $("#select_gpus").change(function(){ $("#select_gpu_count").val(null);});
