@@ -412,6 +412,7 @@ def classify_one():
     # delete job
     scheduler.delete_job(inference_job)
 
+
     if remove_image_path:
         os.remove(image_path)
 

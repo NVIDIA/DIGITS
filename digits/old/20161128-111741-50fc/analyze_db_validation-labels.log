@@ -1,0 +1,16 @@
+salloc: Granted job allocation 3874554
+srun: Job step created
+2016-11-28 11:17:46 [INFO ] Total entries: 31898
+2016-11-28 11:17:46 [DEBUG] >>> Key 00000000_824
+2016-11-28 11:17:46 [DEBUG] 	WxHxC:   256x256x3
+2016-11-28 11:17:46 [DEBUG] 	Label:   824
+2016-11-28 11:17:46 [DEBUG] 	Encoded: True
+2016-11-28 11:17:46 [DEBUG] Progress: 1/31898
+2016-11-28 11:17:48 [DEBUG] >>> Key 00018343_293
+2016-11-28 11:17:48 [DEBUG] 	WxHxC:   256x256x3
+2016-11-28 11:17:48 [DEBUG] 	Label:   293
+2016-11-28 11:17:48 [DEBUG] 	Encoded: True
+2016-11-28 11:17:48 [DEBUG] Progress: 18344/31898
+2016-11-28 11:17:50 [INFO ] 31898 entries found with shape 256x256x3 (WxHxC)
+2016-11-28 11:17:50 [INFO ] Completed in 3.76883816719 seconds.
+salloc: Relinquishing job allocation 3874554

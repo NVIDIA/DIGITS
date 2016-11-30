@@ -17,6 +17,8 @@ from .config import config_value
 from .status import Status, StatusCls
 import digits.log
 
+
+
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 1
 
@@ -213,6 +215,7 @@ class Task(StatusCls):
         args = [str(x) for x in args]
 
         self.logger.info('%s task started.' % self.name())
+
         self.status = Status.RUN
 
         unrecognized_output = []
@@ -222,21 +225,27 @@ class Task(StatusCls):
 
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         if self.system_type == 'slurm':
+            print "Running in slurm mode"
+
             # limit to 3 gpus as it is the max for our nodes
             gpus = len(args[len(args)-1].split(','))
-
             # setting gpu to 3 until we allocate the correct gpus
             gpus = 3
             # if(gpus > 3):
             #     gpus = 3;
+            if type(self) == digits.inference.tasks.inference.InferenceTask:
+               print ""
+               # do slurm for inference
+            else:
+                self.status = Status.WAIT
+                args = ['salloc', '-c 10' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
 
-            args = ['salloc', '-c 10' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
         if platform.system() == 'Windows':
             args = ' '.join(args)
             self.logger.info('Task subprocess args: "{}"'.format(args))
         else:
-             print args
-             print self.job_dir
+             # print args
+             # print self.job_dir
              self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
 
@@ -278,11 +287,14 @@ class Task(StatusCls):
 
 
                     if line:
-                        if line.find('allocation') > 1:
+
+                        if not self.job_num and line.find('allocation') > 1:
                             jobNums = [int(s) for s in line.split() if s.isdigit()]
                             self.job_num = str(jobNums[0])
+                        if self.status != Status.RUN and line.find('srun:') >= 0:
+                            self.status = Status.RUN
                         print line
-                        print self.job_num
+                        # print self.job_num
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
                             unrecognized_output.append(line)
@@ -333,7 +345,6 @@ class Task(StatusCls):
         Takes line of output and parses it according to DIGITS's log format
         Returns (timestamp, level, message) or (None, None, None)
         """
-        print "PROCESSING THE OUTPUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         # NOTE: This must change when the logging format changes
         # YYYY-MM-DD HH:MM:SS [LEVEL] message
         if line.find('allocation') > 1:

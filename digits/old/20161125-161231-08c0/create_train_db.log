@@ -1,0 +1,37 @@
+2016-11-25 16:12:44 [DEBUG] 45002 total lines in file
+2016-11-25 16:12:44 [INFO ] 45002 valid lines in file
+2016-11-25 16:12:44 [DEBUG] Category 0 has 4442 images.
+2016-11-25 16:12:44 [DEBUG] Category 1 has 5057 images.
+2016-11-25 16:12:44 [DEBUG] Category 2 has 4469 images.
+2016-11-25 16:12:44 [DEBUG] Category 3 has 4598 images.
+2016-11-25 16:12:44 [DEBUG] Category 4 has 4382 images.
+2016-11-25 16:12:44 [DEBUG] Category 5 has 4066 images.
+2016-11-25 16:12:44 [DEBUG] Category 6 has 4439 images.
+2016-11-25 16:12:44 [DEBUG] Category 7 has 4699 images.
+2016-11-25 16:12:44 [DEBUG] Category 8 has 4388 images.
+2016-11-25 16:12:44 [DEBUG] Category 9 has 4462 images.
+2016-11-25 16:12:46 [DEBUG] Processed 2200/45002
+2016-11-25 16:12:48 [DEBUG] Processed 4500/45002
+2016-11-25 16:12:50 [DEBUG] Processed 6600/45002
+2016-11-25 16:12:52 [DEBUG] Processed 8900/45002
+2016-11-25 16:12:54 [DEBUG] Processed 11100/45002
+2016-11-25 16:12:56 [DEBUG] Processed 13300/45002
+2016-11-25 16:12:58 [DEBUG] Processed 15400/45002
+2016-11-25 16:13:00 [DEBUG] Processed 17500/45002
+2016-11-25 16:13:02 [DEBUG] Processed 19800/45002
+2016-11-25 16:13:04 [DEBUG] Processed 22100/45002
+2016-11-25 16:13:06 [DEBUG] Processed 24500/45002
+2016-11-25 16:13:08 [DEBUG] Processed 26900/45002
+2016-11-25 16:13:10 [DEBUG] Processed 29300/45002
+2016-11-25 16:13:12 [DEBUG] Processed 31500/45002
+2016-11-25 16:13:14 [DEBUG] Processed 33700/45002
+2016-11-25 16:13:16 [DEBUG] Processed 35700/45002
+2016-11-25 16:13:18 [DEBUG] Processed 37700/45002
+2016-11-25 16:13:20 [DEBUG] Processed 39700/45002
+2016-11-25 16:13:22 [DEBUG] Processed 41800/45002
+2016-11-25 16:13:24 [DEBUG] Processed 43900/45002
+2016-11-25 16:13:25 [DEBUG] 45002 images loaded
+2016-11-25 16:13:25 [INFO ] 45002 images written to database
+2016-11-25 16:13:25 [INFO ] Mean saved at "/data/zim021/digits-proj/DIGITS/digits/jobs/20161125-161231-08c0/mean.binaryproto"
+2016-11-25 16:13:25 [INFO ] Mean saved at "/data/zim021/digits-proj/DIGITS/digits/jobs/20161125-161231-08c0/mean.jpg"
+2016-11-25 16:13:25 [INFO ] Database created after 41 seconds.

@@ -1,0 +1,17 @@
+salloc: Granted job allocation 3893891
+srun: Job step created
+srun: interrupt (one more within 1 sec to abort)
+srun: task 0: running
+srun: sending Ctrl-C to job 3893891.0
+Traceback (most recent call last):
+File "/data/zim021/digits-proj/DIGITS/digits/tools/inference.py", line 19, in <module>
+import digits.config  # noqa
+File "/data/zim021/digits-proj/DIGITS/digits/config/__init__.py", line 7, in <module>
+from . import (  # noqa
+File "/data/zim021/digits-proj/DIGITS/digits/config/caffe.py", line 13, in <module>
+from digits.utils import parse_version
+File "/data/zim021/digits-proj/DIGITS/digits/utils/__init__.py", line 9, in <module>
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: *** STEP 3893891.0 ON g008 CANCELLED AT 2016-11-30T08:30:02 ***
+salloc: Relinquishing job allocation 3893891
+salloc: Job allocation 3893891 has been revoked.

@@ -4,7 +4,7 @@ from . import option_list
 import subprocess
 
 
-if subprocess.call('slurm', stdout=None) == 0:
+if subprocess.call('slurm',  stdout=subprocess.PIPE) == 0:
     system_type = "slurm"
 else:
     system_type = "int"

@@ -48,6 +48,7 @@ class InferenceTask(Task):
         self.inference_outputs = None
         self.inference_layers = []
 
+
         super(InferenceTask, self).__init__(**kwargs)
 
     @override
