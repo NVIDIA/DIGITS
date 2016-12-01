@@ -105,7 +105,7 @@ class Scheduler:
         # Keeps track of resource usage
 
         if config_value('system_type') == 'slurm':
-            gpu_list="0,1,2"
+            gpu_list = "0,1,2"
         self.resources = {
             # TODO: break this into CPU cores, memory usage, IO usage, etc.
             'parse_folder_task_pool': [Resource()],
