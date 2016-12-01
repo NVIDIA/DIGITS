@@ -227,19 +227,24 @@ class Task(StatusCls):
         if self.system_type == 'slurm':
             print "Running in slurm mode"
 
-            # limit to 3 gpus as it is the max for our nodes
+            # get amount of gpus passed by the interface
             gpus = len(args[len(args)-1].split(','))
-            # setting gpu to 3 until we allocate the correct gpus
-            gpus = 3
+
+            # set caffe to use all available gpus
+            # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
+            args[len(args) - 1] == '--gpu=all'
+
+            # # Limit - removed as interface limits gpus
             # if(gpus > 3):
             #     gpus = 3;
+
             if type(self) == digits.inference.tasks.inference.InferenceTask:
                print ""
                # do slurm for inference
             else:
                 self.status = Status.WAIT
-                args = ['salloc', '-c 10' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
-
+                args = ['salloc','-c 8' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
+        # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
             self.logger.info('Task subprocess args: "{}"'.format(args))

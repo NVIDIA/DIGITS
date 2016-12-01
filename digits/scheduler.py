@@ -407,9 +407,11 @@ class Scheduler:
                                     if requested_resources is None:
                                         task.status = Status.WAIT
                                     else:
-                                        if self.reserve_resources(task, requested_resources):
-                                            gevent.spawn(self.run_task,
-                                                         task, requested_resources)
+                                        # This stops digits from repeatedly spawning slurm jobs when waiting
+                                        if config_value('system_type') != 'slurm' or task.status != Status.WAIT:
+                                            if self.reserve_resources(task, requested_resources):
+                                                gevent.spawn(self.run_task,
+                                                             task, requested_resources)
                             elif task.status == Status.RUN:
                                 # job is not done
                                 alldone = False
@@ -474,18 +476,18 @@ class Scheduler:
         """
         try:
             # reserve resources
-            for resource_type, requests in resources.iteritems():
-                for identifier, value in requests:
-                    found = False
-                    for resource in self.resources[resource_type]:
-                        if resource.identifier == identifier:
-                            resource.allocate(task, value)
-                            self.emit_gpus_available()
-                            found = True
-                            break
-                    if not found:
-                        raise RuntimeError('Resource "%s" with identifier="%s" not found' % (
-                            resource_type, identifier))
+            # for resource_type, requests in resources.iteritems():
+            #     for identifier, value in requests:
+            #         found = False
+            #         for resource in self.resources[resource_type]:
+            #             if resource.identifier == identifier:
+            #                 resource.allocate(task, value)
+            #                 self.emit_gpus_available()
+            #                 found = True
+            #                 break
+            #         if not found:
+            #             raise RuntimeError('Resource "%s" with identifier="%s" not found' % (
+            #                 resource_type, identifier))
             task.current_resources = resources
             return True
         except Exception as e:
