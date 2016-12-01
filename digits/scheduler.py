@@ -476,18 +476,19 @@ class Scheduler:
         """
         try:
             # reserve resources
-            # for resource_type, requests in resources.iteritems():
-            #     for identifier, value in requests:
-            #         found = False
-            #         for resource in self.resources[resource_type]:
-            #             if resource.identifier == identifier:
-            #                 resource.allocate(task, value)
-            #                 self.emit_gpus_available()
-            #                 found = True
-            #                 break
-            #         if not found:
-            #             raise RuntimeError('Resource "%s" with identifier="%s" not found' % (
-            #                 resource_type, identifier))
+            if config_value('system_type') != 'slurm':
+                for resource_type, requests in resources.iteritems():
+                    for identifier, value in requests:
+                        found = False
+                        for resource in self.resources[resource_type]:
+                            if resource.identifier == identifier:
+                                resource.allocate(task, value)
+                                self.emit_gpus_available()
+                                found = True
+                                break
+                        if not found:
+                            raise RuntimeError('Resource "%s" with identifier="%s" not found' % (
+                                resource_type, identifier))
             task.current_resources = resources
             return True
         except Exception as e:

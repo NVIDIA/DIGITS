@@ -52,6 +52,7 @@ def new(extension_id=None):
         previous_networks_fullinfo=get_previous_networks_fulldetails(),
         pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
         multi_gpu=config_value('caffe')['multi_gpu'],
+        system_type=config_value('system_type'),
     )
 
 
@@ -91,6 +92,7 @@ def create(extension_id=None):
                 previous_networks_fullinfo=get_previous_networks_fulldetails(),
                 pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
                 multi_gpu=config_value('caffe')['multi_gpu'],
+                system_type=config_value('system_type'),
             ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
