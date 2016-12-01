@@ -344,7 +344,7 @@ def show(job, related_jobs=None):
         framework_ids=[
             fw.get_id()
             for fw in frameworks.get_frameworks()
-        ],
+            ],
         related_jobs=related_jobs
     )
 
@@ -413,7 +413,6 @@ def classify_one():
 
     # delete job
     scheduler.delete_job(inference_job)
-
 
     if remove_image_path:
         os.remove(image_path)
@@ -704,7 +703,7 @@ def get_datasets():
          and (j.status.is_running() or j.status == Status.DONE)],
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
-    ]
+            ]
 
 
 def get_standard_networks():
@@ -724,7 +723,7 @@ def get_previous_networks():
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
-    ]
+            ]
 
 
 def get_previous_networks_fulldetails():
@@ -732,7 +731,7 @@ def get_previous_networks_fulldetails():
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
-    ]
+            ]
 
 
 def get_previous_network_snapshots():
@@ -752,7 +751,7 @@ def get_pretrained_networks():
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
-    ]
+            ]
 
 
 def get_pretrained_networks_fulldetails():
@@ -760,4 +759,4 @@ def get_pretrained_networks_fulldetails():
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
-    ]
+            ]

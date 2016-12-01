@@ -17,8 +17,6 @@ from .config import config_value
 from .status import Status, StatusCls
 import digits.log
 
-
-
 # NOTE: Increment this everytime the pickled version changes
 PICKLE_VERSION = 1
 
@@ -61,8 +59,6 @@ class Task(StatusCls):
         self.aborted = gevent.event.Event()
         self.set_logger()
         self.p = None  # Subprocess object for training
-
-
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -115,8 +111,8 @@ class Task(StatusCls):
             'css': self.status.css,
             'show': (self.status in [Status.RUN, Status.ERROR]),
             'running': self.status.is_running(),
-            'node':self.node,
-            'job_num':self.job_num
+            'node': self.node,
+            'job_num': self.job_num
         }
         with app.app_context():
             message['html'] = flask.render_template('status_updates.html',
@@ -228,7 +224,7 @@ class Task(StatusCls):
             print "Running in slurm mode"
 
             # get amount of gpus passed by the interface
-            gpus = len(args[len(args)-1].split(','))
+            gpus = len(args[len(args) - 1].split(','))
 
             # set caffe to use all available gpus
             # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
@@ -239,20 +235,19 @@ class Task(StatusCls):
             #     gpus = 3;
 
             if type(self) == digits.inference.tasks.inference.InferenceTask:
-               print ""
-               # do slurm for inference
+                print ""
+                # do slurm for inference
             else:
                 self.status = Status.WAIT
-                args = ['salloc','-c 8' ,'--mem=30gb' ,'--gres=gpu:'+str(gpus)+'','srun'] + args
+                args = ['salloc', '-c 8', '--mem=30gb', '--gres=gpu:' + str(gpus) + '', 'srun'] + args
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
             self.logger.info('Task subprocess args: "{}"'.format(args))
         else:
-             # print args
-             # print self.job_dir
-             self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
-
+            # print args
+            # print self.job_dir
+            self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
         self.p = subprocess.Popen(args,
                                   stdout=subprocess.PIPE,
@@ -264,7 +259,6 @@ class Task(StatusCls):
 
         print "SUBPROCESS IS OPEN"
 
-
         try:
             sigterm_time = None  # When was the SIGTERM signal sent
             sigterm_timeout = 2  # When should the SIGKILL signal be sent
@@ -275,8 +269,8 @@ class Task(StatusCls):
                             print "graceful shutdown"
                             # Attempt graceful shutdown
                             if self.job_num:
-                                #slurm job cancel
-                                args = ['scancel',self.job_num]
+                                # slurm job cancel
+                                args = ['scancel', self.job_num]
                                 subprocess.call(args)
                                 sigterm_time = time.time()
                                 self.status = Status.ABORT
@@ -289,7 +283,6 @@ class Task(StatusCls):
                     if line is not None:
                         # Remove whitespace
                         line = line.strip()
-
 
                     if line:
 
