@@ -77,7 +77,6 @@ def new():
     fill_form_if_cloned(form)
 
     if config_value('system_type') == 'slurm':
-        print config_value('caffe')['multi_gpu']
         config_value('caffe')['multi_gpu'] = True
     return flask.render_template('models/images/classification/new.html',
                                  form=form,
@@ -122,7 +121,6 @@ def create():
                                          previous_networks_fullinfo=get_previous_networks_fulldetails(),
                                          pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
                                          multi_gpu=config_value('caffe')['multi_gpu'],
-                                         system_type=config_value('system_type'),
                                          ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
