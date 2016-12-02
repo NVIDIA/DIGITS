@@ -298,4 +298,4 @@ This would allow us to directly aim for this metric during training.
 ### Data augmentation
 
 FCN-8s exhibits some amount of overfit: the training loss is consistently lower than the validation loss.
-In order to reduce overfit, we can artifically augment the training dataset by applying random perturbations (color, contract changes, etc.).
+In order to reduce overfit, we can artificially augment the training dataset by applying random perturbations (color, contract changes, etc.).

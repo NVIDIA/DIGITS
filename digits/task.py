@@ -17,7 +17,7 @@ from .config import config_value
 from .status import Status, StatusCls
 import digits.log
 
-# NOTE: Increment this everytime the pickled version changes
+# NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 1
 
 

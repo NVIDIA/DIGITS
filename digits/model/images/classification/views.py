@@ -75,7 +75,6 @@ def new():
 
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
-
     if config_value('system_type') == 'slurm':
         config_value('caffe')['multi_gpu'] = True
     return flask.render_template('models/images/classification/new.html',
@@ -342,7 +341,7 @@ def show(job, related_jobs=None):
         framework_ids=[
             fw.get_id()
             for fw in frameworks.get_frameworks()
-            ],
+        ],
         related_jobs=related_jobs
     )
 
@@ -666,7 +665,7 @@ def top_n():
         scores = last_output_data
 
         if scores is None:
-            raise RuntimeError('An error occured while processing the images')
+            raise RuntimeError('An error occurred while processing the images')
 
         labels = model_job.train_task().get_labels()
         images = inputs['data']
@@ -699,7 +698,9 @@ def get_datasets():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationDatasetJob)
          and (j.status.is_running() or j.status == Status.DONE)],
-        cmp=lambda x, y: cmp(y.id(), x.id()))]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
 
 
 def get_standard_networks():
@@ -717,13 +718,17 @@ def get_default_standard_network():
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id()))]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
 
 
 def get_previous_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id()))]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
 
 
 def get_previous_network_snapshots():
@@ -741,10 +746,14 @@ def get_previous_network_snapshots():
 def get_pretrained_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id()))]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
 
 
 def get_pretrained_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id()))]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
