@@ -20,5 +20,5 @@ function set_exe {
 set_exe PYTHON_EXE python2
 set_exe NOSE_EXE nosetests
 
-DIGITS_MODE_TEST=1 $PYTHON_EXE $NOSE_EXE -v\
+DIGITS_MODE_TEST=1 $PYTHON_EXE $NOSE_EXE \
     --no-path-adjustment $@
