@@ -14,7 +14,6 @@ from digits.utils import sizeof_fmt
 from digits.utils.forms import validate_required_iff
 from digits import frameworks
 
-
 class ModelForm(Form):
 
     # Methods
@@ -165,6 +164,7 @@ class ModelForm(Form):
         default='SGD',
         tooltip="What type of solver will be used?",
     )
+
 
     def validate_solver_type(form, field):
         fw = frameworks.get_framework_by_id(form.framework)
@@ -321,6 +321,9 @@ class ModelForm(Form):
         ) for index in config_value('gpu_list').split(',') if index],
         default='next',
     )
+    # slurm options
+    slurm_selector = utils.forms.BooleanField('Use slurm?')
+
 
     # Select N of several GPUs
     select_gpus = utils.forms.SelectMultipleField(

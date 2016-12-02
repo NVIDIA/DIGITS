@@ -226,9 +226,7 @@ class Task(StatusCls):
             # get amount of gpus passed by the interface
             gpus = len(args[len(args) - 1].split(','))
 
-            # set caffe to use all available gpus
-            # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
-            args[len(args) - 1] == '--gpu=all'
+
 
             # # Limit - removed as interface limits gpus
             # if(gpus > 3):
@@ -239,7 +237,11 @@ class Task(StatusCls):
                 # do slurm for inference
             else:
                 self.status = Status.WAIT
+                # set caffe to use all available gpus
+                # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
+                args[len(args) - 1] = '--gpu=all'
                 args = ['salloc', '-c 8', '--mem=30gb', '--gres=gpu:' + str(gpus) + '', 'srun'] + args
+                print args
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
@@ -289,8 +291,10 @@ class Task(StatusCls):
                         if not self.job_num and line.find('allocation') > 1:
                             jobNums = [int(s) for s in line.split() if s.isdigit()]
                             self.job_num = str(jobNums[0])
+                            self.on_status_update()
                         if self.status != Status.RUN and line.find('srun:') >= 0:
                             self.status = Status.RUN
+
                         print line
                         # print self.job_num
                         if not self.process_output(line):

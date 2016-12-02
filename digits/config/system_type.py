@@ -8,6 +8,6 @@ try:
         system_type = "slurm"
     else:
         system_type = "int"
-except:
+except OSError:
     system_type = "int"
 option_list['system_type'] = system_type

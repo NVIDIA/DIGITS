@@ -668,6 +668,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
     </div>
 
     <div class="row">
+
         <div class="col-sm-6 col-sm-offset-3 well">
             {% if form.select_gpu.choices|length > 2 and not multi_gpu %}
             <div class="form-group{{mark_errors([form.select_gpu])}}">
@@ -715,6 +716,15 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </div>
             <input type="submit" name="create-model" class="btn btn-primary" value="Create">
         </div>
+         {% if system_type == 'slurm' %}
+        <div class="col-sm-3 col-sm-offset-3 well">
+               <div class="form-group{{mark_errors([form.select_gpus])}}">
+                   {{form.slurm_selector.label }}
+                   {{form.slurm_selector}}
+            </div>
+
+        </div>
+         {% endif %}
     </div>
 
 </form>

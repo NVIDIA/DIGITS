@@ -45,7 +45,8 @@ socket.on('task update', function (msg) {
             } else {
                 $(status_selector+" .task-progress").hide();
             }
-            $(status_selector+" .panel-title small").html(msg['status']);
+            $(status_selector+" .panel-title small").html(msg['status'] += msg['job_num']);
+         
             setPanelClass(status_selector, msg['css']);
             $(status_selector+" .task-statuses").html(msg['html']);
         }
@@ -88,7 +89,10 @@ socket.on('task update', function (msg) {
 {% block content %}
 <div class="jumbotron">
     <div class="container">
+
         <div class="row">
+
+
             <div id="show-job-name" class="col-sm-12">
                 <h2 style="display:inline;">{{ job.name() }}</h2>
                 {% if job | has_permission('edit') %}
@@ -197,7 +201,7 @@ $('#delete-job').on('click', function(event) {
                                     <h4 class="panel-title">
                                         <a data-toggle="collapse" href="#{{task.html_id()}}-status-collapse">
                                             {{task.name()}}
-                                            <small>{{task.status.name}}</small>
+                                            <small>{{task.status.name}} {{task.job_num}}</small>
                                             <span class="caret"></span>
                                         </a>
                                     </h4>
@@ -267,6 +271,7 @@ $('#delete-job').on('click', function(event) {
                             </div>
                             <div id="{{r_job.id()}}-status-collapse" class="panel-collapse collapse">
                                 <div class="panel-body">
+
                                     <div class="task-statuses">
                                         {% with updates = r_job.status_history %}
                                             {% include "status_updates.html" %}

@@ -335,6 +335,7 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
+
     return flask.render_template(
         'models/images/classification/show.html',
         job=job,
