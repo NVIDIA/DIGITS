@@ -8,11 +8,9 @@ python: 2.7
 
 env:
     global:
+        - OPENBLAS_ROOT=~/openblas
         - CAFFE_ROOT=~/caffe
         - TORCH_ROOT=~/torch
-        # Fixes for Torch and OpenBLAS
-        - OMP_NUM_THREADS=1
-        - OPENBLAS_MAIN_FREE=1
         - secure: "WSqrE+PQm76DdoRLRGKTK6fRWfXZjIb0BWCZm3IgHgFO7OE6fcK2tBnpDNNw4XQjmo27FFWlEhxN32g18P84n5PvErHaH65IuS9Nv6FkLlPXZlVqGNxbPmEA4oTkD/6Y6kZyZWZtLh2+/1ijuzQAPnIy/4BEuL8pdO+PsoJ9hYM="
     matrix:
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=NVIDIA
@@ -72,6 +70,7 @@ matrix:
 cache:
     apt: true
     directories:
+        - $OPENBLAS_ROOT
         - $CAFFE_ROOT
         - $TORCH_ROOT
 
@@ -92,7 +91,6 @@ addons:
             - libhdf5-serial-dev
             - libleveldb-dev
             - liblmdb-dev
-            - libopenblas-dev
             - libopencv-dev
             - libprotobuf-dev
             - libsnappy-dev
@@ -126,8 +124,9 @@ before_install:
 install:
     - mkdir -p ~/.config/matplotlib
     - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
+    - ./scripts/travis/install-openblas.sh $OPENBLAS_ROOT
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
-    - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
+    - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
     - pip install -r ./requirements.txt
     - pip install -r ./requirements_test.txt
     - pip install -e .
