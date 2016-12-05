@@ -334,7 +334,7 @@ class ModelForm(Form):
                        if get_nvml_info(index) and 'memory' in get_nvml_info(index)
                        else get_device(index).totalGlobalMem)
         ),
-                  ) for index in config_value('gpu_list').split(',') if index],
+        ) for index in config_value('gpu_list').split(',') if index],
         tooltip="The job won't start until all of the chosen GPUs are available.")
 
     # XXX For testing
