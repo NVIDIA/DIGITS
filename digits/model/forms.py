@@ -322,9 +322,7 @@ class ModelForm(Form):
     )
     # slurm options
     slurm_selector = utils.forms.BooleanField('Use slurm?')
-    slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='leave blank for default', validators=[
-        validators.NumberRange(min=0)
-    ], default=None, )
+    slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='leave blank for default',default=None, )
     slurm_cpu_count = utils.forms.IntegerField('Use this many cores', validators=[
         validators.NumberRange(min=1, max=128)
     ], default=8, )

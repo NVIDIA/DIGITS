@@ -64,6 +64,7 @@ class TrainTask(Task):
         self.framework_id = kwargs.pop('framework_id', None)
         self.data_aug = kwargs.pop('data_aug', None)
 
+
         self.time_limit = kwargs.pop('time_limit', None)
         self.s_cpu_count = kwargs.pop('s_cpu_count',None)
         self.s_mem = kwargs.pop('s_mem',None)
