@@ -319,11 +319,11 @@ class ModelForm(Form):
     slurm_selector = utils.forms.BooleanField('Use slurm?')
     slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='leave blank for default', default=None, )
     slurm_cpu_count = utils.forms.IntegerField('Use this many cores', validators=[
-        validators.NumberRange(min=1, max=128)
-    ], default=8, )
+                validators.NumberRange(min=1, max=128)
+                ], default=8, )
     slurm_mem = utils.forms.IntegerField('Use this much memory (GB)', validators=[
-        validators.NumberRange(min=1, max=128)
-    ], default=30, )
+                validators.NumberRange(min=1, max=128)
+                ], default=30, )
 
     # Select N of several GPUs
     select_gpus = utils.forms.SelectMultipleField(
@@ -339,8 +339,7 @@ class ModelForm(Form):
                              else get_device(index).totalGlobalMem)
                      ),
                  ) for index in config_value('gpu_list').split(',') if index],
-        tooltip="The job won't start until all of the chosen GPUs are available."
-    )
+        tooltip="The job won't start until all of the chosen GPUs are available.")
 
     # XXX For testing
     # The Flask test framework can't handle SelectMultipleFields correctly

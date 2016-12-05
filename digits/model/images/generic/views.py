@@ -294,10 +294,8 @@ def create(extension_id=None):
                     data_aug=data_aug,
                 )
                 )
-
-
-
             # Save form data with the job so we can easily clone it later.
+
             save_form_to_job(job, form)
 
             jobs.append(job)

@@ -246,8 +246,6 @@ class Task(StatusCls):
                 args = ['salloc', '-t', str(self.time_limit), '-c', str(self.s_cpu_count),
                         '--mem=' + str(self.s_mem) + 'GB',
                         '--gres=gpu:' + str(gpus) + '', 'srun'] + args
-
-
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
@@ -262,8 +260,6 @@ class Task(StatusCls):
                                   close_fds=False if platform.system() == 'Windows' else True,
                                   env=env,
                                   )
-
-
         try:
             sigterm_time = None  # When was the SIGTERM signal sent
             sigterm_timeout = 2  # When should the SIGKILL signal be sent
