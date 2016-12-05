@@ -305,6 +305,9 @@ def create():
                 rms_decay=form.rms_decay.data,
                 shuffle=form.shuffle.data,
                 data_aug=data_aug,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
             )
 

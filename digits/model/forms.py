@@ -14,8 +14,8 @@ from digits.utils import sizeof_fmt
 from digits.utils.forms import validate_required_iff
 from digits import frameworks
 
-class ModelForm(Form):
 
+class ModelForm(Form):
     # Methods
 
     def selection_exists_in_choices(form, field):
@@ -165,7 +165,6 @@ class ModelForm(Form):
         tooltip="What type of solver will be used?",
     )
 
-
     def validate_solver_type(form, field):
         fw = frameworks.get_framework_by_id(form.framework)
         if fw is not None:
@@ -309,36 +308,44 @@ class ModelForm(Form):
     select_gpu = wtforms.RadioField(
         'Select which GPU you would like to use',
         choices=[('next', 'Next available')] + [(
-            index,
-            '#%s - %s (%s memory)' % (
-                index,
-                get_device(index).name,
-                sizeof_fmt(
-                    get_nvml_info(index)['memory']['total']
-                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                    else get_device(index).totalGlobalMem)
-            ),
-        ) for index in config_value('gpu_list').split(',') if index],
+                                                    index,
+                                                    '#%s - %s (%s memory)' % (
+                                                        index,
+                                                        get_device(index).name,
+                                                        sizeof_fmt(
+                                                            get_nvml_info(index)['memory']['total']
+                                                            if get_nvml_info(index) and 'memory' in get_nvml_info(index)
+                                                            else get_device(index).totalGlobalMem)
+                                                    ),
+                                                ) for index in config_value('gpu_list').split(',') if index],
         default='next',
     )
     # slurm options
     slurm_selector = utils.forms.BooleanField('Use slurm?')
-
+    slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='leave blank for default', validators=[
+        validators.NumberRange(min=0)
+    ], default=None, )
+    slurm_cpu_count = utils.forms.IntegerField('Use this many cores', validators=[
+        validators.NumberRange(min=1, max=128)
+    ], default=8, )
+    slurm_mem = utils.forms.IntegerField('Use this much memory (GB)', validators=[
+        validators.NumberRange(min=1, max=128)
+    ], default=30, )
 
     # Select N of several GPUs
     select_gpus = utils.forms.SelectMultipleField(
         'Select which GPU[s] you would like to use',
         choices=[(
-            index,
-            '#%s - %s (%s memory)' % (
-                index,
-                get_device(index).name,
-                sizeof_fmt(
-                    get_nvml_info(index)['memory']['total']
-                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                    else get_device(index).totalGlobalMem)
-            ),
-        ) for index in config_value('gpu_list').split(',') if index],
+                     index,
+                     '#%s - %s (%s memory)' % (
+                         index,
+                         get_device(index).name,
+                         sizeof_fmt(
+                             get_nvml_info(index)['memory']['total']
+                             if get_nvml_info(index) and 'memory' in get_nvml_info(index)
+                             else get_device(index).totalGlobalMem)
+                     ),
+                 ) for index in config_value('gpu_list').split(',') if index],
         tooltip="The job won't start until all of the chosen GPUs are available."
     )
 

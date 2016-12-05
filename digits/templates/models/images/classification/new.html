@@ -666,6 +666,26 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </script>
         </div>
     </div>
+            {% if system_type == 'slurm' %}
+                <!--OPTIONS FOR SLURM-->
+        <div class="col-sm-6 col-sm-offset-3 well">
+               <div class="form-group{{mark_errors([form.slurm_time_limit])}}">
+                   {{form.slurm_time_limit.label}}
+                   {{form.slurm_time_limit.tooltip}}
+                   {{form.slurm_time_limit(class='form-control')}}
+            </div>
+            <div class="form-group{{mark_errors([form.slurm_cpu_count])}}">
+                    {{form.slurm_cpu_count.label}}
+                    {{form.slurm_cpu_count.tooltip}}
+                    {{form.slurm_cpu_count(class='form-control')}}
+            </div>
+            <div class="form-group{{mark_errors([form.slurm_cpu_count])}}">
+                   {{form.slurm_mem.label}}
+                   {{form.slurm_mem.tooltip}}
+                   {{form.slurm_mem(class='form-control')}}
+            </div>
+        </div>
+         {% endif %}
 
     <div class="row">
 
@@ -716,15 +736,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </div>
             <input type="submit" name="create-model" class="btn btn-primary" value="Create">
         </div>
-         {% if system_type == 'slurm' %}
-        <div class="col-sm-3 col-sm-offset-3 well">
-               <div class="form-group{{mark_errors([form.select_gpus])}}">
-                   {{form.slurm_selector.label }}
-                   {{form.slurm_selector}}
-            </div>
 
-        </div>
-         {% endif %}
     </div>
 
 </form>

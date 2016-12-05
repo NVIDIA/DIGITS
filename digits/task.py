@@ -226,8 +226,6 @@ class Task(StatusCls):
             # get amount of gpus passed by the interface
             gpus = len(args[len(args) - 1].split(','))
 
-
-
             # # Limit - removed as interface limits gpus
             # if(gpus > 3):
             #     gpus = 3;
@@ -235,12 +233,19 @@ class Task(StatusCls):
             if type(self) == digits.inference.tasks.inference.InferenceTask:
                 print ""
                 # do slurm for inference
+
             else:
                 self.status = Status.WAIT
+                print self.time_limit
+                if self.time_limit == None:
+                    self.time_limit = 30;
+
                 # set caffe to use all available gpus
                 # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
                 args[len(args) - 1] = '--gpu=all'
-                args = ['salloc', '-c 8', '--mem=30gb', '--gres=gpu:' + str(gpus) + '', 'srun'] + args
+                args = ['salloc','-t',str(self.time_limit), '-c',str(self.s_cpu_count), '--mem='+str(self.s_mem)+'GB',
+                        '--gres=gpu:' + str(gpus) + '', 'srun'] + args
+
                 print args
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
