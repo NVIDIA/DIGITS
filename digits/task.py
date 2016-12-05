@@ -237,23 +237,22 @@ class Task(StatusCls):
             else:
                 self.status = Status.WAIT
                 print self.time_limit
-                if self.time_limit == None:
-                    self.time_limit = 30;
+                if self.time_limit is None:
+                    self.time_limit = 30
 
                 # set caffe to use all available gpus
                 # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
                 args[len(args) - 1] = '--gpu=all'
-                args = ['salloc','-t',str(self.time_limit), '-c',str(self.s_cpu_count), '--mem='+str(self.s_mem)+'GB',
+                args = ['salloc', '-t', str(self.time_limit), '-c', str(self.s_cpu_count),
+                        '--mem=' + str(self.s_mem) + 'GB',
                         '--gres=gpu:' + str(gpus) + '', 'srun'] + args
 
-                print args
+
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
             self.logger.info('Task subprocess args: "{}"'.format(args))
         else:
-            # print args
-            # print self.job_dir
             self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
         self.p = subprocess.Popen(args,
@@ -264,7 +263,6 @@ class Task(StatusCls):
                                   env=env,
                                   )
 
-        print "SUBPROCESS IS OPEN"
 
         try:
             sigterm_time = None  # When was the SIGTERM signal sent
@@ -299,9 +297,6 @@ class Task(StatusCls):
                             self.on_status_update()
                         if self.status != Status.RUN and line.find('srun:') >= 0:
                             self.status = Status.RUN
-
-                        print line
-                        # print self.job_num
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
                             unrecognized_output.append(line)

@@ -307,22 +307,17 @@ class ModelForm(Form):
     # Select one of several GPUs
     select_gpu = wtforms.RadioField(
         'Select which GPU you would like to use',
-        choices=[('next', 'Next available')] + [(
-                                                    index,
-                                                    '#%s - %s (%s memory)' % (
-                                                        index,
-                                                        get_device(index).name,
-                                                        sizeof_fmt(
-                                                            get_nvml_info(index)['memory']['total']
-                                                            if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                                                            else get_device(index).totalGlobalMem)
-                                                    ),
-                                                ) for index in config_value('gpu_list').split(',') if index],
-        default='next',
-    )
+        choices=[('next', 'Next available')] + [(index, '#%s - %s (%s memory)' % (
+            index,
+            get_device(index).name,
+            sizeof_fmt(
+                get_nvml_info(index)['memory']['total']
+                if get_nvml_info(index) and 'memory' in get_nvml_info(index)
+                else get_device(index).totalGlobalMem)
+        ), ) for index in config_value('gpu_list').split(',') if index], default='next',)
     # slurm options
     slurm_selector = utils.forms.BooleanField('Use slurm?')
-    slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='leave blank for default',default=None, )
+    slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='leave blank for default', default=None, )
     slurm_cpu_count = utils.forms.IntegerField('Use this many cores', validators=[
         validators.NumberRange(min=1, max=128)
     ], default=8, )

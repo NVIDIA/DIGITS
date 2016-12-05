@@ -5,7 +5,7 @@ import subprocess
 
 try:
     if subprocess.call('slurm',  stdout=subprocess.PIPE) == 0:
-        system_type = "int"
+        system_type = "slurm"
     else:
         system_type = "int"
 except OSError:
