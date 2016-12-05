@@ -68,7 +68,7 @@ class TrainTask(Task):
 
         self.time_limit = kwargs.pop('time_limit', None)
         self.s_cpu_count = kwargs.pop('s_cpu_count', None)
-        self.s_mem = kwargs.pop('s_mem',None)
+        self.s_mem = kwargs.pop('s_mem', None)
         super(TrainTask, self).__init__(job_dir=job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION
 
