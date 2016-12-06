@@ -39,6 +39,7 @@ class ParseFolderTask(Task):
         self.s_cpu_count = kwargs.pop('s_cpu_count', None)
         self.s_mem = kwargs.pop('s_mem', None)
 
+
         super(ParseFolderTask, self).__init__(**kwargs)
         self.pickver_task_parsefolder = PICKLE_VERSION
 

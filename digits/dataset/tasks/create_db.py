@@ -46,10 +46,15 @@ class CreateDbTask(Task):
         self.mean_file = kwargs.pop('mean_file', None)
         self.labels_file = kwargs.pop('labels_file', None)
 
-        if config_value('system_type') == 'slurm':
+
+        try:
             self.time_limit = kwargs.pop('time_limit', None)
             self.s_cpu_count = kwargs.pop('s_cpu_count', None)
             self.s_mem = kwargs.pop('s_mem', None)
+        except:
+            self.time_limit
+            self.s_cpu_count
+            self.s_mem
 
         super(CreateDbTask, self).__init__(**kwargs)
         self.pickver_task_createdb = PICKLE_VERSION

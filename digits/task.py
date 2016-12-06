@@ -235,7 +235,7 @@ class Task(StatusCls):
                 # do slurm for inference
             else:
                 self.status = Status.WAIT
-                if not self.time_limit:
+                if not self.time_limit or self.time_limit == 0:
                     self.time_limit = 30
                 if not self.s_cpu_count:
                     self.s_cpu_count = 1

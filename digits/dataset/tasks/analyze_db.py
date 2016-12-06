@@ -42,6 +42,9 @@ class AnalyzeDbTask(Task):
         self.image_width = None
         self.image_height = None
         self.image_channels = None
+        self.time_limit = kwargs.pop('time_limit', None)
+        self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+        self.s_mem = kwargs.pop('s_mem', None)
 
         self.analyze_db_log_file = 'analyze_db_%s.log' % '-'.join(p.lower() for p in self.purpose.split())
 
