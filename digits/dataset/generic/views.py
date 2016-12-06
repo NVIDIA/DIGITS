@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 
 # Find the best implementation available
+from digits.config import config_value
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -197,7 +199,7 @@ def explore():
     return flask.render_template(
         'datasets/images/explore.html',
         page=page, size=size, job=job, imgs=imgs, labels=None,
-        pages=pages, label=None, total_entries=total_entries, db=db)
+        pages=pages, label=None, total_entries=total_entries, db=db, system_type=config_value('system_type'))
 
 
 def show(job, related_jobs=None):

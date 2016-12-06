@@ -4,6 +4,8 @@ from __future__ import absolute_import
 import os
 
 # Find the best implementation available
+from digits.config import config_value
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -21,7 +23,6 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.lmdbreader import DbReader
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
-
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -195,6 +196,7 @@ def from_files(job, form):
             mean_file=utils.constants.MEAN_FILE_CAFFE,
             labels_file=job.labels_file,
             shuffle=shuffle,
+
         )
     )
 
@@ -272,7 +274,8 @@ def new():
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
-    return flask.render_template('datasets/images/classification/new.html', form=form)
+    return flask.render_template('datasets/images/classification/new.html', form=form,
+                                 system_type=config_value('system_type'))
 
 
 @blueprint.route('.json', methods=['POST'])
@@ -293,7 +296,8 @@ def create():
         if request_wants_json():
             return flask.jsonify({'errors': form.errors}), 400
         else:
-            return flask.render_template('datasets/images/classification/new.html', form=form), 400
+            return flask.render_template('datasets/images/classification/new.html', form=form,
+                                         system_type=config_value('system_type')), 400
 
     job = None
     try:

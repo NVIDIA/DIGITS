@@ -10,6 +10,7 @@ from digits.dataset import tasks
 from digits.webapp import scheduler
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json
+from digits.config import config_value
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -24,8 +25,8 @@ def new():
 
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
-
-    return flask.render_template('datasets/images/generic/new.html', form=form)
+    print config_value('system_type')
+    return flask.render_template('datasets/images/generic/new.html', form=form, system_type=config_value('system_type'))
 
 
 @blueprint.route('.json', methods=['POST'])
@@ -46,7 +47,8 @@ def create():
         if request_wants_json():
             return flask.jsonify({'errors': form.errors}), 400
         else:
-            return flask.render_template('datasets/images/generic/new.html', form=form), 400
+            return flask.render_template('datasets/images/generic/new.html', form=form,
+                                         system_type=config_value('system_type')), 400
 
     job = None
     try:

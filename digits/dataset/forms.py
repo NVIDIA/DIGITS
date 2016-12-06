@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 from flask.ext.wtf import Form
 from wtforms.validators import DataRequired
+from wtforms import validators
 
 from digits import utils
 
@@ -20,3 +21,13 @@ class DatasetForm(Form):
     group_name = utils.forms.StringField('Group Name',
                                          tooltip="An optional group name for organization on the main page."
                                          )
+
+    # slurm options
+    slurm_selector = utils.forms.BooleanField('Use slurm?')
+    slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='leave blank for default', default=None, )
+    slurm_cpu_count = utils.forms.IntegerField('Use this many cores', validators=[
+        validators.NumberRange(min=1, max=128)
+    ], default=8, )
+    slurm_mem = utils.forms.IntegerField('Use this much memory (GB)', validators=[
+        validators.NumberRange(min=1, max=128)
+    ], default=30, )

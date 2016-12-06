@@ -97,6 +97,7 @@ $('#db-tabs a[href="#db-{{ form.method.data }}"]').tab('show');
     </script>
 
     <div class="row">
+        {% include '/partials/slurm_options.html' %}
         <div class="col-sm-6 col-sm-offset-3 well">
             <div class="form-group{{mark_errors([form.group_name])}}">
                 {{ form.group_name.label }}

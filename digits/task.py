@@ -233,12 +233,14 @@ class Task(StatusCls):
             if type(self) == digits.inference.tasks.inference.InferenceTask:
                 print ""
                 # do slurm for inference
-
-            else:
+            if type(self) == digits.model.tasks.TrainTask:
                 self.status = Status.WAIT
-                print self.time_limit
                 if self.time_limit is None:
                     self.time_limit = 30
+                if self.s_cpu_count is None:
+                    self.s_cpu_count = 1
+                if self.s_mem is None:
+                    self.s_mem = 4
 
                 # set caffe to use all available gpus
                 # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
@@ -246,6 +248,7 @@ class Task(StatusCls):
                 args = ['salloc', '-t', str(self.time_limit), '-c', str(self.s_cpu_count),
                         '--mem=' + str(self.s_mem) + 'GB',
                         '--gres=gpu:' + str(gpus) + '', 'srun'] + args
+
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
