@@ -146,4 +146,10 @@ You may also test multiple images at once by specifying the image paths in a tex
 To that end, in `Test a list of Images`, upload an image list.
 The output may be rendered as below:
 
-![test one](test-many.jpg)
+![test meny](test-many.jpg)
+
+The options cog menu allows you to adjust a few view options.
+The opacity applies to the interior of the bounding box rectangle,
+and desaturation appies to the image, which is useful when the image contains a lot of the bounding box color.
+
+![test meny](display-options-menu.jpg)
