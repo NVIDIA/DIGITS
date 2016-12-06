@@ -57,6 +57,7 @@ def create():
             name=form.dataset_name.data,
             group=form.group_name.data,
             mean_file=form.prebuilt_mean_file.data.strip(),
+
         )
 
         if form.method.data == 'prebuilt':
