@@ -10,6 +10,7 @@ import digits
 from digits import utils
 from digits.task import Task
 from digits.utils import subclass, override
+from digits.config import config_value
 
 # NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 3
@@ -45,9 +46,10 @@ class CreateDbTask(Task):
         self.mean_file = kwargs.pop('mean_file', None)
         self.labels_file = kwargs.pop('labels_file', None)
 
-        self.time_limit = kwargs.pop('time_limit', None)
-        self.s_cpu_count = kwargs.pop('s_cpu_count', None)
-        self.s_mem = kwargs.pop('s_mem', None)
+        if config_value('system_type') == 'slurm':
+            self.time_limit = kwargs.pop('time_limit', None)
+            self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+            self.s_mem = kwargs.pop('s_mem', None)
 
         super(CreateDbTask, self).__init__(**kwargs)
         self.pickver_task_createdb = PICKLE_VERSION
