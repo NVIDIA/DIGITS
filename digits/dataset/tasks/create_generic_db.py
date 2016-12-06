@@ -32,6 +32,9 @@ class CreateGenericDbTask(Task):
         self.feature_shape = None
         self.label_shape = None
         self.mean_file = None
+        self.time_limit = kwargs.pop('time_limit', None)
+        self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+        self.s_mem = kwargs.pop('s_mem', None)
         super(CreateGenericDbTask, self).__init__(**kwargs)
         self.pickver_task_create_generic_db = PICKLE_VERSION
 
