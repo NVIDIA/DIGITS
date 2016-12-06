@@ -30,4 +30,4 @@ class DatasetForm(Form):
     ], default=8, )
     slurm_mem = utils.forms.IntegerField('Use this much memory (GB)', validators=[
         validators.NumberRange(min=1, max=128)
-    ], default=30, )
+    ], default=10, )

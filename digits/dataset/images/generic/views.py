@@ -73,6 +73,9 @@ def create():
                 database=form.prebuilt_train_images.data,
                 purpose=form.prebuilt_train_images.label.text,
                 force_same_shape=force_same_shape,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -83,6 +86,9 @@ def create():
                     database=form.prebuilt_train_labels.data,
                     purpose=form.prebuilt_train_labels.label.text,
                     force_same_shape=force_same_shape,
+                    time_limit=form.slurm_time_limit.data,
+                    s_cpu_count=form.slurm_cpu_count.data,
+                    s_mem=form.slurm_mem.data,
                 )
             )
 
@@ -93,6 +99,9 @@ def create():
                     database=form.prebuilt_val_images.data,
                     purpose=form.prebuilt_val_images.label.text,
                     force_same_shape=force_same_shape,
+                    time_limit=form.slurm_time_limit.data,
+                    s_cpu_count=form.slurm_cpu_count.data,
+                    s_mem=form.slurm_mem.data,
                 )
             )
             if form.prebuilt_val_labels.data:
@@ -102,6 +111,9 @@ def create():
                         database=form.prebuilt_val_labels.data,
                         purpose=form.prebuilt_val_labels.label.text,
                         force_same_shape=force_same_shape,
+                        time_limit=form.slurm_time_limit.data,
+                        s_cpu_count=form.slurm_cpu_count.data,
+                        s_mem=form.slurm_mem.data,
                     )
                 )
 

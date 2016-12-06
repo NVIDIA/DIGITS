@@ -35,6 +35,10 @@ class ParseFolderTask(Task):
         self.min_per_category = kwargs.pop('min_per_category', 2)
         self.max_per_category = kwargs.pop('max_per_category', None)
 
+        self.time_limit = kwargs.pop('time_limit', None)
+        self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+        self.s_mem = kwargs.pop('s_mem', None)
+
         super(ParseFolderTask, self).__init__(**kwargs)
         self.pickver_task_parsefolder = PICKLE_VERSION
 

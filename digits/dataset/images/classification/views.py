@@ -115,6 +115,9 @@ def from_folders(job, form):
             compression=compression,
             mean_file=utils.constants.MEAN_FILE_CAFFE,
             labels_file=job.labels_file,
+            time_limit=form.slurm_time_limit.data,
+            s_cpu_count=form.slurm_cpu_count.data,
+            s_mem=form.slurm_mem.data,
         )
     )
 
@@ -131,6 +134,9 @@ def from_folders(job, form):
                 encoding=encoding,
                 compression=compression,
                 labels_file=job.labels_file,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -147,6 +153,9 @@ def from_folders(job, form):
                 encoding=encoding,
                 compression=compression,
                 labels_file=job.labels_file,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -196,6 +205,9 @@ def from_files(job, form):
             mean_file=utils.constants.MEAN_FILE_CAFFE,
             labels_file=job.labels_file,
             shuffle=shuffle,
+            time_limit=form.slurm_time_limit.data,
+            s_cpu_count=form.slurm_cpu_count.data,
+            s_mem=form.slurm_mem.data,
 
         )
     )
@@ -228,6 +240,9 @@ def from_files(job, form):
                 compression=compression,
                 labels_file=job.labels_file,
                 shuffle=shuffle,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -259,6 +274,9 @@ def from_files(job, form):
                 compression=compression,
                 labels_file=job.labels_file,
                 shuffle=shuffle,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
