@@ -235,11 +235,11 @@ class Task(StatusCls):
                 # do slurm for inference
             else:
                 self.status = Status.WAIT
-                if self.time_limit is None:
+                if not self.time_limit:
                     self.time_limit = 30
-                if self.s_cpu_count is None:
+                if not self.s_cpu_count:
                     self.s_cpu_count = 1
-                if self.s_mem is None:
+                if not self.s_mem:
                     self.s_mem = 4
 
                 # set caffe to use all available gpus
@@ -294,7 +294,7 @@ class Task(StatusCls):
                         if not self.job_num and line.find('allocation') > 1:
                             jobNums = [int(s) for s in line.split() if s.isdigit()]
                             self.job_num = str(jobNums[0])
-                            self.on_status_update()
+                            # self.on_status_update()
                         if self.status != Status.RUN and line.find('srun:') >= 0:
                             self.status = Status.RUN
                         if not self.process_output(line):
