@@ -3,7 +3,7 @@
 <!-- Scripts for communicating with the SocketIO server -->
 <script type="text/javascript" src="/static/js/3rdparty/socket.io-1.4.5.min.js"></script>
 <script>
-var socket = io.connect('http://' + document.domain + ':' + location.port + "{{namespace}}");
+var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + "{{namespace}}");
 
 $(window).bind("beforeunload", function() {
         socket.emit('leave');
