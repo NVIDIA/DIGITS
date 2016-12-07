@@ -67,6 +67,8 @@ class Job(StatusCls):
         self.persistent = persistent
 
         os.mkdir(self._dir)
+        print self._dir
+        print "MKDIR CALLED"
 
     def __getstate__(self):
         """
