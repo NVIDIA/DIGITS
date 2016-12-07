@@ -232,8 +232,9 @@ class Task(StatusCls):
 
             if type(self) == digits.inference.tasks.inference.InferenceTask:
                 print ""
-            # do slurm for inference
-            if type(self) == digits.model.tasks.TrainTask:
+                # do slurm for inference
+            # if type(self) == digits.model.tasks.TrainTask:
+            else:
                 self.status = Status.WAIT
                 if not self.time_limit or self.time_limit == 0:
                     self.time_limit = 30
