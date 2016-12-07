@@ -251,6 +251,7 @@ class Task(StatusCls):
                         '--mem=' + str(self.s_mem) + 'GB',
                         '--gres=gpu:' + str(gpus) + '', 'srun'] + args
 
+
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)

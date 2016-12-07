@@ -35,6 +35,7 @@ class GenericDatasetJob(DatasetJob):
         self.extension_id = extension_id
         self.extension_userdata = extension_userdata
 
+
         super(GenericDatasetJob, self).__init__(**kwargs)
         self.pickver_job_dataset_extension = PICKLE_VERSION
 

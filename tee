@@ -1,0 +1,14 @@
+Failure: ValueError (Unable to load tests from file /data/zim021/digits-proj/DIGITS/test) ... ERROR
+
+======================================================================
+ERROR: Failure: ValueError (Unable to load tests from file /data/zim021/digits-proj/DIGITS/test)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/loader.py", line 233, in loadTestsFromFile
+    % filename)
+ValueError: Unable to load tests from file /data/zim021/digits-proj/DIGITS/test
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)
