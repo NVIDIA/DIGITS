@@ -28,9 +28,14 @@ class AnalyzeDbTask(Task):
         Keyword arguments:
         force_same_shape -- if True, enforce that every entry in the database has the same shape
         """
-        self.time_limit = kwargs.pop('time_limit', None)
-        self.s_cpu_count = kwargs.pop('s_cpu_count', None)
-        self.s_mem = kwargs.pop('s_mem', None)
+        try:
+            self.time_limit = kwargs.pop('time_limit', None)
+            self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+            self.s_mem = kwargs.pop('s_mem', None)
+        except:
+            self.time_limit
+            self.s_cpu_count
+            self.s_mem
         self.force_same_shape = kwargs.pop('force_same_shape', False)
 
         super(AnalyzeDbTask, self).__init__(**kwargs)
