@@ -259,6 +259,7 @@ class Task(StatusCls):
         else:
             self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
+        print self.job_dir
         self.p = subprocess.Popen(args,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT,
