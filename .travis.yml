@@ -17,6 +17,7 @@ env:
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=BVLC
         - DIGITS_TEST_FRAMEWORK=torch
         - DIGITS_TEST_FRAMEWORK=none
+        - DIGITS_TEST_FRAMEWORK=none WITH_PLUGINS=false
 
 matrix:
     include:
@@ -130,8 +131,7 @@ install:
     - pip install -r ./requirements.txt
     - pip install -r ./requirements_test.txt
     - pip install -e .
-    - pip install -e ./plugins/data/imageGradients
-    - pip install -e ./plugins/view/imageGradients
+    - if [ "$WITH_PLUGINS" != "false" ]; then find ./plugins/*/* -maxdepth 0 -type d | xargs -n1 pip install -e; fi
 
 script:
     - ./digits-test -v
