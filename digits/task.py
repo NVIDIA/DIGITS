@@ -239,9 +239,9 @@ class Task(StatusCls):
                 if not self.time_limit or self.time_limit == 0:
                     self.time_limit = 30
                 if not self.s_cpu_count:
-                    self.s_cpu_count = 1
+                    self.s_cpu_count = 4
                 if not self.s_mem:
-                    self.s_mem = 4
+                    self.s_mem = 8
 
                 # set caffe to use all available gpus
                 # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
