@@ -16,7 +16,7 @@ from . import utils
 from .config import config_value
 from .status import Status, StatusCls
 import digits.log
-
+from digits.extensions.cluster_management.slurm import pack_slurm_args
 # NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 1
 
@@ -221,40 +221,10 @@ class Task(StatusCls):
 
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         self.logger.info(type(self))
-        if self.system_type == 'slurm' and type(self) != digits.dataset.tasks.create_generic_db.CreateGenericDbTask:
+        if self.system_type == 'slurm':
             print "Running in slurm mode"
-
-            # get amount of gpus passed by the interface
-            gpu_arg_idx = [i for i, arg in enumerate(args) if arg.startswith('--gpu')]
-            if gpu_arg_idx:
-                gpu_arg_idx = gpu_arg_idx[0]
-                gpus = len(args[gpu_arg_idx].split(','))
-            else:
-                # if none was passed ask for no
-                gpus = 0
-
-            if type(self) == digits.inference.tasks.inference.InferenceTask:
-                print ""
-                # do slurm for inference
-            # if type(self) == digits.model.tasks.TrainTask:
-            else:
-                self.status = Status.WAIT
-                if not self.time_limit or self.time_limit == 0:
-                    self.time_limit = 30
-                if not self.s_cpu_count:
-                    self.s_cpu_count = 4
-                if not self.s_mem:
-                    self.s_mem = 8
-
-                # set caffe to use all available gpus
-                # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
-                if type(self) == digits.model.tasks.TrainTask:
-                    args[len(args) - 1] = '--gpu=all'
-                args = ['salloc', '-t', str(self.time_limit), '-c', str(self.s_cpu_count),
-                        '--mem=' + str(self.s_mem) + 'GB',
-                        '--gres=gpu:' + str(gpus), 'srun'] + args
-
-
+            args = pack_slurm_args(args, self.time_limit,
+                                   self.s_cpu_count, self.s_mem, type(self))
         # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
@@ -265,7 +235,7 @@ class Task(StatusCls):
         self.p = subprocess.Popen(args,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT,
-                                  cwd=self.job_dir,
+                                  cwd=os.path.relpath(self.job_dir),
                                   close_fds=False if platform.system() == 'Windows' else True,
                                   env=env,
                                   )

@@ -1,38 +1,1749 @@
+WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:45 [INFO ] Loaded 0 jobs.
+SKIP: Extension "image-gradients" is not installed
+-------------------- >> begin captured logging << --------------------
+engineio: INFO: Server initialized for gevent.
+digits: INFO: Loaded 0 jobs.
+--------------------- >> end captured logging << ---------------------
+SKIP: Extension "image-gradients" is not installed
+-------------------- >> begin captured logging << --------------------
+engineio: INFO: Server initialized for gevent.
+digits: INFO: Loaded 0 jobs.
+--------------------- >> end captured logging << ---------------------
+digits.dataset.generic.test_views.TestImageGradientViews.test_nonexistent_dataset ... ok
+digits.dataset.generic.test_views.TestImageGradientViews.test_page_dataset_new ... FAIL
+
+<html>
+<head>
+<link rel="icon" href="/static/images/nvidia.ico" />
+<link rel="stylesheet" href="/static/css/bootstrap.min.css?ver=77b0f4b9a9f48665f738eb0ae1624192">
+<link rel="stylesheet" href="/static/css/bootstrap-theme.min.css?ver=77b0f4b9a9f48665f738eb0ae1624192">
+</head>
+
+<body>
+<h2>ValueError</h2>
+<p class="text-danger">Unknown extension &#39;image-gradients&#39;</p>
+<pre class="text-muted">
 Traceback (most recent call last):
-  File "/apps/python/2.7.11/bin/nosetests", line 7, in <module>
-    from nose import run_exit
-  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/__init__.py", line 1, in <module>
-    from nose.core import collector, main, run, run_exit, runmodule
-  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/core.py", line 11, in <module>
-    from nose.config import Config, all_config_files
-  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/config.py", line 9, in <module>
-    from nose.plugins.manager import NoPlugins
-  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/plugins/__init__.py", line 185, in <module>
-    from nose.plugins.manager import *
-  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/plugins/manager.py", line 418, in <module>
-    import pkg_resources
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2927, in <module>
-    @_call_aside
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2913, in _call_aside
-    f(*args, **kwargs)
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2955, in _initialize_master_working_set
-    list(map(working_set.add_entry, sys.path))
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 675, in add_entry
-    for dist in find_distributions(entry, True):
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1982, in find_on_path
-    path_item, entry, metadata, precedence=DEVELOP_DIST
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2370, in from_location
-    py_version=py_version, platform=platform, **kw
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2687, in _reload_version
-    md_version = _version_from_file(self._get_metadata(self.PKG_INFO))
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2335, in _version_from_file
-    line = next(iter(version_lines), '')
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2503, in _get_metadata
-    for line in self.get_metadata_lines(name):
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1477, in get_metadata_lines
-    return yield_lines(self.get_metadata(name))
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1469, in get_metadata
-    return self._get(self._fn(self.egg_info, name))
-  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1580, in _get
-    with open(path, 'rb') as stream:
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/flask/app.py", line 1475, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/flask/app.py", line 1461, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/data/zim021/digits-proj/DIGITS/digits/webapp.py", line 81, in decorated
+    return f(*args, **kwargs)
+  File "/data/zim021/digits-proj/DIGITS/digits/utils/auth.py", line 55, in decorated
+    return f(*args, **kwargs)
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/generic/views.py", line 44, in new
+    raise ValueError("Unknown extension '%s'" % extension_id)
+ValueError: Unknown extension 'image-gradients'
+
+</pre>
+
+</body>
+</html>
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] Create train_db DB task started.
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+Running in slurm mode
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] Create val_db DB task started.
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+Running in slurm mode
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] Create test_db DB task started.
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+Running in slurm mode
+2016-12-08 15:53:45 [20161208-155345-14e6] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+2016-12-08 15:53:45 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+2016-12-08 15:53:45 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+2016-12-08 15:53:46 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+2016-12-08 15:53:46 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+2016-12-08 15:53:46 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: srun: Job step created
+2016-12-08 15:53:46 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: srun: Job step created
+2016-12-08 15:53:46 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+2016-12-08 15:53:46 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:48 [20161208-155345-14e6] [ERROR] Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: Traceback (most recent call last):
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: args['stage']
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+2016-12-08 15:53:48 [20161208-155345-14e6] [ERROR] TypeError: not enough arguments for format string
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:48 [20161208-155345-14e6] [ERROR] Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: Traceback (most recent call last):
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: args['stage']
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+2016-12-08 15:53:48 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+ERROR
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005486
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:49 [20161208-155345-14e6] [ERROR] Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: Traceback (most recent call last):
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: args['stage']
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:49 [20161208-155345-14e6] [WARNING] Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005487
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] Create train_db DB task started.
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+Running in slurm mode
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] Create val_db DB task started.
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+Running in slurm mode
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] Create test_db DB task started.
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+Running in slurm mode
+2016-12-08 15:53:49 [20161208-155348-e46a] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+2016-12-08 15:53:49 [20161208-155345-14e6] [ERROR] TypeError: not enough arguments for format string
+2016-12-08 15:53:49 [20161208-155345-14e6] [ERROR] TypeError: not enough arguments for format string
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: salloc: Granted job allocation 4005488
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: salloc: Granted job allocation 4005489
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: salloc: Granted job allocation 4005490
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: srun: Job step created
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: srun: Job step created
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+2016-12-08 15:53:49 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:51 [20161208-155348-e46a] [ERROR] Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: Traceback (most recent call last):
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: args['stage']
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005488
+2016-12-08 15:53:51 [20161208-155348-e46a] [ERROR] TypeError: not enough arguments for format string
+ERROR
+2016-12-08 15:53:51 [20161208-155351-ab49] [INFO ] Parse Folder (train/val) task started.
+2016-12-08 15:53:51 [20161208-155351-ab49] [INFO ] <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+Running in slurm mode
+2016-12-08 15:53:51 [20161208-155351-ab49] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmplwMRuj /tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/val.txt --percent_val=25.0"
+2016-12-08 15:53:51 [20161208-155351-ab49] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005491
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:51 [20161208-155348-e46a] [ERROR] Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: Traceback (most recent call last):
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: args['stage']
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:51 [20161208-155348-e46a] [WARNING] Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005489
+2016-12-08 15:53:51 [20161208-155348-e46a] [ERROR] TypeError: not enough arguments for format string
+2016-12-08 15:53:51 [20161208-155351-ab49] [WARNING] Parse Folder (train/val) unrecognized output: srun: Job step created
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:52 [20161208-155348-e46a] [ERROR] Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: Traceback (most recent call last):
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: args['stage']
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+2016-12-08 15:53:52 [20161208-155351-ab49] [WARNING] Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49': No such file or directory: going to /tmp instead
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:52 [20161208-155348-e46a] [WARNING] Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005490
+2016-12-08 15:53:52 [20161208-155348-e46a] [ERROR] TypeError: not enough arguments for format string
+2016-12-08 15:53:54 [20161208-155351-ab49] [WARNING] Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:54 [20161208-155351-ab49] [WARNING] Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:54 [20161208-155351-ab49] [ERROR] Parse Folder (train/val): folder "/tmp/zim021.25851/tmplwMRuj" does not exist
+2016-12-08 15:53:54 [20161208-155351-ab49] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+2016-12-08 15:53:54 [20161208-155351-ab49] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+2016-12-08 15:53:54 [20161208-155351-ab49] [WARNING] Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:54 [20161208-155351-ab49] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005491
+2016-12-08 15:53:54 [20161208-155351-ab49] [ERROR] TypeError: not enough arguments for format string
+ERROR
+2016-12-08 15:53:54 [20161208-155354-0c58] [INFO ] Parse Folder (train/val) task started.
+2016-12-08 15:53:54 [20161208-155354-0c58] [INFO ] <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+Running in slurm mode
+2016-12-08 15:53:54 [20161208-155354-0c58] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpAnUAzn /tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/val.txt --percent_val=25.0"
+2016-12-08 15:53:54 [20161208-155354-0c58] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005492
+2016-12-08 15:53:55 [20161208-155354-0c58] [WARNING] Parse Folder (train/val) unrecognized output: srun: Job step created
+2016-12-08 15:53:55 [20161208-155354-0c58] [WARNING] Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58': No such file or directory: going to /tmp instead
+2016-12-08 15:53:57 [20161208-155354-0c58] [WARNING] Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:53:57 [20161208-155354-0c58] [WARNING] Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:53:57 [20161208-155354-0c58] [ERROR] Parse Folder (train/val): folder "/tmp/zim021.25851/tmpAnUAzn" does not exist
+2016-12-08 15:53:57 [20161208-155354-0c58] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+2016-12-08 15:53:57 [20161208-155354-0c58] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+2016-12-08 15:53:57 [20161208-155354-0c58] [WARNING] Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:53:57 [20161208-155354-0c58] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005492
+2016-12-08 15:53:57 [20161208-155354-0c58] [ERROR] TypeError: not enough arguments for format string
+ERROR
+2016-12-08 15:53:57 [20161208-155357-7397] [INFO ] Parse Folder (train/val) task started.
+2016-12-08 15:53:57 [20161208-155357-7397] [INFO ] <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+Running in slurm mode
+2016-12-08 15:53:57 [20161208-155357-7397] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpri0lAS /tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/val.txt --percent_val=25.0"
+2016-12-08 15:53:57 [20161208-155357-7397] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005493
+2016-12-08 15:53:58 [20161208-155357-7397] [WARNING] Parse Folder (train/val) unrecognized output: srun: Job step created
+2016-12-08 15:53:58 [20161208-155357-7397] [WARNING] Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397': No such file or directory: going to /tmp instead
+2016-12-08 15:54:00 [20161208-155357-7397] [WARNING] Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:54:00 [20161208-155357-7397] [WARNING] Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:54:00 [20161208-155357-7397] [ERROR] Parse Folder (train/val): folder "/tmp/zim021.25851/tmpri0lAS" does not exist
+2016-12-08 15:54:00 [20161208-155357-7397] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+2016-12-08 15:54:00 [20161208-155357-7397] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+2016-12-08 15:54:00 [20161208-155357-7397] [WARNING] Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:54:00 [20161208-155357-7397] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005493
+2016-12-08 15:54:00 [20161208-155357-7397] [ERROR] TypeError: not enough arguments for format string
+ERROR
+2016-12-08 15:54:00 [20161208-155400-4900] [INFO ] Parse Folder (train/val) task started.
+2016-12-08 15:54:00 [20161208-155400-4900] [INFO ] <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+Running in slurm mode
+2016-12-08 15:54:00 [20161208-155400-4900] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpWl8Jef /tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/val.txt --percent_val=25.0"
+2016-12-08 15:54:00 [20161208-155400-4900] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005494
+2016-12-08 15:54:00 [20161208-155400-4900] [WARNING] Parse Folder (train/val) unrecognized output: srun: Job step created
+2016-12-08 15:54:00 [20161208-155400-4900] [WARNING] Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900': No such file or directory: going to /tmp instead
+2016-12-08 15:54:02 [20161208-155400-4900] [WARNING] Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:54:02 [20161208-155400-4900] [WARNING] Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:54:02 [20161208-155400-4900] [ERROR] Parse Folder (train/val): folder "/tmp/zim021.25851/tmpWl8Jef" does not exist
+2016-12-08 15:54:02 [20161208-155400-4900] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900" does not exist!
+2016-12-08 15:54:02 [20161208-155400-4900] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900" does not exist!
+2016-12-08 15:54:02 [20161208-155400-4900] [WARNING] Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:54:02 [20161208-155400-4900] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005494
+2016-12-08 15:54:04 [20161208-155400-4900] [ERROR] TypeError: not enough arguments for format string
+ERROR
+2016-12-08 15:54:04 [20161208-155404-148b] [INFO ] Parse Folder (train/val) task started.
+2016-12-08 15:54:04 [20161208-155404-148b] [INFO ] <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+Running in slurm mode
+2016-12-08 15:54:04 [20161208-155404-148b] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpI4He4a /tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b/val.txt --percent_val=25.0"
+2016-12-08 15:54:07 [20161208-155404-148b] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005495
+2016-12-08 15:54:07 [20161208-155404-148b] [WARNING] Parse Folder (train/val) unrecognized output: srun: Job step created
+2016-12-08 15:54:07 [20161208-155404-148b] [WARNING] Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b': No such file or directory: going to /tmp instead
+2016-12-08 15:54:09 [20161208-155404-148b] [WARNING] Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+2016-12-08 15:54:09 [20161208-155404-148b] [WARNING] Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+2016-12-08 15:54:09 [20161208-155404-148b] [ERROR] Parse Folder (train/val): folder "/tmp/zim021.25851/tmpI4He4a" does not exist
+2016-12-08 15:54:09 [20161208-155404-148b] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b" does not exist!
+2016-12-08 15:54:09 [20161208-155404-148b] [ERROR] Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b" does not exist!
+2016-12-08 15:54:09 [20161208-155404-148b] [WARNING] Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+2016-12-08 15:54:09 [20161208-155404-148b] [WARNING] Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005495
+2016-12-08 15:54:09 [20161208-155404-148b] [ERROR] TypeError: not enough arguments for format string
+ERROR
+2016-12-08 15:54:10 [20161208-155410-6532] [INFO ] Parse Folder (train/val) task started.
+2016-12-08 15:54:10 [20161208-155410-6532] [INFO ] <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+Running in slurm mode
+2016-12-08 15:54:10 [20161208-155410-6532] [INFO ] Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpAKP4Z2 /tmp/zim021.25851/tmp8lQD5x/20161208-155410-6532/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155410-6532/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155410-6532/val.txt --percent_val=25.0"
 KeyboardInterrupt
+
+======================================================================
+ERROR: test suite for <class 'digits.dataset.generic.test_views.TestImageProcessingCreated'>
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 209, in run
+    self.setUp()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 292, in setUp
+    self.setupContext(ancestor)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 315, in setupContext
+    try_run(context, names)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/util.py", line 471, in try_run
+    return func()
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/generic/test_views.py", line 403, in setUpClass
+    channel_conversion='L')
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/generic/test_views.py", line 187, in setUpClass
+    assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+AssertionError: create failed
+-------------------- >> begin captured logging << --------------------
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+ERROR: test suite for <class 'digits.dataset.generic.test_views.TestImageProcessingCreatedWithSeparateValidationDirs'>
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 209, in run
+    self.setUp()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 292, in setUp
+    self.setupContext(ancestor)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 315, in setupContext
+    try_run(context, names)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/util.py", line 471, in try_run
+    return func()
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/generic/test_views.py", line 434, in setUpClass
+    channel_conversion='RGB')
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/generic/test_views.py", line 187, in setUpClass
+    assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+AssertionError: create failed
+-------------------- >> begin captured logging << --------------------
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005486
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005487
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005488
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005489
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005490
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005488
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+ERROR: test suite for <class 'digits.dataset.images.classification.test_views.TestCreated'>
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 209, in run
+    self.setUp()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 292, in setUp
+    self.setupContext(ancestor)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 315, in setupContext
+    try_run(context, names)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/util.py", line 471, in try_run
+    return func()
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/images/classification/test_views.py", line 165, in setUpClass
+    assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+AssertionError: create failed
+-------------------- >> begin captured logging << --------------------
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005486
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005487
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005488
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005489
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005490
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005488
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmplwMRuj /tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005491
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005489
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005490
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmplwMRuj" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005491
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+ERROR: test suite for <class 'digits.dataset.images.classification.test_views.TestCreatedGrayscale'>
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 209, in run
+    self.setUp()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 292, in setUp
+    self.setupContext(ancestor)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 315, in setupContext
+    try_run(context, names)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/util.py", line 471, in try_run
+    return func()
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/images/classification/test_views.py", line 165, in setUpClass
+    assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+AssertionError: create failed
+-------------------- >> begin captured logging << --------------------
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005486
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005487
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005488
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005489
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005490
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005488
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmplwMRuj /tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005491
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005489
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005490
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmplwMRuj" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005491
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpAnUAzn /tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005492
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpAnUAzn" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005492
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+ERROR: test suite for <class 'digits.dataset.images.classification.test_views.TestCreatedHdf5'>
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 209, in run
+    self.setUp()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 292, in setUp
+    self.setupContext(ancestor)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 315, in setupContext
+    try_run(context, names)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/util.py", line 471, in try_run
+    return func()
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/images/classification/test_views.py", line 165, in setUpClass
+    assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+AssertionError: create failed
+-------------------- >> begin captured logging << --------------------
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005486
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005487
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005488
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005489
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005490
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005488
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmplwMRuj /tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005491
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005489
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005490
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmplwMRuj" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005491
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpAnUAzn /tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005492
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpAnUAzn" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005492
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpri0lAS /tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005493
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpri0lAS" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005493
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+ERROR: test suite for <class 'digits.dataset.images.classification.test_views.TestCreatedHdf5Gzip'>
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 209, in run
+    self.setUp()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 292, in setUp
+    self.setupContext(ancestor)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 315, in setupContext
+    try_run(context, names)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/util.py", line 471, in try_run
+    return func()
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/images/classification/test_views.py", line 165, in setUpClass
+    assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+AssertionError: create failed
+-------------------- >> begin captured logging << --------------------
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005486
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005487
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005488
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005489
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005490
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005488
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmplwMRuj /tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005491
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005489
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005490
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmplwMRuj" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005491
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpAnUAzn /tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005492
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpAnUAzn" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005492
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpri0lAS /tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005493
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpri0lAS" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005493
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpWl8Jef /tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005494
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpWl8Jef" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005494
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+ERROR: test suite for <class 'digits.dataset.images.classification.test_views.TestCreatedJPEG'>
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 209, in run
+    self.setUp()
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 292, in setUp
+    self.setupContext(ancestor)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/suite.py", line 315, in setupContext
+    try_run(context, names)
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/util.py", line 471, in try_run
+    return func()
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/images/classification/test_views.py", line 165, in setUpClass
+    assert cls.dataset_wait_completion(cls.dataset_id) == 'Done', 'create failed'
+AssertionError: create failed
+-------------------- >> begin captured logging << --------------------
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155345-14e6 --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005485
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005486
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005487
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005485
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005486
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155345-14e6 does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005487
+digits.webapp: INFO: Create train_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=train_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create val_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=val_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits.webapp: INFO: Create test_db DB task started.
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.create_generic_db.CreateGenericDbTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py 20161208-155348-e46a --stage=test_db --jobs_dir=/tmp/zim021.25851/tmp8lQD5x"
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155345-14e6 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Granted job allocation 4005488
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Granted job allocation 4005489
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Granted job allocation 4005490
+digits.webapp: WARNING: Create train_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create val_db DB unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create train_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create train_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create train_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create train_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create train_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create train_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create train_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create train_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create train_db DB unrecognized output: salloc: Relinquishing job allocation 4005488
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmplwMRuj /tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005491
+digits.webapp: WARNING: Create val_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create val_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create val_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create val_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create val_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create val_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create val_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create val_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create val_db DB unrecognized output: salloc: Relinquishing job allocation 4005489
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Create test_db DB unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Create test_db DB unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Create test_db DB: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Create test_db DB unrecognized output: Traceback (most recent call last):
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 478, in <module>
+digits.webapp: WARNING: Create test_db DB unrecognized output: args['stage']
+digits.webapp: WARNING: Create test_db DB unrecognized output: File "/data/zim021/digits-proj/DIGITS/digits/tools/create_generic_db.py", line 416, in create_generic_db
+digits.webapp: WARNING: Create test_db DB unrecognized output: raise IOError("Dataset dir %s does not exist" % dataset_dir)
+digits.webapp: WARNING: Create test_db DB unrecognized output: IOError: Dataset dir /tmp/zim021.25851/tmp8lQD5x/20161208-155348-e46a does not exist
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Create test_db DB unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Create test_db DB unrecognized output: salloc: Relinquishing job allocation 4005490
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155348-e46a [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmplwMRuj" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155351-ab49" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005491
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155351-ab49 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpAnUAzn /tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005492
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpAnUAzn" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155354-0c58" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005492
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155354-0c58 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpri0lAS /tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005493
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpri0lAS" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155357-7397" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005493
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155357-7397 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpWl8Jef /tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005494
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpWl8Jef" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155400-4900" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005494
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155400-4900 [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155404-148b [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: Parse Folder (train/val) task started.
+socketio: INFO: emitting event "task update" to 20161208-155404-148b [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155404-148b [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+digits.webapp: INFO: <class 'digits.dataset.tasks.parse_folder.ParseFolderTask'>
+digits.webapp: INFO: Task subprocess args: "salloc -t 30 -c 4 --mem=8GB --gres=gpu:0 srun /data/zim021/digits-env/bin/python2 /data/zim021/digits-proj/DIGITS/digits/tools/parse_folder.py /tmp/zim021.25851/tmpI4He4a /tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b/labels.txt --min=2 --train_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b/train.txt --val_file=/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b/val.txt --percent_val=25.0"
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Granted job allocation 4005495
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: Job step created
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: slurmstepd: couldn't chdir to `/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b': No such file or directory: going to /tmp instead
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: cudaRuntimeGetVersion() failed with error #38
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: WARNING: log_file config option not found - no log file is being saved
+digits.webapp: ERROR: Parse Folder (train/val): folder "/tmp/zim021.25851/tmpI4He4a" does not exist
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b" does not exist!
+digits.webapp: ERROR: Parse Folder (train/val): output directory "/tmp/zim021.25851/tmp8lQD5x/20161208-155404-148b" does not exist!
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: srun: error: g011: task 0: Exited with exit code 1
+digits.webapp: WARNING: Parse Folder (train/val) unrecognized output: salloc: Relinquishing job allocation 4005495
+digits: ERROR: TypeError: not enough arguments for format string
+socketio: INFO: emitting event "task update" to 20161208-155404-148b [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155404-148b [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+socketio: INFO: emitting event "server update" to job_management [/jobs]
+socketio: INFO: emitting event "job update" to 20161208-155404-148b [/jobs]
+socketio: INFO: emitting event "job update" to job_management [/jobs]
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+FAIL: digits.dataset.generic.test_views.TestImageGradientViews.test_page_dataset_new
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/case.py", line 197, in runTest
+    self.test(*self.arg)
+  File "/data/zim021/digits-proj/DIGITS/digits/dataset/generic/test_views.py", line 205, in test_page_dataset_new
+    assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
+AssertionError: page load failed with 500
+
+----------------------------------------------------------------------
+Ran 2 tests in 29.327s
+
+FAILED (SKIP=2, errors=7, failures=1)
