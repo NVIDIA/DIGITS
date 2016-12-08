@@ -1,0 +1,38 @@
+Traceback (most recent call last):
+  File "/apps/python/2.7.11/bin/nosetests", line 7, in <module>
+    from nose import run_exit
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/__init__.py", line 1, in <module>
+    from nose.core import collector, main, run, run_exit, runmodule
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/core.py", line 11, in <module>
+    from nose.config import Config, all_config_files
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/config.py", line 9, in <module>
+    from nose.plugins.manager import NoPlugins
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/plugins/__init__.py", line 185, in <module>
+    from nose.plugins.manager import *
+  File "/apps/python/2.7.11/lib/python2.7/site-packages/nose/plugins/manager.py", line 418, in <module>
+    import pkg_resources
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2927, in <module>
+    @_call_aside
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2913, in _call_aside
+    f(*args, **kwargs)
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2955, in _initialize_master_working_set
+    list(map(working_set.add_entry, sys.path))
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 675, in add_entry
+    for dist in find_distributions(entry, True):
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1982, in find_on_path
+    path_item, entry, metadata, precedence=DEVELOP_DIST
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2370, in from_location
+    py_version=py_version, platform=platform, **kw
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2687, in _reload_version
+    md_version = _version_from_file(self._get_metadata(self.PKG_INFO))
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2335, in _version_from_file
+    line = next(iter(version_lines), '')
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 2503, in _get_metadata
+    for line in self.get_metadata_lines(name):
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1477, in get_metadata_lines
+    return yield_lines(self.get_metadata(name))
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1469, in get_metadata
+    return self._get(self._fn(self.egg_info, name))
+  File "/data/zim021/digits-env/lib/python2.7/site-packages/pkg_resources/__init__.py", line 1580, in _get
+    with open(path, 'rb') as stream:
+KeyboardInterrupt

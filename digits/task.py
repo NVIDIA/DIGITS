@@ -220,15 +220,18 @@ class Task(StatusCls):
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
 
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
-        if self.system_type == 'slurm':
+        self.logger.info(type(self))
+        if self.system_type == 'slurm' and type(self) != digits.dataset.tasks.create_generic_db.CreateGenericDbTask:
             print "Running in slurm mode"
 
             # get amount of gpus passed by the interface
-            gpus = len(args[len(args) - 1].split(','))
-
-            # # Limit - removed as interface limits gpus
-            # if(gpus > 3):
-            #     gpus = 3;
+            gpu_arg_idx = [i for i, arg in enumerate(args) if arg.startswith('--gpu')]
+            if gpu_arg_idx:
+                gpu_arg_idx = gpu_arg_idx[0]
+                gpus = len(args[gpu_arg_idx].split(','))
+            else:
+                # if none was passed ask for no
+                gpus = 0
 
             if type(self) == digits.inference.tasks.inference.InferenceTask:
                 print ""
@@ -249,7 +252,7 @@ class Task(StatusCls):
                     args[len(args) - 1] = '--gpu=all'
                 args = ['salloc', '-t', str(self.time_limit), '-c', str(self.s_cpu_count),
                         '--mem=' + str(self.s_mem) + 'GB',
-                        '--gres=gpu:' + str(gpus) + '', 'srun'] + args
+                        '--gres=gpu:' + str(gpus), 'srun'] + args
 
 
         # del args[len(args) - 1]
@@ -259,7 +262,6 @@ class Task(StatusCls):
         else:
             self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
 
-        print self.job_dir
         self.p = subprocess.Popen(args,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT,
@@ -267,6 +269,7 @@ class Task(StatusCls):
                                   close_fds=False if platform.system() == 'Windows' else True,
                                   env=env,
                                   )
+
         try:
             sigterm_time = None  # When was the SIGTERM signal sent
             sigterm_timeout = 2  # When should the SIGKILL signal be sent
