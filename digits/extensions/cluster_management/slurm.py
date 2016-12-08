@@ -7,9 +7,6 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,type):
     else:
         # if none was passed ask for no
         gpus = 0
-
-    if type == digits.inference.tasks.inference.InferenceTask:
-        print ""
         # do slurm for inference
     if type == digits.model.tasks.TrainTask:
     # else:

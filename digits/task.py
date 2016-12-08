@@ -221,7 +221,7 @@ class Task(StatusCls):
 
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         self.logger.info(type(self))
-        if self.system_type == 'slurm':
+        if self.system_type == 'slurm' and type(self) != digits.inference.tasks.inference.InferenceTask:
             print "Running in slurm mode"
             args = pack_slurm_args(args, self.time_limit,
                                    self.s_cpu_count, self.s_mem, type(self))
