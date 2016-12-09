@@ -1,9 +1,0 @@
-salloc: Pending job allocation 4015683
-salloc: job 4015683 queued and waiting for resources
-salloc: job 4015683 has been allocated resources
-salloc: Granted job allocation 4015683
-srun: Job step created
-cudaRuntimeGetVersion() failed with error #38
-WARNING: log_file config option not found - no log file is being saved
-2016-12-09 10:50:12 [INFO ] Generic DB creation Done
-salloc: Relinquishing job allocation 4015683

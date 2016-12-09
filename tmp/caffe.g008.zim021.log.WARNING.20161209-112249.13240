@@ -1,4 +1,0 @@
-Log file created at: 2016/12/09 11:22:49
-Running on machine: g008
-Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
-W1209 11:22:49.947243 13240 upgrade_proto.cpp:1053] Note that future Caffe releases will only support 'type' field (string) for a solver's type.

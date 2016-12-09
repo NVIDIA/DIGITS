@@ -1,6 +1,0 @@
-salloc: Granted job allocation 4015334
-cudaRuntimeGetVersion() failed with error #38
-WARNING: log_file config option not found - no log file is being saved
-2016-12-09 10:18:32 [INFO ] Generic DB creation Done
-salloc: Relinquishing job allocation 4015334
-salloc: Job allocation 4015334 has been revoked.

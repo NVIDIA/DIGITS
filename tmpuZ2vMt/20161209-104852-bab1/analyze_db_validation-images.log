@@ -1,9 +1,0 @@
-salloc: Pending job allocation 4015671
-salloc: job 4015671 queued and waiting for resources
-salloc: job 4015671 has been allocated resources
-salloc: Granted job allocation 4015671
-cudaRuntimeGetVersion() failed with error #38
-WARNING: log_file config option not found - no log file is being saved
-2016-12-09 10:49:15 [ERROR] No such file or directory
-srun: error: g011: task 0: Exited with exit code 1
-salloc: Relinquishing job allocation 4015671

@@ -3,13 +3,10 @@ from __future__ import absolute_import
 from . import option_list
 import subprocess
 import os
+from digits.extensions.cluster_management.slurm import test_if_slurm_system
 
-try:
-    if subprocess.call('slurm',  stdout=subprocess.PIPE) == 0:
-        system_type = "slurm"
-        os.environ['TMPDIR'] = str(os.path.abspath('./tmp'))
-    else:
-        system_type = "int"
-except OSError:
-    system_type = "int"
+if test_if_slurm_system():
+    system_type = 'slurm'
+else:
+    system_type = 'interactive'
 option_list['system_type'] = system_type

@@ -1,4 +1,0 @@
-Log file created at: 2016/12/09 11:26:14
-Running on machine: g008
-Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
-F1209 11:26:14.380002 15022 io.cpp:36] Check failed: fd != -1 (-1 vs. -1) File not found: /data/zim021/digits-proj/DIGITS/tmp/tmpyzXVAu/20161209-112603-7749/solver.prototxt

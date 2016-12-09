@@ -48,7 +48,7 @@ socket.on('task update', function (msg) {
             $(status_selector+" .panel-title small").html(msg['status']);
             setPanelClass(status_selector, msg['css']);
             $(status_selector+" .task-statuses").html(msg['html']);
-            $(status_selector+" #task_num ").html("Slurm job number "+msg['job_num']);
+            $(status_selector+" #task_num ").html("Slurm job number "+ msg['job_num']);
         }
         else if (msg['update'] == 'progress') {
             $(status_selector+" .task-progress .progress-bar").width(msg['percentage'] + '%');

@@ -1,3 +1,0 @@
-blue-to-left
-green-to-top
-red-to-right
