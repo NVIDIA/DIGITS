@@ -1,0 +1,12 @@
+salloc: Granted job allocation 4016422
+srun: Job step created
+cudaRuntimeGetVersion() failed with error #38
+WARNING: log_file config option not found - no log file is being saved
+2016-12-09 11:22:45 [INFO ] Created features db for stage val_db in val_db/features
+2016-12-09 11:22:45 [INFO ] Feature shape for stage val_db: (1, 16, 28)
+2016-12-09 11:22:45 [INFO ] Label shape for stage val_db: (1, 16, 28)
+2016-12-09 11:22:45 [INFO ] Created labels db for stage val_db in val_db/labels
+2016-12-09 11:22:45 [INFO ] Processed 1/1
+2016-12-09 11:22:45 [INFO ] Found 10 entries for stage val_db
+2016-12-09 11:22:45 [INFO ] Generic DB creation Done
+salloc: Relinquishing job allocation 4016422

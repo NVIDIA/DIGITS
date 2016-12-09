@@ -1,0 +1,14 @@
+salloc: Granted job allocation 4016154
+cudaRuntimeGetVersion() failed with error #38
+WARNING: log_file config option not found - no log file is being saved
+2016-12-09 11:16:07 [DEBUG] 24 total lines in file
+2016-12-09 11:16:07 [INFO ] 24 valid lines in file
+2016-12-09 11:16:07 [DEBUG] Category 0 has 8 images.
+2016-12-09 11:16:07 [DEBUG] Category 1 has 8 images.
+2016-12-09 11:16:07 [DEBUG] Category 2 has 8 images.
+2016-12-09 11:16:07 [DEBUG] 24 images loaded
+2016-12-09 11:16:07 [INFO ] 24 images written to database
+2016-12-09 11:16:07 [INFO ] Mean saved at "/data/zim021/digits-proj/DIGITS/tmp/tmpyzXVAu/20161209-111559-1dd8/mean.binaryproto"
+2016-12-09 11:16:07 [INFO ] Mean saved at "/data/zim021/digits-proj/DIGITS/tmp/tmpyzXVAu/20161209-111559-1dd8/mean.jpg"
+2016-12-09 11:16:07 [INFO ] Database created after 0 seconds.
+salloc: Relinquishing job allocation 4016154

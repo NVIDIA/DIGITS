@@ -1,0 +1,13 @@
+salloc: Granted job allocation 4016122
+srun: Job step created
+cudaRuntimeGetVersion() failed with error #38
+WARNING: log_file config option not found - no log file is being saved
+2016-12-09 11:15:07 [DEBUG] 6 total lines in file
+2016-12-09 11:15:07 [INFO ] 6 valid lines in file
+2016-12-09 11:15:07 [DEBUG] Category 0 has 2 images.
+2016-12-09 11:15:07 [DEBUG] Category 1 has 2 images.
+2016-12-09 11:15:07 [DEBUG] Category 2 has 2 images.
+2016-12-09 11:15:08 [DEBUG] 6 images loaded
+2016-12-09 11:15:08 [INFO ] 6 images written to database
+2016-12-09 11:15:08 [INFO ] Database created after 0 seconds.
+salloc: Relinquishing job allocation 4016122

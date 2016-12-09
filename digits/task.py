@@ -221,6 +221,7 @@ class Task(StatusCls):
 
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         self.logger.info(type(self))
+        self.logger.info("is "+self.job_dir+" there: " + str(os.path.isdir(self.job_dir)) + " " + str(os.path.exists(self.job_dir)))
         if self.system_type == 'slurm' and type(self) != digits.inference.tasks.inference.InferenceTask:
             print "Running in slurm mode"
             args = pack_slurm_args(args, self.time_limit,

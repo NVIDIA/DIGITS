@@ -1,0 +1,25 @@
+input: "data"
+input_shape {
+  dim: 1
+  dim: 1
+  dim: 10
+  dim: 10
+}
+layer {
+  name: "scale"
+  type: "Power"
+  bottom: "data"
+  top: "scale"
+  power_param {
+    scale: 0.004
+  }
+}
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scale"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
+}

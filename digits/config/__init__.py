@@ -5,6 +5,7 @@ from __future__ import absolute_import
 option_list = {}
 
 from . import (  # noqa
+    system_type,
     caffe,
     gpu_list,
     jobs_dir,
@@ -12,7 +13,7 @@ from . import (  # noqa
     torch,
     server_name,
     store_option,
-    system_type,
+
 )
 
 

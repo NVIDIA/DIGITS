@@ -1,0 +1,6 @@
+/data/zim021/digits-proj/DIGITS/tmp/tmpvaxUfB/blue-to-left/6.png 0
+/data/zim021/digits-proj/DIGITS/tmp/tmpvaxUfB/blue-to-left/7.png 0
+/data/zim021/digits-proj/DIGITS/tmp/tmpvaxUfB/green-to-top/4.png 1
+/data/zim021/digits-proj/DIGITS/tmp/tmpvaxUfB/green-to-top/9.png 1
+/data/zim021/digits-proj/DIGITS/tmp/tmpvaxUfB/red-to-right/8.png 2
+/data/zim021/digits-proj/DIGITS/tmp/tmpvaxUfB/red-to-right/9.png 2

@@ -1,0 +1,338 @@
+Log file created at: 2016/12/09 11:20:22
+Running on machine: g008
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I1209 11:20:22.563546 12337 upgrade_proto.cpp:1044] Attempting to upgrade input file specified using deprecated 'solver_type' field (enum)': /data/zim021/digits-proj/DIGITS/tmp/tmpyzXVAu/20161209-112020-8c95/solver.prototxt
+I1209 11:20:22.564956 12337 upgrade_proto.cpp:1051] Successfully upgraded file specified using deprecated 'solver_type' field (enum) to 'type' field (string).
+W1209 11:20:22.564967 12337 upgrade_proto.cpp:1053] Note that future Caffe releases will only support 'type' field (string) for a solver's type.
+I1209 11:20:22.565881 12337 caffe.cpp:217] Using GPUs 0
+I1209 11:20:22.614893 12337 caffe.cpp:222] GPU 0: Tesla K20m
+I1209 11:20:23.038187 12337 solver.cpp:48] Initializing solver from parameters: 
+test_iter: 2
+test_interval: 10
+base_lr: 0.01
+display: 1
+max_iter: 30
+lr_policy: "step"
+gamma: 0.1
+momentum: 0.9
+weight_decay: 0.0001
+stepsize: 10
+snapshot: 10
+snapshot_prefix: "snapshot"
+solver_mode: GPU
+device_id: 0
+random_seed: 3405691582
+net: "train_val.prototxt"
+train_state {
+  level: 0
+  stage: ""
+}
+type: "SGD"
+I1209 11:20:23.039544 12337 solver.cpp:91] Creating training net from net file: train_val.prototxt
+I1209 11:20:23.040606 12337 net.cpp:322] The NetState phase (0) differed from the phase (1) specified by a rule in layer val_data
+I1209 11:20:23.040622 12337 net.cpp:322] The NetState phase (0) differed from the phase (1) specified by a rule in layer val_label
+I1209 11:20:23.040644 12337 net.cpp:58] Initializing net from parameters: 
+state {
+  phase: TRAIN
+  level: 0
+  stage: ""
+}
+layer {
+  name: "train_data"
+  type: "Data"
+  top: "scaled_data"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    scale: 0.004
+    mean_file: "/data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_mean.binaryproto"
+  }
+  data_param {
+    source: "/data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_images"
+    batch_size: 10
+    backend: LMDB
+  }
+}
+layer {
+  name: "train_label"
+  type: "Data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  data_param {
+    source: "/data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_labels"
+    batch_size: 10
+    backend: LMDB
+  }
+}
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scaled_data"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+}
+I1209 11:20:23.040855 12337 layer_factory.hpp:77] Creating layer train_data
+I1209 11:20:23.041038 12337 net.cpp:100] Creating Layer train_data
+I1209 11:20:23.041057 12337 net.cpp:408] train_data -> scaled_data
+I1209 11:20:23.041118 12337 data_transformer.cpp:25] Loading mean file from: /data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_mean.binaryproto
+I1209 11:20:23.043392 12342 db_lmdb.cpp:35] Opened lmdb /data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_images
+I1209 11:20:23.066530 12337 data_layer.cpp:41] output data size: 10,1,10,10
+I1209 11:20:23.068245 12337 net.cpp:150] Setting up train_data
+I1209 11:20:23.068285 12337 net.cpp:157] Top shape: 10 1 10 10 (1000)
+I1209 11:20:23.068318 12337 net.cpp:165] Memory required for data: 4000
+I1209 11:20:23.068346 12337 layer_factory.hpp:77] Creating layer train_label
+I1209 11:20:23.068444 12337 net.cpp:100] Creating Layer train_label
+I1209 11:20:23.068460 12337 net.cpp:408] train_label -> label
+I1209 11:20:23.071837 12344 db_lmdb.cpp:35] Opened lmdb /data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_labels
+I1209 11:20:23.072028 12337 data_layer.cpp:41] output data size: 10,1,1,2
+I1209 11:20:23.072477 12337 net.cpp:150] Setting up train_label
+I1209 11:20:23.072492 12337 net.cpp:157] Top shape: 10 1 1 2 (20)
+I1209 11:20:23.072504 12337 net.cpp:165] Memory required for data: 4080
+I1209 11:20:23.072511 12337 layer_factory.hpp:77] Creating layer hidden
+I1209 11:20:23.072532 12337 net.cpp:100] Creating Layer hidden
+I1209 11:20:23.072545 12337 net.cpp:434] hidden <- scaled_data
+I1209 11:20:23.072566 12337 net.cpp:408] hidden -> output
+I1209 11:20:23.072832 12337 net.cpp:150] Setting up hidden
+I1209 11:20:23.072846 12337 net.cpp:157] Top shape: 10 2 (20)
+I1209 11:20:23.072856 12337 net.cpp:165] Memory required for data: 4160
+I1209 11:20:23.072886 12337 layer_factory.hpp:77] Creating layer loss
+I1209 11:20:23.072904 12337 net.cpp:100] Creating Layer loss
+I1209 11:20:23.072912 12337 net.cpp:434] loss <- output
+I1209 11:20:23.072928 12337 net.cpp:434] loss <- label
+I1209 11:20:23.072938 12337 net.cpp:408] loss -> loss
+I1209 11:20:23.072998 12337 net.cpp:150] Setting up loss
+I1209 11:20:23.073007 12337 net.cpp:157] Top shape: (1)
+I1209 11:20:23.073022 12337 net.cpp:160]     with loss weight 1
+I1209 11:20:23.073055 12337 net.cpp:165] Memory required for data: 4164
+I1209 11:20:23.073065 12337 net.cpp:226] loss needs backward computation.
+I1209 11:20:23.073073 12337 net.cpp:226] hidden needs backward computation.
+I1209 11:20:23.073079 12337 net.cpp:228] train_label does not need backward computation.
+I1209 11:20:23.073084 12337 net.cpp:228] train_data does not need backward computation.
+I1209 11:20:23.073089 12337 net.cpp:270] This network produces output loss
+I1209 11:20:23.073099 12337 net.cpp:283] Network initialization done.
+I1209 11:20:23.073595 12337 solver.cpp:181] Creating test net (#0) specified by net file: train_val.prototxt
+I1209 11:20:23.073629 12337 net.cpp:322] The NetState phase (1) differed from the phase (0) specified by a rule in layer train_data
+I1209 11:20:23.073637 12337 net.cpp:322] The NetState phase (1) differed from the phase (0) specified by a rule in layer train_label
+I1209 11:20:23.073648 12337 net.cpp:58] Initializing net from parameters: 
+state {
+  phase: TEST
+}
+layer {
+  name: "val_data"
+  type: "Data"
+  top: "scaled_data"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    scale: 0.004
+    mean_file: "/data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_mean.binaryproto"
+  }
+  data_param {
+    source: "/data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/val_images"
+    batch_size: 10
+    backend: LMDB
+  }
+}
+layer {
+  name: "val_label"
+  type: "Data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  data_param {
+    source: "/data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/val_labels"
+    batch_size: 10
+    backend: LMDB
+  }
+}
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "scaled_data"
+  top: "output"
+  inner_product_param {
+    num_output: 2
+  }
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+}
+I1209 11:20:23.073788 12337 layer_factory.hpp:77] Creating layer val_data
+I1209 11:20:23.073884 12337 net.cpp:100] Creating Layer val_data
+I1209 11:20:23.073920 12337 net.cpp:408] val_data -> scaled_data
+I1209 11:20:23.073937 12337 data_transformer.cpp:25] Loading mean file from: /data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/train_mean.binaryproto
+I1209 11:20:23.076226 12346 db_lmdb.cpp:35] Opened lmdb /data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/val_images
+I1209 11:20:23.076400 12337 data_layer.cpp:41] output data size: 10,1,10,10
+I1209 11:20:23.076864 12337 net.cpp:150] Setting up val_data
+I1209 11:20:23.076877 12337 net.cpp:157] Top shape: 10 1 10 10 (1000)
+I1209 11:20:23.076889 12337 net.cpp:165] Memory required for data: 4000
+I1209 11:20:23.076895 12337 layer_factory.hpp:77] Creating layer val_label
+I1209 11:20:23.076975 12337 net.cpp:100] Creating Layer val_label
+I1209 11:20:23.076992 12337 net.cpp:408] val_label -> label
+I1209 11:20:23.079453 12348 db_lmdb.cpp:35] Opened lmdb /data/zim021/digits-proj/DIGITS/tmp/tmpc2ZVI7/val_labels
+I1209 11:20:23.079640 12337 data_layer.cpp:41] output data size: 10,1,1,2
+I1209 11:20:23.080202 12337 net.cpp:150] Setting up val_label
+I1209 11:20:23.080219 12337 net.cpp:157] Top shape: 10 1 1 2 (20)
+I1209 11:20:23.080229 12337 net.cpp:165] Memory required for data: 4080
+I1209 11:20:23.080237 12337 layer_factory.hpp:77] Creating layer hidden
+I1209 11:20:23.080255 12337 net.cpp:100] Creating Layer hidden
+I1209 11:20:23.080263 12337 net.cpp:434] hidden <- scaled_data
+I1209 11:20:23.080273 12337 net.cpp:408] hidden -> output
+I1209 11:20:23.080485 12337 net.cpp:150] Setting up hidden
+I1209 11:20:23.080498 12337 net.cpp:157] Top shape: 10 2 (20)
+I1209 11:20:23.080507 12337 net.cpp:165] Memory required for data: 4160
+I1209 11:20:23.080533 12337 layer_factory.hpp:77] Creating layer loss
+I1209 11:20:23.080545 12337 net.cpp:100] Creating Layer loss
+I1209 11:20:23.080551 12337 net.cpp:434] loss <- output
+I1209 11:20:23.080559 12337 net.cpp:434] loss <- label
+I1209 11:20:23.080570 12337 net.cpp:408] loss -> loss
+I1209 11:20:23.080622 12337 net.cpp:150] Setting up loss
+I1209 11:20:23.080632 12337 net.cpp:157] Top shape: (1)
+I1209 11:20:23.080641 12337 net.cpp:160]     with loss weight 1
+I1209 11:20:23.080651 12337 net.cpp:165] Memory required for data: 4164
+I1209 11:20:23.080657 12337 net.cpp:226] loss needs backward computation.
+I1209 11:20:23.080663 12337 net.cpp:226] hidden needs backward computation.
+I1209 11:20:23.080668 12337 net.cpp:228] val_label does not need backward computation.
+I1209 11:20:23.080673 12337 net.cpp:228] val_data does not need backward computation.
+I1209 11:20:23.080678 12337 net.cpp:270] This network produces output loss
+I1209 11:20:23.080687 12337 net.cpp:283] Network initialization done.
+I1209 11:20:23.080719 12337 solver.cpp:60] Solver scaffolding done.
+I1209 11:20:23.080845 12337 caffe.cpp:155] Finetuning from /data/zim021/digits-proj/DIGITS/tmp/tmpyzXVAu/20161209-112009-1755/snapshot_iter_30.caffemodel
+I1209 11:20:23.081552 12337 net.cpp:761] Ignoring source layer train_data
+I1209 11:20:23.081573 12337 net.cpp:761] Ignoring source layer train_label
+I1209 11:20:23.081596 12337 caffe.cpp:251] Starting Optimization
+I1209 11:20:23.081607 12337 solver.cpp:279] Solving 
+I1209 11:20:23.081612 12337 solver.cpp:280] Learning Rate Policy: step
+I1209 11:20:23.081781 12337 solver.cpp:337] Iteration 0, Testing net (#0)
+I1209 11:20:23.081800 12337 net.cpp:693] Ignoring source layer train_data
+I1209 11:20:23.081805 12337 net.cpp:693] Ignoring source layer train_label
+I1209 11:20:23.083079 12337 solver.cpp:404]     Test net output #0: loss = 0.0103879 (* 1 = 0.0103879 loss)
+I1209 11:20:23.083740 12337 solver.cpp:228] Iteration 0, loss = 0.00964794
+I1209 11:20:23.083768 12337 solver.cpp:244]     Train net output #0: loss = 0.00964794 (* 1 = 0.00964794 loss)
+I1209 11:20:23.083796 12337 sgd_solver.cpp:106] Iteration 0, lr = 0.01
+I1209 11:20:23.084275 12337 solver.cpp:228] Iteration 1, loss = 0.00840117
+I1209 11:20:23.084303 12337 solver.cpp:244]     Train net output #0: loss = 0.00840117 (* 1 = 0.00840117 loss)
+I1209 11:20:23.084314 12337 sgd_solver.cpp:106] Iteration 1, lr = 0.01
+I1209 11:20:23.084727 12337 solver.cpp:228] Iteration 2, loss = 0.010222
+I1209 11:20:23.084748 12337 solver.cpp:244]     Train net output #0: loss = 0.010222 (* 1 = 0.010222 loss)
+I1209 11:20:23.084758 12337 sgd_solver.cpp:106] Iteration 2, lr = 0.01
+I1209 11:20:23.085156 12337 solver.cpp:228] Iteration 3, loss = 0.00659591
+I1209 11:20:23.085177 12337 solver.cpp:244]     Train net output #0: loss = 0.00659591 (* 1 = 0.00659591 loss)
+I1209 11:20:23.085187 12337 sgd_solver.cpp:106] Iteration 3, lr = 0.01
+I1209 11:20:23.085579 12337 solver.cpp:228] Iteration 4, loss = 0.00981481
+I1209 11:20:23.085600 12337 solver.cpp:244]     Train net output #0: loss = 0.00981481 (* 1 = 0.00981481 loss)
+I1209 11:20:23.085609 12337 sgd_solver.cpp:106] Iteration 4, lr = 0.01
+I1209 11:20:23.086032 12337 solver.cpp:228] Iteration 5, loss = 0.00769824
+I1209 11:20:23.086055 12337 solver.cpp:244]     Train net output #0: loss = 0.00769824 (* 1 = 0.00769824 loss)
+I1209 11:20:23.086064 12337 sgd_solver.cpp:106] Iteration 5, lr = 0.01
+I1209 11:20:23.086458 12337 solver.cpp:228] Iteration 6, loss = 0.0069255
+I1209 11:20:23.086479 12337 solver.cpp:244]     Train net output #0: loss = 0.0069255 (* 1 = 0.0069255 loss)
+I1209 11:20:23.086489 12337 sgd_solver.cpp:106] Iteration 6, lr = 0.01
+I1209 11:20:23.086886 12337 solver.cpp:228] Iteration 7, loss = 0.00741194
+I1209 11:20:23.086907 12337 solver.cpp:244]     Train net output #0: loss = 0.00741194 (* 1 = 0.00741194 loss)
+I1209 11:20:23.086916 12337 sgd_solver.cpp:106] Iteration 7, lr = 0.01
+I1209 11:20:23.087306 12337 solver.cpp:228] Iteration 8, loss = 0.00524921
+I1209 11:20:23.087327 12337 solver.cpp:244]     Train net output #0: loss = 0.00524921 (* 1 = 0.00524921 loss)
+I1209 11:20:23.087335 12337 sgd_solver.cpp:106] Iteration 8, lr = 0.01
+I1209 11:20:23.087745 12337 solver.cpp:228] Iteration 9, loss = 0.00565211
+I1209 11:20:23.087766 12337 solver.cpp:244]     Train net output #0: loss = 0.00565211 (* 1 = 0.00565211 loss)
+I1209 11:20:23.087781 12337 sgd_solver.cpp:106] Iteration 9, lr = 0.01
+I1209 11:20:23.087858 12337 solver.cpp:454] Snapshotting to binary proto file snapshot_iter_10.caffemodel
+I1209 11:20:23.088814 12337 sgd_solver.cpp:273] Snapshotting solver state to binary proto file snapshot_iter_10.solverstate
+I1209 11:20:23.089387 12337 solver.cpp:337] Iteration 10, Testing net (#0)
+I1209 11:20:23.089402 12337 net.cpp:693] Ignoring source layer train_data
+I1209 11:20:23.089407 12337 net.cpp:693] Ignoring source layer train_label
+I1209 11:20:23.090168 12337 solver.cpp:404]     Test net output #0: loss = 0.00531192 (* 1 = 0.00531192 loss)
+I1209 11:20:23.090513 12337 solver.cpp:228] Iteration 10, loss = 0.00485462
+I1209 11:20:23.090534 12337 solver.cpp:244]     Train net output #0: loss = 0.00485462 (* 1 = 0.00485462 loss)
+I1209 11:20:23.090548 12337 sgd_solver.cpp:106] Iteration 10, lr = 0.001
+I1209 11:20:23.090947 12337 solver.cpp:228] Iteration 11, loss = 0.00370071
+I1209 11:20:23.090968 12337 solver.cpp:244]     Train net output #0: loss = 0.00370071 (* 1 = 0.00370071 loss)
+I1209 11:20:23.090977 12337 sgd_solver.cpp:106] Iteration 11, lr = 0.001
+I1209 11:20:23.091367 12337 solver.cpp:228] Iteration 12, loss = 0.00424462
+I1209 11:20:23.091388 12337 solver.cpp:244]     Train net output #0: loss = 0.00424462 (* 1 = 0.00424462 loss)
+I1209 11:20:23.091398 12337 sgd_solver.cpp:106] Iteration 12, lr = 0.001
+I1209 11:20:23.091796 12337 solver.cpp:228] Iteration 13, loss = 0.00251463
+I1209 11:20:23.091816 12337 solver.cpp:244]     Train net output #0: loss = 0.00251463 (* 1 = 0.00251463 loss)
+I1209 11:20:23.091826 12337 sgd_solver.cpp:106] Iteration 13, lr = 0.001
+I1209 11:20:23.092214 12337 solver.cpp:228] Iteration 14, loss = 0.00376641
+I1209 11:20:23.092236 12337 solver.cpp:244]     Train net output #0: loss = 0.00376641 (* 1 = 0.00376641 loss)
+I1209 11:20:23.092245 12337 sgd_solver.cpp:106] Iteration 14, lr = 0.001
+I1209 11:20:23.092660 12337 solver.cpp:228] Iteration 15, loss = 0.00269244
+I1209 11:20:23.092681 12337 solver.cpp:244]     Train net output #0: loss = 0.00269244 (* 1 = 0.00269244 loss)
+I1209 11:20:23.092691 12337 sgd_solver.cpp:106] Iteration 15, lr = 0.001
+I1209 11:20:23.093102 12337 solver.cpp:228] Iteration 16, loss = 0.00236764
+I1209 11:20:23.093123 12337 solver.cpp:244]     Train net output #0: loss = 0.00236764 (* 1 = 0.00236764 loss)
+I1209 11:20:23.093133 12337 sgd_solver.cpp:106] Iteration 16, lr = 0.001
+I1209 11:20:23.093529 12337 solver.cpp:228] Iteration 17, loss = 0.00268838
+I1209 11:20:23.093549 12337 solver.cpp:244]     Train net output #0: loss = 0.00268838 (* 1 = 0.00268838 loss)
+I1209 11:20:23.093559 12337 sgd_solver.cpp:106] Iteration 17, lr = 0.001
+I1209 11:20:23.094005 12337 solver.cpp:228] Iteration 18, loss = 0.00197448
+I1209 11:20:23.094027 12337 solver.cpp:244]     Train net output #0: loss = 0.00197448 (* 1 = 0.00197448 loss)
+I1209 11:20:23.094038 12337 sgd_solver.cpp:106] Iteration 18, lr = 0.001
+I1209 11:20:23.094420 12337 solver.cpp:228] Iteration 19, loss = 0.00213392
+I1209 11:20:23.094441 12337 solver.cpp:244]     Train net output #0: loss = 0.00213392 (* 1 = 0.00213392 loss)
+I1209 11:20:23.094450 12337 sgd_solver.cpp:106] Iteration 19, lr = 0.001
+I1209 11:20:23.094523 12337 solver.cpp:454] Snapshotting to binary proto file snapshot_iter_20.caffemodel
+I1209 11:20:23.095144 12337 sgd_solver.cpp:273] Snapshotting solver state to binary proto file snapshot_iter_20.solverstate
+I1209 11:20:23.095630 12337 solver.cpp:337] Iteration 20, Testing net (#0)
+I1209 11:20:23.095644 12337 net.cpp:693] Ignoring source layer train_data
+I1209 11:20:23.095649 12337 net.cpp:693] Ignoring source layer train_label
+I1209 11:20:23.096462 12337 solver.cpp:404]     Test net output #0: loss = 0.0020513 (* 1 = 0.0020513 loss)
+I1209 11:20:23.096812 12337 solver.cpp:228] Iteration 20, loss = 0.00190715
+I1209 11:20:23.096835 12337 solver.cpp:244]     Train net output #0: loss = 0.00190715 (* 1 = 0.00190715 loss)
+I1209 11:20:23.096845 12337 sgd_solver.cpp:106] Iteration 20, lr = 0.0001
+I1209 11:20:23.097235 12337 solver.cpp:228] Iteration 21, loss = 0.00149779
+I1209 11:20:23.097257 12337 solver.cpp:244]     Train net output #0: loss = 0.00149779 (* 1 = 0.00149779 loss)
+I1209 11:20:23.097266 12337 sgd_solver.cpp:106] Iteration 21, lr = 0.0001
+I1209 11:20:23.097663 12337 solver.cpp:228] Iteration 22, loss = 0.00178292
+I1209 11:20:23.097684 12337 solver.cpp:244]     Train net output #0: loss = 0.00178292 (* 1 = 0.00178292 loss)
+I1209 11:20:23.097694 12337 sgd_solver.cpp:106] Iteration 22, lr = 0.0001
+I1209 11:20:23.098103 12337 solver.cpp:228] Iteration 23, loss = 0.00106488
+I1209 11:20:23.098125 12337 solver.cpp:244]     Train net output #0: loss = 0.00106488 (* 1 = 0.00106488 loss)
+I1209 11:20:23.098135 12337 sgd_solver.cpp:106] Iteration 23, lr = 0.0001
+I1209 11:20:23.098537 12337 solver.cpp:228] Iteration 24, loss = 0.00173454
+I1209 11:20:23.098558 12337 solver.cpp:244]     Train net output #0: loss = 0.00173454 (* 1 = 0.00173454 loss)
+I1209 11:20:23.098567 12337 sgd_solver.cpp:106] Iteration 24, lr = 0.0001
+I1209 11:20:23.098973 12337 solver.cpp:228] Iteration 25, loss = 0.00125056
+I1209 11:20:23.098994 12337 solver.cpp:244]     Train net output #0: loss = 0.00125056 (* 1 = 0.00125056 loss)
+I1209 11:20:23.099004 12337 sgd_solver.cpp:106] Iteration 25, lr = 0.0001
+I1209 11:20:23.099402 12337 solver.cpp:228] Iteration 26, loss = 0.00114636
+I1209 11:20:23.099423 12337 solver.cpp:244]     Train net output #0: loss = 0.00114636 (* 1 = 0.00114636 loss)
+I1209 11:20:23.099432 12337 sgd_solver.cpp:106] Iteration 26, lr = 0.0001
+I1209 11:20:23.099828 12337 solver.cpp:228] Iteration 27, loss = 0.00141347
+I1209 11:20:23.099848 12337 solver.cpp:244]     Train net output #0: loss = 0.00141347 (* 1 = 0.00141347 loss)
+I1209 11:20:23.099858 12337 sgd_solver.cpp:106] Iteration 27, lr = 0.0001
+I1209 11:20:23.100265 12337 solver.cpp:228] Iteration 28, loss = 0.00108869
+I1209 11:20:23.100287 12337 solver.cpp:244]     Train net output #0: loss = 0.00108869 (* 1 = 0.00108869 loss)
+I1209 11:20:23.100296 12337 sgd_solver.cpp:106] Iteration 28, lr = 0.0001
+I1209 11:20:23.100704 12337 solver.cpp:228] Iteration 29, loss = 0.00120544
+I1209 11:20:23.100725 12337 solver.cpp:244]     Train net output #0: loss = 0.00120544 (* 1 = 0.00120544 loss)
+I1209 11:20:23.100734 12337 sgd_solver.cpp:106] Iteration 29, lr = 0.0001
+I1209 11:20:23.100806 12337 solver.cpp:454] Snapshotting to binary proto file snapshot_iter_30.caffemodel
+I1209 11:20:23.101491 12337 sgd_solver.cpp:273] Snapshotting solver state to binary proto file snapshot_iter_30.solverstate
+I1209 11:20:23.102468 12337 solver.cpp:317] Iteration 30, loss = 0.00113113
+I1209 11:20:23.102486 12337 solver.cpp:337] Iteration 30, Testing net (#0)
+I1209 11:20:23.102493 12337 net.cpp:693] Ignoring source layer train_data
+I1209 11:20:23.102497 12337 net.cpp:693] Ignoring source layer train_label
+I1209 11:20:23.103091 12337 solver.cpp:404]     Test net output #0: loss = 0.00119825 (* 1 = 0.00119825 loss)
+I1209 11:20:23.103106 12337 solver.cpp:322] Optimization Done.
+I1209 11:20:23.103112 12337 caffe.cpp:254] Optimization Done.

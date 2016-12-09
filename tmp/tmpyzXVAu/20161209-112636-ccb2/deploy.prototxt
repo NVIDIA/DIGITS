@@ -1,0 +1,22 @@
+input: "data"
+input_shape {
+  dim: 1
+  dim: 3
+  dim: 10
+  dim: 10
+}
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "output"
+  inner_product_param {
+    num_output: 3
+  }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "output"
+  top: "softmax"
+}

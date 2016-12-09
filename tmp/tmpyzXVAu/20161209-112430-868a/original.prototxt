@@ -1,0 +1,16 @@
+layer {
+  name: "identity"
+  type: "Power"
+  bottom: "data"
+  top: "output"
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+  exclude {
+    stage: "deploy"
+  }
+}

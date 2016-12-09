@@ -8,24 +8,24 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,type):
         # if none was passed ask for no
         gpus = 0
         # do slurm for inference
-    if type == digits.model.tasks.TrainTask:
-    # else:
-        if not time_limit or time_limit == 0:
-            time_limit = 30
-        if not cpu_count:
-            cpu_count = 4
-        if not mem:
-            mem = 8
+    # if type == digits.model.tasks.TrainTask:
 
-        # set caffe to use all available gpus
-        # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
-        if type == digits.model.tasks.TrainTask:
-            args[len(args) - 1] = '--gpu=all'
-        args = ['salloc', '-t', str(time_limit), '-c', str(cpu_count),
-                '--mem=' + str(mem) + 'GB',
-                '--gres=gpu:' + str(gpus), 'srun'] + args
-        #
-        # args = ['srun','-v', '-t', str(time_limit), '-c', str(cpu_count),
-        #         '--mem=' + str(mem) + 'GB',
-        #         '--gres=gpu:' + str(gpus)] + args
+    if not time_limit or time_limit == 0:
+        time_limit = 30
+    if not cpu_count:
+        cpu_count = 4
+    if not mem:
+        mem = 8
+
+    # set caffe to use all available gpus
+    # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes
+    if type == digits.model.tasks.TrainTask:
+        args[len(args) - 1] = '--gpu=all'
+    args = ['salloc', '-t', str(time_limit), '-c', str(cpu_count),
+            '--mem=' + str(mem) + 'GB',
+            '--gres=gpu:' + str(gpus), 'srun'] + args
+    #
+    # args = ['srun','-v', '-t', str(time_limit), '-c', str(cpu_count),
+    #         '--mem=' + str(mem) + 'GB',
+    #         '--gres=gpu:' + str(gpus)] + args
     return args

@@ -1,0 +1,35 @@
+layer {
+  name: "hidden"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "output"
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
+  exclude {
+    stage: "deploy"
+  }
+}
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "output"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    stage: "val"
+  }
+}
+layer {
+  name: "softmax"
+  type: "Softmax"
+  bottom: "output"
+  top: "softmax"
+  include {
+    stage: "deploy"
+  }
+}
