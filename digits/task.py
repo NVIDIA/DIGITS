@@ -212,7 +212,7 @@ class Task(StatusCls):
 
         self.logger.info('%s task started.' % self.name())
 
-        self.status = Status.WAIT
+        self.status = Status.RUN
 
         unrecognized_output = []
 
@@ -225,6 +225,7 @@ class Task(StatusCls):
             print "Running in slurm mode"
             args = pack_slurm_args(args, self.time_limit,
                                    self.s_cpu_count, self.s_mem, str(type(self)))
+            self.status = Status.WAIT
         else:
             self.status = Status.RUN
         # del args[len(args) - 1]

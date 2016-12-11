@@ -5,10 +5,11 @@ import os
 
 def get_digits_tmpdir():
     # users should set DIGITS_TMP to a dir that is available to all nodes
+    if os.environ.get('JENKINS_URL') is not None:
+        os.environ['DIGITS_TMP'] = os.environ.get('WORKSPACE')+"/tmp"
     if os.environ.get('DIGITS_TMP') is None:
-        os.environ['DIGITS_TMP'] = (os.environ.get('HOME') + "/tmp")
-    if os.environ.get('DIGITS_TMP') != os.environ.get('TMPDIR'):
-        os.environ['TMPDIR'] = os.path.abspath(os.environ.get('DIGITS_TMP'))
+        os.environ['DIGITS_TMP'] = os.environ.get('HOME') + "/tmp"
+    os.environ['TMPDIR'] = os.path.abspath(os.environ.get('DIGITS_TMP'))
     return os.environ['TMPDIR']
 
 
@@ -29,7 +30,7 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,type):
         gpus = len(args[gpu_arg_idx].split(','))
     else:
         # if none was passed ask for no
-        gpus = 0
+        gpus = 1
         # do slurm for inference
     # if type == digits.model.tasks.TrainTask:
 
@@ -38,7 +39,7 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,type):
     if not cpu_count:
         cpu_count = 4
     if not mem:
-        mem = 8
+        mem = 10
 
     # set caffe to use all available gpus
     # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes\
