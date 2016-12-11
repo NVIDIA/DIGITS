@@ -162,6 +162,7 @@ class Model(object):
 
                     if self.stage == digits.STAGE_TRAIN:
                         grad_tower = self.optimizer.compute_gradients(tower_loss)
+                        grad_tower = tower_model.gradientUpdate(grad_tower)
                         grad_towers.append(grad_tower)
 
         # Assemble and average the gradients from all towers
@@ -271,3 +272,6 @@ class Tower(object):
         self.x = x
         self.y = y
         self.train = None
+
+    def gradientUpdate(self, grad):
+        raise ValueError("Argh!")
