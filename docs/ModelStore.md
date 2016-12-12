@@ -27,12 +27,13 @@ The new page shows models available in model stores.
 
 ![List models](images/model-store-list.png)
 
-Hover the Note field to show complete text.
+Hover on Note will show the complete notes.
 Enter keyword in 'Filter list by' to limit results.
 Click 'Update model list' button will retrieve the latest model list (see limitation).
-Click 'Import' will import that model into DIGITS (may takes a few seconds, depends on network speed).
+Click 'Import' icon will import that model into DIGITS (may takes a few seconds, depends on network speed).
+The progress bar after clicking 'Import' icon will show current import progress.
 
-After successfully importing the model, DIGITS redirects the browser to Home page.
+After successfully importing the model, click DIGITS to return to Home page.
 
 ![Imported models](images/model-store-import.png)
 
@@ -48,15 +49,15 @@ Then run the following command to start server at port 8000.
 python -m SimpleHTTPServer 8000
 ```
 
-At the top directory, create a master.json file (if your server does not support Apache directory listing).
+At the top directory, create a master.json file.
 The following is a sample master.json file.
 ```
 {"msg":"This is my own model store server.", "children":["Model01","Model02"]}
 ```
 Model01 and Model02 are subdirectories containing the actual models.
-Each model must at least include one info.json file, one weight file and one model file.
+Each model must at least include one info.json file, one weight file and one network description prototxt file.
 The info.json file is in the format of same file inside DIGITS downloaded model.
-The subdirectory can optionally contain aux.json, which points to files not directly from DIGITS.
+The subdirectory can optionally contain aux.json, which points to files not directly generated from DIGITS and information shown in Model Store list.
 The following is a sample aux.json file.
 ```
 {"license": "3-clause BSD license", "logo": "logo.png", "dataset":"MNIST"}
@@ -69,4 +70,4 @@ The `license.txt` inside that subdirectory will be displayed when users clicking
 ## Limitation
 Some web server may limit frequent requests from the same machine to stop malicious activities.
 Therefore, DIGITS implemented a cache mechanism to reduce server-to-server communication.
-The button, 'Update model list', invalidates cache and retrieve meta data from all models.
+The button, 'Update model list', invalidates cache and retrieve meta data from all models from each Model Store.
