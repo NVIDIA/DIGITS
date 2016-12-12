@@ -2,7 +2,7 @@ import digits
 import subprocess
 import os
 
-is_slurm = None
+
 def get_digits_tmpdir():
     # users should set DIGITS_TMP to a dir that is available to all nodes
     if os.environ.get('JENKINS_URL') is not None:
@@ -15,13 +15,12 @@ def get_digits_tmpdir():
 
 def test_if_slurm_system():
     try:
-        global is_slurm
-        if is_slurm == None and subprocess.call('slurm', stdout=subprocess.PIPE) == 0:
+        if os.environ.get('SLURM_HOME'):
             get_digits_tmpdir()
-            is_slurm == True
             return True
         else:
             return False
+
     except OSError:
         return False
 
@@ -32,7 +31,7 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,type):
         gpus = len(args[gpu_arg_idx].split(','))
     else:
         # if none was passed ask for no
-        gpus = 1
+        gpus = 0
         # do slurm for inference
     # if type == digits.model.tasks.TrainTask:
 
@@ -41,16 +40,21 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,type):
     if not cpu_count:
         cpu_count = 4
     if not mem:
-        mem = 8
+        mem = 4
 
     # set caffe to use all available gpus
     # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes\
-    print type
     if gpu_arg_idx:
         args[gpu_arg_idx] = '--gpu=all'
-    args = ['salloc', '-t', str(time_limit), '-c', str(cpu_count),
-            '--mem=' + str(mem) + 'GB',
-            '--gres=gpu:' + str(gpus), 'srun'] + args
+
+    if gpus == 0:
+        args = ['salloc', '-t', str(time_limit), '-c', str(cpu_count),
+                '--mem=' + str(mem) + 'GB',
+                 'srun'] + args
+    else:
+        args = ['salloc', '-t', str(time_limit), '-c', str(cpu_count),
+                '--mem=' + str(mem) + 'GB',
+                '--gres=gpu:' + str(gpus), 'srun'] + args
     #
     # args = ['srun','-v', '-t', str(time_limit), '-c', str(cpu_count),
     #         '--mem=' + str(mem) + 'GB',

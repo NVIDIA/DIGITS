@@ -212,7 +212,7 @@ class Task(StatusCls):
 
         self.logger.info('%s task started.' % self.name())
 
-        self.status = Status.RUN
+
 
         unrecognized_output = []
 
