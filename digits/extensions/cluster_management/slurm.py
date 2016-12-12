@@ -2,7 +2,7 @@ import digits
 import subprocess
 import os
 
-
+is_slurm = None
 def get_digits_tmpdir():
     # users should set DIGITS_TMP to a dir that is available to all nodes
     if os.environ.get('JENKINS_URL') is not None:
@@ -15,8 +15,10 @@ def get_digits_tmpdir():
 
 def test_if_slurm_system():
     try:
-        if subprocess.call('slurm', stdout=subprocess.PIPE) == 0:
+        global is_slurm
+        if is_slurm == None and subprocess.call('slurm', stdout=subprocess.PIPE) == 0:
             get_digits_tmpdir()
+            is_slurm == True
             return True
         else:
             return False
@@ -35,11 +37,11 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,type):
     # if type == digits.model.tasks.TrainTask:
 
     if not time_limit or time_limit == 0:
-        time_limit = 30
+        time_limit = 10
     if not cpu_count:
         cpu_count = 4
     if not mem:
-        mem = 10
+        mem = 8
 
     # set caffe to use all available gpus
     # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes\
