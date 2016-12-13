@@ -269,12 +269,13 @@ class Task(StatusCls):
                         line = line.strip()
 
                     if line:
+                        print line
 
                         if not self.job_num and line.find('allocation') > 1:
                             jobNums = [int(s) for s in line.split() if s.isdigit()]
                             self.job_num = str(jobNums[0])
                             # self.on_status_update()
-                        if self.status != Status.RUN and line.find('srun:') >= 0:
+                        if self.status != Status.RUN and line.find('Granted') >= 0:
                             self.status = Status.RUN
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
