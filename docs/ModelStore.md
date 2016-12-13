@@ -21,6 +21,7 @@ Click on the small download icon (first column) to download a model from the sto
 
 After downloading a model, you can return to the homepage to see the list of pretrained models.
 To make use of the downloaded model for training, select it as a "Pretrained Network" in the "New Model" form.
+> NOTE: In order to automatically popluate to Python Layers the path of the Python layer file which comes with "Pretrained Models," you need to click "Customize" next to the selected "Pretrained Model."
 
 ## Create your own Model Store server
 
