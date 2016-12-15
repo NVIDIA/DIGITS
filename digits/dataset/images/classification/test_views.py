@@ -7,6 +7,8 @@ import shutil
 import tempfile
 
 # Find the best implementation available
+from digits.config import config_value
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -20,7 +22,10 @@ from digits import test_utils
 import digits.test_views
 
 # May be too short on a slow system
-TIMEOUT_DATASET = 45
+if config_value('system_type') == 'interactive':
+    TIMEOUT_DATASET = 45
+else:
+    TIMEOUT_DATASET = 100
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)

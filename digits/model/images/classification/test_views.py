@@ -29,7 +29,10 @@ import digits.webapp
 import caffe_pb2
 
 # May be too short on a slow system
-TIMEOUT_DATASET = 45
+if config_value('system_type') == 'interactive':
+    TIMEOUT_DATASET = 45
+else:
+    TIMEOUT_DATASET = 100
 TIMEOUT_MODEL = 60
 
 ################################################################################
