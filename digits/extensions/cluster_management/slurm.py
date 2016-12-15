@@ -6,10 +6,10 @@ import os
 def get_digits_tmpdir():
     # users should set DIGITS_TMP to a dir that is available to all nodes
     if os.environ.get('JENKINS_URL') is not None:
-        os.environ['DIGITS_TMP'] = os.environ.get('WORKSPACE')+"/tmp"
-    if os.environ.get('DIGITS_TMP') is None:
-        os.environ['DIGITS_TMP'] = os.environ.get('HOME') + "/tmp"
-    os.environ['TMPDIR'] = os.path.abspath(os.environ.get('DIGITS_TMP'))
+        os.environ['DIGITS_SLURM_TMP'] = os.environ.get('WORKSPACE')+"/tmp"
+    if os.environ.get('DIGITS_SLURM_TMP') is None:
+        os.environ['DIGITS_SLURM_TMP'] = os.environ.get('HOME') + "/tmp"
+    os.environ['TMPDIR'] = os.path.abspath(os.environ.get('DIGITS_SLURM_TMP'))
     return os.environ['TMPDIR']
 
 
