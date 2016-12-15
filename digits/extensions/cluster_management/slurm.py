@@ -24,21 +24,21 @@ def test_if_slurm_system():
     except OSError:
         return False
 
-def pack_slurm_args(args,time_limit,cpu_count,mem,type):
+def pack_slurm_args(args,time_limit,cpu_count,mem,gpu_count,type):
     gpu_arg_idx = [i for i, arg in enumerate(args) if arg.startswith('--gpu')]
     if gpu_arg_idx:
         gpu_arg_idx = gpu_arg_idx[0]
-        gpus = len(args[gpu_arg_idx].split(','))
-    else:
-        # if none was passed ask for no
-        gpus = 0
+    #     gpus = len(args[gpu_arg_idx].split(','))
+    # else:
+    #     # if none was passed ask for no
+    gpus = gpu_count
         # do slurm for inference
     # if type == digits.model.tasks.TrainTask:
 
     if not time_limit or time_limit == 0:
-        time_limit = 10
+        time_limit = 2
     if not cpu_count:
-        cpu_count = 4
+        cpu_count = 2
     if not mem:
         mem = 4
 

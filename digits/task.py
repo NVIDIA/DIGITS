@@ -219,12 +219,16 @@ class Task(StatusCls):
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
 
+        try:
+            self.gpu_count
+        except:
+            self.gpu_count=0
         # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
         self.logger.info(type(self))
         if self.system_type == 'slurm' and type(self) != digits.inference.tasks.inference.InferenceTask:
             print "Running in slurm mode"
             args = pack_slurm_args(args, self.time_limit,
-                                   self.s_cpu_count, self.s_mem, str(type(self)))
+                                   self.s_cpu_count, self.s_mem, self.gpu_count, str(type(self)))
             self.status = Status.WAIT
         else:
             self.status = Status.RUN
