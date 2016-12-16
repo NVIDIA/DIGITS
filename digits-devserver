@@ -1,6 +1,0 @@
-#!/bin/bash
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
-
-set -e
-
-python2 -m digits $@
