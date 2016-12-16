@@ -12,7 +12,6 @@ def get_digits_tmpdir():
     os.environ['TMPDIR'] = os.path.abspath(os.environ.get('DIGITS_SLURM_TMP'))
     return os.environ['TMPDIR']
 
-
 def test_if_slurm_system():
     try:
         if os.environ.get('SLURM_HOME'):
@@ -28,12 +27,7 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,gpu_count,type):
     gpu_arg_idx = [i for i, arg in enumerate(args) if arg.startswith('--gpu')]
     if gpu_arg_idx:
         gpu_arg_idx = gpu_arg_idx[0]
-    #     gpus = len(args[gpu_arg_idx].split(','))
-    # else:
-    #     # if none was passed ask for no
     gpus = gpu_count
-        # do slurm for inference
-    # if type == digits.model.tasks.TrainTask:
 
     if not time_limit or time_limit == 0:
         time_limit = 2
@@ -56,8 +50,5 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,gpu_count,type):
         args = ['salloc', '-t', str(time_limit), '-c', str(cpu_count),
                 '--mem=' + str(mem) + 'GB',
                 '--gres=gpu:' + str(gpus), 'srun'] + args
-    #
-    # args = ['srun','-v', '-t', str(time_limit), '-c', str(cpu_count),
-    #         '--mem=' + str(mem) + 'GB',
-    #         '--gres=gpu:' + str(gpus)] + args
+
     return args
