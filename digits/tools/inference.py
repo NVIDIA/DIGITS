@@ -22,7 +22,7 @@ from digits import utils, log  # noqa
 from digits.inference.errors import InferenceError  # noqa
 from digits.job import Job  # noqa
 from digits.utils.lmdbreader import DbReader  # noqa
-
+import os
 # Import digits.config before caffe to set the path
 import caffe_pb2  # noqa
 
@@ -46,6 +46,9 @@ def infer(input_list,
     """
     Perform inference on a list of images using the specified model
     """
+    # Get the gpu that slurm as set for the task
+    if digits.config.config_value('system_type') != 'slurm':
+        gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
     # job directory defaults to that defined in DIGITS config
     if jobs_dir == 'none':
         jobs_dir = digits.config.config_value('jobs_dir')

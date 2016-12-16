@@ -211,22 +211,29 @@ class Task(StatusCls):
         args = [str(x) for x in args]
 
         self.logger.info('%s task started.' % self.name())
-
-
-
         unrecognized_output = []
-
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
-
-        try:
-            self.gpu_count
-        except:
-            self.gpu_count=0
-        # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
-        self.logger.info(type(self))
-        if self.system_type == 'slurm' and type(self) != digits.inference.tasks.inference.InferenceTask:
-            print "Running in slurm mode"
+        # SLURM PROCESSING
+        if self.system_type == 'slurm':
+            # Check for arguments if missing fill with defaults
+            try:
+                self.gpu_count
+            except:
+                self.gpu_count = 1
+            try:
+                self.time_limit
+            except:
+                self.time_limit = 2
+            try:
+                self.s_cpu_count
+            except:
+                self.s_cpu_count = 1
+            try:
+                self.s_mem
+            except:
+                self.s_mem = 2
+            # Create a slurm command
             args = pack_slurm_args(args, self.time_limit,
                                    self.s_cpu_count, self.s_mem, self.gpu_count, str(type(self)))
             self.status = Status.WAIT

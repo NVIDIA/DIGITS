@@ -44,8 +44,9 @@ def pack_slurm_args(args,time_limit,cpu_count,mem,gpu_count,type):
 
     # set caffe to use all available gpus
     # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes\
-    if gpu_arg_idx:
-        args[gpu_arg_idx] = '--gpu=all'
+    if type == digits.model.tasks.TrainTask:
+        if gpu_arg_idx:
+            args[gpu_arg_idx] = '--gpu=all'
 
     if gpus == 0:
         args = ['salloc', '-t', str(time_limit), '-c', str(cpu_count),
