@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --parallel --with=python2,systemd --buildsystem=pybuild
+
+override_dh_auto_test:
+	:

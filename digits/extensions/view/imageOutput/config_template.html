@@ -1,0 +1,19 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<small>Display network output as an image.</small>
+
+<div class="form-group{{mark_errors([form.channel_order])}}">
+    {{ form.channel_order.label }}
+    {{ form.channel_order.tooltip }}
+    {{ form.channel_order(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.pixel_conversion])}}">
+    {{ form.pixel_conversion.label }}
+    {{ form.pixel_conversion.tooltip }}
+    {{ form.pixel_conversion(class='form-control') }}
+</div>

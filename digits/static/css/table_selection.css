@@ -1,0 +1,45 @@
+.table.selectable tr
+{
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+}
+.table.selectable tbody tr.selected td
+{
+    background-color:#B0BED9
+}
+.table {
+    width: 100%;
+    border: 0;
+    table-layout:fixed;
+    word-wrap:break-word;
+    border-collapse:collapse;
+}
+.table>tbody>tr {
+    background-color: #ffffff;
+}
+
+.table>tbody>tr>td,.table>thead>tr>th {
+    padding: 2px;
+    border-collapse: collapse;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.table>thead>tr>th {
+    cursor: pointer;
+}
+.table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th {
+    background-color: #f6f6f6;
+}
+.table-striped>tbody>tr:nth-child(even)>td, .table-striped>tbody>tr:nth-child(even)>th {
+    background-color: #ffffff;
+}
+tr.group-bar td {
+    cursor: pointer;
+    background-color: #ccccee;
+    border-radius: 4px;
+}

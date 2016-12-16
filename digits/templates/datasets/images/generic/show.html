@@ -1,0 +1,71 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "job.html" %}
+{% from "helper.html" import serve_file %}
+
+{% macro print_analyze_db_task(task) %}
+<div class="panel-heading">
+    <h4>{{task.name()}}</h4>
+</div>
+<div class="panel-body">
+    <dl>
+        <dt>Database</dt>
+        <dd>{{task.database}}</dd>
+    </dl>
+    <dl>
+        <dt>Image Count</dt>
+        <dd>
+        {% if task.image_count %}
+        {{ task.image_count }}
+        {% else %}
+        <i>?</i>
+        {% endif %}
+        </dd>
+        <dt>Image Dimensions</dt>
+        <dd>
+        {% if task.image_width and task.image_height and task.image_channels %}
+        {{task.image_width}}x{{task.image_height}}x{{task.image_channels}} (Width x Height x Channels)
+        {% else %}
+        <i>?</i>
+        {% endif %}
+        </dd>
+        {% if task.analyze_db_log_file %}
+        <dt>DB analysis log file</dt>
+        <dd>{{serve_file(task, task.analyze_db_log_file)}}</dd>
+        {% endif %}
+    </dl>
+</div>
+{% endmacro %}
+
+{% block job_content %}
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Job Information</h4>
+            </div>
+            <div class="panel-body">
+                <dl>
+                    <dt>Job Directory</dt>
+                    <dd>{{job.dir()}}</dd>
+                    <dt>Dataset size</dt>
+                    <dd>{{job.disk_size_fmt()}}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for task in job.analyze_db_tasks() %}
+<div class="row">
+    <div class="col-sm-12">
+        <div id="{{task.html_id()}}" class="panel panel-default">
+            {{ print_analyze_db_task(task) }}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+

@@ -1,0 +1,57 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+<ul class="nav nav-tabs" id="stdnetRole">
+    {% for fw in frameworks %}
+    <li id="{{ fw.get_id() }}"><a href="#{{ fw.get_id() }}_standard" data-toggle="tab">{{ fw.get_name() }}</a></li>
+    {% endfor %}
+</ul>
+<div id="network-tab-standard-contents" class="tab-pane active">
+    <script>
+        $('#stdnetRole li').first().addClass("active");
+        $('#stdnetRole li').on('click', function(e) {
+             $(this).addClass('active');
+             $(this).siblings().removeClass('active');
+             setFramework($(this).attr('id'));
+        });
+    </script>
+    <table class="table">
+        <tr>
+            <th>Network</th>
+            <th>Details</th>
+            <th>Intended image size</th>
+            <th></th>
+        </tr>
+        {% for network in form.standard_networks %}
+        <tr>
+            <td>{{network}} {{network.label}}</td>
+            {% if network.data == 'lenet' %}
+            <td>
+                <a href="http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf" target="_blank">Original paper</a>
+                [1998]
+            </td>
+            <td>28x28 (gray)</td>
+            {% elif network.data == 'alexnet' %}
+            <td>
+                <a href="http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional" target="_blank">Original paper</a>
+                [2012]
+            </td>
+            <td>256x256</td>
+            {% elif network.data == 'vgg-16' %}
+            <td>
+                <a href="http://arxiv.org/abs/1409.1556" target="_blank">Original paper</a>
+                [2014]
+            </td>
+            <td>256x256</td>
+            {% elif network.data == 'googlenet' %}
+            <td>
+                <a href="http://arxiv.org/abs/1409.4842" target="_blank">Original paper</a>
+                [2014]
+            </td>
+            <td>256x256</td>
+            {% else %}
+            <td></td><td>?</td>
+            {% endif %}
+            <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}');">Customize</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>

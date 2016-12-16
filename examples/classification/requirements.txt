@@ -1,0 +1,4 @@
+Pillow>=2.3.0
+numpy>=1.7
+scipy>=0.13.3
+protobuf>=2.5.0

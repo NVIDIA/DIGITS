@@ -1,0 +1,265 @@
+<!-- {# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #} -->
+
+<script>
+ // Create image filters
+ Filters = {};
+ Filters.get_canvas = function(width, height) {
+     var canvas = document.createElement('canvas');
+     canvas.width = width;
+     canvas.height = height;
+     return canvas;
+ };
+
+ Filters.get_pixels = function(image) {
+     var canvas = this.get_canvas(image.width, image.height);
+     var context = canvas.getContext('2d');
+     context.drawImage(image, 0, 0);
+     return context.getImageData(0, 0, canvas.width, canvas.height);
+ };
+
+ Filters.filter_image = function(filter, image, var_args) {
+     var args = [this.get_pixels(image)];
+     for (var i = 2; i < arguments.length; i++) {
+         args.push(arguments[i]);
+     }
+     return filter.apply(null, args);
+ };
+
+ Filters.desaturate = function(pixels, desaturation) {
+     var d = pixels.data;
+     for (var i = 0; i < d.length; i += 4) {
+         var r = d[i];
+         var g = d[i+1];
+         var b = d[i+2];
+         var v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+         d[i]   = r + (v - r) * desaturation;
+         d[i+1] = g + (v - g) * desaturation;
+         d[i+2] = b + (v - b) * desaturation;
+     }
+     return pixels;
+ };
+
+ // Add a bounding box draw method to the canvas
+ CanvasRenderingContext2D.prototype.draw_bbox = function(bbox, color, opacity) {
+     this.globalAlpha = opacity;
+     this.fillStyle = color;
+     this.fillRect(bbox[0],
+                   bbox[1],
+                   bbox[2] - bbox[0],
+                   bbox[3] - bbox[1]);
+     this.globalAlpha = 1.0;
+     this.strokeStyle = color;
+     this.strokeRect(bbox[0],
+                     bbox[1],
+                     bbox[2] - bbox[0],
+                     bbox[3] - bbox[1]);
+ }
+
+ // Add a text to bounding box
+ CanvasRenderingContext2D.prototype.draw_text = function(bbox, color, scale, text) {
+     this.globalAlpha = 1.0;
+     this.fillStyle = color;
+     this.strokeStyle = color;
+     this.font = Math.round(11 * scale) + "px Arial";
+     // move text because of lineWidth and decenders
+     this.fillText(text,
+                   bbox[0] - this.lineWidth / 2,
+                   bbox[1] - this.lineWidth / 2 - scale * 4);
+ }
+
+ // Angularjs app, visualization_app
+ var app = angular.module('visualization_app', ['ngStorage']);
+
+ // Controller to handle global display attributes
+ app.controller('display_controller',
+                ['$scope', '$rootScope', '$localStorage',
+                 function($scope, $rootScope, $localStorage) {
+                     $rootScope.storage = $localStorage.$default({
+                         line_width: 2,
+                         desaturation: 0,
+                         opacity: 30,
+                     });
+                     // Broadcast to child scopes that the line width has changed.
+                     $scope.$watch(function(){
+                         return $localStorage.line_width;
+                     }, function(new_line_width, old_line_width){
+                         $rootScope.$broadcast('draw_settings_changed');
+                     });
+                     // Broadcast to child scopes that the desaturation has changed.
+                     $scope.$watch(function(){
+                         return $localStorage.desaturation;
+                     }, function(new_desaturation, old_desaturation){
+                         $rootScope.$broadcast('draw_settings_changed');
+                     });
+                     // Broadcast to child scopes that the opacity has changed.
+                     $scope.$watch(function(){
+                         return $localStorage.opacity;
+                     }, function(new_opacity, old_opacity){
+                         $rootScope.$broadcast('draw_settings_changed');
+                     });
+                 }]);
+
+ // Controller to draw bounding boxes on an image.
+ // The line_width is adjusted by the display_controller and the canvas width.
+ app.controller('bbox_controller', ['$scope','$rootScope', function($scope, $rootScope) {
+     $scope.canvas_width = 0;
+
+     // The display_controller has broadcast that the draw settings change have changed
+     $scope.$on('draw_settings_changed', function(event) {
+         $scope.draw_bboxes_and_image();
+     });
+     
+     // may need to rewrite
+     function hsv(h, s, v) {
+         var hp = h * 6;
+         var c = v * s
+         var x = c * (1 - Math.abs(hp % 2 - 1));
+         var rgb = [0, 0, 0];
+         switch (Math.floor(hp % 6)) {
+             case 0: rgb = [c, x, 0]; break;
+             case 1: rgb = [x, c, 0]; break;
+             case 2: rgb = [0, c, x]; break;
+             case 3: rgb = [0, x, c]; break;
+             case 4: rgb = [x, 0, c]; break;
+             case 5: rgb = [c, 0, x]; break;
+         }
+         var m = v - c;
+         r = Math.round((rgb[0] + m) * 255);
+         g = Math.round((rgb[1] + m) * 255);
+         b = Math.round((rgb[2] + m) * 255);
+         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+     }
+
+     $scope.get_color = function(i) {
+         if (i == 0) {
+             var h = 0.0;
+         } else {
+             // Divide the hsv into n parts depending on the input. First cut
+             // in half, then quarters, then eighths, ...
+             var d = Math.pow( 2, Math.floor( Math.log(i) / Math.log(2) ) + 1);
+             // Then iterate though the odd sections 1/8, 3/8, 5/8, ...
+             var n = 2 * i - d + 1;
+             var h = n / d;
+         }
+         return hsv(h, 1, 1);
+     };
+
+
+     // Draw the image and the bounding boxes with line_width and desaturated by desaturation.
+     $scope.draw_bboxes = function(image, bboxes) {
+         var canvas = document.getElementById($scope.canvas_id);
+         var context = canvas.getContext('2d'); 
+         
+         // first set the size of the canvas
+         canvas.width = image.width;
+         canvas.height = image.height;
+
+         // draw the image
+         if (false) {
+             context.drawImage(image, 0, 0);
+         } else {
+             var desaturation = $rootScope.storage.desaturation / 100.0;
+             var image_data = Filters.filter_image(Filters.desaturate, image, desaturation);
+             context.putImageData(image_data, 0, 0);
+         }
+         
+         // scale the line width
+         $scope.canvas_width = $('#' + $scope.canvas_id).width();
+         var scale = image.width / $scope.canvas_width;
+         context.lineWidth = $rootScope.storage.line_width * scale;
+
+         // rectangle fill opacity
+         var opacity = $rootScope.storage.opacity / 100.0;
+
+         // draw the bounding boxes
+         var keys = Object.keys(bboxes);
+         keys.sort();
+         for (var k = 0; k < keys.length; k++) {
+             var color = $scope.get_color(k);
+             for (var i = 0; i < bboxes[keys[k]].length; i++) {
+                 context.draw_bbox(bboxes[keys[k]][i], color, opacity);
+             }
+         }
+     }
+
+     // Draw after the image data is loaded
+     $scope.draw_bboxes_and_image = function() {
+         var image = new Image;
+         image.onload = function() {
+             $scope.draw_bboxes(image, $scope.bboxes);
+         }
+         image.src = $scope.image;
+     }
+
+     // Redraw if the canvas width has changed because the line_width is
+     // adjusted by the inverse of the canvas_width to keep apparent
+     // width constant.
+     $scope.resize_canvas = function() {
+         if ($scope.canvas_width != $('#' + $scope.canvas_id).width()) {
+             $scope.draw_bboxes_and_image();
+         }
+     }
+ }]);
+
+ // A directive to notify the bbox_controllers that the window has resized.
+ app.directive('resize', function ($window) {
+     return function (scope, element, attr) {
+         
+         var w = angular.element($window);
+         scope.$watch(function () {
+             return {
+                 'w': w.width()
+             };
+         }, function (newValue, oldValue) {
+             scope.resize_canvas();
+         }, true);
+
+         w.bind('resize', function () {
+             scope.$apply();
+         });
+     }
+ }); 
+
+ // Because jinja uses {{ and }}, tell angular to use {[ and ]}
+ app.config(['$interpolateProvider', function($interpolateProvider) {
+     $interpolateProvider.startSymbol('{[');
+     $interpolateProvider.endSymbol(']}');
+ }]);
+</script>
+
+<div ng-app="visualization_app">
+    <div ng-controller="display_controller as dispaly">
+        <!-- The ngCloak directive is used to prevent the Angular html
+        template from being briefly displayed by the browser in its raw
+        (uncompiled) form while your application is loading. Use this
+        directive to avoid the undesirable flicker effect caused by
+        the html template display. -->
+        <!-- Display Options -->
+        <div class="pull-right">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="button-group pull-right">
+                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-cog"></span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu"
+                            style="padding:10px"
+                            ng-click="$event.stopPropagation()">
+                            <li>
+                                <small>Line Width {[storage.line_width]}</small>
+                                <input type="range" min="1" max="4" ng-model="storage.line_width">
+                            </li>
+                            <li>
+                                <small>Desaturation {[storage.desaturation]}%</small>
+                                <input type="range" min="0" max="100" step="10" ng-model="storage.desaturation">
+                            </li>
+                            <li>
+                                <small>Opacity {[storage.opacity]}%</small>
+                                <input type="range" min="0" max="100" step="5" ng-model="storage.opacity">
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>

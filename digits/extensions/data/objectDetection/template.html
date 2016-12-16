@@ -1,0 +1,86 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<h3>Object Detection Dataset Options</h3>
+
+<small>
+    Images can be stored in any of the supported file formats ('.png','.jpg','.jpeg','.bmp','.ppm').
+</small>
+
+<div class="form-group{{mark_errors([form.train_image_folder])}}">
+    {{ form.train_image_folder.label }}
+    {{ form.train_image_folder.tooltip }}
+    {{ form.train_image_folder(class='form-control autocomplete_path', placeholder='folder')}}
+</div>
+
+<small>
+    Label files are expected to have the .txt extension.
+    For example if an image file is named foo.png the corresponding label file should be foo.txt.
+</small>
+
+<div class="form-group{{mark_errors([form.train_label_folder])}}">
+    {{ form.train_label_folder.label }}
+    {{ form.train_label_folder.tooltip }}
+    {{ form.train_label_folder(class='form-control autocomplete_path', placeholder='folder')}}
+</div>
+
+<div class="form-group{{mark_errors([form.val_image_folder])}}">
+    {{ form.val_image_folder.label }}
+    {{ form.val_image_folder.tooltip }}
+    {{ form.val_image_folder(class='form-control autocomplete_path', placeholder='folder')}}
+</div>
+
+<div class="form-group{{mark_errors([form.val_label_folder])}}">
+    {{ form.val_label_folder.label }}
+    {{ form.val_label_folder.tooltip }}
+    {{ form.val_label_folder(class='form-control autocomplete_path', placeholder='folder')}}
+</div>
+
+<div class="form-group{{mark_errors([form.padding_image_width, form.padding_image_height])}}">
+    <label>Pad image (Width x Height)</label>
+    <span name="pad_dims_explanation"
+          class="explanation-tooltip glyphicon glyphicon-question-sign"
+          data-container="body"
+          title="If specified, input images will be padded to that dimension. Pad dimensions should be greater than those of input images."
+          ></span>
+    <div class="input-group">
+        {{ form.padding_image_width(size=4, placeholder='width', class='form-control') }}
+        <span class="input-group-addon">x</span>
+        {{ form.padding_image_height(size=4, placeholder='height', class='form-control') }}
+    </div>
+</div>
+
+<div class="form-group{{mark_errors([form.resize_image_width, form.resize_image_height])}}">
+    <label>Resize image (Width x Height)</label>
+    <span name="resize_dims_explanation"
+          class="explanation-tooltip glyphicon glyphicon-question-sign"
+          data-container="body"
+          title="If specified, input images will be squashed to that dimension after padding."
+          ></span>
+    <div class="input-group">
+        {{ form.resize_image_width(size=4, placeholder='width', class='form-control') }}
+        <span class="input-group-addon">x</span>
+        {{ form.resize_image_height(size=4, placeholder='height', class='form-control') }}
+    </div>
+</div>
+
+<div class="form-group{{mark_errors([form.channel_conversion])}}">
+    {{ form.channel_conversion.label }}
+    {{ form.channel_conversion.tooltip }}
+    {{ form.channel_conversion(class='form-control')}}
+</div>
+
+<div class="form-group{{mark_errors([form.val_min_box_size])}}">
+    {{ form.val_min_box_size.label }}
+    {{ form.val_min_box_size.tooltip }}
+    {{ form.val_min_box_size(class='form-control')}}
+</div>
+
+<div class="form-group{{mark_errors([form.custom_classes])}}">
+    {{ form.custom_classes.label }}
+    {{ form.custom_classes.tooltip }}
+    {{ form.custom_classes(class='form-control')}}
+</div>

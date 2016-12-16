@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    purge)
+        # Remove all job data
+        rm -rf /var/lib/digits/jobs /var/log/digits
+        ;;
+
+    remove|upgrade|disappear|failed-upgrade|abort-install|abort-upgrade)
+        ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#

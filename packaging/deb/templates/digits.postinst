@@ -1,0 +1,51 @@
+#!/bin/sh
+set -e
+
+# Read port from debconf
+. /usr/share/debconf/confmodule
+db_get digits/port
+PORT="$RET"
+db_stop
+
+#DEBHELPER#
+
+case "$1" in
+    configure)
+        # Update permissions on new directories
+        chown www-data /var/lib/digits/jobs /var/log/digits
+
+        # Disable default NGINX site
+        NGINX_NEEDS_RELOAD=false
+        DEFAULT_SITE=/etc/nginx/sites-enabled/default
+        if [ -L "$DEFAULT_SITE" ]
+        then
+            echo WARNING - Disabling default nginx site at $DEFAULT_SITE
+            rm -f $DEFAULT_SITE
+            NGINX_NEEDS_RELOAD=true
+        fi
+
+        # Enable nginx site
+        SITE_FILE=/etc/nginx/sites-available/digits.nginx-site
+        SITE_LINK=/etc/nginx/sites-enabled/digits.nginx-site
+        if [ "$PORT" != "-1" ]
+        then
+            sed "s/.*AUTOCONFIG port.*/    listen ${PORT}; #AUTOCONFIG port (DO NOT DELETE THIS LINE)/" $SITE_FILE -i
+            rm -f $SITE_LINK
+            ln -s $SITE_FILE $SITE_LINK
+            NGINX_NEEDS_RELOAD=true
+        fi
+        if [ "$NGINX_NEEDS_RELOAD" = true ]
+        then
+            service nginx reload
+        fi
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+

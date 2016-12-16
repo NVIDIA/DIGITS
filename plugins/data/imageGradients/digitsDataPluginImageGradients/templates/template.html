@@ -1,0 +1,39 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<div class="form-group{{mark_errors([form.train_image_count])}}">
+    {{ form.train_image_count.label }}
+    {{ form.train_image_count.tooltip }}
+    {{ form.train_image_count(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.val_image_count])}}">
+    {{ form.val_image_count.label }}
+    {{ form.val_image_count.tooltip }}
+    {{ form.val_image_count(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.test_image_count])}}">
+    {{ form.test_image_count.label }}
+    {{ form.test_image_count.tooltip }}
+    {{ form.test_image_count(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.image_width, form.image_height])}}">
+    <label>Image size (Width x Height)</label>
+    <span name="size_dims_explanation"
+          class="explanation-tooltip glyphicon glyphicon-question-sign"
+          data-container="body"
+          title="Input images will be resized to fit."
+          ></span>
+    <div class="input-group">
+        {{ form.image_width(size=4, placeholder='width', class='form-control') }}
+        <span class="input-group-addon">x</span>
+        {{ form.image_height(size=4, placeholder='height', class='form-control') }}
+    </div>
+</div>
+
+

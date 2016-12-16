@@ -1,0 +1,42 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+<div class="tab-content">
+    {% set batch_size = 10 %}
+    {% for batch in form.pretrained_networks|batch(batch_size) %}
+    {% set batch_loop_index = loop.index0 %}
+    <div class="tab-pane{{' active' if loop.index==1}}" id="pretrained_networks-page-{{loop.index}}">
+
+        <table class="table">
+            <tr>
+                <th>Pretrained Model</th>
+                <th></th>
+            </tr>
+            {% for network in batch %}
+            {% set inner_index = batch_loop_index * batch_size + loop.index0 %}
+            {% set pretrained_job = pretrained_networks_fullinfo[inner_index] %}
+            <tr>
+                <td>
+                    {{network}}
+                    {{network.label}}
+                </td>
+                <td><a class="btn btn-sm" onClick="customizeNetwork('{{network.data}}',undefined,'{{pretrained_job.framework}}');">Customize</a></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td><i>None</i></td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </div>
+    {% endfor %}
+</div>
+
+{% if form.pretrained_networks.choices|length > batch_size %}
+<div class="text-center">
+    <ul class="pagination">
+        {% for i in range((form.pretrained_networks.choices|length/batch_size)|round(0,'ceil')|int) %}
+        <li class="{{'active' if i==0}}"><a href="#pretrained_networks-page-{{i+1}}" data-toggle="tab">{{i+1}}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

@@ -1,0 +1,41 @@
+<html>
+<title>Failed to connect to DIGITS</title>
+<body>
+<h1>Error: Unable to connect to DIGITS</h1>
+
+<h3>Restart the server</h3>
+<p>
+On Ubuntu 14.04, use this command to restart the server:
+</p>
+<pre>
+    sudo service digits restart
+</pre>
+<p>
+On Ubuntu 16.04, use this command to restart the server:
+</p>
+<pre>
+    sudo systemctl restart digits
+</pre>
+
+<h3>Check the logs for errors</h3>
+<p>
+If you are still encountering problems after restarting, check the logs for errors.
+</p>
+<pre>
+    cat /var/log/digits/digits.log
+</pre>
+</p>
+<p>
+For additional messsages on Ubuntu 14.04:
+</p>
+<pre>
+    cat /var/log/upstart/digits.log
+</pre>
+<p>
+For additional messages on Ubuntu 16.04:
+</p>
+<pre>
+    journalctl -u digits.service
+</pre>
+</body>
+</html>

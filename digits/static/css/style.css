@@ -1,0 +1,152 @@
+/* Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved. */
+
+body {
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+
+dl dd {
+    /* I've got some long filenames */
+    word-wrap: break-word;
+}
+
+div.progress div.progress-bar {
+    min-width: 20px;
+}
+
+.wide-bootbox > .modal-dialog {
+    width: 70%!important;
+}
+
+/* Upload Button */
+.file-upload {
+    position: relative;
+    display: inline-block !important;
+    overflow: hidden;
+}
+.file-upload input.upload {
+    position: absolute;
+    display: block;
+    top: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+}
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+/* Spinning Glyphicon */
+.glyphicon-spin {
+  -webkit-animation: spin 1000ms infinite linear;
+  animation: spin 1000ms infinite linear;
+}
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+
+
+path.c3-line {
+    stroke-width: 2px;
+}
+
+/* Hide all data transformation and augmentation by default */
+.data_transformation_input{ display:none; } 
+.data_augmentation_input{ display:none; } 
+
+.autocomplete-suggestions { border: 1px solid #999; background: #FFF; overflow: auto; }
+.autocomplete-suggestion { padding: 2px 5px; white-space: nowrap; overflow: visible; }
+.autocomplete-selected { background: #F0F0F0; }
+.autocomplete-suggestions strong { font-weight: normal; color: #3399FF; }
+.autocomplete-group { padding: 2px 5px; }
+.autocomplete-group strong { display: block; border-bottom: 1px solid #000; }
+
+/* To fix the tooltip in the sparkline */
+.jqstooltip {
+  -webkit-box-sizing: content-box;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+
+input[readonly] {
+    background-color: white !important;
+    cursor: text !important;
+}
+
+input[readonly]:disabled {
+    background-color: #EEE !important;
+    cursor: not-allowed !important;
+}
+
+a.active {
+	font-weight: 900;
+	color: black;
+}
+
+ul.inline li {
+	display: inline-block;
+}
+
+#ace-editor {
+    position: relative;
+    height: 600px;
+    border-radius: 5px;
+    margin-top:10px;
+    margin-bottom:10px;
+}

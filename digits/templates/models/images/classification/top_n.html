@@ -1,0 +1,43 @@
+{# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "job.html" %}
+
+{% block nav %}
+<li><a href="{{url_for('digits.model.views.show', job_id=model_job.id())}}">{{model_job.job_type()}}</a></li>
+<li class="active"><a>Top N</a></li>
+{% endblock %}
+
+{% block job_content %}
+
+<div class="page-header">
+    <h1>Top N Predictions per Category</h1>
+</div>
+
+{% if not results %}
+<div class="alert alert-danger">
+        <p>Classification failed, see job log</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block job_content_details %}
+
+{% if results %}
+<table class="table">
+    <tr>
+        <th>Category</th>
+        <th>Top images for this category</th>
+    </tr>
+    {% for result in results %}
+    <tr>
+        <td><h3>{{result[0]}}</h3></td>
+        <td>
+            <img src="{{result[1]}}">
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

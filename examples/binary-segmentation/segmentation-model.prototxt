@@ -1,0 +1,143 @@
+name: "SRCNN"
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  include {
+    phase: TRAIN
+  }
+  data_param {
+    batch_size: 4
+    backend: LMDB
+  }
+}
+layer {
+  name: "label"
+  type: "Data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  data_param {
+    batch_size: 4
+    backend: LMDB
+  }
+}
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  include {
+    phase: TEST
+  }
+  data_param {
+    batch_size: 4
+    backend: LMDB
+  }
+}
+layer {
+  name: "label"
+  type: "Data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  data_param {
+    batch_size: 4
+    backend: LMDB
+  }
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1.0
+  }
+  param {
+    lr_mult: 0.10000000149
+  }
+  convolution_param {
+    num_output: 32
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.0010000000475
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+}
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2"
+  param {
+    lr_mult: 1.0
+  }
+  param {
+    lr_mult: 0.10000000149
+  }
+  convolution_param {
+    num_output: 1024
+    pad: 0
+    kernel_size: 16
+    stride: 16
+    weight_filler {
+      type: "gaussian"
+      std: 0.0010000000475
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu2"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+}
+layer {
+  name: "upsample"
+  type: "Deconvolution"
+  bottom: "conv2"
+  top: "upsample"
+  param {
+    lr_mult: 1.0
+  }
+  convolution_param {
+    num_output: 1
+    pad: 0
+    kernel_size: 16
+    stride: 16
+    bias_filler {
+      type: "constant"
+      value: 128.0
+    }
+  }
+}
+layer {
+  name: "lossL1"
+  type: "L1Loss"
+  bottom: "upsample"
+  bottom: "label"
+  top: "lossL1"
+  loss_weight: 1.0
+  exclude {
+    stage: "deploy"
+  }
+}

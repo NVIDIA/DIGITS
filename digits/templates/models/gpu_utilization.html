@@ -1,0 +1,37 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
+<h1>Hardware</h1>
+{% for info in data_gpu %}
+<h3>{{info.name}} (#{{info.index}})</h3>
+<dl>
+    {% if 'memory' in info %}
+    <dt>Memory</dt>
+    <dd>
+        {{info.memory.used|sizeof_fmt}} / {{info.memory.total|sizeof_fmt}}
+        ({{(100.0 * info.memory.used / info.memory.total)|round(1)}}%)
+    </dd>
+    {% endif %}
+    {% if 'utilization' in info %}
+    <dt>GPU Utilization</dt>
+    <dd>{{info.utilization.gpu}}%</dd>
+    {% endif %}
+    {% if 'temperature' in info %}
+    <dt>Temperature</dt>
+    <dd>{{info.temperature}} &deg;C</dd>
+    {% endif %}
+</dl>
+{% endfor %}
+{% if data_cpu %}
+<h3>Process {% if 'pid' in data_cpu %}#{{data_cpu.pid}}{% endif %}</h3>
+<dl>
+    <dt>CPU Utilization </dt>
+    {% if 'cpu_pct' in data_cpu %}
+    <dd>{{data_cpu.cpu_pct}}%</dd>
+    {% endif %}
+    {% if 'mem_used' in data_cpu %}
+    <dt>Memory</dt>
+    <dd>
+        {{data_cpu.mem_used|sizeof_fmt}} {% if 'mem_pct' in data_cpu %} ({{data_cpu.mem_pct|round(1)}}%) {% endif %}
+    </dd>
+    {% endif %}
+</dl>
+{% endif %}

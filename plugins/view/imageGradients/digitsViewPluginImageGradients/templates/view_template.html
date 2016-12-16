@@ -1,0 +1,18 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<div class="col-sm-6">
+    <img src="{{image}}" style="max-width:100%;" />
+</div>
+<div class="col-sm-6">
+    <ul>
+        <li>Gradx: {{ gradients[0] }}</li>
+        <li>Grady: {{ gradients[1] }}</li>
+    </ul>
+</div>
+
+
+

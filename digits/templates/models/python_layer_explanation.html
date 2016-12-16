@@ -1,0 +1,75 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+<h1>Using Python layers</h1>
+
+<p>
+    Caffe lets you define custom layers with Python.
+    Python layers are obviously much slower than their C++ counterparts, but are easy to write and test quickly since using them doesn't require recompilation.
+    DIGITS moves some files around for you so that you can specify different Python layers for each network.
+</p>
+<p>
+    The BVLC and DIGITS documentation online has detailed information and tutorials about how to use these layers.
+    Some of that information has been re-created here for your convenience.
+</p>
+
+<p>
+    First, you'll need to create a Python file which defines one or more layers.
+    As an example, here is a layer which re-creates the functionality of the standard Accuracy layer using JSON-encoded parameters:
+</p>
+<pre>
+import caffe
+import json
+
+class AccuracyLayer(caffe.Layer):
+    def setup(self, bottom, top):
+        if hasattr(self, 'param_str') and self.param_str:
+            params = json.loads(self.param_str)
+        else:
+            params = {}
+        self.top_k = params.get('top_k', 1)
+
+    def reshape(self, bottom, top):
+        top[0].reshape(1)
+
+    def forward(self, bottom, top):
+        # Renaming for clarity
+        predictions = bottom[0].data
+        ground_truth = bottom[1].data
+
+        num_correct = 0.0
+
+        # NumPy magic - get top K predictions for each datum
+        top_predictions = (-predictions).argsort()[:, :self.top_k]
+        for batch_index, predictions in enumerate(top_predictions):
+            if ground_truth[batch_index] in predictions:
+                num_correct += 1
+
+        # Accuracy is averaged over the batch
+        top[0].data[0] = num_correct / len(ground_truth)
+
+    def backward(self, top, propagate_down, bottom):
+        pass
+</pre>
+
+<p class="alert alert-warning">
+    <b>NOTE:</b> The uploaded file will be renamed to <b>digits_python_layers.py</b>, discarding the original filename.
+</p>
+
+<p>
+    To add the layer to your network, include this prototxt snippet in your custom network definition:
+</p>
+<pre>
+layer {
+    name: "accuracy"
+    type: "Python"
+    bottom: "pred"      # These blob names may differ in your network
+    bottom: "label"
+    top: "accuracy"
+    python_param {
+        module: "digits_python_layers"  # File name
+        layer: "AccuracyLayer"          # Class name
+        param_str: "{\"top_k\": 1}"
+    }
+    include { stage: "val" }
+}
+</pre>

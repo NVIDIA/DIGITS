@@ -1,0 +1,138 @@
+# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+
+os: linux
+dist: trusty
+sudo: required
+language: python
+python: 2.7
+
+env:
+    global:
+        - OPENBLAS_ROOT=~/openblas
+        - CAFFE_ROOT=~/caffe
+        - TORCH_ROOT=~/torch
+        - secure: "WSqrE+PQm76DdoRLRGKTK6fRWfXZjIb0BWCZm3IgHgFO7OE6fcK2tBnpDNNw4XQjmo27FFWlEhxN32g18P84n5PvErHaH65IuS9Nv6FkLlPXZlVqGNxbPmEA4oTkD/6Y6kZyZWZtLh2+/1ijuzQAPnIy/4BEuL8pdO+PsoJ9hYM="
+    matrix:
+        - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=NVIDIA
+        - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=BVLC
+        - DIGITS_TEST_FRAMEWORK=torch
+        - DIGITS_TEST_FRAMEWORK=none
+
+matrix:
+    include:
+        - env: LINT_CHECK
+          addons:
+              apt:
+                  packages:
+                      - closure-linter
+                      - python-flake8
+          install: true
+          script:
+              - ./digits-lint
+
+        - env: DIST
+          services: docker
+          addons:
+              apt:
+                  packages:
+                      - devscripts
+                      - debhelper
+                      - dput
+                      - gnupg
+          install:
+              - git remote add nvidia-digits-upstream https://github.com/NVIDIA/DIGITS.git  # for forks
+              - git fetch nvidia-digits-upstream --tags
+              - pip install twine
+          script:
+              - DEBIAN_REVISION=1ppa1~trusty ./packaging/deb/build.sh
+              - DEBIAN_REVISION=1ppa1~xenial ./packaging/deb/build.sh
+              - python setup.py sdist bdist_wheel
+          deploy:
+              - provider: script
+                skip_cleanup: true
+                script: ./scripts/travis/ppa-upload.sh stable
+                on:
+                    repo: NVIDIA/DIGITS
+                    tags: true
+              - provider: script
+                skip_cleanup: true
+                script: ./scripts/travis/ppa-upload.sh dev
+                on:
+                    repo: NVIDIA/DIGITS
+                    branch: master
+              - provider: script  # not pypi because travis-ci/dpl#334
+                skip_cleanup: true
+                script: ./scripts/travis/pypi-upload.sh
+                on:
+                    repo: NVIDIA/DIGITS
+                    tags: true
+
+cache:
+    apt: true
+    directories:
+        - $OPENBLAS_ROOT
+        - $CAFFE_ROOT
+        - $TORCH_ROOT
+
+addons:
+    apt:
+        packages:
+            - build-essential
+            - cmake
+            - cython
+            - git
+            - graphviz
+            - libboost-filesystem-dev
+            - libboost-python-dev
+            - libboost-system-dev
+            - libboost-thread-dev
+            - libgflags-dev
+            - libgoogle-glog-dev
+            - libhdf5-serial-dev
+            - libleveldb-dev
+            - liblmdb-dev
+            - libopencv-dev
+            - libprotobuf-dev
+            - libsnappy-dev
+            - protobuf-compiler
+            - python-dev
+            - python-flask
+            - python-gevent
+            - python-gevent-websocket
+            - python-gflags
+            - python-h5py
+            - python-matplotlib
+            - python-mock
+            - python-nose
+            - python-numpy
+            - python-opencv
+            - python-pil
+            - python-pip
+            - python-protobuf
+            - python-psutil
+            - python-pydot
+            - python-requests
+            - python-scipy
+            - python-six
+            - python-skimage
+
+before_install:
+    - deactivate
+    - virtualenv --system-site-packages ~/venv
+    - source ~/venv/bin/activate
+
+install:
+    - mkdir -p ~/.config/matplotlib
+    - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
+    - ./scripts/travis/install-openblas.sh $OPENBLAS_ROOT
+    - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
+    - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
+    - pip install -r ./requirements.txt
+    - pip install -r ./requirements_test.txt
+    - pip install -e .
+    - pip install -e ./plugins/data/imageGradients
+    - pip install -e ./plugins/view/imageGradients
+
+script:
+    - ./digits-test -v
+

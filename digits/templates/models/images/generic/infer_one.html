@@ -1,0 +1,162 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
+{% extends "job.html" %}
+
+{% block head %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/3rdparty/angular-1.5.3.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/3rdparty/ngStorage-0.3.10.min.js') }}"></script>
+{% endblock %}
+
+{% block nav %}
+<li><a href="{{url_for('digits.model.views.show', job_id=model_job.id())}}">{{model_job.name()}}</a></li>
+<li class="active"><a>Test One</a></li>
+{% endblock %}
+
+{% block job_content %}
+
+<script src="{{ url_for('static', filename='js/3rdparty/jquery.elevateZoom-3.0.8.min.js', ver=dir_hash) }}"></script>
+
+<div class="page-header">
+    <h1>
+        {{model_job.name()}}
+        <small>
+            {{model_job.job_type()}}
+        </small>
+    </h1>
+</div>
+
+{% if header_html %}
+<div class="row">
+    {{header_html|safe}}
+</div>
+{% endif %}
+
+{% if app_begin_html %}
+{{app_begin_html|safe}}
+{% endif %}
+
+{% if image_src %}
+<div class="row">
+    <h3>Source image</h3>
+    <img src="{{image_src}}" style="max-width:100%;" />
+</div>
+<div class="row">
+    <h3>Inference visualization</h3>
+    {{ inference_view_html|safe }}
+</div>
+{% else %}
+<div class="row">
+    <div class="alert alert-danger">
+        <p>Inference failed, see job log</p>
+    </div>
+</div>
+{% endif %}
+
+{% if app_end_html %}
+{{app_end_html|safe}}
+{% endif %}
+
+{% endblock %}
+
+{% block job_content_details %}
+
+<script type="text/javascript">
+    function drawHistogram(id, data) {
+        c3.generate({
+            bindto: id,
+            size: {height: 200},
+            data: {
+                columns: [
+                    ['Count'].concat(data[0]),
+                    ['Value'].concat(data[1]),
+                ],
+                x: 'Value',
+                type: 'area-spline',
+            },
+            axis: {
+                x: {
+                    label: {
+                        text: 'Value',
+                        position: 'outer-center',
+                    },
+                    tick: {
+                        values: data[2],
+                        format: d3.format('.3g'),
+                    },
+                    padding: {left: 0},
+                },
+                y: {
+                    padding: {bottom: 0},
+                },
+            },
+            bar: {
+               width: {ratio: 0.2}
+            },
+            padding: {left: 20, right: 20},
+            legend: {hide: true},
+        });
+    }
+</script>
+<style>
+    div.histogram .c3-axis-y .tick {
+        display: none;
+    }
+</style>
+
+{% if visualizations %}
+<table class="table">
+    <tr>
+        <th>Description</th>
+        <th width="20%">Statistics</th>
+        <th>Visualization</th>
+    </tr>
+    {% for vis in visualizations %}
+    <tr>
+        <td>
+            <h3>"{{vis['name']}}"</h3>
+            <p>
+            {{vis['vis_type']}}
+            {% if 'layer_type' in vis %}
+            <small><i>({{vis['layer_type']}} layer)</i></small>
+            {% endif %}
+            </p>
+            {% if 'param_count' in vis %}
+            <p>
+            {{'{:,}'.format(vis['param_count'])}} learned parameters
+            </p>
+            {% endif %}
+        </td>
+        <td>
+            <b>Data shape:</b> {{vis['data_stats']['shape']}}<br>
+            <b>Mean:</b> {{vis['data_stats']['mean']}}<br>
+            <b>Std deviation:</b> {{vis['data_stats']['stddev']}}<br>
+            <div id="histogram-{{loop.index}}" class="histogram"></div>
+            <script>
+                drawHistogram("#histogram-{{loop.index}}", {{vis['data_stats']['histogram']}});
+            </script>
+        </td>
+        <td>
+            {% if vis['image_html'] %}
+            <img style="max-width:100%" src="{{vis['image_html']}}" id="vis_{{ loop.index }}"/>
+            <script>
+                $('#vis_{{ loop.index }}').elevateZoom({zoomType: "inner", cursor: "crosshair",
+                        zoomWindowFadeIn: 500, zoomWindowFadeOut: 750,
+                        scrollZoom: true, scrollZoomIncrement: 0.025});
+            </script>
+            {% else %}
+            <i>Not shown</i>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    <tr>
+        <td><i>Totals</i></td>
+        <td>
+            <b>Total learned parameters:</b>
+            {{'{:,}'.format(total_parameters)}}
+        </td>
+    </tr>
+</table>
+{% endif %}
+
+{% endblock %}
+

@@ -1,0 +1,105 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
+{% extends "job.html" %}
+
+{% block nav %}
+<li><a href="{{url_for('digits.model.views.show', job_id=model_job.id())}}">{{model_job.name()}}</a></li>
+<li class="active"><a>Classify Many</a></li>
+{% endblock %}
+
+{% block job_content %}
+
+<div class="page-header">
+    <h1>
+        {{model_job.name()}}
+        <small>
+            {{model_job.job_type()}}
+        </small>
+    </h1>
+</div>
+
+{% if not classifications %}
+<div class="alert alert-danger">
+        <p>Classification failed, see job log</p>
+</div>
+{% endif %}
+
+{% if show_ground_truth %}
+<div class="panel-heading">
+    <h4>Summary</h4>
+</div>
+<div class="panel-body">
+    <dl>
+        <dt>Top-1 accuracy</dt>
+        <dd>{{top1_accuracy}}%</dd>
+    </dl>
+    <dl>
+        <dt>Top-5 accuracy</dt>
+        <dd>{{top5_accuracy}}%</dd>
+    </dl>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block job_content_details %}
+
+{% if classifications %}
+    {% if show_ground_truth %}
+    <div class="panel-heading">
+        <h4>Confusion matrix</h4>
+    </div>
+    <table class="table">
+        <tr>
+            <th></th>
+            {% for label in labels %}
+                <th>{{label}}</th>
+            {% endfor %}
+            <th>Per-class accuracy</th>
+        </tr>
+        {% for row in confusion_matrix %}
+            {% set label_idx = loop.index0 %}
+            {% if per_class_accuracy[label_idx] is not none %}
+            <tr>
+                <th>{{labels[label_idx]}}</th>
+                {% for column in row %}
+                    {% set column_idx = loop.index[0] %}
+                    <td>{{column}}</td>
+                {% endfor %}
+                <td>{{per_class_accuracy[label_idx]}}%</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+    {% endif %}
+<div class="panel-heading">
+    <h4>All classifications</h4>
+</div>
+<table class="table">
+    <tr>
+        <td></td>
+        <th>Path</th>
+        {% if show_ground_truth %}<th>Ground truth</th>{% endif %}
+        <th colspan=10>Top predictions</th>
+    </tr>
+    {% for path in paths %}
+    {% set result = classifications[loop.index0] %}
+    {% set ground_truth = ground_truths[loop.index0] %}
+    <tr>
+        <td>{{loop.index}}</td>
+        <td>{{path}}</td>
+        {% if show_ground_truth %}<td>{% if ground_truth is not none%}{{ground_truth}}{% endif %}</td>{% endif %}
+        {% for r in result %}
+        <td align="right">
+            <b>{{r[0]}}</b>
+        </td>
+        <td align="left">
+            <span class="badge">{{r[1]}}%</span>
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}
+

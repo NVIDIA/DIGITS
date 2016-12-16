@@ -1,0 +1,8 @@
+include requirements*.txt
+recursive-include digits/templates *
+recursive-include digits/static *
+recursive-include digits/standard-networks *
+recursive-include digits/tools/torch *
+recursive-include digits/extensions *.css
+recursive-include digits/extensions *.html
+recursive-include digits/extensions *.js

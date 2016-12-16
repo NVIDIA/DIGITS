@@ -1,0 +1,107 @@
+{# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+<h1>Specifying a custom Caffe network</h1>
+
+<p>
+    Use this field to enter a Caffe network in .prototxt format.
+</p>
+
+<p>
+    Classification are special in a few ways:
+</p>
+<ul>
+    <li>
+        The Deploy network <b>must contain a Softmax layer</b>.
+        This should produce the only network output.
+    </li>
+    <li>
+        If any InnerProduct layers have left <i>num_output</i> unset, DIGITS will <b>fill it in for you automatically</b> with the number of classes in your dataset.
+    </li>
+    <li>
+        If any Accuracy layer has a <i>top_k</i> value that is smaller than the number of classes in your dataset, then that layer is <b>removed</b>.
+    </li>
+</ul>
+
+<p>
+    The network should include the necessary layers for all computation states - Train, Val and Deploy.
+    When searching for layers, the network will be set to one of these three states:
+</p>
+<ul>
+    <li>phase: TRAIN stage: "train"</li>
+    <li>phase: TEST stage: "val"</li>
+    <li>phase: TEST stage: "deploy"</li>
+</ul>
+<p>
+    Your layer's include and exclude rules should be set properly to be picked up by the desired computation state[s].
+    You can look at the standard networks for examples.
+    In addition, since there are many ways to specify the rules, here's a table that you may find useful:
+</p>
+<table class="table">
+    <tr>
+        <th>Rule</th>
+        <th>Train</th>
+        <th>Val</th>
+        <th>Deploy</th>
+    </tr>
+    <tr>
+        <td><i>none</i></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+    </tr>
+    <tr>
+        <td>include { phase: TRAIN }</td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>include { stage: "train" }</td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>include { phase: TEST }</td>
+        <td></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+    </tr>
+    <tr>
+        <td>include { stage: "val" }</td>
+        <td></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td><td></td>
+    </tr>
+    <tr>
+        <td>include { stage: "deploy" }</td>
+        <td></td>
+        <td></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+    </tr>
+    <tr>
+        <td>exclude { stage: "deploy" }</td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>
+            include { stage: "train" }
+            include { stage: "val" }
+        </td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td><span class="glyphicon glyphicon-ok"></span></td>
+        <td></td>
+    </tr>
+</table>
+<p>
+    You may notice that DIGITS still generates separate files for <i>train_val</i> and <i>deploy</i> networks, and that they each only use <i>phase</i> and not <i>stage</i>.
+    This is because Caffe doesn't fully support all-in-one networks yet.
+</p>
+
+<h1>Specifying a custom Torch network</h1>
+
+<p>
+    Use this field to enter a Torch network using Lua code.
+    Refer to the documentation for more information.
+</p>
