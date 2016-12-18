@@ -243,57 +243,34 @@ def create(extension_id=None):
                  if form.python_layer_client_file.name in flask.request.files
                  else ''), form.python_layer_server_file.data)
 
-            if config_value('system_type') == 'slurm':
-                job.tasks.append(fw.create_train_task(
-                    job=job,
-                    dataset=datasetJob,
-                    train_epochs=form.train_epochs.data,
-                    snapshot_interval=form.snapshot_interval.data,
-                    learning_rate=form.learning_rate.data[0],
-                    lr_policy=policy,
-                    gpu_count=gpu_count,
-                    selected_gpus=selected_gpus,
-                    batch_size=form.batch_size.data[0],
-                    batch_accumulation=form.batch_accumulation.data,
-                    val_interval=form.val_interval.data,
-                    pretrained_model=pretrained_model,
-                    crop_size=form.crop_size.data,
-                    use_mean=form.use_mean.data,
-                    network=network,
-                    random_seed=form.random_seed.data,
-                    solver_type=form.solver_type.data,
-                    rms_decay=form.rms_decay.data,
-                    shuffle=form.shuffle.data,
-                    data_aug=data_aug,
-                    time_limit=form.slurm_time_limit.data,
-                    s_cpu_count=form.slurm_cpu_count.data,
-                    s_mem=form.slurm_mem.data,
-                )
-                )
-            else:
-                job.tasks.append(fw.create_train_task(
-                    job=job,
-                    dataset=datasetJob,
-                    train_epochs=form.train_epochs.data,
-                    snapshot_interval=form.snapshot_interval.data,
-                    learning_rate=form.learning_rate.data[0],
-                    lr_policy=policy,
-                    gpu_count=gpu_count,
-                    selected_gpus=selected_gpus,
-                    batch_size=form.batch_size.data[0],
-                    batch_accumulation=form.batch_accumulation.data,
-                    val_interval=form.val_interval.data,
-                    pretrained_model=pretrained_model,
-                    crop_size=form.crop_size.data,
-                    use_mean=form.use_mean.data,
-                    network=network,
-                    random_seed=form.random_seed.data,
-                    solver_type=form.solver_type.data,
-                    rms_decay=form.rms_decay.data,
-                    shuffle=form.shuffle.data,
-                    data_aug=data_aug,
-                )
-                )
+
+            job.tasks.append(fw.create_train_task(
+                job=job,
+                dataset=datasetJob,
+                train_epochs=form.train_epochs.data,
+                snapshot_interval=form.snapshot_interval.data,
+                learning_rate=form.learning_rate.data[0],
+                lr_policy=policy,
+                gpu_count=gpu_count,
+                selected_gpus=selected_gpus,
+                batch_size=form.batch_size.data[0],
+                batch_accumulation=form.batch_accumulation.data,
+                val_interval=form.val_interval.data,
+                pretrained_model=pretrained_model,
+                crop_size=form.crop_size.data,
+                use_mean=form.use_mean.data,
+                network=network,
+                random_seed=form.random_seed.data,
+                solver_type=form.solver_type.data,
+                rms_decay=form.rms_decay.data,
+                shuffle=form.shuffle.data,
+                data_aug=data_aug,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
+            )
+            )
+
             # Save form data with the job so we can easily clone it later.
 
             save_form_to_job(job, form)
