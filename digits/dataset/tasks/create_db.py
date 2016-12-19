@@ -10,7 +10,6 @@ import digits
 from digits import utils
 from digits.task import Task
 from digits.utils import subclass, override
-from digits.config import config_value
 
 # NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 3
@@ -45,7 +44,6 @@ class CreateDbTask(Task):
         self.compression = kwargs.pop('compression', None)
         self.mean_file = kwargs.pop('mean_file', None)
         self.labels_file = kwargs.pop('labels_file', None)
-
 
         try:
             self.time_limit = kwargs.pop('time_limit', None)

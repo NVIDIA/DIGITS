@@ -44,7 +44,6 @@ class ParseFolderTask(Task):
             self.s_cpu_count
             self.s_mem
 
-
         super(ParseFolderTask, self).__init__(**kwargs)
         self.pickver_task_parsefolder = PICKLE_VERSION
 

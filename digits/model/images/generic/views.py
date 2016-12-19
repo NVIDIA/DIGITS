@@ -243,7 +243,6 @@ def create(extension_id=None):
                  if form.python_layer_client_file.name in flask.request.files
                  else ''), form.python_layer_server_file.data)
 
-
             job.tasks.append(fw.create_train_task(
                 job=job,
                 dataset=datasetJob,
