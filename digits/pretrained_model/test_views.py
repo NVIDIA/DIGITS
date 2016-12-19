@@ -16,12 +16,8 @@ import digits.test_views
 
 
 # May be too short on a slow system
-from digits.config import config_value
 
-if config_value('system_type') == 'interactive':
-    TIMEOUT_DATASET = 45
-else:
-    TIMEOUT_DATASET = 100
+TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
 
 

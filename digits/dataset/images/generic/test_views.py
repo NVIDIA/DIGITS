@@ -7,16 +7,12 @@ import tempfile
 
 from bs4 import BeautifulSoup
 
-from digits.config import config_value
 from .test_lmdb_creator import create_lmdbs
 from digits import test_utils
 import digits.test_views
 
 # May be too short on a slow system
-if config_value('system_type') == 'interactive':
-    TIMEOUT_DATASET = 45
-else:
-    TIMEOUT_DATASET = 100
+TIMEOUT_DATASET = 45
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)

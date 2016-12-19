@@ -13,14 +13,10 @@ import PIL.Image
 import digits.test_views
 from digits import extensions
 from digits import test_utils
-from digits.config import config_value
 from digits.utils import constants
 
 # May be too short on a slow system
-if config_value('system_type') == 'interactive':
-    TIMEOUT_DATASET = 45
-else:
-    TIMEOUT_DATASET = 100
+TIMEOUT_DATASET = 45
 
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)

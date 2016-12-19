@@ -28,10 +28,7 @@ import digits.webapp
 
 
 # May be too short on a slow system
-if config_value('system_type') == 'interactive':
-    TIMEOUT_DATASET = 45
-else:
-    TIMEOUT_DATASET = 100
+TIMEOUT_DATASET = 45
 TIMEOUT_MODEL = 60
 
 ################################################################################
