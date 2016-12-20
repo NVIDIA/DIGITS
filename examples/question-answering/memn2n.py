@@ -53,9 +53,14 @@ class UserModel(Tower):
 
                     u_k = tf.matmul(u[-1], weights['H']) + o_k
 
+                    if self.is_training:
+                        u_k = tf.nn.dropout(u_k, 0.75)
+
                     u.append(u_k)
 
                 o = tf.matmul(u_k, weights['W'])
+                if self.is_training:
+                    o = tf.nn.dropout(o, 0.75)
             return o
 
         # configuration
@@ -79,6 +84,8 @@ class UserModel(Tower):
             'W': tf.get_variable('W', [embedding_size, dict_size], initializer=initializer),
         }
 
+        self._nil_vars = [embeddings['A'].name, embeddings['B'].name]
+
         self.summaries.append(tf.histogram_summary("A_hist", embeddings['A']))
         self.summaries.append(tf.histogram_summary("B_hist", embeddings['B']))
         self.summaries.append(tf.histogram_summary("TA_hist", weights['TA']))
@@ -101,3 +108,27 @@ class UserModel(Tower):
         accuracy = digits.classification_accuracy(self.inference, y)
         self.summaries.append(tf.scalar_summary(accuracy.op.name, accuracy))
         return loss
+
+    def gradientUpdate(self, grads_and_vars):
+        def add_gradient_noise(t, stddev=1e-3, name=None):
+            t = tf.convert_to_tensor(t, name="t")
+            gn = tf.random_normal(tf.shape(t), stddev=stddev)
+            return tf.add(t, gn, name=name)
+        def zero_nil_slot(t, name=None):
+            t = tf.convert_to_tensor(t, name="t")
+            s = tf.shape(t)[1]
+            z = tf.zeros(tf.pack([1, s]))
+            return tf.concat(0, [z, tf.slice(t, [1, 0], [-1, -1])], name=name)
+        max_grad_norm=40.0
+        grads_and_vars = [(tf.clip_by_norm(g, max_grad_norm), v) for g,v in grads_and_vars]
+        grads_and_vars = [(add_gradient_noise(g), v) for g,v in grads_and_vars]
+        nil_grads_and_vars = []
+        for g, v in grads_and_vars:
+            if v.name in self._nil_vars:
+                print("grad zero nil slot")
+                g = zero_nil_slot(g)
+                g = tf.Print(g, [g], message="This is g: ", first_n=10, summarize=100)
+                nil_grads_and_vars.append((g, v))
+            else:
+                nil_grads_and_vars.append((g, v))
+        return nil_grads_and_vars
