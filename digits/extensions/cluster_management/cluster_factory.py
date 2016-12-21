@@ -2,7 +2,6 @@
 import slurm
 from digits.config import option_list
 class cluster_factory:
-    system_type = ''
     selected_system = 'interactive'
     use_cluster = True
 
@@ -10,7 +9,6 @@ class cluster_factory:
         pass
 
     def get_cluster_manager(self):
-        print cluster_factory.system_type
         if cluster_factory.selected_system == 'slurm':
             return slurm.slurm_manager()
     @staticmethod
