@@ -130,6 +130,8 @@ class TrainTask(Task):
 
     @override
     def offer_resources(self, resources):
+        # if self.system_type != 'interactive':
+        #     return {'gpus': [(i, 1) for i in self.gpu_count]}
         if 'gpus' not in resources:
             return None
         if not resources['gpus']:
@@ -167,12 +169,14 @@ class TrainTask(Task):
     def before_run(self):
         # start a thread which sends SocketIO updates about hardware utilization
         gpus = None
-        if 'gpus' in self.current_resources:
-            gpus = [identifier for (identifier, value) in self.current_resources['gpus']]
+        if self.system_type == 'interactive':
+            if 'gpus' in self.current_resources:
+                gpus = [identifier for (identifier, value) in self.current_resources['gpus']]
 
-        self._hw_socketio_thread = gevent.spawn(
-            self.hw_socketio_updater,
-            gpus)
+            self._hw_socketio_thread = gevent.spawn(
+                self.hw_socketio_updater,
+                gpus)
+
 
     def hw_socketio_updater(self, gpus):
         """

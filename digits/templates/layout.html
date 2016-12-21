@@ -59,6 +59,12 @@
                 <li><span class="navbar-text">DIGITS version: <br> {{server_version}}</span></li>
                 <li><span class="navbar-text">Caffe version: <br> {{caffe_version}}</span></li>
                 <li><span class="navbar-text">Caffe flavor: <br> {{caffe_flavor}}</span></li>
+                <li><span class="navbar-text">System types
+                {% for system in system_types %}
+                    <br><a class="navbar-link" href="/system/{{system}}">{{system}}</a>
+                {% endfor %}
+                    </span>
+                </li>
             </ul>
             </li>
             <li class="dropdown">

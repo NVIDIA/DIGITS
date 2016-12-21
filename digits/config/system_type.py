@@ -3,7 +3,7 @@ from . import option_list
 from digits.extensions.cluster_management.cluster_factory import cluster_factory
 if cluster_factory.use_cluster:
     system_type = cluster_factory.selected_system
-    print "set the cluster type"
+
 else:
     system_type = 'interactive'
 

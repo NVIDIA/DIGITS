@@ -10,10 +10,11 @@ class cluster_factory:
         pass
 
     def get_cluster_manager(self):
-        if cluster_factory.system_type == 'slurm':
+        print cluster_factory.system_type
+        if cluster_factory.selected_system == 'slurm':
             return slurm.slurm_manager()
-
-    def get_running_systems(self):
+    @staticmethod
+    def get_running_systems():
         running_systems = ['interactive']
         if slurm.test_if_slurm_system():
             running_systems.append('slurm')

@@ -18,6 +18,7 @@ import digits
 from digits import dataset, extensions, model, utils, pretrained_model
 from digits.log import logger
 from digits.utils.routing import request_wants_json
+from digits.extensions.cluster_management.cluster_factory import cluster_factory
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -769,3 +770,16 @@ def on_leave_jobs():
         del flask.session['room']
         # print '>>> Somebody left room %s' % room
         leave_room(room)
+
+@blueprint.route('/system/<system_type>')
+def change_system_type(system_type):
+    """
+    change scheduling system
+    """
+    print system_type
+    # Get the URL to redirect to after logging in
+    next_url = utils.routing.get_request_arg('next') or \
+        flask.request.referrer or flask.url_for('.home')
+    cluster_factory.set_system(system_type)
+    response = flask.make_response(flask.redirect(next_url))
+    return response

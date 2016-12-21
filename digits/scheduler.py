@@ -104,8 +104,6 @@ class Scheduler:
         self.verbose = verbose
         # Keeps track of resource usage
 
-        if config_value('system_type') == 'slurm':
-            gpu_list = "0,1,2"
         self.resources = {
             # TODO: break this into CPU cores, memory usage, IO usage, etc.
             'parse_folder_task_pool': [Resource()],
@@ -399,11 +397,11 @@ class Scheduler:
                                 # try to start the task
                                 if task.ready_to_queue():
                                     requested_resources = task.offer_resources(self.resources)
-                                    if requested_resources is None:
+                                    if requested_resources is None and task.system_type == 'interactive':
                                         task.status = Status.WAIT
                                     else:
                                         # This stops digits from repeatedly spawning slurm jobs when waiting
-                                        if config_value('system_type') != 'slurm' or task.status != Status.WAIT:
+                                        if task.system_type == 'interactive' or task.status != Status.WAIT:
                                             if self.reserve_resources(task, requested_resources):
                                                 gevent.spawn(self.run_task,
                                                              task, requested_resources)
@@ -471,7 +469,8 @@ class Scheduler:
         """
         try:
             # reserve resources
-            if config_value('system_type') != 'slurm':
+            # no need to do this for non interactive systems are the should be running their own scheduling
+            if task.system_type == 'interactive':
                 for resource_type, requests in resources.iteritems():
                     for identifier, value in requests:
                         found = False
@@ -484,7 +483,7 @@ class Scheduler:
                         if not found:
                             raise RuntimeError('Resource "%s" with identifier="%s" not found' % (
                                 resource_type, identifier))
-            task.current_resources = resources
+                task.current_resources = resources
             return True
         except Exception as e:
             self.task_error(task, e)
