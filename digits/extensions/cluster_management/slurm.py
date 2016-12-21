@@ -1,5 +1,8 @@
-import digits
+
 import os
+
+import digits
+
 
 def get_digits_tmpdir():
     # users should set DIGITS_TMP to a dir that is available to all nodes
@@ -14,7 +17,7 @@ def get_digits_tmpdir():
 def test_if_slurm_system():
     try:
         if os.environ.get('SLURM_HOME'):
-            get_digits_tmpdir()
+            # get_digits_tmpdir()
             return True
         else:
             return False
@@ -24,9 +27,7 @@ def test_if_slurm_system():
 
 class slurm_manager:
     def __init__(self):
-        pass
-
-
+        get_digits_tmpdir()
 
     def pack_args(self,args, time_limit, cpu_count, mem, gpu_count, type):
         gpu_arg_idx = [i for i, arg in enumerate(args) if arg.startswith('--gpu')]
