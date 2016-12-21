@@ -16,7 +16,8 @@ from . import utils
 from .config import config_value
 from .status import Status, StatusCls
 import digits.log
-from digits.extensions.cluster_management.slurm import pack_slurm_args
+from digits.extensions.cluster_management import cluster_factory
+# from digits.extensions.cluster_management.slurm import pack_slurm_args
 # NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 1
 
@@ -215,7 +216,10 @@ class Task(StatusCls):
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
         # SLURM PROCESSING
-        if self.system_type == 'slurm':
+
+        if self.system_type != 'interactive':
+            cf = cluster_factory.cluster_factory()
+            cm = cf.get_cluster_manager()
             # Check for arguments if missing fill with defaults
             try:
                 self.gpu_count
@@ -234,7 +238,7 @@ class Task(StatusCls):
             except:
                 self.s_mem = 2
             # Create a slurm command
-            args = pack_slurm_args(args, self.time_limit,
+            args = cm.pack_args(args, self.time_limit,
                                    self.s_cpu_count, self.s_mem, self.gpu_count, str(type(self)))
             self.status = Status.WAIT
         else:

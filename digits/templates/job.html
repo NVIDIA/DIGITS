@@ -206,7 +206,7 @@ $('#delete-job').on('click', function(event) {
                                         </a>
                                     </h4>
                                 </div>
-                                <small id="task_num">Slurm Job Number {{task.job_num}}</small>
+                                <small id="task_num">{{task.job_num}}</small>
                                 <div id="{{task.html_id()}}-status-collapse" class="panel-collapse collapse{{' in' if task.status in ['R', 'E'] else ''}}">
                                     <div class="panel-body">
                                         <div class="task-progress" {% autoescape false %}{{' style="display:none;"' if not task.status == 'R' else ''}}{% endautoescape %}>
