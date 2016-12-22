@@ -47,8 +47,10 @@ def infer(input_list,
     Perform inference on a list of images using the specified model
     """
     # Get the gpu that slurm as set for the task
-    if digits.config.config_value('system_type') != 'slurm':
+    print gpu
+    if digits.config.config_value('system_type') != 'interactive':
         gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
+
     # job directory defaults to that defined in DIGITS config
     if jobs_dir == 'none':
         jobs_dir = digits.config.config_value('jobs_dir')

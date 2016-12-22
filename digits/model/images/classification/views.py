@@ -378,6 +378,7 @@ def classify_one():
         image_path = flask.request.form['image_path']
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
         outfile = tempfile.mkstemp(suffix='.png')
+
         flask.request.files['image_file'].save(outfile[1])
         image_path = outfile[1]
         os.close(outfile[0])

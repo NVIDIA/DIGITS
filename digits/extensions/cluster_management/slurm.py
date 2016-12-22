@@ -1,6 +1,6 @@
 
 import os
-
+import tempfile
 import digits
 
 
@@ -11,6 +11,9 @@ def get_digits_tmpdir():
     if os.environ.get('DIGITS_SLURM_TMP') is None:
         os.environ['DIGITS_SLURM_TMP'] = os.environ.get('HOME') + "/tmp"
     os.environ['TMPDIR'] = os.path.abspath(os.environ.get('DIGITS_SLURM_TMP'))
+    os.environ['TEMP'] = os.path.abspath(os.environ.get('DIGITS_SLURM_TMP'))
+    os.environ['TMP'] = os.path.abspath(os.environ.get('DIGITS_SLURM_TMP'))
+    tempfile.tempdir = os.environ['TMPDIR']
     return os.environ['TMPDIR']
 
 

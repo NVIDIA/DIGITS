@@ -10,7 +10,6 @@ class cluster_factory:
 
     def get_cluster_manager(self):
         if cluster_factory.selected_system == 'slurm':
-            slurm.get_digits_tmpdir()
             return slurm.slurm_manager()
     @staticmethod
     def get_running_systems():
@@ -23,6 +22,8 @@ class cluster_factory:
     def set_system(system):
         cluster_factory.selected_system = system
         option_list['system_type'] = cluster_factory.selected_system
+        if cluster_factory.selected_system == 'slurm':
+            slurm.get_digits_tmpdir()
 
     # enter this to set system_type
     # cluster_factory.cluster_factory.selected_system = "slurm"
