@@ -33,7 +33,7 @@ class slurm_manager:
         get_digits_tmpdir()
         pass
 
-    def pack_args(self,args, time_limit, cpu_count, mem, gpu_count, type):
+    def pack_args(self,args, time_limit, cpu_count, mem, gpu_count, t_type):
         gpu_arg_idx = [i for i, arg in enumerate(args) if arg.startswith('--gpu')]
         if gpu_arg_idx:
             gpu_arg_idx = gpu_arg_idx[0]
@@ -48,7 +48,8 @@ class slurm_manager:
 
         # set caffe to use all available gpus
         # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes\
-        if type == digits.model.tasks.TrainTask:
+        print t_type
+        if issubclass(t_type,digits.model.tasks.TrainTask):
             if gpu_arg_idx:
                 args[gpu_arg_idx] = '--gpu=all'
 

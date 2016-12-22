@@ -239,7 +239,7 @@ class Task(StatusCls):
                 self.s_mem = 2
             # Create a slurm command
             args = cm.pack_args(args, self.time_limit,
-                                   self.s_cpu_count, self.s_mem, self.gpu_count, str(type(self)))
+                                   self.s_cpu_count, self.s_mem, self.gpu_count, type(self))
             self.status = Status.WAIT
         else:
             self.status = Status.RUN
