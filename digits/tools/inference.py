@@ -50,6 +50,7 @@ def infer(input_list,
     print gpu
     if digits.config.config_value('system_type') != 'interactive':
         gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
+        print gpu
 
     # job directory defaults to that defined in DIGITS config
     if jobs_dir == 'none':
