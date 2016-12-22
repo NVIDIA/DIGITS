@@ -111,9 +111,7 @@ class CaffeTrainTask(TrainTask):
     @staticmethod
     def set_mode(gpu):
         if gpu is not None:
-            print gpu
-            print type(gpu)
-            caffe.set_device(gpu)
+            caffe.set_device(int(gpu))
             caffe.set_mode_gpu()
         else:
             caffe.set_mode_cpu()
