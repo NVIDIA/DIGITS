@@ -49,8 +49,8 @@ def infer(input_list,
     # Get the gpu that slurm as set for the task
     print gpu
     logger.info(gpu)
-    if digits.config.config_value('system_type') != 'interactive':
-        gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
+    # if digits.config.config_value('system_type') != 'interactive':
+    #     gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
     print gpu
     logger.info(gpu)
     # job directory defaults to that defined in DIGITS config
