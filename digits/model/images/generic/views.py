@@ -76,6 +76,8 @@ def create(extension_id=None):
     form.pretrained_networks.choices = get_pretrained_networks()
 
     prev_network_snapshots = get_previous_network_snapshots()
+    if config_value("system_type") == 'slurm':
+        form.select_gpu_count.validators = form.select_gpu_count_slurm.validators
 
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
