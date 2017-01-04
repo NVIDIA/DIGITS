@@ -50,8 +50,8 @@ def infer(input_list,
     print gpu
     logger.info("++++++++++++ inference.py ++++++++++++++++")
     logger.info(gpu)
-    if digits.config.config_value('system_type') != 'interactive':
-        gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
+    # if digits.config.config_value('system_type') != 'interactive':
+    #     gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
     logger.info(gpu)
     # job directory defaults to that defined in DIGITS config
     if jobs_dir == 'none':
