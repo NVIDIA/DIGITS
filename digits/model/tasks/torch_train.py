@@ -603,7 +603,8 @@ class TorchTrainTask(TrainTask):
         if gpu is not None:
             args.append('--type=cuda')
             # make only the selected GPU visible
-            env['CUDA_VISIBLE_DEVICES'] = subprocess_visible_devices([gpu])
+            if config_value('system_type') == 'interactive':
+                env['CUDA_VISIBLE_DEVICES'] = subprocess_visible_devices([gpu])
         else:
             args.append('--type=float')
 
