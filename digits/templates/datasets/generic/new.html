@@ -32,6 +32,7 @@ New {{ extension_title }} Dataset
     </div>
 
     <div class="row">
+         {% include '/partials/slurm_options.html' %}
         <div class="col-sm-6 col-sm-offset-3 well">
             <div class="form-group{{mark_errors([form.dsopts_feature_encoding])}}">
                 {{form.dsopts_feature_encoding.label}}
@@ -70,7 +71,7 @@ New {{ extension_title }} Dataset
                 {{ form.dataset_name.label }}
                 {{ form.dataset_name(class='form-control') }}
             </div>
-                {% include '/partials/slurm_options.html' %}
+
             <input type="submit" name="create-dataset" class="btn btn-primary" value="Create">
         </div>
     </div>

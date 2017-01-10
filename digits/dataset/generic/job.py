@@ -35,6 +35,14 @@ class GenericDatasetJob(DatasetJob):
         self.extension_id = extension_id
         self.extension_userdata = extension_userdata
 
+        try:
+            self.time_limit = kwargs.pop('time_limit', None)
+            self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+            self.s_mem = kwargs.pop('s_mem', None)
+        except:
+            self.time_limit
+            self.s_cpu_count
+            self.s_mem
 
         super(GenericDatasetJob, self).__init__(**kwargs)
         self.pickver_job_dataset_extension = PICKLE_VERSION

@@ -55,7 +55,8 @@ def new(extension_id):
         extension_title=extension.get_title(),
         extension_id=extension_id,
         extension_html=rendered_extension,
-        form=form
+        form=form,
+        system_type=config_value('system_type')
     )
 
 
@@ -97,7 +98,9 @@ def create(extension_id):
                 extension_id=extension_id,
                 extension_html=rendered_extension,
                 form=form,
-                errors=errors), 400
+                errors=errors,
+                system_type=config_value('system_type')
+            ), 400
 
     # create instance of extension class
     extension = extension_class(**extension_form.data)
@@ -117,6 +120,9 @@ def create(extension_id):
             force_same_shape=form.dsopts_force_same_shape.data,
             extension_id=extension_id,
             extension_userdata=extension.get_user_data(),
+            time_limit=form.slurm_time_limit.data,
+            s_cpu_count=form.slurm_cpu_count.data,
+            s_mem=form.slurm_mem.data,
         )
 
         # Save form data with the job so we can easily clone it later.

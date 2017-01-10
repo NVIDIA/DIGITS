@@ -38,17 +38,23 @@ class slurm_manager:
         if gpu_arg_idx:
             gpu_arg_idx = gpu_arg_idx[0]
         gpus = gpu_count
+        print time_limit
+        print cpu_count
+        print mem
 
         if not time_limit or time_limit == 0:
-            time_limit = 2
+            time_limit = 70
         if not cpu_count:
-            cpu_count = 2
+            cpu_count = 4
         if not mem:
-            mem = 4
+            mem = 8
+
+
 
         # set caffe to use all available gpus
         # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes\
-        print t_type
+
+
         if issubclass(t_type,digits.model.tasks.TrainTask):
             if gpu_arg_idx:
                 args[gpu_arg_idx] = '--gpu=all'

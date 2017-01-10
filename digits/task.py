@@ -228,15 +228,15 @@ class Task(StatusCls):
             try:
                 self.time_limit
             except:
-                self.time_limit = 2
+                self.time_limit = 0
             try:
                 self.s_cpu_count
             except:
-                self.s_cpu_count = 1
+                self.s_cpu_count = 0
             try:
                 self.s_mem
             except:
-                self.s_mem = 2
+                self.s_mem = 0
             # Create a slurm command
             args = cm.pack_args(args, self.time_limit,
                                    self.s_cpu_count, self.s_mem, self.gpu_count, type(self))

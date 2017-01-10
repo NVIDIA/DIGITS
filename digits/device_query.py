@@ -6,7 +6,6 @@ import argparse
 import ctypes
 import platform
 
-
 class c_cudaDeviceProp(ctypes.Structure):
     """
     Passed to cudart.cudaGetDeviceProperties()
