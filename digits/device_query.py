@@ -240,7 +240,6 @@ def get_nvml_info(device_id):
     Gets info from NVML for the given device
     Returns a dict of dicts from different NVML functions
     """
-    print device_id
     device = get_device(device_id)
     if device is None:
         return None
@@ -255,7 +254,6 @@ def get_nvml_info(device_id):
     try:
         # get device handle
         handle = c_nvmlDevice_t()
-        print device.pciBusID_str
         rc = nvml.nvmlDeviceGetHandleByPciBusId(ctypes.c_char_p(device.pciBusID_str), ctypes.byref(handle))
         if rc != 0:
             raise RuntimeError('nvmlDeviceGetHandleByPciBusId() failed with error #%s' % rc)
