@@ -48,7 +48,9 @@ socket.on('task update', function (msg) {
             $(status_selector+" .panel-title small").html(msg['status']);
             setPanelClass(status_selector, msg['css']);
             $(status_selector+" .task-statuses").html(msg['html']);
-            $(status_selector+" #task_num ").html("Slurm Job Number "+ msg['job_num']);
+            if(msg['job_num']){
+                $(status_selector+" #task_num ").html("Slurm job number: "+ msg['job_num']);
+            }
         }
         else if (msg['update'] == 'progress') {
             $(status_selector+" .task-progress .progress-bar").width(msg['percentage'] + '%');
@@ -206,7 +208,7 @@ $('#delete-job').on('click', function(event) {
                                         </a>
                                     </h4>
                                 </div>
-                                <small id="task_num">{{task.job_num}}</small>
+                                <small id="task_num">{%if task.job_num %}Slurm job number: {{task.job_num}} {% endif %}</small>
                                 <div id="{{task.html_id()}}-status-collapse" class="panel-collapse collapse{{' in' if task.status in ['R', 'E'] else ''}}">
                                     <div class="panel-body">
                                         <div class="task-progress" {% autoescape false %}{{' style="display:none;"' if not task.status == 'R' else ''}}{% endautoescape %}>
