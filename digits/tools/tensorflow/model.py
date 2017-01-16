@@ -133,11 +133,13 @@ class Model(object):
                     if self.stage != digits.STAGE_INF:
                         tower_model = self.add_tower(obj_tower=obj_UserModel,
                                                      x=batch_x_split[dev_i],
-                                                     y=batch_y_split[dev_i])
+                                                     y=batch_y_split[dev_i],
+                                                     global_step=self.global_step)
                     else:
                         tower_model = self.add_tower(obj_tower=obj_UserModel,
                                                      x=batch_x_split[dev_i],
-                                                     y=None)
+                                                     y=None,
+                                                     global_step=tf.Constant(0.))
 
                     with tf.variable_scope(digits.GraphKeys.MODEL, reuse=dev_i > 0):
                         tower_model.inference  # touch to initialize
@@ -147,23 +149,27 @@ class Model(object):
                         continue
 
                     with tf.name_scope(digits.GraphKeys.LOSS):
-                        tf.add_to_collection(digits.GraphKeys.LOSSES, tower_model.loss)
+                        for loss in tower_model.loss:
+                            tf.add_to_collection(digits.GraphKeys.LOSSES, loss['loss'])
 
                         # Assemble all made within this scope so far. The user can add custom
                         # losses to the digits.GraphKeys.LOSSES collection
-                        losses = tf.get_collection(digits.GraphKeys.LOSSES, scope=scope_tower)
-                        losses += ops.get_collection(ops.GraphKeys.REGULARIZATION_LOSSES, scope=None)
-                        tower_loss = tf.add_n(losses, name='loss')
+                        #losses = tf.get_collection(digits.GraphKeys.LOSSES, scope=scope_tower)
+                        #losses += ops.get_collection(ops.GraphKeys.REGULARIZATION_LOSSES, scope=None)
+                        #tower_loss = tf.add_n(losses, name='loss')
 
-                        self.summaries.append(tf.scalar_summary(tower_loss.op.name, tower_loss))
+                        #self.summaries.append(tf.scalar_summary(tower_loss.op.name, tower_loss))
 
                     # Reuse the variables in this scope for the next tower/device
                     tf.get_variable_scope().reuse_variables()
 
                     if self.stage == digits.STAGE_TRAIN:
-                        grad_tower = self.optimizer.compute_gradients(tower_loss)
-                        grad_tower = tower_model.gradientUpdate(grad_tower)
-                        grad_towers.append(grad_tower)
+                        grad_tower_losses = []
+                        for loss in tower_model.loss:
+                            grad_tower_loss = self.optimizer.compute_gradients(loss['loss'], loss['vars'])
+                            grad_tower_loss = tower_model.gradientUpdate(grad_tower_loss)
+                            grad_tower_losses.append(grad_tower_loss)
+                        grad_towers.append(grad_tower_losses)
 
         # Assemble and average the gradients from all towers
         if self.stage == digits.STAGE_TRAIN:
@@ -172,8 +178,11 @@ class Model(object):
             else:
                 with tf.device(available_devices[0]):
                     grad_avg = average_gradients(grad_towers)
-            apply_gradient_op = self.optimizer.apply_gradients(grad_avg, global_step=self.global_step)
-            self._train = apply_gradient_op
+            apply_gradient_ops = []
+            for grad in grad_avg:
+                apply_gradient_ops.append(self.optimizer.apply_gradients(grad, global_step=self.global_step))
+            #apply_gradient_op = self.optimizer.apply_gradients(grad_avg, global_step=self.global_step)
+            self._train = apply_gradient_ops
 
     def start_queue_runners(self, sess):
         logging.info('Starting queue runners (%s)', self.stage)
@@ -195,10 +204,10 @@ class Model(object):
             self.queue_coord.request_stop()
             self.queue_coord.join(self.queue_threads)
 
-    def add_tower(self, obj_tower, x, y):
+    def add_tower(self, obj_tower, x, y, global_step):
         is_training = self.stage == digits.STAGE_TRAIN
         input_shape = self.dataloader.get_shape()
-        tower = obj_tower(x, y, input_shape, self.nclasses, is_training)
+        tower = obj_tower(x, y, input_shape, self.nclasses, is_training, global_step)
         self.towers.append(tower)
         return tower
 
@@ -264,7 +273,7 @@ class Model(object):
 
 class Tower(object):
 
-    def __init__(self, x, y, input_shape, nclasses, is_training):
+    def __init__(self, x, y, input_shape, nclasses, is_training, global_step):
         self.input_shape = input_shape
         self.nclasses = nclasses
         self.is_training = is_training
@@ -272,6 +281,7 @@ class Tower(object):
         self.x = x
         self.y = y
         self.train = None
+        self.global_step = global_step
 
     def gradientUpdate(self, grad):
-        raise ValueError("Argh!")
+        return grad
