@@ -206,8 +206,9 @@ class Model(object):
 
     def add_tower(self, obj_tower, x, y, global_step):
         is_training = self.stage == digits.STAGE_TRAIN
+        is_inference = self.stage == digits.STAGE_INF
         input_shape = self.dataloader.get_shape()
-        tower = obj_tower(x, y, input_shape, self.nclasses, is_training, global_step)
+        tower = obj_tower(x, y, input_shape, self.nclasses, is_training, is_inference, global_step)
         self.towers.append(tower)
         return tower
 
@@ -273,10 +274,11 @@ class Model(object):
 
 class Tower(object):
 
-    def __init__(self, x, y, input_shape, nclasses, is_training, global_step):
+    def __init__(self, x, y, input_shape, nclasses, is_training, is_inference, global_step):
         self.input_shape = input_shape
         self.nclasses = nclasses
         self.is_training = is_training
+        self.is_inference = is_inference
         self.summaries = []
         self.x = x
         self.y = y
