@@ -1,5 +1,6 @@
 
 import slurm
+from cluster_manager import cluster_manager
 from digits.config import option_list
 class cluster_factory:
     selected_system = 'interactive'

@@ -2,7 +2,7 @@
 import os
 import tempfile
 import digits
-import cluster_manager
+from cluster_manager import cluster_manager
 
 
 def get_digits_tmpdir():
@@ -33,7 +33,6 @@ def test_if_slurm_system():
 class slurm_manager(cluster_manager):
     def __init__(self):
         get_digits_tmpdir()
-        pass
 
     def pack_args(self,args, time_limit, cpu_count, mem, gpu_count, t_type):
         gpu_arg_idx = [i for i, arg in enumerate(args) if arg.startswith('--gpu')]
