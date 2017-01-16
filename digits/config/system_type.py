@@ -7,6 +7,4 @@ if cluster_factory.use_cluster:
 else:
     system_type = 'interactive'
 
-print system_type
-
 option_list['system_type'] = system_type

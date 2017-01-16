@@ -25,7 +25,6 @@ def new():
 
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
-    print config_value('system_type')
     return flask.render_template('datasets/images/generic/new.html', form=form, system_type=config_value('system_type'))
 
 
