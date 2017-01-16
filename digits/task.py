@@ -268,9 +268,7 @@ class Task(StatusCls):
                             print "graceful shutdown"
                             # Attempt graceful shutdown
                             if self.job_num:
-                                # slurm job cancel
-                                args = ['scancel', self.job_num]
-                                subprocess.call(args)
+                                cm.kill_task(self.job_num)
                                 sigterm_time = time.time()
                                 self.status = Status.ABORT
                             else:

@@ -3,7 +3,7 @@ import os
 import tempfile
 import digits
 from cluster_manager import cluster_manager
-
+import subprocess
 
 def get_digits_tmpdir():
     # users should set DIGITS_TMP to a dir that is available to all nodes
@@ -50,11 +50,8 @@ class slurm_manager(cluster_manager):
         if not mem:
             mem = 4
 
-
-
         # set caffe to use all available gpus
         # This is assuming that $CUDA_VISIBLE_DEVICES is set for each task on the nodes\
-
 
         if issubclass(t_type,digits.model.tasks.TrainTask):
             if gpu_arg_idx:
@@ -69,3 +66,8 @@ class slurm_manager(cluster_manager):
                     '--gres=gpu:' + str(gpus), 'srun'] + args
 
         return args
+
+    def kill_task(self,job_num):
+        args = ['scancel',job_num]
+        subprocess.call(args)
+        return
