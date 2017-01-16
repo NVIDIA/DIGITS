@@ -32,7 +32,8 @@ def conv_cond_concat(x, y):
     """Concatenate conditioning vector on feature map axis."""
     x_shapes = x.get_shape()
     y_shapes = y.get_shape()
-    return tf.concat(3, [x, y*tf.ones([x_shapes[0], x_shapes[1], x_shapes[2], y_shapes[3]])])
+    batch_size = tf.shape(x)[0]
+    return tf.concat(3, [x, y*tf.ones([batch_size, int(x_shapes[1]), int(x_shapes[2]), int(y_shapes[3])])])
 
 def conv2d(input_, output_dim,
            k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02,
@@ -43,7 +44,7 @@ def conv2d(input_, output_dim,
         conv = tf.nn.conv2d(input_, w, strides=[1, d_h, d_w, 1], padding='SAME')
 
         biases = tf.get_variable('biases', [output_dim], initializer=tf.constant_initializer(0.0))
-        conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
+        conv = tf.nn.bias_add(conv, biases)
 
         return conv
 
@@ -55,18 +56,11 @@ def deconv2d(input_, output_shape,
         # filter : [height, width, output_channels, in_channels]
         w = tf.get_variable('w', [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
                             initializer=tf.random_normal_initializer(stddev=stddev))
-
-        try:
-            deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
-                                strides=[1, d_h, d_w, 1])
-
-        # Support for verisons of TensorFlow before 0.7.0
-        except AttributeError:
-            deconv = tf.nn.deconv2d(input_, w, output_shape=output_shape,
+        deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
                                 strides=[1, d_h, d_w, 1])
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
-        deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
+        deconv = tf.reshape(tf.nn.bias_add(deconv, biases), output_shape)
 
         if with_w:
             return deconv, w, biases
@@ -160,11 +154,8 @@ class UserModel(Tower):
 
         self.c_dim = c_dim
 
-        self.batch_size = 64
+        self.batch_size = tf.shape(self.x)[0]
         x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim], name='x_reshaped')
-
-        #self.batch_size = tf.shape(self.x)[0]
-        #x_reshaped = self.x
 
         self.images = x_reshaped / 255.
 
@@ -191,7 +182,6 @@ class UserModel(Tower):
     def build_model(self):
 
         self.z = tf.random_normal(shape=[self.batch_size, self.z_dim], dtype=tf.float32, seed=None, name='z')
-        #self.z = tf.random_normal(shape=[self.batch_size, self.z_dim], dtype=tf.float32, seed=None, name='z')
 
         self.summaries.append(histogram_summary("z", self.z))
 
@@ -249,7 +239,8 @@ class UserModel(Tower):
                 h0 = conv_cond_concat(h0, yb)
 
                 h1 = lrelu(self.d_bn1(conv2d(h0, self.df_dim + self.y_dim, name='d_h1_conv')))
-                h1 = tf.reshape(h1, [self.batch_size, -1])
+                sz = h1.get_shape()
+                h1 = tf.reshape(h1, [self.batch_size, int(sz[1] * sz[2] * sz[3])])
                 h1 = tf.concat(1, [h1, y])
 
                 h2 = lrelu(self.d_bn2(linear(h1, self.dfc_dim, 'd_h2_lin')))
