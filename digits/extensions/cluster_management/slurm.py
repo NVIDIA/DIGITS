@@ -2,6 +2,7 @@
 import os
 import tempfile
 import digits
+import cluster_manager
 
 
 def get_digits_tmpdir():
@@ -28,7 +29,8 @@ def test_if_slurm_system():
     except OSError:
         return False
 
-class slurm_manager:
+
+class slurm_manager(cluster_manager):
     def __init__(self):
         get_digits_tmpdir()
         pass
@@ -43,11 +45,11 @@ class slurm_manager:
         print mem
 
         if not time_limit or time_limit == 0:
-            time_limit = 70
+            time_limit = 30
         if not cpu_count:
-            cpu_count = 4
+            cpu_count = 1
         if not mem:
-            mem = 8
+            mem = 4
 
 
 

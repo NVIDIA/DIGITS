@@ -328,7 +328,10 @@ def create():
                 int(form.resize_width.data),
                 int(form.resize_channels.data),
             ),
-            resize_mode=form.resize_mode.data
+            resize_mode=form.resize_mode.data,
+            time_limit=form.slurm_time_limit.data,
+            s_cpu_count=form.slurm_cpu_count.data,
+            s_mem=form.slurm_mem.data,
         )
 
         if form.method.data == 'folder':

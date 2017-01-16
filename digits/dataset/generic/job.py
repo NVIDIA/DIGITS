@@ -44,6 +44,10 @@ class GenericDatasetJob(DatasetJob):
             self.s_cpu_count
             self.s_mem
 
+        print self.time_limit
+        print self.s_cpu_count
+        print self.s_mem
+
         super(GenericDatasetJob, self).__init__(**kwargs)
         self.pickver_job_dataset_extension = PICKLE_VERSION
 

@@ -216,7 +216,7 @@ class Task(StatusCls):
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
         # SLURM PROCESSING
-
+        print type(self)
         if self.system_type != 'interactive':
             cf = cluster_factory.cluster_factory()
             cm = cf.get_cluster_manager()

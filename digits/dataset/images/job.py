@@ -20,6 +20,14 @@ class ImageDatasetJob(DatasetJob):
         """
         self.image_dims = kwargs.pop('image_dims', None)
         self.resize_mode = kwargs.pop('resize_mode', None)
+        try:
+            self.time_limit = kwargs.pop('time_limit', None)
+            self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+            self.s_mem = kwargs.pop('s_mem', None)
+        except:
+            self.time_limit
+            self.s_cpu_count
+            self.s_mem
 
         super(ImageDatasetJob, self).__init__(**kwargs)
         self.pickver_job_dataset_image = PICKLE_VERSION

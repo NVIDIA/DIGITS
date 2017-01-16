@@ -108,6 +108,7 @@ def create(extension_id):
     job = None
     try:
         # create job
+
         job = GenericDatasetJob(
             username=utils.auth.get_username(),
             name=form.dataset_name.data,
