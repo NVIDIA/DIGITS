@@ -334,7 +334,7 @@ class ModelForm(Form):
                        if get_nvml_info(index) and 'memory' in get_nvml_info(index)
                        else get_device(index).totalGlobalMem)
         ),
-        ) for index in config_value('gpu_list').split(',') if index],
+                  ) for index in config_value('gpu_list').split(',') if index],
         tooltip="The job won't start until all of the chosen GPUs are available.")
 
     # XXX For testing
@@ -347,11 +347,11 @@ class ModelForm(Form):
 
     # Use next available N GPUs
     select_gpu_count_slurm = wtforms.IntegerField('Use this many GPUs (next available)',
-                                            validators=[
-                                                validators.NumberRange(min=1)
-                                            ],
-                                            default=1,
-                                            )
+                                                  validators=[
+                                                      validators.NumberRange(min=1)
+                                                  ],
+                                                  default=1,
+                                                  )
 
     select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
                                             validators=[
