@@ -174,7 +174,7 @@ def json_dict(job, model_output_fields):
                     d.update({key + 'max': max(data)})
 
         if (job.train_task().combined_graph_data() and
-                    'columns' in job.train_task().combined_graph_data()):
+                'columns' in job.train_task().combined_graph_data()):
             d.update({
                 'sparkline': job.train_task().combined_graph_data()['columns'][0][1:],
             })
@@ -330,7 +330,7 @@ def login():
     """
     # Get the URL to redirect to after logging in
     next_url = utils.routing.get_request_arg('next') or \
-               flask.request.referrer or flask.url_for('.home')
+        flask.request.referrer or flask.url_for('.home')
 
     if flask.request.method == 'GET':
         return flask.render_template('login.html', next=next_url)
@@ -356,7 +356,7 @@ def logout():
     Unset the username cookie
     """
     next_url = utils.routing.get_request_arg('next') or \
-               flask.request.referrer or flask.url_for('.home')
+        flask.request.referrer or flask.url_for('.home')
 
     response = flask.make_response(flask.redirect(next_url))
     response.set_cookie('username', '', expires=0)
@@ -787,7 +787,7 @@ def change_system_type(system_type):
     print system_type
     # Get the URL to redirect to after logging in
     next_url = utils.routing.get_request_arg('next') or \
-               flask.request.referrer or flask.url_for('.home')
+        flask.request.referrer or flask.url_for('.home')
     cluster_factory.set_system(system_type)
     response = flask.make_response(flask.redirect(next_url))
     return response
