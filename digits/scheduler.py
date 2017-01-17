@@ -469,7 +469,7 @@ class Scheduler:
         """
         try:
             # reserve resources
-            # no need to do this for non interactive systems are the should be running their own scheduling
+            # no need to do this for non interactive systems as they should be running their own scheduling
             if task.system_type == 'interactive':
                 for resource_type, requests in resources.iteritems():
                     for identifier, value in requests:

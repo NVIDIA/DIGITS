@@ -54,6 +54,9 @@ class GenericDatasetJob(DatasetJob):
                 job=self,
                 backend=self.backend,
                 stage=stage,
+                time_limit=self.time_limit,
+                s_cpu_count=self.s_cpu_count,
+                s_mem=self.s_cpu_count,
             )
             )
 
