@@ -139,7 +139,7 @@ class Model(object):
                         tower_model = self.add_tower(obj_tower=obj_UserModel,
                                                      x=batch_x_split[dev_i],
                                                      y=None,
-                                                     global_step=tf.Constant(0.))
+                                                     global_step=tf.constant(0.))
 
                     with tf.variable_scope(digits.GraphKeys.MODEL, reuse=dev_i > 0):
                         tower_model.inference  # touch to initialize
