@@ -332,8 +332,7 @@ class ModelForm(Form):
             index, get_device(index).name,
             sizeof_fmt(get_nvml_info(index)['memory']['total']
                        if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                       else get_device(index).totalGlobalMem)
-        ),
+                       else get_device(index).totalGlobalMem)),
                   ) for index in config_value('gpu_list').split(',') if index],
         tooltip="The job won't start until all of the chosen GPUs are available.")
 
