@@ -253,8 +253,6 @@ class LoaderFactory(object):
                     logging.error('Unsupported mime type (%s); cannot be decoded' % (self.data_mime))
                     exit(-1)
             else:
-                data = tf.decode_raw(data, self.image_dtype, name='raw_decoder')
-
                 # if data is in CHW, set the shape and convert to HWC
                 if self.unencoded_data_format == 'chw':
                     data = tf.reshape(data, [shape[2], shape[0], shape[1]])
@@ -700,7 +698,7 @@ class TFRecordsLoader(LoaderFactory):
             serialized_example,
             # Defaults are not specified since both keys are required.
             features={
-                'image_raw': tf.FixedLenFeature([], tf.string),
+                'image_raw': tf.FixedLenFeature([self.width, self.height, self.channels], tf.float32),
                 'label': tf.FixedLenFeature([], tf.int64),
             })
 

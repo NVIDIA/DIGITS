@@ -36,6 +36,10 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
+def _float_array_feature(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+
+
 def subprocess_visible_devices(gpus):
     """
     Calculates CUDA_VISIBLE_DEVICES for a subprocess
@@ -443,7 +447,7 @@ class TensorflowTrainTask(TrainTask):
         snapshots = []
         for filename in os.listdir(self.job_dir):
             # find models
-            match = re.match(r'%s_(\d+)\.?(\d*)\.ckpt$' % self.snapshot_prefix, filename)
+            match = re.match(r'%s_(\d+)\.?(\d*)\.ckpt\.meta$' % self.snapshot_prefix, filename)
             if match:
                 epoch = 0
                 if match.group(2) == '':
@@ -491,14 +495,13 @@ class TensorflowTrainTask(TrainTask):
         os.close(temp_image_handle)
         if image.ndim < 3:
             image = image[..., np.newaxis]
-        # currently only support 8-bit pixel-like data
-        image = image.astype('uint8')
         writer = tf.python_io.TFRecordWriter(temp_image_path)
+
         record = tf.train.Example(features=tf.train.Features(feature={
             'height': _int64_feature(image.shape[0]),
             'width': _int64_feature(image.shape[1]),
             'depth': _int64_feature(image.shape[2]),
-            'image_raw': _bytes_feature(image.tostring()),
+            'image_raw': _float_array_feature(image.flatten()),
             'label': _int64_feature(0),
             'encoding': _int64_feature(0)}))
         writer.write(record.SerializeToString())
@@ -787,15 +790,13 @@ class TensorflowTrainTask(TrainTask):
                 for image in images:
                     if image.ndim < 3:
                         image = image[..., np.newaxis]
-                    # currently only support 8-bit pixel-like data
-                    image = image.astype('uint8')
                     temp_image_handle, temp_image_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.tfrecords')
                     writer = tf.python_io.TFRecordWriter(temp_image_path)
                     record = tf.train.Example(features=tf.train.Features(feature={
                         'height': _int64_feature(image.shape[0]),
                         'width': _int64_feature(image.shape[1]),
                         'depth': _int64_feature(image.shape[2]),
-                        'image_raw': _bytes_feature(image.tostring()),
+                        'image_raw': _float_array_feature(image.flatten()),
                         'label': _int64_feature(0),
                         'encoding': _int64_feature(0)}))
                     writer.write(record.SerializeToString())

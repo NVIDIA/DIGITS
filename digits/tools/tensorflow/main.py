@@ -245,6 +245,10 @@ def dump(obj):
 def load_snapshot(sess, weight_path, var_candidates):
     """ Loads a snapshot into a session from a weight path. Will only load the
     weights that are both in the weight_path file and the passed var_candidates."""
+
+    if weight_path.endswith('.meta'):
+        weight_path = weight_path[:-5]
+
     logging.info("Loading weights from pretrained model - %s ", weight_path)
     reader = tf.train.NewCheckpointReader(weight_path)
     var_map = reader.get_variable_to_shape_map()
@@ -524,7 +528,7 @@ def main(_):
 
         # Saver creation.
         if FLAGS.save_vars == 'all':
-            vars_to_save = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+            vars_to_save = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
         elif FLAGS.save_vars == 'trainable':
             vars_to_save = tf.all_variables()
         else:
@@ -538,7 +542,7 @@ def main(_):
 
         # If weights option is set, preload weights from existing models appropriately
         if FLAGS.weights:
-            load_snapshot(sess, FLAGS.weights, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))
+            load_snapshot(sess, FLAGS.weights, tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
 
         # Tensorboard: Merge all the summaries and write them out
         writer = tf.train.SummaryWriter(os.path.join(FLAGS.summaries_dir, 'tb'), sess.graph)
