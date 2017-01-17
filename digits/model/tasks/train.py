@@ -132,7 +132,7 @@ class TrainTask(Task):
     def offer_resources(self, resources):
         # gives non interactive tasks as many gpus as they want
         if self.system_type != 'interactive':
-            return {'gpus': [(str(i), 1) for i in range(0,self.gpu_count)]}
+            return {'gpus': [(str(i), 1) for i in range(0, self.gpu_count)]}
         if 'gpus' not in resources:
             return None
         if not resources['gpus']:
@@ -177,7 +177,6 @@ class TrainTask(Task):
             self._hw_socketio_thread = gevent.spawn(
                 self.hw_socketio_updater,
                 gpus)
-
 
     def hw_socketio_updater(self, gpus):
         """
