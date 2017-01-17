@@ -170,7 +170,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     <script>
                         $("#view_extension_id").change(function() {
                             if ($(this).val()) {
-                                $.ajax("/models/view-config/" + $(this).val(),
+                                $.ajax("{{config['URL_PREFIX']}}/models/view-config/" + $(this).val(),
                                     {
                                         type: "GET",
                                         }

@@ -4,7 +4,7 @@
     'use strict';
     var app = angular.module('modelStore', []);
     app.controller('ModelListController', function($scope, $http) {
-        var end_point = '/store/models';
+        var end_point = URL_PREFIX + '/store/models';
         var get_model_list = function(refresh) {
             $http({
                 method: 'GET',
@@ -27,7 +27,7 @@
         $scope.download = function(id) {
             $http({
                 method: 'GET',
-                url: '/store/push?id=' + id,
+                url: URL_PREFIX + '/store/push?id=' + id,
             }).then(function successCallback(response) {
                 // nothing
             }, function errorCallback(response) {

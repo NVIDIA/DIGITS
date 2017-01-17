@@ -205,7 +205,7 @@ PretrainedModel.Actions = function(props) {
   var parent = !_.isUndefined(props.parent) ? props.parent : props;
 
   self.uploadArchive = function(file) {
-       var upload_url = '/pretrained_models/upload_archive';
+       var upload_url = URL_PREFIX + '/pretrained_models/upload_archive';
        parent.heading({classed: false, text: 'Uploading archive, one moment...'});
 
        var formData = new FormData();

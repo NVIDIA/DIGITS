@@ -66,7 +66,7 @@ class BaseViewsTest(object):
         """
         url = '/%s/%s' % (job_type, job_id)
         rv = cls.app.get(url, follow_redirects=True)
-        assert rv.status_code in [200, 404], 'got status code "%s" from "%s"' % (rv.status_code, url)
+        assert rv.status_code in [200, 404], 'got status code "%s" from "%s"\n%s' % (rv.status_code, url, rv.data)
         return rv.status_code == 200
 
     @classmethod
