@@ -38,7 +38,7 @@
             <div id="dataset-summary"></div>
             {% if job.dataset %}
             <script>
-            $.ajax("/datasets/summary?job_id={{ job.dataset.id() }}",
+            $.ajax("{{url_for('digits.dataset.views.summary', job_id=job.dataset.id())}}",
             {
                 type: "GET",
                 }

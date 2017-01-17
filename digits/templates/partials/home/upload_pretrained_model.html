@@ -2,7 +2,7 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/PretrainedModel.js', ver=dir_hash) }}"></script>
 
 {% set size = 500 %}
-{% set url  = "/pretrained_models/new" %}
+{% set url  = url_for('digits.pretrained_model.views.new') %}
 
 <style>
 .closeButton {
