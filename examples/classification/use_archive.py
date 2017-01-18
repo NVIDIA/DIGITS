@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 
 """
 Classify an image using a model archive file
@@ -95,3 +95,4 @@ if __name__ == '__main__':
                           )
 
     print 'Script took %f seconds.' % (time.time() - script_start_time,)
+

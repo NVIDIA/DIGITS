@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 """
 Prepares KITTI data for ingestion by DIGITS
 """
@@ -196,3 +196,4 @@ if __name__ == '__main__':
         use_symlinks=(not args.no_symlinks),
     )
     print 'Done.'
+

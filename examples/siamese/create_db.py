@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 """
 Functions for creating temporary LMDBs
 Used in test_views
@@ -251,3 +251,4 @@ if __name__ == '__main__':
     )
 
     print 'Done after %s seconds' % (time.time() - start_time,)
+

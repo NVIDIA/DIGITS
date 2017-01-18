@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
 if [ "$#" -ne 2 ] || ! [ -d "$2" ]; then
   echo "Usage: $0 <NEW_DATASET_DIR> <MNIST_DIR>" >&2
