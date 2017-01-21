@@ -295,29 +295,15 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
+    data_extensions = get_data_extensions()
     view_extensions = get_view_extensions()
-
-    inference_form_html = None
-    if isinstance(job.dataset, GenericDatasetJob):
-        extension_class = extensions.data.get_extension(job.dataset.extension_id)
-        if not extension_class:
-            raise RuntimeError("Unable to find data extension with ID=%s"
-                               % job.dataset.extension_id)
-        extension_userdata = job.dataset.extension_userdata
-        extension_userdata.update({'is_inference_db': True})
-        extension = extension_class(**extension_userdata)
-
-        form = extension.get_inference_form()
-        if form:
-            template, context = extension.get_inference_template(form)
-            inference_form_html = flask.render_template_string(template, **context)
 
     return flask.render_template(
         'models/images/generic/show.html',
         job=job,
+        data_extensions=data_extensions,
         view_extensions=view_extensions,
         related_jobs=related_jobs,
-        inference_form_html=inference_form_html,
     )
 
 
@@ -446,8 +432,13 @@ def infer_extension():
 
     inference_db_job = None
     try:
+        if 'data_extension_id' in flask.request.form:
+            data_extension_id = flask.request.form['data_extension_id']
+        else:
+            data_extension_id = model_job.dataset.extension_id
+
         # create an inference database
-        inference_db_job = create_inference_db(model_job)
+        inference_db_job = create_inference_db(model_job, data_extension_id)
         db_path = inference_db_job.get_feature_db_path(constants.TEST_DB)
 
         # create database creation job
@@ -728,10 +719,13 @@ def infer_many():
         ), status_code
 
 
-def create_inference_db(model_job):
+def create_inference_db(model_job, data_extension_id):
     # create instance of extension class
-    extension_class = extensions.data.get_extension(model_job.dataset.extension_id)
-    extension_userdata = model_job.dataset.extension_userdata
+    extension_class = extensions.data.get_extension(data_extension_id)
+    if hasattr(model_job.dataset, 'extension_userdata'):
+        extension_userdata = model_job.dataset.extension_userdata
+    else:
+        extension_userdata = {}
     extension_userdata.update({'is_inference_db': True})
     extension = extension_class(**extension_userdata)
 
@@ -755,7 +749,7 @@ def create_inference_db(model_job):
         batch_size=1,
         num_threads=1,
         force_same_shape=0,
-        extension_id=model_job.dataset.extension_id,
+        extension_id=data_extension_id,
         extension_userdata=extension.get_user_data(),
     )
 
@@ -872,6 +866,17 @@ def get_pretrained_networks_fulldetails():
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
     ]
+
+
+def get_data_extensions():
+    """
+    return all enabled data extensions
+    """
+    data_extensions = {"all-default": "Default"}
+    all_extensions = extensions.data.get_extensions()
+    for extension in all_extensions:
+        data_extensions[extension.get_id()] = extension.get_title()
+    return data_extensions
 
 
 def get_view_extensions():
