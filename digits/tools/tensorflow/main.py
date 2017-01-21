@@ -258,8 +258,11 @@ def load_snapshot(sess, weight_path, var_candidates):
     for vt in var_candidates:
         for vm in var_map.keys():
             if vt.name.split(':')[0] == vm:
-                vars_restore.append(vt)
-                logging.info('restoring %s -> %s' % (vm, vt.name))
+                if ("global_step" not in vt.name) and not (vt.name.startswith("train/")):
+                    vars_restore.append(vt)
+                    logging.info('restoring %s -> %s' % (vm, vt.name))
+                else:
+                    logging.info('NOT restoring %s -> %s' % (vm, vt.name))
 
     logging.info('Restoring %s variable ops.' % len(vars_restore))
     tf.train.Saver(vars_restore, max_to_keep=0, sharded=FLAGS.serving_export).restore(sess, weight_path)
