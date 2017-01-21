@@ -497,6 +497,7 @@ class TensorflowTrainTask(TrainTask):
             image = image[..., np.newaxis]
         writer = tf.python_io.TFRecordWriter(temp_image_path)
 
+        image = image.astype('float')
         record = tf.train.Example(features=tf.train.Features(feature={
             'height': _int64_feature(image.shape[0]),
             'width': _int64_feature(image.shape[1]),
@@ -790,6 +791,7 @@ class TensorflowTrainTask(TrainTask):
                 for image in images:
                     if image.ndim < 3:
                         image = image[..., np.newaxis]
+                    image = image.astype('float')
                     temp_image_handle, temp_image_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.tfrecords')
                     writer = tf.python_io.TFRecordWriter(temp_image_path)
                     record = tf.train.Example(features=tf.train.Features(feature={
