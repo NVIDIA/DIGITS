@@ -101,16 +101,14 @@ class UserModel(Tower):
     @model_property
     def inference(self):
         """ op to use for inference """
-        model = self.G
-        return tf.to_int32(model * 255)
+        model = self.DzGEN
+        return model
 
     @model_property
     def loss(self):
         """ return list of losses (and corresponding vars) to optimize """
         losses = [
-            {'loss': self.d_loss_real, 'vars': self.d_vars},
-            {'loss': self.d_loss_fake, 'vars': self.d_vars},
-            {'loss': self.g_loss, 'vars': self.g_vars}
+            {'loss': self.dzgen_loss, 'vars': self.d_vars},
         ]
         return losses
 
@@ -168,6 +166,7 @@ class UserModel(Tower):
     def build_model(self):
 
         if not self.is_inference:
+
             self.z = tf.random_normal(shape=[self.batch_size, self.z_dim], dtype=tf.float32, seed=None, name='z')
 
             x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim], name='x_reshaped')
@@ -175,46 +174,46 @@ class UserModel(Tower):
 
             if self.y_dim:
                 self.y = tf.one_hot(self.y, self.y_dim, name='y_onehot')
-                self.G = self.generator(self.z, self.y)
-                self.D, self.D_logits  = self.discriminator(self.images, self.y, reuse=False)
-                self.D_, self.D_logits_ = self.discriminator(self.G, self.y, reuse=True)
+
+                self.DzGEN, self.D_logits  = self.discriminator(self.images, self.y, reuse=False)
+                self.G = self.generator(self.DzGEN, self.y)
+                #self.D_, self.D_logits_ = self.discriminator(self.G, self.y, reuse=True)
             else:
                 self.G = self.generator(self.z)
                 self.D, self.D_logits = self.discriminator(self.images, reuse=False)
                 self.D_, self.D_logits_ = self.discriminator(self.G, reuse=True)
 
             self.summaries.append(histogram_summary("z", self.z))
-            self.summaries.append(histogram_summary("d", self.D))
-            self.summaries.append(histogram_summary("d_", self.D_))
             self.summaries.append(image_summary("G", self.G, max_outputs=5))
             self.summaries.append(image_summary("X", self.images, max_outputs=5))
             self.summaries.append(histogram_summary("G_hist", self.G))
             self.summaries.append(histogram_summary("X_hist", self.images))
 
-            self.d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits, tf.ones_like(self.D), name="loss_D_real"))
-            self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_, tf.zeros_like(self.D_), name="loss_D_fake"))
-            self.g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_, tf.ones_like(self.D_), name="loss_G"))
+            self.dzgen_loss = tf.reduce_mean(tf.square(self.G - self.images), name="loss_DzGEN")
+            #self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_, tf.zeros_like(self.D_), name="loss_D_fake"))
+            #self.g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_, tf.ones_like(self.D_), name="loss_G"))
 
-            self.summaries.append(scalar_summary("d_loss_real", self.d_loss_real))
-            self.summaries.append(scalar_summary("d_loss_fake", self.d_loss_fake))
+            #self.summaries.append(scalar_summary("d_loss_real", self.d_loss_real))
+            #self.summaries.append(scalar_summary("d_loss_fake", self.d_loss_fake))
 
-            self.d_loss = (self.d_loss_real + self.d_loss_fake) / 2.
+            #self.d_loss = (self.d_loss_real + self.d_loss_fake) / 2.
 
-            self.summaries.append(scalar_summary("g_loss", self.g_loss))
-            self.summaries.append(scalar_summary("d_loss", self.d_loss))
+            self.summaries.append(scalar_summary("DzGen_loss", self.dzgen_loss))
+            #self.summaries.append(scalar_summary("g_loss", self.g_loss))
+            #self.summaries.append(scalar_summary("d_loss", self.d_loss))
 
             t_vars = tf.trainable_variables()
 
             self.g_vars = [var for var in t_vars if 'g_' in var.name]
             self.d_vars = [var for var in t_vars if 'd_' in var.name]
 
-            # histogram comparison
-            value_range = [0.0, 1.0]
-            nbins = 100
-            hist_g = tf.histogram_fixed_width(self.G, value_range, nbins=nbins, dtype=tf.float32) / nbins
-            hist_images = tf.histogram_fixed_width(self.images, value_range, nbins=nbins, dtype=tf.float32) / nbins
-            chi_square = tf.reduce_mean(tf.div(tf.square(hist_g - hist_images), hist_g + hist_images))
-            self.summaries.append(scalar_summary("chi_square", chi_square))
+            ## histogram comparison
+            #value_range = [0.0, 1.0]
+            #nbins = 100
+            #hist_g = tf.histogram_fixed_width(self.G, value_range, nbins=nbins, dtype=tf.float32) / nbins
+            #hist_images = tf.histogram_fixed_width(self.images, value_range, nbins=nbins, dtype=tf.float32) / nbins
+            #chi_square = tf.reduce_mean(tf.div(tf.square(hist_g - hist_images), hist_g + hist_images))
+            #self.summaries.append(scalar_summary("chi_square", chi_square))
         else:
             if self.y_dim:
                 # shape of x is [self.batch_size, 1, self.z_dim + self.y_dim]
@@ -255,9 +254,9 @@ class UserModel(Tower):
                 h2 = lrelu(self.d_bn2(linear(h1, self.dfc_dim, 'd_h2_lin'), train=self.is_training))
                 h2 = tf.concat(1, [h2, y])
 
-                h3 = linear(h2, 1, 'd_h3_lin')
+                h3 = linear(h2, self.z_dim, 'd_h3_lin_retrain')
+                return h3, h3
 
-                return tf.nn.sigmoid(h3), h3
 
     def generator(self, z, y=None):
         with tf.variable_scope("generator") as scope:
