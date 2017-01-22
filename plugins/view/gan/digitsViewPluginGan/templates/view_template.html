@@ -1,0 +1,12 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<script>
+$('#{{ row_id }}_{{ col_id }}').html('<img src="{{image}}" style="max-width:100%;" />');
+</script>
+
+{{key}}
+<img src="{{image}}" style="max-width:100%;" />

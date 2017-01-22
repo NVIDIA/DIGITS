@@ -1,0 +1,51 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<h3>GAN inference Options</h3>
+<h4>Choose a task</h4>
+<div class="form-group">
+    <div class="form-group{{mark_errors([form.task_id])}}">
+        {{ form.task_id.label }}
+        {{ form.task_id.tooltip }}
+        {{ form.task_id(class='form-control') }}
+    </div>
+
+    <h4>Class sweep parameters</h4>
+
+    <div class="form-group{{mark_errors([form.class_z_vector])}}">
+        {{ form.class_z_vector.label }}
+        {{ form.class_z_vector.tooltip }}
+        {{ form.class_z_vector(class='form-control') }}
+    </div>
+
+    <h4>Style sweep parameters</h4>
+
+    <div class="form-group{{mark_errors([form.style_z1_vector])}}">
+        {{ form.style_z1_vector.label }}
+        {{ form.style_z1_vector.tooltip }}
+        {{ form.style_z1_vector(class='form-control') }}
+    </div>
+
+    <div class="form-group{{mark_errors([form.style_z2_vector])}}">
+        {{ form.style_z2_vector.label }}
+        {{ form.style_z2_vector.tooltip }}
+        {{ form.style_z2_vector(class='form-control') }}
+    </div>
+
+    <h4>Image generation parameters</h4>
+
+    <div class="form-group{{mark_errors([form.genimg_z_vector])}}">
+        {{ form.genimg_z_vector.label }}
+        {{ form.genimg_z_vector.tooltip }}
+        {{ form.genimg_z_vector(class='form-control') }}
+    </div>
+
+    <div class="form-group{{mark_errors([form.genimg_class_id])}}">
+        {{ form.genimg_class_id.label }}
+        {{ form.genimg_class_id.tooltip }}
+        {{ form.genimg_class_id(class='form-control') }}
+    </div>
+</div>
