@@ -313,7 +313,7 @@ class Task(StatusCls):
         if self.status != Status.RUN:
             return False
         elif self.p.returncode != 0:
-            self.logger.error('%s %s task failed with error code %d' % (self.name(), self.p.returncode))
+            self.logger.error('%s task failed with error code %d' % (self.name(), self.p.returncode))
             if self.exception is None:
                 self.exception = 'error code %d' % self.p.returncode
                 if unrecognized_output:
