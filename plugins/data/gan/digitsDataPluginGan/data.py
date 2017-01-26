@@ -39,16 +39,21 @@ class DataIngestion(DataIngestionInterface):
     def __init__(self, is_inference_db=False, **kwargs):
         super(DataIngestion, self).__init__(**kwargs)
 
-        self.userdata['is_inference_db'] = is_inference_db
-
         self.z_dim = 100
         self.y_dim = 10
+
+        self.userdata['is_inference_db'] = is_inference_db
+
         self.input_dim = self.z_dim + self.y_dim
 
     @override
     def encode_entry(self, entry):
         if not self.userdata['is_inference_db']:
-            raise NotImplementedError
+            filename = entry[0]
+            label = entry[1]
+            # feature image
+            feature = self.encode_PIL_Image(image.load_image(filename))
+            label = np.array(label).reshape(1, 1, len(label))
         else:
             if self.userdata['task_id'] in ['style', 'class', 'genimg']:
                 feature = entry
@@ -124,7 +129,22 @@ class DataIngestion(DataIngestionInterface):
     def itemize_entries(self, stage):
         entries = []
         if not self.userdata['is_inference_db']:
-            raise NotImplementedError
+            if stage == constants.TRAIN_DB:
+                # read file list
+                with open(self.userdata['file_list']) as f:
+                    palette = []
+                    lines = f.read().splitlines()
+                    # skip first 2 lines (header)
+                    for line in lines[2:]:
+                        fields = line.split()
+                        filename = fields[0]
+                        # replace .jpg extension with .png
+                        filename = filename.split('.')[0] + '.png'
+                        # add full path
+                        filename = os.path.join(self.userdata['image_folder'], filename)
+                        label=[int(f) for f in fields[1:]]
+                        entries.append((filename, label))
+            return entries
         elif stage == constants.TEST_DB:
             if self.userdata['task_id'] == 'style':
                 if self.userdata['style_z1_vector']:

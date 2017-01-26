@@ -17,6 +17,17 @@ class DatasetForm(Form):
     A form used to create a Sunnybrook dataset
     """
 
+    def validate_file_path(form, field):
+        if not field.data:
+            pass
+        else:
+            # make sure the filesystem path exists
+            if not os.path.exists(field.data) and not os.path.isdir(field.data):
+                raise validators.ValidationError(
+                    'File does not exist or is not reachable')
+            else:
+                return True
+
     def validate_folder_path(form, field):
         if not field.data:
             pass
@@ -27,6 +38,14 @@ class DatasetForm(Form):
                     'Folder does not exist or is not reachable')
             else:
                 return True
+
+    file_list = utils.forms.StringField(
+        u'File list (with attributes) in CelebA format',
+        validators=[
+            validate_file_path,
+        ],
+        tooltip="Provide file list in CelebA format"
+    )
 
     image_folder = utils.forms.StringField(
         u'Image folder',
