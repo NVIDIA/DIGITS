@@ -123,6 +123,23 @@ After a few hours of training, your network loss and accuracy may look like:
 
 ![loss](dbpedia-loss.png)
 
+**NOTE**: There is a minor bug in cuDNN v5.1.10 that you may run into with this example.
+On Kepler GPUs (e.g. K80), you may have very bad performance (time estimates in the hundreds of days!).
+If so, cuDNN is suggesting an inappropriate algorithm to use.
+You can override this easily - simply replace this line:
+```lua
+    -- [(1018-3)/3+1=339] x 256
+    net:add(backend.TemporalConvolution(256, 256, 7))
+```
+With these lines:
+```lua
+     -- [(1018-3)/3+1=339] x 256
+    local conv2 = backend.TemporalConvolution(256, 256, 7)
+    conv2:setMode(nil, 0, nil)
+    net:add(conv2)
+```
+That will force cuDNN to use a different algorithm. If you're into applying git patches, [use this](https://gist.github.com/lukeyeager/48a852f90c1366c9a123ba183bc1eda2).
+
 ## Verification
 
 At the bottom of the model page, select the model snapshot that achieved the best validation accuracy (this is not necessarily the last one).
