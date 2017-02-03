@@ -20,7 +20,7 @@ server {
 
     # Socketio
     location /socket.io {
-        proxy_pass http://127.0.0.1:34448/socket.io;
+        proxy_pass http://127.0.0.1:34448;
         proxy_redirect off;
         proxy_buffering off;
 
