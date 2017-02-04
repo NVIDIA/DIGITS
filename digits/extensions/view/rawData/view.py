@@ -9,6 +9,7 @@ from ..interface import VisualizationInterface
 
 CONFIG_TEMPLATE = "config_template.html"
 VIEW_TEMPLATE = "view_template.html"
+HEADER_TEMPLATE = "header_template.html"
 
 
 @subclass
@@ -22,6 +23,7 @@ class Visualization(VisualizationInterface):
         extension_dir = os.path.dirname(os.path.abspath(__file__))
         self.view_template = open(
             os.path.join(extension_dir, VIEW_TEMPLATE), "r").read()
+        self.all_data = []
 
     @staticmethod
     def get_config_form():
@@ -43,6 +45,14 @@ class Visualization(VisualizationInterface):
         template = open(
             os.path.join(extension_dir, CONFIG_TEMPLATE), "r").read()
         return (template, {})
+
+    @override
+    def get_header_template(self):
+        extension_dir = os.path.dirname(os.path.abspath(__file__))
+        template = open(
+            os.path.join(extension_dir, HEADER_TEMPLATE), "r").read()
+        print(repr(self.all_data))
+        return self.view_template, {'data': repr(self.all_data)}
 
     @staticmethod
     def get_id():
@@ -74,4 +84,5 @@ class Visualization(VisualizationInterface):
         Process one inference output
         """
         # just return the same data and ignore ground truth
+        self.all_data.append(inference_data)
         return inference_data
