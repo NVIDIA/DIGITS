@@ -48,4 +48,18 @@
         {{ form.genimg_class_id.tooltip }}
         {{ form.genimg_class_id(class='form-control') }}
     </div>
+
+    <h4>Encode random images in folder</h4>
+
+    <div class="form-group{{mark_errors([form.enc_file_list])}}">
+        {{ form.enc_file_list.label }}
+        {{ form.enc_file_list.tooltip }}
+        {{ form.enc_file_list(class='form-control autocomplete_path', placeholder='file') }}
+    </div>
+
+    <div class="form-group{{mark_errors([form.enc_image_folder])}}">
+        {{ form.enc_image_folder.label }}
+        {{ form.enc_image_folder.tooltip }}
+        {{ form.enc_image_folder(class='form-control autocomplete_path', placeholder='folder') }}
+    </div>
 </div>

@@ -56,8 +56,26 @@ class DatasetForm(Form):
         tooltip="Specify the path to a folder of images."
         )
 
+    center_crop_size = utils.forms.IntegerField(
+        u'Center crop size',
+        default=108,
+        validators=[
+            validators.NumberRange(min=0)
+        ],
+        tooltip="Specify center crop."
+    )
+
+    resize = utils.forms.IntegerField(
+        u'Resize after crop',
+        default=64,
+        tooltip="Resize after crop."
+    )
+
 @subclass
 class InferenceForm(Form):
+    """
+    A form used to perform inference on a text classification dataset
+    """
 
     def validate_file_path(form, field):
         if not field.data:
@@ -69,9 +87,18 @@ class InferenceForm(Form):
                     'File does not exist or is not reachable')
             else:
                 return True
-    """
-    A form used to perform inference on a text classification dataset
-    """
+
+    def validate_folder_path(form, field):
+        if not field.data:
+            pass
+        else:
+            # make sure the filesystem path exists
+            if not os.path.exists(field.data) or not os.path.isdir(field.data):
+                raise validators.ValidationError(
+                    'Folder does not exist or is not reachable')
+            else:
+                return True
+
     row_count = utils.forms.IntegerField(
         u'Rows',
         default=10,
@@ -87,6 +114,8 @@ class InferenceForm(Form):
             ('class', 'Class sweep'),
             ('style', 'Style sweep'),
             ('genimg', 'Generate single image'),
+            ('enclist', 'Encode list of images'),
+            ('testzs', 'Test z vectors'),
             ],
         default='class',
         tooltip="Select a task to execute."
@@ -116,3 +145,19 @@ class InferenceForm(Form):
         ],
         tooltip="Class of image to generate."
     )
+
+    enc_file_list = utils.forms.StringField(
+        u'File list',
+        validators=[
+            validate_file_path,
+            ],
+        tooltip="Specify the path to a file that contains a list of files."
+        )
+
+    enc_image_folder = utils.forms.StringField(
+        u'Image folder',
+        validators=[
+            validate_folder_path,
+            ],
+        tooltip="Specify the path to a folder of images."
+        )

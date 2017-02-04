@@ -13,6 +13,8 @@ from .forms import DatasetForm, InferenceForm
 DATASET_TEMPLATE = "templates/dataset_template.html"
 INFERENCE_TEMPLATE = "templates/inference_template.html"
 
+# CONFIG = "mnist"
+CONFIG = "celebA"
 
 def one_hot(val, depth):
     x = np.zeros(depth)
@@ -40,7 +42,10 @@ class DataIngestion(DataIngestionInterface):
         super(DataIngestion, self).__init__(**kwargs)
 
         self.z_dim = 100
-        self.y_dim = 10
+        if CONFIG == "mnist":
+            self.y_dim = 10
+        else:
+            self.y_dim = 0
 
         self.userdata['is_inference_db'] = is_inference_db
 
@@ -51,14 +56,18 @@ class DataIngestion(DataIngestionInterface):
         if not self.userdata['is_inference_db']:
             filename = entry[0]
             label = entry[1]
-            # feature image
-            feature = self.encode_PIL_Image(image.load_image(filename))
+            feature = self.scale_image(filename)
             label = np.array(label).reshape(1, 1, len(label))
         else:
-            if self.userdata['task_id'] in ['style', 'class', 'genimg']:
+            if self.userdata['task_id'] in ['style', 'class', 'genimg', 'testzs']:
                 feature = entry
                 label = np.array([0])
-            elif self.userdata['task_id'] == 'genz':
+            elif self.userdata['task_id'] == 'enclist':
+                filename = entry[0]
+                label = entry[1]
+                feature = self.scale_image(filename)
+                label = np.array(label).reshape(1, 1, len(label))
+            else:
                 raise NotImplementedError
         return feature, label
 
@@ -144,7 +153,6 @@ class DataIngestion(DataIngestionInterface):
                         filename = os.path.join(self.userdata['image_folder'], filename)
                         label=[int(f) for f in fields[1:]]
                         entries.append((filename, label))
-            return entries
         elif stage == constants.TEST_DB:
             if self.userdata['task_id'] == 'style':
                 if self.userdata['style_z1_vector']:
@@ -180,9 +188,50 @@ class DataIngestion(DataIngestionInterface):
                     z = np.array([float(v) for v in self.userdata['genimg_z_vector'].split()])
                 else:
                     z = np.random.normal(size=(100,))
-                feature = np.append(z, one_hot(c, self.y_dim)).reshape((1, 1, self.input_dim))
-                print(feature)
+                if self.y_dim > 0:
+                    z = np.append(z, one_hot(c, self.y_dim))
+                feature = z.reshape((1, 1, self.input_dim))
                 entries.append(feature)
+            elif self.userdata['task_id'] == 'enclist':
+                with open(self.userdata['enc_file_list']) as f:
+                    palette = []
+                    lines = f.read().splitlines()
+                    # skip first 2 lines (header)
+                    for line in lines[2:100]:
+                        fields = line.split()
+                        filename = fields[0]
+                        # replace .jpg extension with .png
+                        filename = filename.split('.')[0] + '.png'
+                        # add full path
+                        filename = os.path.join(self.userdata['enc_image_folder'], filename)
+                        label=[int(f) for f in fields[1:]]
+                        entries.append((filename, label))
+            elif self.userdata['task_id'] == 'testzs':
+                for item in list_encoding:
+                    z = np.random.normal(size=(100,))
+                    #z = item['output']
+                    entries.append(z.reshape((1, 1, self.input_dim)))
             else:
                 raise ValueError("Unknown task: %s" % self.userdata['task_id'])
         return entries
+
+    def scale_image(self, filename):
+        im = np.array(image.load_image(filename))
+
+        # center crop
+        if self.userdata['center_crop_size']:
+            crop_size = int(self.userdata['center_crop_size'])
+            width, height = im.shape[0:2]
+            i = (width // 2) - crop_size // 2
+            j = (height //2 )- crop_size // 2
+            im = im[i:i + crop_size, j:j + crop_size, :]
+
+        # resize
+        if self.userdata['resize']:
+            resize = int(self.userdata['resize'])
+            im = image.resize_image(im, resize, resize, resize_mode='squash')
+
+        # transpose to CHW
+        feature = im.transpose(2, 0, 1)
+
+        return feature
