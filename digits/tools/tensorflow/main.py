@@ -618,9 +618,14 @@ def main(_):
 
                     feed_dict = {train_model.learning_rate: lrpolicy.get_learning_rate(step)}
 
-                    for op in train_model.train:
-
-                        _, summary_str, step = sess.run([op, train_model.summary, train_model.global_step],
+                    if False:
+                        for op in train_model.train:
+                            _, summary_str, step = sess.run([op, train_model.summary, train_model.global_step],
+                                                            feed_dict=feed_dict,
+                                                        options=run_options,
+                                                        run_metadata=run_metadata)
+                    else:
+                        _, summary_str, step = sess.run([train_model.train, train_model.summary, train_model.global_step],
                                                         feed_dict=feed_dict,
                                                         options=run_options,
                                                         run_metadata=run_metadata)
