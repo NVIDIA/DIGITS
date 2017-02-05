@@ -83,6 +83,7 @@ addons:
             - cython
             - git
             - graphviz
+            - libatlas-base-dev
             - libboost-filesystem-dev
             - libboost-python-dev
             - libboost-system-dev

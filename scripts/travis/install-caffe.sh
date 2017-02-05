@@ -31,7 +31,7 @@ git clone https://github.com/${CAFFE_FORK}/caffe.git ${INSTALL_DIR} ${CAFFE_BRAN
 # configure project
 mkdir -p ${INSTALL_DIR}/build
 cd ${INSTALL_DIR}/build
-cmake .. -DCPU_ONLY=On -DBLAS=Open
+cmake .. -DCPU_ONLY=On
 
 # build
 make --jobs=`nproc`
