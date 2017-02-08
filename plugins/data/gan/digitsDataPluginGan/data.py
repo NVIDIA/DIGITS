@@ -147,8 +147,6 @@ class DataIngestion(DataIngestionInterface):
                     for line in lines[2:]:
                         fields = line.split()
                         filename = fields[0]
-                        # replace .jpg extension with .png
-                        filename = filename.split('.')[0] + '.png'
                         # add full path
                         filename = os.path.join(self.userdata['image_folder'], filename)
                         label=[int(f) for f in fields[1:]]
@@ -200,8 +198,6 @@ class DataIngestion(DataIngestionInterface):
                     for line in lines[2:100]:
                         fields = line.split()
                         filename = fields[0]
-                        # replace .jpg extension with .png
-                        filename = filename.split('.')[0] + '.png'
                         # add full path
                         filename = os.path.join(self.userdata['enc_image_folder'], filename)
                         label=[int(f) for f in fields[1:]]
