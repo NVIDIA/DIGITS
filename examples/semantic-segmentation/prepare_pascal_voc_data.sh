@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
 if [ "$#" -ne 2 ]; then
