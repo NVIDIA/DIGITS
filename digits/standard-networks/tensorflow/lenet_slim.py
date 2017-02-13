@@ -3,7 +3,9 @@ class UserModel(Tower):
     @model_property
     def inference(self):
         x = tf.reshape(self.x, shape=[-1, self.input_shape[0], self.input_shape[1], self.input_shape[2]])
-        with slim.arg_scope([slim.conv2d, slim.fully_connected], 
+        # scale (divide by MNIST std)
+        x = x * 0.0125
+        with slim.arg_scope([slim.conv2d, slim.fully_connected],
                             weights_initializer=tf.contrib.layers.xavier_initializer(),
                             weights_regularizer=slim.l2_regularizer(0.0005) ):
             model = slim.conv2d(x, 20, [5, 5], padding='VALID', scope='conv1')
