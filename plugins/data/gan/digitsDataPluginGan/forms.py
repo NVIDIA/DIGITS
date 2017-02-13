@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import os
 
 from flask.ext.wtf import Form
-from wtforms import StringField, validators
+from wtforms import HiddenField, validators
 
 from digits import utils
 from digits.utils import subclass
@@ -77,6 +77,11 @@ class InferenceForm(Form):
     A form used to perform inference on a text classification dataset
     """
 
+    def __init__(self, attributes, editable_attribute_ids, **kwargs):
+        super(InferenceForm, self).__init__(**kwargs)
+        self.attributes = attributes
+        self.editable_attribute_ids = editable_attribute_ids
+
     def validate_file_path(form, field):
         if not field.data:
             pass
@@ -108,32 +113,42 @@ class InferenceForm(Form):
         tooltip="Rows to generate in output grid."
     )
 
+    dataset_type = utils.forms.SelectField(
+        'Dataset',
+        choices=[
+            ('mnist', 'MNIST'),
+            ('celeba', 'CelebA'),
+            ],
+        default='celeba',
+        tooltip="Select a dataset."
+        )
+
     task_id = utils.forms.SelectField(
         'Task ID',
         choices=[
-            ('class', 'Class sweep'),
-            ('style', 'Style sweep'),
+            ('class', 'MNIST - Class sweep'),
+            ('style', 'MNIST - Style sweep'),
             ('genimg', 'Generate single image'),
-            ('enclist', 'Encode list of images'),
-            ('testzs', 'Test z vectors'),
+            ('attributes', 'CelebA - add/remove attributes'),
+            ('enclist', 'CelebA - Encode list of images'),
             ],
         default='class',
         tooltip="Select a task to execute."
         )
 
-    class_z_vector = StringField(
+    class_z_vector = utils.forms.StringField(
         u'Z vector (leave blank for random)',
     )
 
-    style_z1_vector = StringField(
+    style_z1_vector = utils.forms.StringField(
         u'Z1 vector (leave blank for random)',
     )
 
-    style_z2_vector = StringField(
+    style_z2_vector = utils.forms.StringField(
         u'Z2 vector (leave blank for random)',
     )
 
-    genimg_z_vector = StringField(
+    genimg_z_vector = utils.forms.StringField(
         u'Z vector (leave blank for random)',
     )
 
@@ -145,6 +160,20 @@ class InferenceForm(Form):
         ],
         tooltip="Class of image to generate."
     )
+
+    attributes_z_vector = utils.forms.StringField(
+        u'Z vector (leave blank for random)',
+    )
+
+    attributes_file = utils.forms.StringField(
+        u'Attributes vector file',
+        validators=[
+            validate_file_path,
+            ],
+        tooltip="Specify the path to a file that contains attributes vectors."
+        )
+
+    attributes_params = HiddenField()
 
     enc_file_list = utils.forms.StringField(
         u'File list',

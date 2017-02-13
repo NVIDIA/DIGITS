@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import os
+import pickle
 
 import numpy as np
 
@@ -13,13 +14,28 @@ from .forms import DatasetForm, InferenceForm
 DATASET_TEMPLATE = "templates/dataset_template.html"
 INFERENCE_TEMPLATE = "templates/inference_template.html"
 
-# CONFIG = "mnist"
-CONFIG = "celebA"
+CELEBA_ALL_ATTRIBUTES = """
+                         5_o_Clock_Shadow Arched_Eyebrows Attractive Bags_Under_Eyes Bald Bangs
+                         Big_Lips Big_Nose Black_Hair Blond_Hair Blurry Brown_Hair Bushy_Eyebrows
+                         Chubby Double_Chin Eyeglasses Goatee Gray_Hair Heavy_Makeup High_Cheekbones
+                         Male Mouth_Slightly_Open Mustache Narrow_Eyes No_Beard Oval_Face Pale_Skin
+                         Pointy_Nose Receding_Hairline Rosy_Cheeks Sideburns Smiling Straight_Hair
+                         Wavy_Hair Wearing_Earrings Wearing_Hat Wearing_Lipstick Wearing_Necklace
+                         Wearing_Necktie Young
+                        """.split()
+
+CELEBA_EDITABLE_ATTRIBUTES = [
+    'Bald', 'Black_Hair', 'Blond_Hair', 'Male', 'Smiling', 'Wearing_Lipstick', 'Young'
+]
+
+CELEBA_EDITABLE_ATTRIBUTES_IDS = [CELEBA_ALL_ATTRIBUTES.index(attr) for attr in CELEBA_EDITABLE_ATTRIBUTES]
+
 
 def one_hot(val, depth):
     x = np.zeros(depth)
     x[val] = 1
     return x
+
 
 def slerp(val, low, high):
     """Spherical interpolation. val has a range of 0 to 1."""
@@ -32,20 +48,32 @@ def slerp(val, low, high):
     return np.sin((1.0-val)*omega) / so * low + np.sin(val*omega)/so * high
 
 
+def parse_attributes_params(s):
+    return [[float(val) for val in line.split()] for line in s.splitlines()]
+
 @subclass
 class DataIngestion(DataIngestionInterface):
     """
     A data ingestion extension for GANs
     """
 
+    # CONFIG = "mnist"
+    CONFIG = "celeba"
+    #CONFIG = "celeba_cond"
+
     def __init__(self, is_inference_db=False, **kwargs):
         super(DataIngestion, self).__init__(**kwargs)
 
+        if 'dataset_type' in self.userdata:
+            self.CONFIG = self.userdata['dataset_type']
+
         self.z_dim = 100
-        if CONFIG == "mnist":
+        if self.CONFIG == "mnist":
             self.y_dim = 10
-        else:
+        elif self.CONFIG == "celeba":
             self.y_dim = 0
+        elif self.CONFIG == "celeba_cond":
+            self.y_dim = 40
 
         self.userdata['is_inference_db'] = is_inference_db
 
@@ -59,7 +87,7 @@ class DataIngestion(DataIngestionInterface):
             feature = self.scale_image(filename)
             label = np.array(label).reshape(1, 1, len(label))
         else:
-            if self.userdata['task_id'] in ['style', 'class', 'genimg', 'testzs']:
+            if self.userdata['task_id'] in ['style', 'class', 'genimg', 'attributes']:
                 feature = entry
                 label = np.array([0])
             elif self.userdata['task_id'] == 'enclist':
@@ -119,7 +147,7 @@ class DataIngestion(DataIngestionInterface):
 
     @override
     def get_inference_form(self):
-        return InferenceForm()
+        return InferenceForm(CELEBA_ALL_ATTRIBUTES, CELEBA_EDITABLE_ATTRIBUTES_IDS)
 
     @staticmethod
     @override
@@ -190,6 +218,19 @@ class DataIngestion(DataIngestionInterface):
                     z = np.append(z, one_hot(c, self.y_dim))
                 feature = z.reshape((1, 1, self.input_dim))
                 entries.append(feature)
+            elif self.userdata['task_id'] == 'attributes':
+                if self.userdata['attributes_z_vector']:
+                    z = np.array([float(v) for v in self.userdata['attributes_z_vector'].split()])
+                else:
+                    z = np.random.normal(size=(100,))
+                with open(self.userdata['attributes_file'], 'rb') as f:
+                    attributes_z = pickle.load(f)
+                    params = parse_attributes_params(self.userdata['attributes_params'])
+                    for img_params in params:
+                        z_img = np.copy(z)
+                        for i, coeff in enumerate(img_params):
+                            z_img += coeff * attributes_z[CELEBA_EDITABLE_ATTRIBUTES_IDS[i]]
+                        entries.append(z_img.reshape((1, 1, self.input_dim)))
             elif self.userdata['task_id'] == 'enclist':
                 with open(self.userdata['enc_file_list']) as f:
                     palette = []
