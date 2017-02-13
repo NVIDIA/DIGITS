@@ -190,11 +190,8 @@ def create():
                         elif epoch == -1:
                             pretrained_model = old_job.train_task().pretrained_model
                         else:
-                            for filename, e in old_job.train_task().snapshots:
-                                if e == epoch:
-                                    pretrained_model = filename
-                                    break
-
+                            # verify snapshot exists
+                            pretrained_model = old_job.train_task().get_snapshot(epoch, download=True)
                             if pretrained_model is None:
                                 raise werkzeug.exceptions.BadRequest(
                                     "For the job %s, selected pretrained_model for epoch %d is invalid!"
@@ -204,6 +201,8 @@ def create():
                                     "Pretrained_model for the selected epoch doesn't exist. "
                                     "May be deleted by another user/process. "
                                     "Please restart the server to load the correct pretrained_model details.")
+                            # get logical path
+                            pretrained_model = old_job.train_task().get_snapshot(epoch)
                         break
 
             elif form.method.data == 'pretrained':

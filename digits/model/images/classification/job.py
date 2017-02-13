@@ -28,7 +28,7 @@ class ImageClassificationModelJob(ImageModelJob):
     def download_files(self, epoch=-1):
         task = self.train_task()
 
-        snapshot_filename = task.get_snapshot(epoch)
+        snapshot_filename = task.get_snapshot(epoch, download=True)
 
         # get model files
         model_files = task.get_model_files()

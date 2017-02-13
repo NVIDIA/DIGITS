@@ -140,6 +140,31 @@ class TensorflowTrainTask(TrainTask):
         return True
 
     @override
+    def get_snapshot(self, epoch=-1, download=False):
+        """
+        return snapshot file for specified epoch
+        """
+        snapshot_filename = None
+
+        if len(self.snapshots) == 0:
+            return "no snapshots"
+
+        if epoch == -1 or not epoch:
+            epoch = self.snapshots[-1][1]
+            snapshot_filename = self.snapshots[-1][0]
+        else:
+            for f, e in self.snapshots:
+                if e == epoch:
+                    snapshot_filename = f
+                    break
+        if not snapshot_filename:
+            raise ValueError('Invalid epoch')
+        if download:
+            snapshot_filename = snapshot_filename + ".data-00000-of-00001"
+
+        return snapshot_filename
+
+    @override
     def task_arguments(self, resources, env):
 
         args = [config_value('tensorflow')['executable'],
@@ -447,9 +472,11 @@ class TensorflowTrainTask(TrainTask):
         snapshots = []
         for filename in os.listdir(self.job_dir):
             # find models
-            match = re.match(r'%s_(\d+)\.?(\d*)\.ckpt\.meta$' % self.snapshot_prefix, filename)
+            match = re.match(r'%s_(\d+)\.?(\d*)\.ckpt\.index$' % self.snapshot_prefix, filename)
             if match:
                 epoch = 0
+                # remove '.index' suffix from filename
+                filename = filename[:-6]
                 if match.group(2) == '':
                     epoch = int(match.group(1))
                 else:

@@ -245,10 +245,6 @@ def dump(obj):
 def load_snapshot(sess, weight_path, var_candidates):
     """ Loads a snapshot into a session from a weight path. Will only load the
     weights that are both in the weight_path file and the passed var_candidates."""
-
-    if weight_path.endswith('.meta'):
-        weight_path = weight_path[:-5]
-
     logging.info("Loading weights from pretrained model - %s ", weight_path)
     reader = tf.train.NewCheckpointReader(weight_path)
     var_map = reader.get_variable_to_shape_map()
@@ -540,7 +536,7 @@ def main(_):
         saver = tf.train.Saver(vars_to_save, max_to_keep=0, sharded=FLAGS.serving_export)
 
         # Initialize variables
-        init_op = tf.group(tf.initialize_all_variables(), tf.initialize_local_variables())
+        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
         sess.run(init_op)
 
         # If weights option is set, preload weights from existing models appropriately
