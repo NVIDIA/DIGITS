@@ -2,10 +2,18 @@
 from __future__ import absolute_import
 
 import os
+import tempfile
+
+# Find the best implementation available
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+import imageio
+import numpy as np
 import PIL.Image
 import PIL.ImageDraw
-
-import numpy as np
 
 import digits
 from digits.utils import subclass, override
@@ -34,8 +42,7 @@ class Visualization(VisualizationInterface):
             os.path.join(extension_dir, VIEW_TEMPLATE), "r").read()
 
         self.normalize = True
-        self.col_count = 10
-        self.row_count = 10
+        self.grid_size = 10
 
         # view options
         self.task_id = kwargs['gan_view_task_id']
@@ -67,11 +74,20 @@ class Visualization(VisualizationInterface):
         """
         Implements get_header_template() method from view extension interface
         """
+
+        # create animated gif
+        string_buf = StringIO()
+        fmt = "gif"
+        imageio.mimsave(string_buf, self.animated_images, format=fmt)
+        data = string_buf.getvalue().encode('base64').replace('\n', '')
+        animated_image_html = 'data:image/%s;base64,%s' % (fmt, data)
+
         extension_dir = os.path.dirname(os.path.abspath(__file__))
         template = open(
             os.path.join(extension_dir, HEADER_TEMPLATE), "r").read()
-        return template, {'cols': range(self.col_count),
-                          'rows': range(self.row_count)}
+        return template, {'cols': range(self.grid_size),
+                          'rows': range(self.grid_size),
+                          'animated_image': animated_image_html}
 
     @staticmethod
     def get_id():
@@ -144,9 +160,38 @@ class Visualization(VisualizationInterface):
         data = output_data[output_data.keys()[0]].astype('float32')
 
         if self.task_id == 'grid':
-            col_id = int(input_id) // self.col_count
-            row_id = int(input_id) % self.col_count
+            col_id = int(input_id) // self.grid_size
+            row_id = int(input_id) % self.grid_size
             image_html = self.get_image_html(data)
+
+            img_size = data.shape[0]
+            if img_size == 28:
+                # MNIST
+                if not hasattr(self, 'animated_images'):
+                    self.animated_images = [None] * (self.grid_size ** 2)
+                self.animated_images[row_id * self.grid_size + col_id] = data.astype('uint8')
+            elif img_size == 64:
+                # CelebA
+                if not hasattr(self, 'animated_images'):
+                    self.animated_images = [None] * (4 * self.grid_size - 4)
+
+                if (
+                       col_id == 0 or
+                       row_id == 0 or
+                       col_id == (self.grid_size - 1) or
+                       row_id == (self.grid_size - 1)
+                   ):
+                    if row_id == 0:
+                        idx = col_id
+                    elif col_id == (self.grid_size - 1):
+                        idx = self.grid_size - 1 + row_id
+                    elif row_id == (self.grid_size - 1):
+                        idx = 3 * self.grid_size - 3 - col_id
+                    else:
+                        idx = 4 * self.grid_size - 4 - row_id
+                    self.animated_images[idx] = data.astype('uint8')
+            else:
+                raise ValueEror("Unhandled image size: %d" % img_size)
 
             return {'image': image_html,
                     'col_id': col_id,

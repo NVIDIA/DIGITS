@@ -25,4 +25,5 @@ setup(
         ]
     },
     include_package_data=True,
+    install_requires=['imageio>=2.1.2'],
 )
