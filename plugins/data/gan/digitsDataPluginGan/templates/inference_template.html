@@ -77,6 +77,8 @@ function add_attributes_row() {
     <div id="task_class">
         <h4>MNIST Class sweep parameters</h4>
 
+        <h5>Use with "GAN" visualization method (select "Grid" task).</h5>
+
         <div class="form-group{{mark_errors([form.class_z_vector])}}">
             {{ form.class_z_vector.label }}
             {{ form.class_z_vector.tooltip }}
@@ -86,6 +88,8 @@ function add_attributes_row() {
 
     <div id="task_style">
         <h4>MNIST Style sweep parameters</h4>
+
+        <h5>Use with "GAN" visualization method (select "Grid" task).</h5>
 
         <div class="form-group{{mark_errors([form.style_z1_vector])}}">
             {{ form.style_z1_vector.label }}
@@ -103,7 +107,7 @@ function add_attributes_row() {
     <div id="task_genimg">
         <h4>Image generation parameters</h4>
 
-        <h5>Use with "Image Output" visualization method (HWC data order)</h5>
+        <h5>Use with "Image Output" visualization method (select "HWC" data order)</h5>
 
         <div class="form-group{{mark_errors([form.genimg_z_vector])}}">
             {{ form.genimg_z_vector.label }}
@@ -162,7 +166,7 @@ function add_attributes_row() {
     <div id="task_enclist">
         <h4>Encode file list</h4>
 
-        <h5>Use with "Raw data" visualization method</h5>
+        <h5>Use with "GAN" visualization method (select "Encoder" task).</h5>
 
         <div class="form-group{{mark_errors([form.enc_file_list])}}">
             {{ form.enc_file_list.label }}
@@ -175,14 +179,45 @@ function add_attributes_row() {
             {{ form.enc_image_folder.tooltip }}
             {{ form.enc_image_folder(class='form-control autocomplete_path', placeholder='folder') }}
         </div>
+
+        <div class="form-group{{mark_errors([form.enc_num_images])}}">
+            {{ form.enc_num_images.label }}
+            {{ form.enc_num_images.tooltip }}
+            {{ form.enc_num_images(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
     </div>
+
+    <div id="task_analogy">
+        <h4>Analogy</h4>
+
+        <h5>Use with "GAN" visualization method</h5>
+
+        <div class="form-group{{mark_errors([form.attributes_z1_vector])}}">
+            {{ form.attributes_z1_vector.label }}
+            {{ form.attributes_z1_vector.tooltip }}
+            {{ form.attributes_z1_vector(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.attributes_z2_vector])}}">
+            {{ form.attributes_z2_vector.label }}
+            {{ form.attributes_z2_vector.tooltip }}
+            {{ form.attributes_z2_vector(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.attributes_z3_vector])}}">
+            {{ form.attributes_z3_vector.label }}
+            {{ form.attributes_z3_vector.tooltip }}
+            {{ form.attributes_z3_vector(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+    </div>
+
 </div>
 
 <script>
 $("#task_id").change(function() {
     task_ids = [
         'class', 'style', 'genimg', 'attributes',
-        'enclist'
+        'enclist', 'analogy'
     ]
 
     console.log($(this).val())

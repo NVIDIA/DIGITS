@@ -51,6 +51,7 @@ def slerp(val, low, high):
 def parse_attributes_params(s):
     return [[float(val) for val in line.split()] for line in s.splitlines()]
 
+
 @subclass
 class DataIngestion(DataIngestionInterface):
     """
@@ -59,7 +60,7 @@ class DataIngestion(DataIngestionInterface):
 
     # CONFIG = "mnist"
     CONFIG = "celeba"
-    #CONFIG = "celeba_cond"
+    # CONFIG = "celeba_cond"
 
     def __init__(self, is_inference_db=False, **kwargs):
         super(DataIngestion, self).__init__(**kwargs)
@@ -87,7 +88,11 @@ class DataIngestion(DataIngestionInterface):
             feature = self.scale_image(filename)
             label = np.array(label).reshape(1, 1, len(label))
         else:
-            if self.userdata['task_id'] in ['style', 'class', 'genimg', 'attributes']:
+            if self.userdata['task_id'] in ['style',
+                                            'class',
+                                            'genimg',
+                                            'attributes',
+                                            'analogy']:
                 feature = entry
                 label = np.array([0])
             elif self.userdata['task_id'] == 'enclist':
@@ -169,7 +174,6 @@ class DataIngestion(DataIngestionInterface):
             if stage == constants.TRAIN_DB:
                 # read file list
                 with open(self.userdata['file_list']) as f:
-                    palette = []
                     lines = f.read().splitlines()
                     # skip first 2 lines (header)
                     for line in lines[2:]:
@@ -177,7 +181,7 @@ class DataIngestion(DataIngestionInterface):
                         filename = fields[0]
                         # add full path
                         filename = os.path.join(self.userdata['image_folder'], filename)
-                        label=[int(f) for f in fields[1:]]
+                        label = [int(field) for field in fields[1:]]
                         entries.append((filename, label))
         elif stage == constants.TEST_DB:
             if self.userdata['task_id'] == 'style':
@@ -199,7 +203,6 @@ class DataIngestion(DataIngestionInterface):
                     z = np.array([float(v) for v in self.userdata['class_z_vector'].split()])
                 else:
                     z = np.random.normal(size=(100,))
-                classes = np.random.random_integers(low=0, high=9, size=2)
                 for val in np.linspace(0, 1, self.userdata['row_count']):
                     for i in range(10):
                         c_0 = i
@@ -233,21 +236,46 @@ class DataIngestion(DataIngestionInterface):
                         entries.append(z_img.reshape((1, 1, self.input_dim)))
             elif self.userdata['task_id'] == 'enclist':
                 with open(self.userdata['enc_file_list']) as f:
-                    palette = []
                     lines = f.read().splitlines()
                     # skip first 2 lines (header)
-                    for line in lines[2:100]:
+                    max_images = self.userdata['enc_num_images']
+                    for line in lines[2:max_images + 2]:
                         fields = line.split()
                         filename = fields[0]
                         # add full path
                         filename = os.path.join(self.userdata['enc_image_folder'], filename)
-                        label=[int(f) for f in fields[1:]]
+                        label = [int(field) for field in fields[1:]]
                         entries.append((filename, label))
-            elif self.userdata['task_id'] == 'testzs':
-                for item in list_encoding:
-                    z = np.random.normal(size=(100,))
-                    #z = item['output']
-                    entries.append(z.reshape((1, 1, self.input_dim)))
+            elif self.userdata['task_id'] == 'analogy':
+                if self.userdata['attributes_z1_vector']:
+                    z1 = np.array([float(v) for v in self.userdata['attributes_z1_vector'].split()])
+                else:
+                    z1 = np.random.normal(size=(100,))
+                if self.userdata['attributes_z2_vector']:
+                    z2 = np.array([float(v) for v in self.userdata['attributes_z2_vector'].split()])
+                else:
+                    z2 = np.random.normal(size=(100,))
+                if self.userdata['attributes_z3_vector']:
+                    z3 = np.array([float(v) for v in self.userdata['attributes_z3_vector'].split()])
+                else:
+                    z3 = np.random.normal(size=(100,))
+
+                # create analogy vector
+                z4 = z2 + z3 - z1
+
+                grid_size = self.userdata['row_count']
+
+                # now interpolate across columns
+                for row in xrange(grid_size):
+                    row_k = row / float(grid_size - 1)
+                    z_left = slerp(row_k, z1, z3)
+                    z_right = slerp(row_k, z2, z4)
+                    entries.append(z_left.reshape((1, 1, self.input_dim)))
+                    for col in xrange(1, grid_size - 1):
+                        col_k = col / float(grid_size - 1)
+                        z = slerp(col_k, z_left, z_right)
+                        entries.append(z.reshape((1, 1, self.input_dim)))
+                    entries.append(z_right.reshape((1, 1, self.input_dim)))
             else:
                 raise ValueError("Unknown task: %s" % self.userdata['task_id'])
         return entries
@@ -260,7 +288,7 @@ class DataIngestion(DataIngestionInterface):
             crop_size = int(self.userdata['center_crop_size'])
             width, height = im.shape[0:2]
             i = (width // 2) - crop_size // 2
-            j = (height //2 )- crop_size // 2
+            j = (height // 2) - crop_size // 2
             im = im[i:i + crop_size, j:j + crop_size, :]
 
         # resize

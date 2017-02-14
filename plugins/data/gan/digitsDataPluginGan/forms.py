@@ -8,7 +8,6 @@ from wtforms import HiddenField, validators
 
 from digits import utils
 from digits.utils import subclass
-from digits.utils.forms import validate_required_iff
 
 
 @subclass
@@ -71,6 +70,7 @@ class DatasetForm(Form):
         tooltip="Resize after crop."
     )
 
+
 @subclass
 class InferenceForm(Form):
     """
@@ -131,6 +131,7 @@ class InferenceForm(Form):
             ('genimg', 'Generate single image'),
             ('attributes', 'CelebA - add/remove attributes'),
             ('enclist', 'CelebA - Encode list of images'),
+            ('analogy', 'CelebA - Analogy'),
             ],
         default='class',
         tooltip="Select a task to execute."
@@ -158,7 +159,7 @@ class InferenceForm(Form):
         validators=[
             validators.NumberRange(min=0, max=9)
         ],
-        tooltip="Class of image to generate."
+        tooltip="Class of image to generate (leave blank for CelebA)."
     )
 
     attributes_z_vector = utils.forms.StringField(
@@ -190,3 +191,24 @@ class InferenceForm(Form):
             ],
         tooltip="Specify the path to a folder of images."
         )
+
+    enc_num_images = utils.forms.IntegerField(
+        u'Number of images to encode',
+        default=100,
+        validators=[
+            validators.NumberRange(min=0)
+        ],
+        tooltip="Max number of images to encode."
+    )
+
+    attributes_z1_vector = utils.forms.StringField(
+        u'Source Z vector (leave blank for random)',
+    )
+
+    attributes_z2_vector = utils.forms.StringField(
+        u'First Sink Z vector (leave blank for random)',
+    )
+
+    attributes_z3_vector = utils.forms.StringField(
+        u'Second Sink Z vector (leave blank for random)',
+    )

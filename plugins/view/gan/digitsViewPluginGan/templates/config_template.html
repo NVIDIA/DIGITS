@@ -5,3 +5,9 @@
 {% from "helper.html" import mark_errors %}
 
 <small>Show the output of a GAN</small>
+
+<div class="form-group{{mark_errors([form.gan_view_task_id])}}">
+    {{ form.gan_view_task_id.label }}
+    {{ form.gan_view_task_id.tooltip }}
+    {{ form.gan_view_task_id(class='form-control autocomplete_path', placeholder='folder') }}
+</div>
