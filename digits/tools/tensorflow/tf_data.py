@@ -167,7 +167,7 @@ class LoaderFactory(object):
         self.batch_k = None
         self.stage = None
         self._seed = None
-        self.unencoded_data_format = 'whc'
+        self.unencoded_data_format = 'hwc'
         self.unencoded_channel_scheme = 'rgb'
         self.summaries = None
         self.aug_dict = {}
@@ -176,7 +176,7 @@ class LoaderFactory(object):
         pass
 
     @staticmethod
-    def set_source(db_path):
+    def set_source(db_path, is_inference=False):
         """
         Returns the correct backend.
         """
@@ -195,6 +195,7 @@ class LoaderFactory(object):
             exit(-1)
         loader.backend = backend
         loader.db_path = db_path
+        loader.is_inference = is_inference
         return loader
 
     def setup(self, labels_db_path, shuffle, bitdepth, batch_size, num_epochs=None, seed=None):
@@ -253,9 +254,12 @@ class LoaderFactory(object):
                     logging.error('Unsupported mime type (%s); cannot be decoded' % (self.data_mime))
                     exit(-1)
             else:
+                if self.backend == 'lmdb':
+                    data = tf.decode_raw(data, self.image_dtype, name='raw_decoder')
+
                 # if data is in CHW, set the shape and convert to HWC
                 if self.unencoded_data_format == 'chw':
-                    data = tf.reshape(data, [shape[2], shape[0], shape[1]])
+                    data = tf.reshape(data, [shape[0], shape[1], shape[2]])
                     data = digits.chw_to_hwc(data)
                 else:  # 'hwc'
                     data = tf.reshape(data, shape)
@@ -294,7 +298,6 @@ class LoaderFactory(object):
         single_label = None
         single_label_shape = None
         if self.stage == digits.STAGE_INF:
-            print(self.get_single_data(key_queue))
             single_key, single_data, single_data_shape, _, _ = self.get_single_data(key_queue)
         else:
             single_key, single_data, single_data_shape, single_label, single_label_shape = \
@@ -373,7 +376,7 @@ class LoaderFactory(object):
                 if aug_whitening:
                     # Subtract off its own mean and divide by the standard deviation of its own the pixels.
                     with tf.name_scope('whitening'):
-                        single_data = tf.image.per_image_whitening(single_data)  # N.B. also converts to float
+                        single_data = tf.image.per_image_standardization(single_data)  # N.B. also converts to float
 
         max_queue_capacity = min(math.ceil(self.total * MIN_FRACTION_OF_EXAMPLES_IN_QUEUE),
                                  MAX_ABSOLUTE_EXAMPLES_IN_QUEUE)
@@ -399,8 +402,8 @@ class LoaderFactory(object):
                 batch_size=self.batch_size,
                 dynamic_pad=True,  # Allows us to not supply fixed shape a priori
                 enqueue_many=False,  # Each tensor is a single example
-                # shapes=[[],[28,28,1],[]],  # Only makes sense is dynamic_pad=False
-                num_threads=NUM_THREADS_DATA_LOADER,
+                # set number of threads to 1 for tfrecords (used for inference)
+                num_threads=NUM_THREADS_DATA_LOADER if not self.is_inference else 1,
                 capacity=max_queue_capacity,  # Max amount that will be loaded and queued
                 allow_smaller_final_batch=True,  # Happens if total%batch_size!=0
                 name='batcher',
@@ -698,12 +701,12 @@ class TFRecordsLoader(LoaderFactory):
             serialized_example,
             # Defaults are not specified since both keys are required.
             features={
-                'image_raw': tf.FixedLenFeature([self.width, self.height, self.channels], tf.float32),
+                'image_raw': tf.FixedLenFeature([self.height, self.width, self.channels], tf.float32),
                 'label': tf.FixedLenFeature([], tf.int64),
             })
 
         d = features['image_raw']
-        ds = np.array([self.width, self.height, self.channels], dtype=np.int32)  # @TODO: this is not dynamic
+        ds = np.array([self.height, self.width, self.channels], dtype=np.int32)  # @TODO: this is not dynamic
         l = features['label']  # l = tf.cast(features['label'], tf.int32)
         ls = np.array([], dtype=np.int32)  # @TODO: this is not dynamic
         return key, d, ds, l, ls
@@ -796,8 +799,6 @@ class Hdf5Loader(LoaderFactory):
             if sample_key < end_range:
                 key_within_db = sample_key-prev_end_range
                 data = self.h5dbs[i]['data'][key_within_db]
-                # Convert from CHW to HWC
-                data = data.transpose((1, 2, 0)).astype(np.float32)/255.
                 shape = np.asarray(data.shape, dtype=np.int32)
                 label = self.h5dbs[i]['label'][key_within_db].astype(np.int64)
                 return data, shape, label

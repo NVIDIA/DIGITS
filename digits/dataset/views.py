@@ -68,7 +68,7 @@ def inference_form(extension_id, job_id):
         extension_class = extensions.data.get_extension(extension_id)
         if not extension_class:
             raise RuntimeError("Unable to find data extension with ID=%s"
-                               % job.dataset.extension_id)
+                               % job_id.dataset.extension_id)
         job = scheduler.get_job(job_id)
         if hasattr(job, 'extension_userdata'):
             extension_userdata = job.extension_userdata

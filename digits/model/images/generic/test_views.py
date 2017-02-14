@@ -1330,19 +1330,19 @@ class TestTensorflowCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWith
         super(TestTensorflowCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
 
-class TestTensorflowCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension,
-                                                                 test_utils.TensorflowMixin):
-    MEAN = 'image'
-
-
-class TestTensorflowCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension,
-                                                                 test_utils.TensorflowMixin):
-    MEAN = 'pixel'
-
-
-class TestTensorflowCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension,
-                                                                test_utils.TensorflowMixin):
-    MEAN = 'none'
+# class TestTensorflowCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension,
+#                                                                  test_utils.TensorflowMixin):
+#     MEAN = 'image'
+#
+#
+# class TestTensorflowCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension,
+#                                                                  test_utils.TensorflowMixin):
+#     MEAN = 'pixel'
+#
+#
+# class TestTensorflowCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension,
+#                                                                 test_utils.TensorflowMixin):
+#     MEAN = 'none'
 
 
 class TestTensorflowCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):

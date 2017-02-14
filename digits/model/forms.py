@@ -312,10 +312,11 @@ class ModelForm(Form):
     )
 
     def validate_custom_network_snapshot(form, field):
-        if form.method.data == 'custom':
-            for filename in field.data.strip().split(os.path.pathsep):
-                if filename and not os.path.exists(filename):
-                    raise validators.ValidationError('File "%s" does not exist' % filename)
+        pass
+        #if form.method.data == 'custom':
+        #    for filename in field.data.strip().split(os.path.pathsep):
+        #        if filename and not os.path.exists(filename):
+        #            raise validators.ValidationError('File "%s" does not exist' % filename)
 
     # Select one of several GPUs
     select_gpu = wtforms.RadioField(

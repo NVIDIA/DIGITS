@@ -839,6 +839,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # if no GPUs, just test inference during a normal training job
 
         # get number of GPUs
+        if self.FRAMEWORK == 'tensorflow':
+            raise unittest.SkipTest('Tensorflow CPU inference during training not supported')
+
         gpu_count = 1
         if (config_value('gpu_list') and
                 config_value('caffe')['cuda_enabled'] and
@@ -1315,7 +1318,7 @@ class TestTensorflowCreation(BaseTestCreation, test_utils.TensorflowMixin):
     pass
 
 
-class TestTensorflowCreatedUnencodedShuffle(BaseTestCreated, test_utils.TensorflowMixin):
+class TestTensorflowCreatedWideUnencodedShuffle(BaseTestCreatedWide, test_utils.TensorflowMixin):
     ENCODING = 'none'
     SHUFFLE = True
 
@@ -1361,10 +1364,6 @@ class TestTensorflowLeNet(BaseTestCreated, test_utils.TensorflowMixin):
                                            'standard-networks',
                                            'tensorflow',
                                            'lenet.py')).read()
-
-    def test_inference_while_training(self):
-        # override parent method to skip this test
-        raise unittest.SkipTest('Tensorflow CPU inference during training not supported')
 
 
 class TestTensorflowLeNetSlim(BaseTestCreated, test_utils.TensorflowMixin):

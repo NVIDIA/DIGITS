@@ -618,10 +618,12 @@ def main(_):
                         for op in train_model.train:
                             _, summary_str, step = sess.run([op, train_model.summary, train_model.global_step],
                                                             feed_dict=feed_dict,
-                                                        options=run_options,
-                                                        run_metadata=run_metadata)
+                                                            options=run_options,
+                                                            run_metadata=run_metadata)
                     else:
-                        _, summary_str, step = sess.run([train_model.train, train_model.summary, train_model.global_step],
+                        _, summary_str, step = sess.run([train_model.train,
+                                                         train_model.summary,
+                                                         train_model.global_step],
                                                         feed_dict=feed_dict,
                                                         options=run_options,
                                                         run_metadata=run_metadata)
