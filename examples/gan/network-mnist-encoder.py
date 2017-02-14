@@ -91,33 +91,20 @@ class UserModel(Tower):
         """Identify the correct input nodes."""
         super(UserModel, self).__init__(*args, **kwargs)
 
-        settings = "CelebA"
-
-        if settings == "MNIST":
-            image_size = 28
-            y_dim = 10
-            output_size = 28
-            c_dim = 1
-            z_dim = 100
-        elif settings == "CelebA":
-            image_size = 64
-            y_dim = None
-            output_size = 64
-            c_dim = 3
-            z_dim = 100
-
-        self.dcgan_init(image_size=image_size,
-                        y_dim=y_dim,
-                        output_size=output_size,
-                        c_dim=c_dim,
-                        z_dim=z_dim,
+        self.dcgan_init(image_size=28,
+                        y_dim=10,
+                        output_size=28,
+                        c_dim=1,
+                        is_crop=False,
                         )
 
     @model_property
     def inference(self):
         """ op to use for inference """
-        model = self.DzGEN
-        return model
+        images = self.G * 255
+        images_flat = tf.reshape(images, [self.batch_size, self.image_size * self.image_size * self.c_dim])
+        zgen_flat = tf.reshape(self.DzGEN, [self.batch_size, self.z_dim])
+        return tf.concat(1, [zgen_flat, images_flat])
 
     @model_property
     def loss(self):
@@ -127,16 +114,9 @@ class UserModel(Tower):
         ]
         return losses
 
-    def dcgan_init(self,
-                   image_size,
-                   output_size,
-                   y_dim,
-                   z_dim,
-                   c_dim,
-                   gf_dim=64,
-                   df_dim=64,
-                   gfc_dim=1024,
-                   dfc_dim=1024,
+    def dcgan_init(self, image_size=108, is_crop=True,
+                   output_size=64, y_dim=None, z_dim=100, gf_dim=64, df_dim=64,
+                   gfc_dim=1024, dfc_dim=1024, c_dim=3, dataset_name='default',
                    ):
         """
 
@@ -150,6 +130,8 @@ class UserModel(Tower):
             dfc_dim: (optional) Dimension of discrim units for fully connected layer. [1024]
             c_dim: (optional) Dimension of image color. For grayscale input, set to 1. [3]
         """
+        self.is_crop = is_crop
+        self.is_grayscale = (c_dim == 1)
         self.image_size = image_size
         self.output_size = output_size
 
@@ -166,8 +148,6 @@ class UserModel(Tower):
 
         self.batch_size = tf.shape(self.x)[0]
 
-        self.soft_label_margin = 0.1
-
         # batch normalization : deals with poor initialization helps gradient flow
         self.d_bn1 = batch_norm(name='d_bn1')
         self.d_bn2 = batch_norm(name='d_bn2')
@@ -182,38 +162,31 @@ class UserModel(Tower):
         if not self.y_dim:
             self.g_bn3 = batch_norm(name='g_bn3')
 
+        self.dataset_name = dataset_name
         self.build_model()
 
     def build_model(self):
 
-        # reshape/rescale x
-        self.images = (tf.reshape(self.x,
-                                  shape=[self.batch_size,
-                                         self.image_size,
-                                         self.image_size,
-                                         self.c_dim],
-                                  name='x_reshaped') - 128)/ 127.
+        if self.is_inference:
+            self.y = tf.to_int32(3*tf.ones(shape=[self.batch_size]))
+
+        x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim], name='x_reshaped')
+        self.images = x_reshaped / 255.
 
         if self.y_dim:
-            if self.is_inference:
-                self.y = tf.to_int32(3*tf.ones(shape=[self.batch_size]))
-                self.y = tf.Print(self.y, [self.y], summarize=10)
             self.y = tf.one_hot(self.y, self.y_dim, name='y_onehot')
             self.DzGEN, self.D_logits  = self.discriminator(self.images, self.y, reuse=False)
             self.G = self.generator(self.DzGEN, self.y)
         else:
-            self.DzGEN, self.D_logits  = self.discriminator(self.images, reuse=False)
-            self.G = self.generator(self.DzGEN)
+            raise NotImplementedError()
 
-        #self.summaries.append(histogram_summary("z", self.z))
-        #self.summaries.append(histogram_summary("d", self.D))
-        #self.summaries.append(histogram_summary("d_", self.D_))
-        self.summaries.append(image_summary("G", self.G, max_outputs=3))
-        self.summaries.append(image_summary("X", self.images, max_outputs=3))
+        self.summaries.append(image_summary("G", self.G, max_outputs=5))
+        self.summaries.append(image_summary("X", self.images, max_outputs=5))
         self.summaries.append(histogram_summary("G_hist", self.G))
         self.summaries.append(histogram_summary("X_hist", self.images))
 
         self.dzgen_loss = tf.reduce_mean(tf.square(self.G - self.images), name="loss_DzGEN")
+
         self.summaries.append(scalar_summary("DzGen_loss", self.dzgen_loss))
 
         t_vars = tf.trainable_variables()
@@ -227,15 +200,7 @@ class UserModel(Tower):
                 scope.reuse_variables()
 
             if not self.y_dim:
-                h0 = lrelu(conv2d(image, self.df_dim, name='d_h0_conv'))
-                h1 = lrelu(self.d_bn1(conv2d(h0, self.df_dim*2, name='d_h1_conv'), train=self.is_training))
-                h2 = lrelu(self.d_bn2(conv2d(h1, self.df_dim*4, name='d_h2_conv'), train=self.is_training))
-                h3 = lrelu(self.d_bn3(conv2d(h2, self.df_dim*8, name='d_h3_conv'), train=self.is_training))
-                # hack
-                h3_size = 4*4*512
-                h4 = linear(tf.reshape(h3, [self.batch_size, h3_size]), self.z_dim, 'd_h3_lin_retrain')
-
-                return tf.nn.sigmoid(h4), h4
+                raise NotImplementedError()
             else:
                 yb = tf.reshape(y, [self.batch_size, 1, 1, self.y_dim])
                 x = conv_cond_concat(image, yb)
@@ -251,38 +216,14 @@ class UserModel(Tower):
                 h2 = lrelu(self.d_bn2(linear(h1, self.dfc_dim, 'd_h2_lin'), train=self.is_training))
                 h2 = tf.concat(1, [h2, y])
 
-                h3 = linear(h2, 1, 'd_h3_lin')
+                h3 = linear(h2, self.z_dim, 'd_h3_lin_retrain')
+                return h3, h3
 
-                return tf.nn.sigmoid(h3), h3
 
     def generator(self, z, y=None):
         with tf.variable_scope("generator") as scope:
             if not self.y_dim:
-                s = self.output_size
-                s2, s4, s8, s16 = int(s/2), int(s/4), int(s/8), int(s/16)
-
-                # project `z` and reshape
-                self.z_, self.h0_w, self.h0_b = linear(z, self.gf_dim*8*s16*s16, 'g_h0_lin', with_w=True)
-
-                self.h0 = tf.reshape(self.z_, [-1, s16, s16, self.gf_dim * 8])
-                h0 = tf.nn.relu(self.g_bn0(self.h0, train=False))
-
-                self.h1, self.h1_w, self.h1_b = deconv2d(h0,
-                    [self.batch_size, s8, s8, self.gf_dim*4], name='g_h1', with_w=True)
-                h1 = tf.nn.relu(self.g_bn1(self.h1, train=False))
-
-                h2, self.h2_w, self.h2_b = deconv2d(h1,
-                    [self.batch_size, s4, s4, self.gf_dim*2], name='g_h2', with_w=True)
-                h2 = tf.nn.relu(self.g_bn2(h2, train=False))
-
-                h3, self.h3_w, self.h3_b = deconv2d(h2,
-                    [self.batch_size, s2, s2, self.gf_dim*1], name='g_h3', with_w=True)
-                h3 = tf.nn.relu(self.g_bn3(h3, train=False))
-
-                h4, self.h4_w, self.h4_b = deconv2d(h3,
-                    [self.batch_size, s, s, self.c_dim], name='g_h4', with_w=True)
-
-                return tf.nn.tanh(h4)
+                raise NotImplementedError()
             else:
                 s = self.output_size
                 s2, s4 = int(s/2), int(s/4)
