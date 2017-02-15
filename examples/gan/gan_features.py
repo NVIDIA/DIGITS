@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.
 
 import argparse
 import logging
@@ -25,6 +25,9 @@ from digits.utils.lmdbreader import DbReader  # noqa
 import caffe_pb2  # noqa
 
 logger = logging.getLogger('digits.tools.inference')
+
+# number of image embeddings to store
+N_EMBEDDINGS = 10000
 
 
 def parse_datum(value):
@@ -65,6 +68,13 @@ def save_attributes(attributes):
             - attributes['negative_attribute_z'][i] / attributes['negative_count'][i]
     output = open('attributes_z.pkl', 'wb')
     pickle.dump(zs, output)
+
+
+def save_embeddings(embeddings):
+    filename = 'embeddings.pkl'
+    logger.info('Saving embeddings to %s...' % filename)
+    output = open(filename, 'wb')
+    pickle.dump(embeddings, output)
 
 
 def infer(jobs_dir,
@@ -117,15 +127,28 @@ def infer(jobs_dir,
     label_db_path = dataset.get_label_db_path(utils.constants.TRAIN_DB)
     label_reader = DbReader(label_db_path)
 
-    def aggregate(data, labels, attributes):
+    embeddings = {'count': 0, 'images': None, 'zs': None}
+
+    def aggregate(images, labels, attributes, embeddings):
         # perform inference
         outputs = model.train_task().infer_many(
-            data,
+            images,
             snapshot_epoch=epoch,
             gpu=gpu,
             resize=False)
         z_vectors = outputs['output'][:, :100]
-        for label, z in zip(labels, z_vectors):
+        for image, label, z in zip(images, labels, z_vectors):
+            if embeddings['images'] is None:
+                embeddings['images'] = np.empty((N_EMBEDDINGS,) + image.shape)
+            if embeddings['zs'] is None:
+                embeddings['zs'] = np.empty((N_EMBEDDINGS,) + z.shape)
+            if embeddings['count'] < N_EMBEDDINGS:
+                embeddings['images'][embeddings['count']] = image
+                embeddings['zs'][embeddings['count']] = z
+                embeddings['count'] += 1
+                if embeddings['count'] == N_EMBEDDINGS:
+                    save_embeddings(embeddings)
+
             for attribute in range(attributes['n_attributes']):
                 if label[attribute] > 0:
                     attributes['positive_attribute_z'][attribute] += z
@@ -157,7 +180,7 @@ def infer(jobs_dir,
         input_labels.append(label)
         n_input_samples = n_input_samples + 1
         if n_input_samples % batch_size == 0:
-            aggregate(input_data, input_labels, attributes)
+            aggregate(input_data, input_labels, attributes, embeddings)
             print("######## %d processed ########" % n_input_samples)
             input_data = []      # sample data
             input_labels = []    # sample labels

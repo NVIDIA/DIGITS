@@ -10,12 +10,15 @@ Table of Contents
     * [Sampling the model](#sampling-the-model)
     * [Training an encoder](#training-an-encoder)
 * [Celebrity faces](#celebrity-faces)
-    * [Downloading the dataset](#downloading-the-dataset)
-    * [Creating the dataset](#creating-the-dataset)
-    * [Training the model](#training-the-model)
-    * [Training an encoder](#training-an-encoder)
+    * [Downloading the CelebA dataset](#downloading-the-celeba-dataset)
+    * [Creating the CelebA dataset](#creating-the-celeba-dataset)
+    * [Training the CelebA model](#training-the-celeba-model)
+    * [Training a CelebA encoder](#training-a-celeba-encoder)
     * [Generating attribute vectors](#generating-attribute-vectors)
-    * [Sampling the model](#sampling-the-model)
+    * [Sampling the CelebA model](#sampling-the-celeba-model)
+        * [Setting image attributes](#setting-image-attributes)
+        * [Analogy grid](#analogy-grid)
+    * [Embeddings visualization](#embeddings-visualization)
 
 ## Introduction
 
@@ -209,13 +212,13 @@ Now click `Test` and you will see a class sweep using the particular style that 
 
 ## Celebrity faces
 
-### Downloading the dataset
+### Downloading the CelebA dataset
 
 The Celebrity Faces (a.k.a. "CelebA") dataset may be downloaded from this [Dropbox account](https://www.dropbox.com/sh/8oqt9vytwxb3s4r/AAB06FXaQRUNtjW9ntaoPGvCa?dl=0).
 Download `img/img_align_celeba.zip` and `Anno/list_attr_celeba.txt`.
 Extract the ZIP file into a local folder.
 
-### Creating the dataset
+### Creating the CelebA dataset
 
 On the home page, click `New dataset>Images>GAN`.
 Specify the location of the attributes and images:
@@ -229,7 +232,7 @@ See below for some image samples:
 
 ![celeba samples](exploring-celeba.png)
 
-### Training the model
+### Training the CelebA model
 
 This model is very similar to the MNIST one but differs slightly:
 - it receives colour 64x64 images,
@@ -255,7 +258,7 @@ This is not necessarily an issue as we will see later.
 
 ![CelebA loss](celeba-loss.png)
 
-### Training an encoder
+### Training a CelebA encoder
 
 Proceed as in the MNIST example but use this [network description](./network-celebA-encoder.py).
 
@@ -273,7 +276,7 @@ $ ./examples/gan/gan_features.py -j $DIGITS_JOBS_DIR $GAN_AUTOENCODER_JOB_ID -g 
 
 Running the above command will sweep through the 200k images in the dataset and create file named `attributes_z.pkl` that includes the 40 characteristic `z` vectors.
 
-### Sampling the model
+### Sampling the CelebA model
 
 #### Setting image attributes
 
@@ -346,3 +349,19 @@ Pretty good, heh?
 The grid can also be visualized through an animated image:
 
 ![animated grid](gan-grid-animated.gif)
+
+### Embeddings visualization
+
+You might have noticed another byproduct of the `gan_features.py` script: a file named `embeddings.pkl`.
+This file contains `z` vectors for the first 10k images in the CelebA dataset.
+We can use this to display image embeddings in Tensorboard:
+
+```sh
+$ ./gan_embeddings.py embeddings.pkl
+$ tensorboard --logdir ./gan-tb/
+```
+
+Now open a browser on `http://localhost:6006`.
+In the `Embeddings` tab you will see something similar to this:
+
+![animated embeddings](celeba-embeddings.gif)
