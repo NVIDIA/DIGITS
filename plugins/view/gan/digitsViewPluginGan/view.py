@@ -75,19 +75,25 @@ class Visualization(VisualizationInterface):
         Implements get_header_template() method from view extension interface
         """
 
-        # create animated gif
-        string_buf = StringIO()
-        fmt = "gif"
-        imageio.mimsave(string_buf, self.animated_images, format=fmt)
-        data = string_buf.getvalue().encode('base64').replace('\n', '')
-        animated_image_html = 'data:image/%s;base64,%s' % (fmt, data)
-
         extension_dir = os.path.dirname(os.path.abspath(__file__))
         template = open(
             os.path.join(extension_dir, HEADER_TEMPLATE), "r").read()
-        return template, {'cols': range(self.grid_size),
-                          'rows': range(self.grid_size),
-                          'animated_image': animated_image_html}
+
+        context = {'task_id': self.task_id,
+                   'cols': range(self.grid_size),
+                   'rows': range(self.grid_size),
+                   'animated_image': None}
+
+        if hasattr(self, 'animated_images'):
+            # create animated gif
+            string_buf = StringIO()
+            fmt = "gif"
+            imageio.mimsave(string_buf, self.animated_images, format=fmt)
+            data = string_buf.getvalue().encode('base64').replace('\n', '')
+            animated_image_html = 'data:image/%s;base64,%s' % (fmt, data)
+            context['animated_image'] = animated_image_html
+
+        return template, context
 
     @staticmethod
     def get_id():
