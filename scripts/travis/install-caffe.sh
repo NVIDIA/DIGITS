@@ -10,13 +10,13 @@ then
     exit 1
 fi
 
-INSTALL_DIR=`readlink -f $1`
-$LOCAL_DIR/bust-cache.sh $INSTALL_DIR
+INSTALL_DIR=$(readlink -f "$1")
+"$LOCAL_DIR/bust-cache.sh" "$INSTALL_DIR"
 if [ -d "$INSTALL_DIR" ] && [ -e "$INSTALL_DIR/build/tools/caffe" ]; then
     echo "Using cached build at $INSTALL_DIR ..."
     exit 0
 fi
-rm -rf $INSTALL_DIR
+rm -rf "$INSTALL_DIR"
 
 CAFFE_FORK=${CAFFE_FORK:-"NVIDIA"}
 if [ ! -z "$CAFFE_BRANCH" ]; then
@@ -26,17 +26,17 @@ fi
 set -x
 
 # get source
-git clone https://github.com/${CAFFE_FORK}/caffe.git ${INSTALL_DIR} ${CAFFE_BRANCH} --depth 1
+git clone "https://github.com/${CAFFE_FORK}/caffe.git" "$INSTALL_DIR" $CAFFE_BRANCH --depth 1
 
 # configure project
-mkdir -p ${INSTALL_DIR}/build
-cd ${INSTALL_DIR}/build
+mkdir -p "${INSTALL_DIR}/build"
+cd "${INSTALL_DIR}/build"
 cmake .. -DCPU_ONLY=On -DBLAS=Open
 
 # build
-make --jobs=`nproc`
+make --jobs="$(nproc)"
 
 # mark cache
-WEEK=`date +%Y-%W`
-echo $WEEK > ${INSTALL_DIR}/cache-version.txt
+WEEK=$(date +%Y-%W)
+echo "$WEEK" > "${INSTALL_DIR}/cache-version.txt"
 
