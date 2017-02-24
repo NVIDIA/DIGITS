@@ -223,7 +223,7 @@ class DataIngestion(DataIngestionInterface):
         for dirpath, dirnames, filenames in os.walk(folder, followlinks=True):
             for filename in filenames:
                 if filename.lower().endswith(digits.utils.image.SUPPORTED_EXTENSIONS):
-                    image_files.append('%s' % os.path.join(folder, filename))
+                    image_files.append('%s' % os.path.join(dirpath, filename))
         if len(image_files) == 0:
             raise ValueError("Unable to find supported images in %s" % folder)
         # shuffle
