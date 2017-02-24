@@ -211,13 +211,31 @@ function add_attributes_row() {
         </div>
     </div>
 
+    <div id="task_animation">
+        <h4>Animation</h4>
+
+        <h5>Use with "GAN" visualization method</h5>
+
+        <div class="form-group{{mark_errors([form.animation_num_transitions])}}">
+            {{ form.animation_num_transitions.label }}
+            {{ form.animation_num_transitions.tooltip }}
+            {{ form.animation_num_transitions(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.animation_z_vectors])}}">
+            {{ form.animation_z_vectors.label }}
+            {{ form.animation_z_vectors.tooltip }}
+            {{ form.animation_z_vectors(class='form-control autocomplete_path', placeholder='z vectors') }}
+        </div>
+    </div>
+
 </div>
 
 <script>
 $("#task_id").change(function() {
     task_ids = [
         'class', 'style', 'genimg', 'attributes',
-        'enclist', 'analogy'
+        'enclist', 'analogy', 'animation'
     ]
 
     console.log($(this).val())

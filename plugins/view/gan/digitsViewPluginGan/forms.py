@@ -18,6 +18,7 @@ class ConfigForm(Form):
             ('grid', 'Grid'),
             ('mnist_encoder', 'MNIST Encoder'),
             ('celeba_encoder', 'CelebA Encoder'),
+            ('animation', 'Animation'),
             ],
         default='grid',
         tooltip="Select a task."

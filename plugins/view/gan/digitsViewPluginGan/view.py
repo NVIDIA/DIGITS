@@ -149,6 +149,9 @@ class Visualization(VisualizationInterface):
                             'col_id': data['col_id'],
                             'row_id': data['row_id'],
                             'image': data['image']})
+        elif self.task_id == 'animation':
+            context.update({'task_id': self.task_id,
+                            'image': data['image']})
         elif self.task_id in ['celeba_encoder', 'mnist_encoder']:
             context.update({'task_id': 'encoder',
                             'z': data['z'],
@@ -226,6 +229,13 @@ class Visualization(VisualizationInterface):
             return {'z': z,
                     'image_input': image_input_html,
                     'image_output': image_output_html,
+                    'key': input_id}
+        elif self.task_id == 'animation':
+            image_html = self.get_image_html(data)
+            if not hasattr(self, 'animated_images'):
+                self.animated_images = []
+            self.animated_images.append(data.astype('uint8'))
+            return {'image': image_html,
                     'key': input_id}
         else:
             raise ValueError("Unknown task: %s" % self.task_id)

@@ -3,14 +3,15 @@
 <script type="text/javascript" src="/extension-static/view/image-segmentation/js/app.js"></script>
 <link rel="stylesheet" href="/extension-static/view/image-segmentation/css/app.css">
 
-{% if task_id == 'grid' %}
-    <table>
-        {% if animated_image %}
-            <tr>
-                <h4>Animation</h4>
-                <img src="{{animated_image}}" style="max-width:100%;" />
-            </tr>
-        {% endif %}
+
+<table>
+    {% if animated_image %}
+        <tr>
+            <h4>Animation</h4>
+            <img src="{{animated_image}}" style="max-width:100%;" />
+        </tr>
+    {% endif %}
+    {% if task_id == 'grid' %}
         <tr>
             <h4>Grid</h4>
         </tr>
@@ -23,5 +24,5 @@
                 {% endfor %}
             </tr>
         {% endfor %}
-    </table>
-{% endif %}
+    {% endif %}
+</table>

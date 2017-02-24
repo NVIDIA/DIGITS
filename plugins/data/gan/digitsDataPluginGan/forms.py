@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import os
 
 from flask.ext.wtf import Form
-from wtforms import HiddenField, validators
+from wtforms import HiddenField, TextAreaField, validators
 
 from digits import utils
 from digits.utils import subclass
@@ -132,6 +132,7 @@ class InferenceForm(Form):
             ('attributes', 'CelebA - add/remove attributes'),
             ('enclist', 'CelebA - Encode list of images'),
             ('analogy', 'CelebA - Analogy'),
+            ('animation', 'CelebA - Animation'),
             ],
         default='class',
         tooltip="Select a task to execute."
@@ -211,4 +212,17 @@ class InferenceForm(Form):
 
     attributes_z3_vector = utils.forms.StringField(
         u'Second Sink Z vector (leave blank for random)',
+    )
+
+    animation_num_transitions = utils.forms.IntegerField(
+        u'Number of transitions per image',
+        default=10,
+        validators=[
+            validators.NumberRange(min=1, max=100)
+        ],
+        tooltip="Number of transitions between each of the specified images"
+    )
+
+    animation_z_vectors = TextAreaField(
+        u'z vectors (one per line)',
     )

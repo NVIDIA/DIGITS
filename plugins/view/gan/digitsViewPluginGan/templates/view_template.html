@@ -8,6 +8,8 @@
     <script>
     $('#{{ row_id }}_{{ col_id }}').html('<img src="{{image}}" style="max-width:100%;" />');
     </script>
+{% endif %}
+{% if task_id=='grid' or task_id=='animation' %}
     {{key}}
     <img src="{{image}}" style="max-width:100%;" />
 {% elif task_id=='encoder' %}

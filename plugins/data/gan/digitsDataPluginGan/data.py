@@ -48,7 +48,7 @@ def slerp(val, low, high):
     return np.sin((1.0-val)*omega) / so * low + np.sin(val*omega)/so * high
 
 
-def parse_attributes_params(s):
+def parse_lines_of_floats(s):
     return [[float(val) for val in line.split()] for line in s.splitlines()]
 
 
@@ -92,7 +92,8 @@ class DataIngestion(DataIngestionInterface):
                                             'class',
                                             'genimg',
                                             'attributes',
-                                            'analogy']:
+                                            'analogy',
+                                            'animation']:
                 feature = entry
                 label = np.array([0])
             elif self.userdata['task_id'] == 'enclist':
@@ -228,7 +229,7 @@ class DataIngestion(DataIngestionInterface):
                     z = np.random.normal(size=(100,))
                 with open(self.userdata['attributes_file'], 'rb') as f:
                     attributes_z = pickle.load(f)
-                    params = parse_attributes_params(self.userdata['attributes_params'])
+                    params = parse_lines_of_floats(self.userdata['attributes_params'])
                     for img_params in params:
                         z_img = np.copy(z)
                         for i, coeff in enumerate(img_params):
@@ -276,6 +277,15 @@ class DataIngestion(DataIngestionInterface):
                         z = slerp(col_k, z_left, z_right)
                         entries.append(z.reshape((1, 1, self.input_dim)))
                     entries.append(z_right.reshape((1, 1, self.input_dim)))
+            elif self.userdata['task_id'] == 'animation':
+                zs = parse_lines_of_floats(self.userdata['animation_z_vectors'])
+                zs = [np.array(z) for z in zs]
+                num_transitions = self.userdata['animation_num_transitions']
+                for i, z in enumerate(zs):
+                    z_next = zs[(i + 1) % len(zs)]
+                    for k in xrange(num_transitions):
+                        z_ = slerp(float(k) / num_transitions, z, z_next)
+                        entries.append(z_.reshape((1, 1, self.input_dim)))
             else:
                 raise ValueError("Unknown task: %s" % self.userdata['task_id'])
         return entries
