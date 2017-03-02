@@ -26,4 +26,22 @@
         </td>
     </tr>
     </table>
+{% elif task_id=='attributes' %}
+    <table>
+    <tr>
+        <td width=100>
+            <img src="{{image_input}}" style="max-width:100%;" />
+        </td>
+        <!-- <td width=100>
+            <img src="{{image_output}}" style="max-width:100%;" />
+        </td>
+        -->
+        <td>
+            {% for attribute in top5 %}
+            <span class="badge">{{attribute[1]}}</span> {{ attribute[0] }}
+            <br>
+            {% endfor %}
+        </td>
+    </tr>
+    </table>
 {% endif %}

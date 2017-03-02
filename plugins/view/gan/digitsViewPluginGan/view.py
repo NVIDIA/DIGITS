@@ -9,6 +9,7 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+import pickle
 
 import imageio
 import numpy as np
@@ -24,6 +25,16 @@ from .forms import ConfigForm
 CONFIG_TEMPLATE = "templates/config_template.html"
 HEADER_TEMPLATE = "templates/header_template.html"
 VIEW_TEMPLATE = "templates/view_template.html"
+
+CELEBA_ATTRIBUTES = """
+                     5_o_Clock_Shadow Arched_Eyebrows Attractive Bags_Under_Eyes Bald Bangs
+                     Big_Lips Big_Nose Black_Hair Blond_Hair Blurry Brown_Hair Bushy_Eyebrows
+                     Chubby Double_Chin Eyeglasses Goatee Gray_Hair Heavy_Makeup High_Cheekbones
+                     Male Mouth_Slightly_Open Mustache Narrow_Eyes No_Beard Oval_Face Pale_Skin
+                     Pointy_Nose Receding_Hairline Rosy_Cheeks Sideburns Smiling Straight_Hair
+                     Wavy_Hair Wearing_Earrings Wearing_Hat Wearing_Lipstick Wearing_Necklace
+                     Wearing_Necktie Young
+                    """.split()
 
 
 @subclass
@@ -46,6 +57,7 @@ class Visualization(VisualizationInterface):
 
         # view options
         self.task_id = kwargs['gan_view_task_id']
+        self.attributes_file = kwargs['attributes_file']
 
     @staticmethod
     def get_config_form():
@@ -127,6 +139,8 @@ class Visualization(VisualizationInterface):
         else:
             raise ValueError("Unhandled number of channels: %d" % channels)
 
+        #image.save(fname)
+
         image_html = digits.utils.image.embed_image_html(image)
 
         return image_html
@@ -143,22 +157,10 @@ class Visualization(VisualizationInterface):
           - context is a dictionary of context variables to use for
           rendering the form
         """
-        context = {'key': data['key']}
-        if self.task_id == 'grid':
-            context.update({'task_id': self.task_id,
-                            'col_id': data['col_id'],
-                            'row_id': data['row_id'],
-                            'image': data['image']})
-        elif self.task_id == 'animation':
-            context.update({'task_id': self.task_id,
-                            'image': data['image']})
-        elif self.task_id in ['celeba_encoder', 'mnist_encoder']:
-            context.update({'task_id': 'encoder',
-                            'z': data['z'],
-                            'image_input': data['image_input'],
-                            'image_output': data['image_output']})
-        else:
-            raise ValueError("Unknown task: %s" % self.task_id)
+        context = {'task_id': self.task_id}
+        context.update(data)
+        if self.task_id in ['celeba_encoder', 'mnist_encoder']:
+            context.update({'task_id': 'encoder'})
         return self.view_template, context
 
     @override
@@ -183,6 +185,7 @@ class Visualization(VisualizationInterface):
                 # CelebA
                 if not hasattr(self, 'animated_images'):
                     self.animated_images = [None] * (4 * self.grid_size - 4)
+                print("animated: %s" % repr(self.animated_images))
 
                 if (
                        col_id == 0 or
@@ -199,6 +202,7 @@ class Visualization(VisualizationInterface):
                     else:
                         idx = 4 * self.grid_size - 4 - row_id
                     self.animated_images[idx] = data.astype('uint8')
+                    print("set idx %d " % idx)
             else:
                 raise ValueEror("Unhandled image size: %d" % img_size)
 
@@ -237,5 +241,30 @@ class Visualization(VisualizationInterface):
             self.animated_images.append(data.astype('uint8'))
             return {'image': image_html,
                     'key': input_id}
+        elif self.task_id == 'attributes':
+            self.z_dim = 100
+            z = data[:self.z_dim]
+            input_data = input_data.astype('float32')
+            image_input_html = self.get_image_html(input_data)
+            image = data[self.z_dim:].reshape(64, 64, 3)
+            image_output_html = self.get_image_html(image)
+            with open(self.attributes_file, 'rb') as f:
+                attributes_z = pickle.load(f)
+
+            #inner_products = np.inner(z, attributes_z)
+            inner_products = np.empty((40))
+            for i in range(40):
+                #if i in [ 1,  2, 18, 19, 20, 21, 25, 27, 31, 33, 36]:
+                if True: #i in [ 0,  1,  2,  3,  5,  6,  7,  8,  9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23, 24, 25, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39]:
+                    attr = attributes_z[i]
+                    inner_products[i] = np.inner(z, attr) / np.linalg.norm(attr)
+                else:
+                    inner_products[i] = 0
+
+            top_5_indices = np.argsort(inner_products)[::-1][:5]
+            top_5 = [(CELEBA_ATTRIBUTES[idx], "%.2f" % inner_products[idx]) for idx in top_5_indices]
+            return {'image_input': image_input_html,
+                    'image_output': image_output_html,
+                    'top5': top_5}
         else:
             raise ValueError("Unknown task: %s" % self.task_id)

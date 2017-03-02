@@ -11,3 +11,9 @@
     {{ form.gan_view_task_id.tooltip }}
     {{ form.gan_view_task_id(class='form-control autocomplete_path', placeholder='folder') }}
 </div>
+
+<div class="form-group{{mark_errors([form.attributes_file])}}">
+    {{ form.attributes_file.label }}
+    {{ form.attributes_file.tooltip }}
+    {{ form.attributes_file(class='form-control autocomplete_path') }}
+</div>
