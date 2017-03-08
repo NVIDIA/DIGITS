@@ -470,7 +470,9 @@ class TrainTask(Task):
 
         assert hasattr(self.dataset, 'labels_file'), 'labels_file not set'
         assert self.dataset.labels_file, 'labels_file not set'
-        assert os.path.exists(self.dataset.path(self.dataset.labels_file)), 'labels_file does not exist'
+        assert os.path.exists(self.dataset.path(self.dataset.labels_file)), 'labels_file does not exist: {}'.format(
+            self.dataset.path(self.dataset.labels_file)
+        )
 
         labels = []
         with open(self.dataset.path(self.dataset.labels_file)) as infile:
