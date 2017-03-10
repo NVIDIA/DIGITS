@@ -87,7 +87,10 @@
         {% endif %}
         {% if task.entries_count %}
         <dt>DB Entries</dt>
-        <dd>{{task.entries_count}}</dd>
+        <dd>
+        {{task.entries_count}}
+        {% if task.entries_error %} ({{task.entries_error}} failed to load) {% endif %}
+        </dd>
         {% endif %}
     </dl>
 
