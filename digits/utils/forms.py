@@ -550,3 +550,11 @@ def fill_form_if_cloned(form):
     if clone is not None:
         clone_job = scheduler.get_job(clone)
         fill_form_from_job(clone_job, form)
+
+
+def get_selected_gpu(form):
+    selected_gpu = None
+    if 'select_one_of_gpus' in form:
+        if form['select_one_of_gpus'] != 'next':
+            selected_gpu = int(form['select_one_of_gpus'])
+    return selected_gpu

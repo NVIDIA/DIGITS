@@ -18,7 +18,7 @@ from digits.inference import ImageInferenceJob
 from digits.status import Status
 from digits.utils import filesystem as fs
 from digits.utils import constants
-from digits.utils.forms import fill_form_if_cloned, save_form_to_job
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job, get_selected_gpu
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
@@ -309,8 +309,10 @@ def show(job, related_jobs=None):
             template, context = extension.get_inference_template(form)
             inference_form_html = flask.render_template_string(template, **context)
 
+    generic_form = GenericImageModelForm()
     return flask.render_template(
         'models/images/generic/show.html',
+        form=generic_form,
         job=job,
         view_extensions=view_extensions,
         related_jobs=related_jobs,
@@ -361,6 +363,8 @@ def infer_one():
     else:
         resize = True
 
+    selected_gpu = get_selected_gpu(flask.request.form)
+
     # create inference job
     inference_job = ImageInferenceJob(
         username=utils.auth.get_username(),
@@ -370,6 +374,7 @@ def infer_one():
         epoch=epoch,
         layers=layers,
         resize=resize,
+        gpu=selected_gpu
     )
 
     # schedule tasks
@@ -446,6 +451,8 @@ def infer_extension():
         if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
             layers = 'all'
 
+        selected_gpu = get_selected_gpu(flask.request.form)
+
         # create inference job
         inference_job = ImageInferenceJob(
             username=utils.auth.get_username(),
@@ -455,6 +462,7 @@ def infer_extension():
             epoch=epoch,
             layers=layers,
             resize=False,
+            gpu=selected_gpu
         )
 
         # schedule tasks
@@ -539,6 +547,8 @@ def infer_db():
     else:
         resize = True
 
+    selected_gpu = get_selected_gpu(flask.request.form)
+
     # create inference job
     inference_job = ImageInferenceJob(
         username=utils.auth.get_username(),
@@ -548,6 +558,7 @@ def infer_db():
         epoch=epoch,
         layers='none',
         resize=resize,
+        gpu=selected_gpu
     )
 
     # schedule tasks
@@ -633,6 +644,8 @@ def infer_many():
     else:
         resize = True
 
+    selected_gpu = get_selected_gpu(flask.request.form)
+
     paths = []
 
     for line in image_list.readlines():
@@ -664,6 +677,7 @@ def infer_many():
         epoch=epoch,
         layers='none',
         resize=resize,
+        gpu=selected_gpu
     )
 
     # schedule tasks

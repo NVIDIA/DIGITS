@@ -339,6 +339,23 @@ class ModelForm(Form):
         tooltip="The job won't start until all of the chosen GPUs are available."
     )
 
+    # Select 1 of several GPUs
+    select_one_of_gpus = utils.forms.SelectField(
+        'Select which GPU you would like to use',
+        choices=[('next', 'Next available')] + [(
+            index,
+            '#%s - %s (%s memory)' % (
+                index,
+                get_device(index).name,
+                sizeof_fmt(
+                    get_nvml_info(index)['memory']['total']
+                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
+                    else get_device(index).totalGlobalMem)
+            ),
+        ) for index in config_value('gpu_list').split(',') if index],
+        default='next',
+    )
+
     # XXX For testing
     # The Flask test framework can't handle SelectMultipleFields correctly
     select_gpus_list = wtforms.StringField('Select which GPU[s] you would like to use (comma separated)')
