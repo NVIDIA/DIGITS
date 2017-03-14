@@ -25,13 +25,13 @@ Table of Contents
 Generative Adversarial Networks (GAN) were introduced by Ian Goodfellow in [Generative Adversarial Networks](https://arxiv.org/abs/1406.2661), Goodfellow, 2014.
 GANs learn a data probability distribution under unsupervised learning.
 In practice a GAN learns to draw from a dataset probability distribution in order to generate data.
-To this avail, a GAN consists of two pieces: a Generator that generates data and a discriminator that learns to discriminate between "real" data (from the dataset) and "fake" data (those that were generated).
+To this avail, a GAN comprises two pieces: a Generator that generates data and a Discriminator that learns to discriminate between "real" data (from the dataset) and "fake" data (those that were generated).
 A latent representation of the data is learnt by ways of a feature vector called `z`.
 Through a number of fully-connected and transpose convolutional layers, the generator learns to generate images from `z`.
 During training, `z` is sampled from a random distribution.
 During inference, `z` may be specified to generate images with carefully chosen attributes.
 
-The typical training loop consists of these phases:
+The typical training loop comprises the following phases:
 - optimize the discriminator on real samples (make it classify them as such),
 - draw `z` from a random distribution and have the generator create the corresponding image,
 - optimize the discriminator on generator samples (make it classify them as such),
@@ -76,7 +76,7 @@ If you already followed the [GettingStarted](../../docs/GettingStarted.md) examp
 We will reuse the LMDB files that were already created for the MNIST classification dataset to create a new generic dataset.
 Creating a generic dataset is required here because GANs do not fall into the category of classification datasets and require specific plug-ins.
 
-Open the classification dataset page and make a good note of the job directory for your MNIST classification dataset:
+Open the classification dataset page and make good note of the job directory for your MNIST classification dataset:
 
 ![mnist classification dataset](mnist-classification-dataset.png)
 
@@ -106,7 +106,8 @@ You can click `Visualize` to browse the model graph (this only works in Chrome):
 Name your model `GAN-MNIST` and click `Create`.
 
 > Note: when training a neural network it is typical to expect the loss to go down and see there an indication that the model is learning well.
-This is not the case in a typical GAN. If the loss of the discriminator is very low, this means that the generator is not doing a good job at fooling the discriminator.
+This is not the case in a typical GAN.
+If the loss of the discriminator is very low, this means that the generator is not doing a good job at fooling the discriminator.
 Conversely, if the loss  of the generator is too low, this means the discriminator is not doing a good job at detecting fake samples.
 In a balanced set-up, equilibrium is reached when the generator can fool the discriminator in 50% of cases.
 From the definition of the cross entropy loss this corresponds to a loss value of `-math.log(0.5)=0.69`.
@@ -145,7 +146,7 @@ In the inference form, select the `MNIST Class sweep` task.
 ![MNIST class sweep inference form](mnist-inference-form-class-sweep.png)
 
 Click `Test`.
-This shows a grid of digits, all sampled using the same randomly generated `z`.
+This shows a grid of digits, all of them were sampled using the same randomly generated `z`.
 The `z` vector is then concatenated with various shades of labels, using spherical interpolation.
 Every column shows how a digit is slowly morphing into the next digit:
 
@@ -274,7 +275,7 @@ $ export GAN_ENCODER_JOB_ID = 20170202-100209-72af  # replace this with the Job 
 $ ./examples/gan/gan_features.py -j $DIGITS_JOBS_DIR $GAN_AUTOENCODER_JOB_ID -g 0
 ```
 
-Running the above command will sweep through the 200k images in the dataset and create file named `attributes_z.pkl` that includes the 40 characteristic `z` vectors.
+Running the above command will sweep through the 200k images in the dataset and create a file named `attributes_z.pkl` that includes the 40 characteristic `z` vectors.
 
 ### Sampling the CelebA model
 
@@ -305,7 +306,7 @@ Now if you pick a `z` vector, you can add/remove attributes to this image:
 - paste the `z` vector you found when using the `Encode list` task above.
 - click `Add row` a number of times to create new rows.
 Each row will generate an image with the corresponding attributes.
-If you leave all cells blank in a row, you will get the original image.
+If you leave all cells in a row blank, you will get the original image.
 If you set `Black Hair` to `+1` and `Blond Hair` to `-1`, this will transform a blond person into a person with dark hair.
 If you set `Smiling` to `-1` this will make a smiling person... not smile.
 
