@@ -271,8 +271,9 @@ A way to do this is to compute the average `z` vector for images that have the a
 This can be done with the `gan_features.py` script:
 
 ```sh
-$ export GAN_ENCODER_JOB_ID = 20170202-100209-72af  # replace this with the Job ID of your GAN-CelebA-Encoder
-$ ./examples/gan/gan_features.py -j $DIGITS_JOBS_DIR $GAN_AUTOENCODER_JOB_ID -g 0
+$ export DIGITS_JOBS_DIR=/path/to/digits/jobs
+$ export GAN_ENCODER_JOB_ID=20170202-100209-72af  # replace this with the Job ID of your GAN-CelebA-Encoder
+$ ./examples/gan/gan_features.py -j $DIGITS_JOBS_DIR $GAN_ENCODER_JOB_ID -g 0
 ```
 
 Running the above command will sweep through the 200k images in the dataset and create a file named `attributes_z.pkl` that includes the 40 characteristic `z` vectors.
