@@ -186,7 +186,7 @@ def infer(jobs_dir,
             input_labels = []    # sample labels
 
     if n_input_samples % batch_size != 0:
-        aggregate(input_data, input_labels, attributes)
+        aggregate(input_data, input_labels, attributes, embeddings)
         print("######## %d processed ########" % n_input_samples)
 
 if __name__ == '__main__':
