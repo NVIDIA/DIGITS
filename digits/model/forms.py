@@ -305,55 +305,31 @@ class ModelForm(Form):
                 if filename and not os.path.exists(filename):
                     raise validators.ValidationError('File "%s" does not exist' % filename)
 
+    # List of GPUs
+    gpu_list = [(
+        index,
+        '#%s - %s (%s memory)' % (
+            index,
+            get_device(index).name,
+            sizeof_fmt(
+                get_nvml_info(index)['memory']['total']
+                if get_nvml_info(index) and 'memory' in get_nvml_info(index)
+                else get_device(index).totalGlobalMem)
+        ),
+    ) for index in config_value('gpu_list').split(',') if index]
+
     # Select one of several GPUs
     select_gpu = wtforms.RadioField(
         'Select which GPU you would like to use',
-        choices=[('next', 'Next available')] + [(
-            index,
-            '#%s - %s (%s memory)' % (
-                index,
-                get_device(index).name,
-                sizeof_fmt(
-                    get_nvml_info(index)['memory']['total']
-                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                    else get_device(index).totalGlobalMem)
-            ),
-        ) for index in config_value('gpu_list').split(',') if index],
+        choices=[('next', 'Next available')] + gpu_list,
         default='next',
     )
 
     # Select N of several GPUs
     select_gpus = utils.forms.SelectMultipleField(
         'Select which GPU[s] you would like to use',
-        choices=[(
-            index,
-            '#%s - %s (%s memory)' % (
-                index,
-                get_device(index).name,
-                sizeof_fmt(
-                    get_nvml_info(index)['memory']['total']
-                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                    else get_device(index).totalGlobalMem)
-            ),
-        ) for index in config_value('gpu_list').split(',') if index],
+        choices=gpu_list,
         tooltip="The job won't start until all of the chosen GPUs are available."
-    )
-
-    # Select 1 of several GPUs
-    select_one_of_gpus = utils.forms.SelectField(
-        'Select which GPU you would like to use',
-        choices=[('next', 'Next available')] + [(
-            index,
-            '#%s - %s (%s memory)' % (
-                index,
-                get_device(index).name,
-                sizeof_fmt(
-                    get_nvml_info(index)['memory']['total']
-                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                    else get_device(index).totalGlobalMem)
-            ),
-        ) for index in config_value('gpu_list').split(',') if index],
-        default='next',
     )
 
     # XXX For testing

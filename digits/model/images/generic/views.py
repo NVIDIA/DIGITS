@@ -312,11 +312,11 @@ def show(job, related_jobs=None):
     generic_form = GenericImageModelForm()
     return flask.render_template(
         'models/images/generic/show.html',
-        form=generic_form,
         job=job,
         view_extensions=view_extensions,
         related_jobs=related_jobs,
         inference_form_html=inference_form_html,
+        gpu_list=generic_form.gpu_list,
     )
 
 

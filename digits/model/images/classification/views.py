@@ -336,13 +336,13 @@ def show(job, related_jobs=None):
     form = ImageClassificationModelForm()
     return flask.render_template(
         'models/images/classification/show.html',
-        form=form,
         job=job,
         framework_ids=[
             fw.get_id()
             for fw in frameworks.get_frameworks()
         ],
-        related_jobs=related_jobs
+        related_jobs=related_jobs,
+        gpu_list=form.gpu_list,
     )
 
 

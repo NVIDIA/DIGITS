@@ -2,14 +2,13 @@
 
 {% extends "job.html" %}
 {% from "helper.html" import serve_file %}
-{% from "helper.html" import mark_errors %}
 
 {% block job_content %}
 
 <script src="{{ url_for('static', filename='js/model-graphs.js', ver=dir_hash) }}"></script>
 
 {% set task = job.train_task() %}
-{% set show_multi_gpu_form = form.select_one_of_gpus.choices| length > 2 %}
+{% set show_multi_gpu_form = gpu_list| length > 1 %}
 
 <div class="row">
     <div class="col-sm-6">
@@ -150,9 +149,14 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     </div>
                     {% if show_multi_gpu_form %}
                     <div class="col-sm-6">
-                        <div class="form-group{{mark_errors([form.select_one_of_gpus])}}">
-                            {{form.select_one_of_gpus.label}}
-                            {{form.select_one_of_gpus(class='form-control', size=4)}}
+                        <div class="form-group">
+                            <label for="select_one_of_gpus">Select which GPU you would like to use</label>
+                            <select class="form-control" id="select_one_of_gpus" name="select_one_of_gpus" size="4">
+                                <option selected="" value="next">Next available</option>
+                                {% for gpu_id, gpu_description in gpu_list %}
+                                    <option value="{{ gpu_id }}">{{ gpu_description }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     {% else %}
