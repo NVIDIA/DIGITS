@@ -101,9 +101,15 @@ class Model(object):
             with tf.name_scope(digits.GraphKeys.LOADER):
                 self.dataloader.create_input_pipeline()
 
-    def create_model(self, obj_UserModel, stage_scope):
+    def create_model(self, obj_UserModel, stage_scope, batch_x=None):
 
-        self.init_dataloader()
+        if batch_x is None:
+            self.init_dataloader()
+            batch_x = self.dataloader.batch_x
+            batch_y = self.dataloader.batch_y
+        else:
+            assert self.stage == digits.STAGE_INF
+            batch_x = batch_x
 
         available_devices = digits.get_available_gpus()
         if not available_devices:
@@ -113,15 +119,15 @@ class Model(object):
 
         # Split the batch over the batch dimension over the number of available gpu's
         if len(available_devices) == 1:
-            batch_x_split = [self.dataloader.batch_x]
+            batch_x_split = [batch_x]
             if self.stage != digits.STAGE_INF:  # Has no labels
-                batch_y_split = [self.dataloader.batch_y]
+                batch_y_split = [batch_y]
         else:
             with tf.name_scope('parallelize'):
                 # Split them up
-                batch_x_split = tf.split(0, len(available_devices), self.dataloader.batch_x, name='split_batch')
+                batch_x_split = tf.split(0, len(available_devices), batch_x, name='split_batch')
                 if self.stage != digits.STAGE_INF:  # Has no labels
-                    batch_y_split = tf.split(0, len(available_devices), self.dataloader.batch_y, name='split_batch')
+                    batch_y_split = tf.split(0, len(available_devices), batch_y, name='split_batch')
 
         # Run the user model through the build_model function that should be filled in
         grad_towers = []

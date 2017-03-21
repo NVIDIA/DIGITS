@@ -39,6 +39,7 @@ DB_EXTENSIONS = {
     'tfrecords': ['.TFRECORDS'],
     'filelist': ['.TXT'],
     'file': ['.JPG', '.JPEG', '.PNG'],
+    'gangrid': ['.GAN'],
 }
 
 LIST_DELIMITER = ' '  # For the FILELIST format
@@ -65,7 +66,7 @@ def get_backend_of_source(db_path):
         files_in_path = [db_path]
 
     # Keep the below priority ordering
-    for db_fmt in ['hdf5', 'lmdb', 'tfrecords', 'filelist', 'file']:
+    for db_fmt in ['hdf5', 'lmdb', 'tfrecords', 'filelist', 'file', 'gangrid']:
         ext_list = DB_EXTENSIONS[db_fmt]
         for ext in ext_list:
             if any(ext in os.path.splitext(fn)[1].upper() for fn in files_in_path):
@@ -190,6 +191,8 @@ class LoaderFactory(object):
             loader = FileListLoader()
         elif backend == 'tfrecords':
             loader = TFRecordsLoader()
+        elif backend == 'gangrid':
+            loader = GanGridLoader()
         else:
             logging.error("Backend (%s) not implemented" % (backend))
             exit(-1)
@@ -845,3 +848,48 @@ class Hdf5Loader(LoaderFactory):
     def __del__(self):
         for db in self.h5dbs:
             db.close()
+
+class GanGridLoader(LoaderFactory):
+    """
+    The GanGridLoader generates data for a GAN.
+    """
+    def __init__(self):
+        pass
+
+    def initialize(self):
+        self.float_data = False  # For now only strings
+        self.keys = None  # Not using keys
+        self.unencoded_data_format = 'hwc'
+        self.unencoded_channel_scheme = 'rgb'
+        self.reader = None
+        self.image_dtype = tf.float32
+
+        self.channels = 1
+        self.height = 1
+        self.width = 100
+        self.data_encoded = False
+
+        self.total = 100000
+
+    def get_queue(self):
+        return tf.train.range_input_producer(
+            self.total,
+            num_epochs=self.num_epochs,
+            capacity=self.total,
+            shuffle=self.shuffle,
+            seed=self._seed,
+            name='input_producer'
+        )
+
+    def get_single_data(self, key_queue):
+        """
+        Returns:
+            key, single_data, single_data_shape, single_label, single_label_shape
+        """
+
+        key = tf.to_int32(key_queue.dequeue())  # Operation that dequeues an index
+
+        d = key
+        ds = np.array([1, 1, 1], dtype=np.int32)
+
+        return key, d, ds, None, None
