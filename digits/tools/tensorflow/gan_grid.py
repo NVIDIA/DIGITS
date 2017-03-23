@@ -602,8 +602,7 @@ def main(_):
             with tf.name_scope(digits.STAGE_INF) as stage_scope:
                 inf_model = Model(digits.STAGE_INF, FLAGS.croplen, nclasses)
                 inf_model.create_dataloader(FLAGS.inference_db)
-                inf_model.dataloader.setup(None, False, FLAGS.bitdepth, FLAGS.batch_size, 1, FLAGS.seed,
-                                           FLAGS.zs_file)
+                inf_model.dataloader.setup(None, False, FLAGS.bitdepth, FLAGS.batch_size, 1, FLAGS.seed)
                 inf_model.dataloader.set_augmentation(mean_loader)
 
                 batch_x, time_placeholder, attribute_placeholder = input_generator(FLAGS.zs_file, FLAGS.batch_size)
