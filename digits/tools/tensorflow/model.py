@@ -106,7 +106,8 @@ class Model(object):
         if batch_x is None:
             self.init_dataloader()
             batch_x = self.dataloader.batch_x
-            batch_y = self.dataloader.batch_y
+            if self.stage != digits.STAGE_INF:
+                batch_y = self.dataloader.batch_y
         else:
             assert self.stage == digits.STAGE_INF
             batch_x = batch_x
