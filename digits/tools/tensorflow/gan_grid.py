@@ -67,7 +67,7 @@ CELEBA_ALL_ATTRIBUTES = """
                         """.split()
 
 CELEBA_EDITABLE_ATTRIBUTES = [
-    'Bald', 'Black_Hair', 'Blond_Hair', 'Male', 'Smiling', 'Young', 'Attractive', 'Pale_Skin', 'Big_Nose'
+    'Bald', 'Black_Hair', 'Blond_Hair', 'Eyeglasses', 'Male', 'Mustache', 'Smiling', 'Young', 'Attractive', 'Pale_Skin', 'Big_Nose'
 ]
 
 CELEBA_EDITABLE_ATTRIBUTES_IDS = [CELEBA_ALL_ATTRIBUTES.index(attr) for attr in CELEBA_EDITABLE_ATTRIBUTES]
