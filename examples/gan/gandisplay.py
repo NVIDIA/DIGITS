@@ -211,7 +211,14 @@ class TestFrame(wx.Frame):
         self.last_frame_timestamp = None
         self.last_fps_update = None
 
+        # add panel to frame
+        frameSizer = wx.BoxSizer(wx.VERTICAL)
+        frameSizer.Add(panel, 0, wx.EXPAND | wx.ALIGN_LEFT)
+        self.SetSizer(frameSizer)
+
         self.Show()
+
+        self.Fit()
 
         self.Bind(DISPLAY_GRID_EVT, self.OnDisplayCell)
 
