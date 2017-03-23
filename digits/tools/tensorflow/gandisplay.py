@@ -1,5 +1,4 @@
 import wxversion
-wxversion.select('3.0')
 
 import wx
 import numpy as np
