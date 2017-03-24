@@ -226,6 +226,8 @@ class Visualization(VisualizationInterface):
                 max_distance = np.maximum(max_distance, distance + 128)
 
             line_data[:, :, 3] = line_mask * 255
+            max_distance = np.maximum(max_distance, np.zeros(max_distance.shape, dtype=float))
+            max_distance = np.minimum(max_distance, np.zeros(max_distance.shape, dtype=float) + 255)
             seg_data[:, :, 3] = max_distance
 
         # Input image with outlines
