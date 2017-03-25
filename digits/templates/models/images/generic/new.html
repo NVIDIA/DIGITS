@@ -85,7 +85,7 @@ function syncAceEditor(){
 
 $("#dataset").change(function() {
     if ($(this).val()) {
-        $.ajax("/datasets/summary?job_id=" + $(this).val(),
+        $.ajax("{{url_for('digits.dataset.views.summary')}}" + "?job_id=" + $(this).val(),
             {
                 type: "GET",
                 }

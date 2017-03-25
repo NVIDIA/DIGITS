@@ -109,7 +109,7 @@
                         ng-keydown="keydown($event)"
                         ng-class="{selected:job.selected}">
                         <td>
-                            <a href="/jobs/{[ job.id ]}" title="{[job.name]}">
+                            <a href="{{config['URL_PREFIX']}}/jobs/{[ job.id ]}" title="{[job.name]}">
                                 {[ job.name | major_name ]}
                             </a>
                             <small>
