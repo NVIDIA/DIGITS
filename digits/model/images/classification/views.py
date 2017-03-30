@@ -670,6 +670,11 @@ def top_n():
         if scores is None:
             raise RuntimeError('An error occurred while processing the images')
 
+        # force correct 2D shape squeezing scores
+        for i in reversed(range(2, len(scores.shape))):
+            if scores.shape[i] == 1:
+                scores = np.squeeze(scores, axis=(i,))
+
         labels = model_job.train_task().get_labels()
         images = inputs['data']
         indices = (-scores).argsort(axis=0)[:top_n]
