@@ -641,6 +641,7 @@ def handle_error(e):
                                      trace=trace,
                                      ), status_code
 
+
 # Register this handler for all error codes
 # flask>=0.11 only codes defined
 # in werkzeug default_exceptions are valid
@@ -656,7 +657,7 @@ if str(flask.__version__) >= "0.11":
 else:
     for code in HTTP_STATUS_CODES:
         if code not in [301]:
-            app.register_error_handler(code, handle_error)            
+            app.register_error_handler(code, handle_error)
 # File serving
 
 
