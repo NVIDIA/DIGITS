@@ -87,6 +87,19 @@ The simplest fix is to manually install the missing library:
 % sudo ldconfig
 ```
 
+#### Torch and HDF5
+
+There is at least one Torch package which is missing a required dependency on libhdf5-dev.
+If you see this error:
+```
+ERROR: /usr/share/lua/5.1/trepl/init.lua:384: /usr/share/lua/5.1/trepl/init.lua:384: /usr/share/lua/5.1/hdf5/ffi.lua:29: libhdf5.so: cannot open shared object file: No such file or directory
+```
+The simplest fix is to manually install the missing library:
+```sh
+% sudo apt-get install libhdf5-dev
+% sudo ldconfig
+```
+
 #### Other
 
 If you run into an issue not addressed here, try searching through the [GitHub issues](https://github.com/NVIDIA/DIGITS/issues) and/or the [user group](https://groups.google.com/d/forum/digits-users).
