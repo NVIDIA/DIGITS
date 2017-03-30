@@ -8,7 +8,7 @@ DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is a webapp for t
 
 | Installation method | Supported platform[s] | Available versions | Instructions |
 | --- | --- | --- | --- |
-| Deb packages | Ubuntu 14.04 | [14.04 repo](http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64) | [docs/UbuntuInstall.md](docs/UbuntuInstall.md) |
+| Deb packages | Ubuntu 14.04, 16.04 | [14.04 repo](http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64), [16.04 repo](http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64) | [docs/UbuntuInstall.md](docs/UbuntuInstall.md) |
 | Docker | Linux | [DockerHub tags](https://hub.docker.com/r/nvidia/digits/tags/) | [nvidia-docker wiki](https://github.com/NVIDIA/nvidia-docker/wiki/DIGITS) |
 | Source | Ubuntu 14.04, 16.04 | [GitHub tags](https://github.com/NVIDIA/DIGITS/releases) | [docs/BuildDigits.md](docs/BuildDigits.md) |
 
