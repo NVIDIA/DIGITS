@@ -642,17 +642,13 @@ def handle_error(e):
                                      ), status_code
 
 
-# Register this handler for all error codes
-# flask>=0.11 only codes defined
+# Register this handler for all error codes.
+# In flask>=0.11 only codes that are defined
 # in werkzeug default_exceptions are valid
-# [400, 401, 403, 404, 405, 406, 408, 409, 410,
-# 411, 412, 413, 414, 415, 416, 417, 418, 422,
-# 423, 428, 429, 431, 451, 500, 501, 502, 503, 504, 505]
 if str(flask.__version__) >= "0.11":
     for code in HTTP_STATUS_CODES:
         if code in werkzeug.exceptions.default_exceptions:
             app.register_error_handler(code, handle_error)
-# Register this handler for all error codes
 # Necessary for flask<=0.10.1
 else:
     for code in HTTP_STATUS_CODES:
