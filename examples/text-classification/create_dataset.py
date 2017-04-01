@@ -54,6 +54,8 @@ def create_dataset(folder, input_file_name, db_batch_size=None, create_images=Fa
             sample = np.ones(FEATURE_LEN)  # one by default (i.e. 'other' character)
             count = 0
             for field in row['fields']:
+                if count > FEATURE_LEN-1:
+                    break
                 for char in field.lower():
                     if char in cdict:
                         sample[count] = cdict[char]
