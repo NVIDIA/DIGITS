@@ -49,3 +49,12 @@ cd build
 cmake ..
 make --jobs=4
 ```
+
+If you want to use Intel MKL or OpenBLAS instead of ATLAS please add `-DBLAS=mkl` or `-DBLAS=open` parameter to `cmake` command line. For example to use Intel MKL do the following:
+```sh
+cd $CAFFE_ROOT
+mkdir build
+cd build
+cmake .. -DBLAS=mkl
+make --jobs=4
+```
