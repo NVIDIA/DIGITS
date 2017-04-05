@@ -20,6 +20,10 @@ Table of Contents
         * [Analogy grid](#analogy-grid)
     * [Embeddings visualization](#embeddings-visualization)
 
+**Disclaimer:**
+This walk-through makes use of experimental features in DIGITS.
+Please do not report issues on the main DIGITS fork.
+
 ## Introduction
 
 Generative Adversarial Networks (GAN) were introduced by Ian Goodfellow in [Generative Adversarial Networks](https://arxiv.org/abs/1406.2661), Goodfellow, 2014.
