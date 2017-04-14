@@ -19,9 +19,6 @@ layer {
   type: "Data"
   top: "data"
   top: "label"
-  transform_param {
-    crop_size: 227
-  }
   data_param {
     batch_size: 32
   }
