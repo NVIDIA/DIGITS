@@ -15,6 +15,9 @@ import numpy as np
 import PIL.Image
 import scipy.misc
 
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 from . import is_url, HTTP_TIMEOUT, errors
 
 # Library defaults:
