@@ -5,6 +5,7 @@ import os
 import datetime
 from ..job import ModelJob
 from digits.utils import subclass, override
+from digits.status import Status
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
@@ -33,4 +34,6 @@ class ImageModelJob(ModelJob):
         })
 
         d.update(task.get_task_stats(epoch))
+        if task.status() == Status.RUN:
+            d.update({'task est': task.est_done(), 'task progress': task.progress})
         return d
