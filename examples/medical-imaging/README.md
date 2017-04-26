@@ -109,7 +109,7 @@ In the model creation form:
 - name your model `FCN-Alexnet-Sunnybrooke`
 
 You will also need to edit the definition of `FCN-Alexnet`.
-Remember that in the semantic segmentation example, there are 12 different classes.
+Remember that in the semantic segmentation example, there are 21 different classes.
 In this example, we only have two classes (background and left ventricle).
 It is straightforward to adjust the model description to train on a different number of classes.
 To this avail:

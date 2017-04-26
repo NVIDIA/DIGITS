@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import os
+import shutil
 
 # Find the best implementation available
 from digits.config import config_value
@@ -166,12 +167,14 @@ def from_files(job, form):
     """
     # labels
     if form.textfile_use_local_files.data:
-        job.labels_file = form.textfile_local_labels_file.data.strip()
+        labels_file_from = form.textfile_local_labels_file.data.strip()
+        labels_file_to = os.path.join(job.dir(), utils.constants.LABELS_FILE)
+        shutil.copyfile(labels_file_from, labels_file_to)
     else:
         flask.request.files[form.textfile_labels_file.name].save(
             os.path.join(job.dir(), utils.constants.LABELS_FILE)
         )
-        job.labels_file = utils.constants.LABELS_FILE
+    job.labels_file = utils.constants.LABELS_FILE
 
     shuffle = bool(form.textfile_shuffle.data)
     backend = form.backend.data

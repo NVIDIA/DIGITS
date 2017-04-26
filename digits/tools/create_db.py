@@ -580,7 +580,7 @@ def _load_thread(load_queue, write_queue, summary_queue,
         try:
             image = utils.image.load_image(path)
         except utils.errors.LoadImageError as e:
-            logger.warning('[%s] %s: %s' % (path, type(e).__name__, e))
+            logger.warning('[%s %s] %s: %s' % (path, label, type(e).__name__, e))
             continue
 
         image = utils.image.resize_image(image,

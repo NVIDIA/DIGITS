@@ -29,8 +29,8 @@ If you do want to use your own dataset instead of KITTI, read [digits/extensions
 We are unable to provide download links to the KITTI data like we can for MNIST and CIFAR, so you'll have to download a few large files yourself.
 Go to http://www.cvlibs.net/datasets/kitti/eval_object.php and download these files:
 
- | Filename | Size
------------- | ------------- | ------------- | -------------
+Description | Filename | Size
+------------ | ------------- | -------------
 Left color images of object data set | `data_object_image_2.zip` | **12GB**
 Training labels of object data set | `data_object_label_2.zip` | 5MB
 Object development kit | `devkit_object.zip` | 1MB

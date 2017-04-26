@@ -10,7 +10,7 @@ See instructions below for creating and connecting to your own store[s].
 
 ## Usage
 
-From the DIGITS home page, click on "Pretrained Models", then "Load Model" > "Images" > "Retreive from Model Store".
+From the DIGITS home page, click on "Pretrained Models", then "Load Model" > "Images" > "Retrieve from Model Store".
 
 ![Home page](images/model-store/home.jpg)
 
