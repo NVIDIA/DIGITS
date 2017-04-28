@@ -25,7 +25,7 @@
                     {% if snapshot_list|length %}
                     <select class="form-control" id="{{network.data}}-snapshot" name="{{network.data}}-snapshot">
                         {% for each_epoch in snapshot_list %}
-                        <option value="{{each_epoch[0]}}">{{each_epoch[1]}}</option>
+                        <option value="{{each_epoch[0]}}" {{'selected' if each_epoch[0] == form.saved_epoch.data}}>{{each_epoch[1]}}</option>
                         {% endfor %}
                     </select>
                     {% endif %}

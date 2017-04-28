@@ -284,6 +284,12 @@ class ModelForm(Form):
         ],
     )
 
+    # This is used to save and restore for cloning because the pretrained model selections are
+    # created on the fly in the html file. This form is not displayed.
+    saved_epoch = utils.forms.TextField(
+        'Saved epoch',
+    )
+
     custom_network = utils.forms.TextAreaField(
         'Custom Network',
         validators=[
