@@ -22,7 +22,6 @@ from digits.utils import filesystem as fs
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
-
 blueprint = flask.Blueprint(__name__, __name__)
 
 """
@@ -64,18 +63,23 @@ def new():
     """
     Return a form for a new ImageClassificationModelJob
     """
+    # cluster_factory.cluster_factory.get_running_systems()
+
     form = ImageClassificationModelForm()
     form.dataset.choices = get_datasets()
     form.standard_networks.choices = get_standard_networks()
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
     form.pretrained_networks.choices = get_pretrained_networks()
+    if config_value("system_type") == 'slurm':
+        form.select_gpu_count.validators = form.select_gpu_count_slurm.validators
 
     prev_network_snapshots = get_previous_network_snapshots()
 
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
-
+    if config_value('system_type') == 'slurm':
+        config_value('caffe')['multi_gpu'] = True
     return flask.render_template('models/images/classification/new.html',
                                  form=form,
                                  frameworks=frameworks.get_frameworks(),
@@ -83,6 +87,7 @@ def new():
                                  previous_networks_fullinfo=get_previous_networks_fulldetails(),
                                  pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
                                  multi_gpu=config_value('caffe')['multi_gpu'],
+                                 system_type=config_value('system_type'),
                                  )
 
 
@@ -101,7 +106,8 @@ def create():
     form.standard_networks.default = get_default_standard_network()
     form.previous_networks.choices = get_previous_networks()
     form.pretrained_networks.choices = get_pretrained_networks()
-
+    if config_value("system_type") == 'slurm':
+        form.select_gpu_count.validators = form.select_gpu_count_slurm.validators
     prev_network_snapshots = get_previous_network_snapshots()
 
     # Is there a request to clone a job with ?clone=<job_id>
@@ -118,6 +124,7 @@ def create():
                                          previous_networks_fullinfo=get_previous_networks_fulldetails(),
                                          pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
                                          multi_gpu=config_value('caffe')['multi_gpu'],
+                                         system_type=config_value('system_type'),
                                          ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
@@ -303,6 +310,9 @@ def create():
                 rms_decay=form.rms_decay.data,
                 shuffle=form.shuffle.data,
                 data_aug=data_aug,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
             )
 
@@ -333,6 +343,7 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
+
     return flask.render_template(
         'models/images/classification/show.html',
         job=job,
@@ -369,6 +380,7 @@ def classify_one():
         image_path = flask.request.form['image_path']
     elif 'image_file' in flask.request.files and flask.request.files['image_file']:
         outfile = tempfile.mkstemp(suffix='.png')
+
         flask.request.files['image_file'].save(outfile[1])
         image_path = outfile[1]
         os.close(outfile[0])

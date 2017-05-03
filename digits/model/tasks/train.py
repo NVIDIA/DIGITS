@@ -64,6 +64,11 @@ class TrainTask(Task):
         self.framework_id = kwargs.pop('framework_id', None)
         self.data_aug = kwargs.pop('data_aug', None)
 
+        # slurm job options
+
+        self.time_limit = kwargs.pop('time_limit', None)
+        self.s_cpu_count = kwargs.pop('s_cpu_count', None)
+        self.s_mem = kwargs.pop('s_mem', None)
         super(TrainTask, self).__init__(job_dir=job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION
 
@@ -125,6 +130,9 @@ class TrainTask(Task):
 
     @override
     def offer_resources(self, resources):
+        # gives non interactive tasks as many gpus as they want
+        if self.system_type != 'interactive':
+            return {'gpus': [(str(i), 1) for i in range(0, self.gpu_count)]}
         if 'gpus' not in resources:
             return None
         if not resources['gpus']:
@@ -162,12 +170,13 @@ class TrainTask(Task):
     def before_run(self):
         # start a thread which sends SocketIO updates about hardware utilization
         gpus = None
-        if 'gpus' in self.current_resources:
-            gpus = [identifier for (identifier, value) in self.current_resources['gpus']]
+        if self.system_type == 'interactive':
+            if 'gpus' in self.current_resources:
+                gpus = [identifier for (identifier, value) in self.current_resources['gpus']]
 
-        self._hw_socketio_thread = gevent.spawn(
-            self.hw_socketio_updater,
-            gpus)
+            self._hw_socketio_thread = gevent.spawn(
+                self.hw_socketio_updater,
+                gpus)
 
     def hw_socketio_updater(self, gpus):
         """

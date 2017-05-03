@@ -1,4 +1,5 @@
-{# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% from "helper.html" import print_flashes %}
 {% from "helper.html" import print_errors %}
@@ -666,8 +667,29 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </script>
         </div>
     </div>
+            {% if system_type == 'slurm' %}
+                <!--OPTIONS FOR SLURM-->
+        <div class="col-sm-6 col-sm-offset-3 well">
+               <div class="form-group{{mark_errors([form.slurm_time_limit])}}">
+                   {{form.slurm_time_limit.label}}
+                   {{form.slurm_time_limit.tooltip}}
+                   {{form.slurm_time_limit(class='form-control')}}
+            </div>
+            <div class="form-group{{mark_errors([form.slurm_cpu_count])}}">
+                    {{form.slurm_cpu_count.label}}
+                    {{form.slurm_cpu_count.tooltip}}
+                    {{form.slurm_cpu_count(class='form-control')}}
+            </div>
+            <div class="form-group{{mark_errors([form.slurm_cpu_count])}}">
+                   {{form.slurm_mem.label}}
+                   {{form.slurm_mem.tooltip}}
+                   {{form.slurm_mem(class='form-control')}}
+            </div>
+        </div>
+         {% endif %}
 
     <div class="row">
+
         <div class="col-sm-6 col-sm-offset-3 well">
             {% if form.select_gpu.choices|length > 2 and not multi_gpu %}
             <div class="form-group{{mark_errors([form.select_gpu])}}">
@@ -682,23 +704,27 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
                 {% endfor %}
             </div>
             {% endif %}
-            {% if form.select_gpus.choices| length > 1 and multi_gpu %}
+
             <div class="form-group{{mark_errors([form.select_gpu_count])}}">
                 {{form.select_gpu_count.label}}
                 {{form.select_gpu_count(class='form-control')}}
             </div>
+
+            {% if form.select_gpu.choices|length > 1 and multi_gpu and system_type != 'slurm' %}
             <p class="text-center"><i>or</i></p>
             <div class="form-group{{mark_errors([form.select_gpus])}}">
                 {{form.select_gpus.label}}
                 {{form.select_gpus.tooltip}}
                 {{form.select_gpus(class='form-control', size=4)}}
             </div>
+            {% endif %}
+
             <script type="text/javascript">
                 // Only allow one of these to be selected
                 $("#select_gpus").change(function(){ $("#select_gpu_count").val(null);});
                 $("#select_gpu_count").change(function(){ $("#select_gpus").val(null);});
             </script>
-            {% endif %}
+
             <div class="form-group{{mark_errors([form.group_name])}}">
                 {{form.group_name.label}}
                 {{form.group_name.tooltip}}
@@ -711,6 +737,7 @@ $('#network-tabs a[href="#network-tab-'+$("#method").val()+'"]').tab('show');
             </div>
             <input type="submit" name="create-model" class="btn btn-primary" value="Create">
         </div>
+
     </div>
 
 </form>

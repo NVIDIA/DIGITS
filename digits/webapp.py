@@ -13,7 +13,7 @@ from digits import utils  # noqa
 from digits.utils import filesystem as fs  # noqa
 from digits.utils.store import StoreCache  # noqa
 import digits.scheduler  # noqa
-
+from digits.extensions.cluster_management.cluster_factory import cluster_factory
 # Create Flask, Scheduler and SocketIO objects
 
 app = flask.Flask(__name__)
@@ -33,6 +33,7 @@ scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.globals['server_version'] = digits.__version__
 app.jinja_env.globals['caffe_version'] = config_value('caffe')['version']
+app.jinja_env.globals['system_types'] = cluster_factory.get_running_systems()
 app.jinja_env.globals['caffe_flavor'] = config_value('caffe')['flavor']
 app.jinja_env.globals['dir_hash'] = fs.dir_hash(
     os.path.join(os.path.dirname(digits.__file__), 'static'))

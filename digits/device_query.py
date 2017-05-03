@@ -220,6 +220,8 @@ def get_devices(force_reload=False):
             rc = cudart.cudaDeviceGetPCIBusId(ctypes.c_char_p(pciBusID_str), 16, x)
             if rc == 0:
                 properties.pciBusID_str = pciBusID_str
+            if rc != 0:
+                raise RuntimeError('cudaDeviceGetPCIBusId() failed with error #%s' % rc)
             devices.append(properties)
         else:
             print 'cudaGetDeviceProperties() failed with error #%s' % rc
@@ -242,7 +244,6 @@ def get_nvml_info(device_id):
     device = get_device(device_id)
     if device is None:
         return None
-
     nvml = get_nvml()
     if nvml is None:
         return None
@@ -291,6 +292,7 @@ def get_nvml_info(device_id):
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description='DIGITS Device Query')
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()

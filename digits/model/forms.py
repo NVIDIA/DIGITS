@@ -16,7 +16,6 @@ from digits import frameworks
 
 
 class ModelForm(Form):
-
     # Methods
 
     def selection_exists_in_choices(form, field):
@@ -308,36 +307,34 @@ class ModelForm(Form):
     # Select one of several GPUs
     select_gpu = wtforms.RadioField(
         'Select which GPU you would like to use',
-        choices=[('next', 'Next available')] + [(
+        choices=[('next', 'Next available')] + [(index, '#%s - %s (%s memory)' % (
             index,
-            '#%s - %s (%s memory)' % (
-                index,
-                get_device(index).name,
-                sizeof_fmt(
-                    get_nvml_info(index)['memory']['total']
-                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                    else get_device(index).totalGlobalMem)
-            ),
-        ) for index in config_value('gpu_list').split(',') if index],
-        default='next',
-    )
+            get_device(index).name,
+            sizeof_fmt(
+                get_nvml_info(index)['memory']['total']
+                if get_nvml_info(index) and 'memory' in get_nvml_info(index)
+                else get_device(index).totalGlobalMem)
+        ),) for index in config_value('gpu_list').split(',') if index], default='next', )
+    # slurm options
+    slurm_selector = utils.forms.BooleanField('Use slurm?')
+    slurm_time_limit = utils.forms.IntegerField('Task time limit', tooltip='in minutes', default=0, )
+    slurm_cpu_count = utils.forms.IntegerField('Use this many cores', validators=[
+        validators.NumberRange(min=1, max=128)
+    ], default=8, )
+    slurm_mem = utils.forms.IntegerField('Use this much memory (GB)', validators=[
+        validators.NumberRange(min=1, max=128)
+    ], default=30, )
 
     # Select N of several GPUs
     select_gpus = utils.forms.SelectMultipleField(
         'Select which GPU[s] you would like to use',
-        choices=[(
-            index,
-            '#%s - %s (%s memory)' % (
-                index,
-                get_device(index).name,
-                sizeof_fmt(
-                    get_nvml_info(index)['memory']['total']
-                    if get_nvml_info(index) and 'memory' in get_nvml_info(index)
-                    else get_device(index).totalGlobalMem)
-            ),
-        ) for index in config_value('gpu_list').split(',') if index],
-        tooltip="The job won't start until all of the chosen GPUs are available."
-    )
+        choices=[(index, '#%s - %s (%s memory)' % (
+            index, get_device(index).name,
+            sizeof_fmt(get_nvml_info(index)['memory']['total']
+                       if get_nvml_info(index) and 'memory' in get_nvml_info(index)
+                       else get_device(index).totalGlobalMem)),
+                  ) for index in config_value('gpu_list').split(',') if index],
+        tooltip="The job won't start until all of the chosen GPUs are available.")
 
     # XXX For testing
     # The Flask test framework can't handle SelectMultipleFields correctly
@@ -348,6 +345,13 @@ class ModelForm(Form):
             field.data = form.select_gpus_list.data.split(',')
 
     # Use next available N GPUs
+    select_gpu_count_slurm = wtforms.IntegerField('Use this many GPUs (next available)',
+                                                  validators=[
+                                                      validators.NumberRange(min=1)
+                                                  ],
+                                                  default=1,
+                                                  )
+
     select_gpu_count = wtforms.IntegerField('Use this many GPUs (next available)',
                                             validators=[
                                                 validators.NumberRange(min=1, max=len(

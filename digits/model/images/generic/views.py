@@ -39,6 +39,8 @@ def new(extension_id=None):
     form.pretrained_networks.choices = get_pretrained_networks()
     prev_network_snapshots = get_previous_network_snapshots()
 
+    if config_value("system_type") == 'slurm':
+        form.select_gpu_count.validators = form.select_gpu_count_slurm.validators
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
@@ -52,6 +54,7 @@ def new(extension_id=None):
         previous_networks_fullinfo=get_previous_networks_fulldetails(),
         pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
         multi_gpu=config_value('caffe')['multi_gpu'],
+        system_type=config_value('system_type'),
     )
 
 
@@ -73,6 +76,8 @@ def create(extension_id=None):
     form.pretrained_networks.choices = get_pretrained_networks()
 
     prev_network_snapshots = get_previous_network_snapshots()
+    if config_value("system_type") == 'slurm':
+        form.select_gpu_count.validators = form.select_gpu_count_slurm.validators
 
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
@@ -91,6 +96,7 @@ def create(extension_id=None):
                 previous_networks_fullinfo=get_previous_networks_fulldetails(),
                 pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
                 multi_gpu=config_value('caffe')['multi_gpu'],
+                system_type=config_value('system_type'),
             ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
@@ -262,10 +268,14 @@ def create(extension_id=None):
                 rms_decay=form.rms_decay.data,
                 shuffle=form.shuffle.data,
                 data_aug=data_aug,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
             )
 
             # Save form data with the job so we can easily clone it later.
+
             save_form_to_job(job, form)
 
             jobs.append(job)

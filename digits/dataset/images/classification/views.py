@@ -5,6 +5,8 @@ import os
 import shutil
 
 # Find the best implementation available
+from digits.config import config_value
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -22,7 +24,6 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.lmdbreader import DbReader
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
-
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -115,6 +116,9 @@ def from_folders(job, form):
             compression=compression,
             mean_file=utils.constants.MEAN_FILE_CAFFE,
             labels_file=job.labels_file,
+            time_limit=form.slurm_time_limit.data,
+            s_cpu_count=form.slurm_cpu_count.data,
+            s_mem=form.slurm_mem.data,
         )
     )
 
@@ -131,6 +135,9 @@ def from_folders(job, form):
                 encoding=encoding,
                 compression=compression,
                 labels_file=job.labels_file,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -147,6 +154,9 @@ def from_folders(job, form):
                 encoding=encoding,
                 compression=compression,
                 labels_file=job.labels_file,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -198,6 +208,10 @@ def from_files(job, form):
             mean_file=utils.constants.MEAN_FILE_CAFFE,
             labels_file=job.labels_file,
             shuffle=shuffle,
+            time_limit=form.slurm_time_limit.data,
+            s_cpu_count=form.slurm_cpu_count.data,
+            s_mem=form.slurm_mem.data,
+
         )
     )
 
@@ -229,6 +243,9 @@ def from_files(job, form):
                 compression=compression,
                 labels_file=job.labels_file,
                 shuffle=shuffle,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -260,6 +277,9 @@ def from_files(job, form):
                 compression=compression,
                 labels_file=job.labels_file,
                 shuffle=shuffle,
+                time_limit=form.slurm_time_limit.data,
+                s_cpu_count=form.slurm_cpu_count.data,
+                s_mem=form.slurm_mem.data,
             )
         )
 
@@ -275,7 +295,8 @@ def new():
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
-    return flask.render_template('datasets/images/classification/new.html', form=form)
+    return flask.render_template('datasets/images/classification/new.html', form=form,
+                                 system_type=config_value('system_type'))
 
 
 @blueprint.route('.json', methods=['POST'])
@@ -296,7 +317,8 @@ def create():
         if request_wants_json():
             return flask.jsonify({'errors': form.errors}), 400
         else:
-            return flask.render_template('datasets/images/classification/new.html', form=form), 400
+            return flask.render_template('datasets/images/classification/new.html', form=form,
+                                         system_type=config_value('system_type')), 400
 
     job = None
     try:
@@ -309,7 +331,10 @@ def create():
                 int(form.resize_width.data),
                 int(form.resize_channels.data),
             ),
-            resize_mode=form.resize_mode.data
+            resize_mode=form.resize_mode.data,
+            time_limit=form.slurm_time_limit.data,
+            s_cpu_count=form.slurm_cpu_count.data,
+            s_mem=form.slurm_mem.data,
         )
 
         if form.method.data == 'folder':

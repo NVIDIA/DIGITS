@@ -16,7 +16,9 @@ from . import utils
 from .config import config_value
 from .status import Status, StatusCls
 import digits.log
+from digits.extensions.cluster_management import cluster_factory
 
+# from digits.extensions.cluster_management.slurm import pack_slurm_args
 # NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 1
 
@@ -29,8 +31,18 @@ class Task(StatusCls):
     """
 
     def __init__(self, job_dir, parents=None):
+        # Detect if slurm is available
+        # This should be moved to a better location that contains system infor
+        # as this should contain only job based information
+        # TODO add other systems to the detection
+        self.system_type = config_value('system_type')
+
         super(Task, self).__init__()
         self.pickver_task = PICKLE_VERSION
+
+        # vars for slurm job details
+        self.node = ""
+        self.job_num = ""
 
         self.job_dir = job_dir
         self.job_id = os.path.basename(job_dir)
@@ -101,6 +113,8 @@ class Task(StatusCls):
             'css': self.status.css,
             'show': (self.status in [Status.RUN, Status.ERROR]),
             'running': self.status.is_running(),
+            'node': self.node,
+            'job_num': self.job_num
         }
         with app.app_context():
             message['html'] = flask.render_template('status_updates.html',
@@ -180,6 +194,7 @@ class Task(StatusCls):
         pass
 
     def run(self, resources):
+
         """
         Execute the task
 
@@ -198,14 +213,38 @@ class Task(StatusCls):
         args = [str(x) for x in args]
 
         self.logger.info('%s task started.' % self.name())
-        self.status = Status.RUN
-
         unrecognized_output = []
-
         import sys
         env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
-
-        # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
+        # SLURM PROCESSING
+        print type(self)
+        if self.system_type != 'interactive':
+            cf = cluster_factory.cluster_factory()
+            cm = cf.get_cluster_manager()
+            # Check for arguments if missing fill with defaults
+            try:
+                self.gpu_count
+            except:
+                self.gpu_count = 1
+            try:
+                self.time_limit
+            except:
+                self.time_limit = 0
+            try:
+                self.s_cpu_count
+            except:
+                self.s_cpu_count = 0
+            try:
+                self.s_mem
+            except:
+                self.s_mem = 0
+            # Create a slurm command
+            args = cm.pack_args(args, self.time_limit,
+                                self.s_cpu_count, self.s_mem, self.gpu_count, type(self))
+            self.status = Status.WAIT
+        else:
+            self.status = Status.RUN
+        # del args[len(args) - 1]
         if platform.system() == 'Windows':
             args = ' '.join(args)
             self.logger.info('Task subprocess args: "{}"'.format(args))
@@ -215,7 +254,7 @@ class Task(StatusCls):
         self.p = subprocess.Popen(args,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT,
-                                  cwd=self.job_dir,
+                                  cwd=os.path.relpath(self.job_dir),
                                   close_fds=False if platform.system() == 'Windows' else True,
                                   env=env,
                                   )
@@ -227,10 +266,16 @@ class Task(StatusCls):
                 for line in utils.nonblocking_readlines(self.p.stdout):
                     if self.aborted.is_set():
                         if sigterm_time is None:
+                            print "graceful shutdown"
                             # Attempt graceful shutdown
-                            self.p.send_signal(signal.SIGTERM)
-                            sigterm_time = time.time()
-                            self.status = Status.ABORT
+                            if self.job_num:
+                                cm.kill_task(self.job_num)
+                                sigterm_time = time.time()
+                                self.status = Status.ABORT
+                            else:
+                                self.p.send_signal(signal.SIGTERM)
+                                sigterm_time = time.time()
+                                self.status = Status.ABORT
                         break
 
                     if line is not None:
@@ -238,17 +283,27 @@ class Task(StatusCls):
                         line = line.strip()
 
                     if line:
+                        print line
+
+                        if not self.job_num and line.find('allocation') > 1:
+                            jobNums = [int(s) for s in line.split() if s.isdigit()]
+                            self.job_num = str(jobNums[0])
+                            # self.on_status_update()
+                        if self.status != Status.RUN and line.find('Granted') >= 0:
+                            self.status = Status.RUN
                         if not self.process_output(line):
                             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
                 if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+                    print "sending sigterm"
                     self.p.send_signal(signal.SIGKILL)
                     self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
                     time.sleep(0.1)
                 time.sleep(0.01)
         except:
+            print "exception"
             self.p.terminate()
             self.after_run()
             raise
@@ -288,7 +343,11 @@ class Task(StatusCls):
         """
         # NOTE: This must change when the logging format changes
         # YYYY-MM-DD HH:MM:SS [LEVEL] message
+        if line.find('allocation') > 1:
+            jobNums = [int(s) for s in line.split() if s.isdigit()]
+            self.job_num = str(jobNums[0])
         match = re.match(r'(\S{10} \S{8}) \[(\w+)\s*\] (.*)$', line)
+
         if match:
             timestr = match.group(1)
             timestamp = time.mktime(time.strptime(timestr, digits.log.DATE_FORMAT))
@@ -309,6 +368,7 @@ class Task(StatusCls):
             return (None, None, None)
 
     def process_output(self, line):
+
         """
         Process a line of output from the task
         Returns True if the output was able to be processed

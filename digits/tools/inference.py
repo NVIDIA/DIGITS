@@ -9,6 +9,7 @@ import numpy as np
 import PIL.Image
 import os
 import sys
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -21,12 +22,11 @@ from digits import utils, log  # noqa
 from digits.inference.errors import InferenceError  # noqa
 from digits.job import Job  # noqa
 from digits.utils.lmdbreader import DbReader  # noqa
-
+import os
 # Import digits.config before caffe to set the path
 import caffe_pb2  # noqa
 
 logger = logging.getLogger('digits.tools.inference')
-
 
 """
 Perform inference on a list of images using the specified model
@@ -46,15 +46,20 @@ def infer(input_list,
     """
     Perform inference on a list of images using the specified model
     """
+    # Get the gpu that slurm as set for the task
+    print gpu
+    logger.info("++++++++++++ inference.py ++++++++++++++++")
+    logger.info(gpu)
+    # if digits.config.config_value('system_type') != 'interactive':
+    #     gpu = os.environ.get('CUDA_VISIBLE_DEVICES')
+    logger.info(gpu)
     # job directory defaults to that defined in DIGITS config
     if jobs_dir == 'none':
         jobs_dir = digits.config.config_value('jobs_dir')
-
     # load model job
     model_dir = os.path.join(jobs_dir, model_id)
     assert os.path.isdir(model_dir), "Model dir %s does not exist" % model_dir
     model = Job.load(model_dir)
-
     # load dataset job
     dataset_dir = os.path.join(jobs_dir, model.dataset_id)
     assert os.path.isdir(dataset_dir), "Dataset dir %s does not exist" % dataset_dir
@@ -86,8 +91,8 @@ def infer(input_list,
     resize_mode = dataset.resize_mode if hasattr(dataset, 'resize_mode') else 'squash'
 
     n_input_samples = 0  # number of samples we were able to load
-    input_ids = []       # indices of samples within file list
-    input_data = []      # sample data
+    input_ids = []  # indices of samples within file list
+    input_data = []  # sample data
 
     if input_is_db:
         # load images from database
@@ -122,6 +127,7 @@ def infer(input_list,
         paths = None
         with open(input_list) as infile:
             paths = infile.readlines()
+
         # load and resize images
         for idx, path in enumerate(paths):
             path = path.strip()
@@ -204,6 +210,7 @@ def infer(input_list,
             dset.attrs['histogram_ticks'] = layer['data_stats']['histogram'][2]
     db.close()
     logger.info('Saved data to %s', db_path)
+
 
 if __name__ == '__main__':
 

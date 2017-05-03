@@ -98,6 +98,7 @@ class BaseViewsTest(object):
         """
         url = '/%s/%s' % (job_type, job_id)
         rv = cls.app.get(url)
+        print url
         assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
         return rv.data
 
