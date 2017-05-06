@@ -43,7 +43,7 @@ def classification_loss(pred, y):
     """
     Definition of the loss for regular classification
     """
-    ssoftmax = tf.nn.sparse_softmax_cross_entropy_with_logits(pred, y, name='cross_entropy_single')
+    ssoftmax = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pred, labels=y, name='cross_entropy_single')
     return tf.reduce_mean(ssoftmax, name='cross_entropy_batch')
 
 
@@ -55,7 +55,7 @@ def constrastive_loss(lhs, rhs, y, margin=1.0):
     """
     Contrastive loss confirming to the Caffe definition
     """
-    d = tf.reduce_sum(tf.square(tf.sub(lhs, rhs)), 1)
+    d = tf.reduce_sum(tf.square(tf.subtract(lhs, rhs)), 1)
     d_sqrt = tf.sqrt(1e-6 + d)
     loss = (y * d) + ((1 - y) * tf.square(tf.maximum(margin - d_sqrt, 0)))
     return tf.reduce_mean(loss)  # Note: constant component removed (/2)
@@ -92,11 +92,11 @@ def chw_to_hwc(x):
 
 
 def bgr_to_rgb(x):
-    return tf.reverse(x, [False, False, True])
+    return tf.reverse(x, [2])
 
 
 def rgb_to_bgr(x):
-    return tf.reverse(x, [False, False, True])
+    return tf.reverse(x, [2])
 
 
 def get_available_gpus():

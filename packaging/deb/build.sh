@@ -55,7 +55,7 @@ if [ $(git tag -l $GIT_TAG | wc -l) -ne 1 ]; then
     echo "$GIT_TAG is not a git tag"
     exit 1
 fi
-DESCRIBE_VERSION=$(git describe --match $GIT_TAG)
+DESCRIBE_VERSION=$(git describe --tag --match $GIT_TAG)
 UPSTREAM_VERSION=${DESCRIBE_VERSION:1}
 if [[ "$GIT_TAG" == *"-"* ]]; then
     # Replace the first dash with a tilde

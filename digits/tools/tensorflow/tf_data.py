@@ -320,9 +320,8 @@ class LoaderFactory(object):
             with tf.name_scope('mean_subtraction'):
                 single_data = self.mean_loader.subtract_mean_op(single_data)
                 if LOG_MEAN_FILE:
-                    self.summaries.append(tf.image_summary('mean_image',
-                                                           tf.expand_dims(self.mean_loader.tf_mean_image, 0),
-                                          max_images=1))
+                    expanded_data = tf.expand_dims(self.mean_loader.tf_mean_image, 0)
+                    self.summaries.append(tf.summary.image('mean_image', expanded_data, max_outputs=1))
 
         # (Random) Cropping
         if self.croplen:
@@ -397,8 +396,7 @@ class LoaderFactory(object):
                 shapes=[[0], self.get_shape(), []],  # Only makes sense is dynamic_pad=False #@TODO(tzaman) - FIXME
                 min_after_dequeue=5*self.batch_size,
                 allow_smaller_final_batch=True,  # Happens if total%batch_size!=0
-                name='batcher'
-            )
+                name='batcher')
         else:
             batch = tf.train.batch(
                 single_batch,
@@ -409,8 +407,7 @@ class LoaderFactory(object):
                 num_threads=NUM_THREADS_DATA_LOADER if not self.is_inference else 1,
                 capacity=max_queue_capacity,  # Max amount that will be loaded and queued
                 allow_smaller_final_batch=True,  # Happens if total%batch_size!=0
-                name='batcher',
-            )
+                name='batcher')
 
         self.batch_k = batch[0]  # Key
         self.batch_x = batch[1]  # Input
@@ -848,6 +845,7 @@ class Hdf5Loader(LoaderFactory):
     def __del__(self):
         for db in self.h5dbs:
             db.close()
+
 
 class GanGridLoader(LoaderFactory):
     """
