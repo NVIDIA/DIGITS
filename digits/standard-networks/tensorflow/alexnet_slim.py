@@ -26,5 +26,5 @@ class UserModel(Tower):
     def loss(self):
         loss = digits.classification_loss(self.inference, self.y)
         accuracy = digits.classification_accuracy(self.inference, self.y)
-        self.summaries.append(tf.scalar_summary(accuracy.op.name, accuracy))
+        self.summaries.append(tf.summary.scalar(accuracy.op.name, accuracy))
         return loss
