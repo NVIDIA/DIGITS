@@ -63,7 +63,7 @@ def load_image(path):
             image = PIL.Image.open(path)
             image.load()
         except IOError as e:
-            raise errors.LoadImageError, 'IOError: %s' % e.message
+            raise errors.LoadImageError, 'IOError: Trying to load "%s": %s' % (path, e.message)
     else:
         raise errors.LoadImageError, '"%s" not found' % path
 
