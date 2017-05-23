@@ -17,7 +17,7 @@ From the DIGITS home page, click on "Pretrained Models", then "Load Model" > "Im
 On the model store page, you will see a list of all the models available for download.
 Click on the small download icon (first column) to download a model from the store to the DIGITS server.
 
-![Official store](images/model-store/official.jpg)
+![Official store](images/model-store/official.png)
 
 After downloading a model, you can return to the homepage to see the list of pretrained models.
 To make use of the downloaded model for training, select it as a "Pretrained Network" in the "New Model" form.

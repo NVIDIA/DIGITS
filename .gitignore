@@ -16,3 +16,4 @@ TAGS
 /build/
 /dist/
 *.egg-info/
+/.project
