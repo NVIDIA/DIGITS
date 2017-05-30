@@ -16,4 +16,13 @@ TAGS
 /build/
 /dist/
 *.egg-info/
+
+#Intellij files
+.idea/
+
+#vscode
+.vscode/
+
+#.project
+.project
 /.project
