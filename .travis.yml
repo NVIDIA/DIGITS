@@ -42,6 +42,7 @@ matrix:
                       - dput
                       - gnupg
           install:
+              - git fetch --unshallow
               - git remote add nvidia-digits-upstream https://github.com/NVIDIA/DIGITS.git  # for forks
               - git fetch nvidia-digits-upstream --tags
               - pip install twine
