@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
 import csv
 import os
@@ -49,7 +49,7 @@ class GroundTruthObj:
                           truncated refers to the object leaving image boundaries.
                           -1 corresponds to a don't care region.
         1    occluded     Integer (-1,0,1,2) indicating occlusion state:
-                          -1 = unkown, 0 = fully visible,
+                          -1 = unknown, 0 = fully visible,
                           1 = partly occluded, 2 = largely occluded
         1    alpha        Observation angle of object, ranging [-pi..pi]
         4    bbox         2D bounding box of object in the image (0-based index):

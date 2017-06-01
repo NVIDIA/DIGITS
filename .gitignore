@@ -26,7 +26,4 @@ TAGS
 
 #.project
 .project
-
-
-/examples/binary-segmentation/out/
-/examples/binary-segmentation/out2/
+/.project

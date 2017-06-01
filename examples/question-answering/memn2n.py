@@ -1,3 +1,9 @@
+# License needed
+
+import numpy as np
+import tensorflow as tf
+
+
 class UserModel(Tower):
 
     @model_property
@@ -114,14 +120,15 @@ class UserModel(Tower):
             t = tf.convert_to_tensor(t, name="t")
             gn = tf.random_normal(tf.shape(t), stddev=stddev)
             return tf.add(t, gn, name=name)
+
         def zero_nil_slot(t, name=None):
             t = tf.convert_to_tensor(t, name="t")
             s = tf.shape(t)[1]
             z = tf.zeros(tf.pack([1, s]))
             return tf.concat(0, [z, tf.slice(t, [1, 0], [-1, -1])], name=name)
-        max_grad_norm=40.0
-        grads_and_vars = [(tf.clip_by_norm(g, max_grad_norm), v) for g,v in grads_and_vars]
-        grads_and_vars = [(add_gradient_noise(g), v) for g,v in grads_and_vars]
+        max_grad_norm = 40.0
+        grads_and_vars = [(tf.clip_by_norm(g, max_grad_norm), v) for g, v in grads_and_vars]
+        grads_and_vars = [(add_gradient_noise(g), v) for g, v in grads_and_vars]
         nil_grads_and_vars = []
         for g, v in grads_and_vars:
             if v.name in self._nil_vars:

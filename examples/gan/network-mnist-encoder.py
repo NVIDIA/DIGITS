@@ -21,11 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import math
-import numpy as np
 import tensorflow as tf
-
-from tensorflow.python.framework import ops
 
 image_summary = tf.summary.image
 scalar_summary = tf.summary.scalar
@@ -138,7 +134,7 @@ def deconv2d(input_, output_shape,
         # filter : [height, width, output_channels, in_channels]
         w = tf.get_variable('w',
                             [k_h, k_w, output_shape[-1],
-                            input_.get_shape()[-1]],
+                             input_.get_shape()[-1]],
                             initializer=tf.random_normal_initializer(stddev=stddev))
         deconv = tf.nn.conv2d_transpose(input_, w,
                                         output_shape=output_shape,
@@ -179,7 +175,7 @@ def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=
         matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32,
                                  tf.random_normal_initializer(stddev=stddev))
         bias = tf.get_variable("bias", [output_size],
-            initializer=tf.constant_initializer(bias_start))
+                               initializer=tf.constant_initializer(bias_start))
         if with_w:
             return tf.matmul(input_, matrix) + bias, matrix, bias
         else:
@@ -219,8 +215,7 @@ class UserModel(Tower):
         self.dcgan_init(image_size=28,
                         y_dim=10,
                         output_size=28,
-                        c_dim=1,
-                        )
+                        c_dim=1)
 
     @model_property
     def inference(self):
@@ -310,14 +305,15 @@ class UserModel(Tower):
         # self.y is a vector of labels - shape: [N]
 
         # rescale to [0,1] range
-        x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim], name='x_reshaped')
+        x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim],
+                                name='x_reshaped')
         self.images = x_reshaped / 255.
 
         # one-hot encode y - shape: [N] -> [N, self.y_dim]
         self.y = tf.one_hot(self.y, self.y_dim, name='y_onehot')
 
         # create discriminator/encoder
-        self.DzGEN, self.D_logits  = self.discriminator(self.images, self.y, reuse=False)
+        self.DzGEN, self.D_logits = self.discriminator(self.images, self.y, reuse=False)
 
         # create generator
         self.G = self.generator(self.DzGEN, self.y)
@@ -389,7 +385,6 @@ class UserModel(Tower):
             h3 = linear(h2, self.z_dim, 'd_h3_lin_retrain')
             return h3, h3
 
-
     def generator(self, z, y=None):
         """
         Create the generator
@@ -426,7 +421,8 @@ class UserModel(Tower):
 
             h1 = conv_cond_concat(h1, yb)
 
-            h2 = tf.nn.relu(self.g_bn2(deconv2d(h1, [self.batch_size, s2, s2, self.gf_dim * 2], name='g_h2'), train=False))
+            h2 = tf.nn.relu(self.g_bn2(deconv2d(h1, [self.batch_size, s2, s2, self.gf_dim * 2],
+                                                name='g_h2'), train=False))
             h2 = conv_cond_concat(h2, yb)
 
             return tf.nn.sigmoid(deconv2d(h2, [self.batch_size, s, s, self.c_dim], name='g_h3'))

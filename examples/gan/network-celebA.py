@@ -21,11 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import math
-import numpy as np
 import tensorflow as tf
-
-from tensorflow.python.framework import ops
 
 image_summary = tf.summary.image
 scalar_summary = tf.summary.scalar
@@ -117,7 +113,7 @@ def deconv2d(input_, output_shape,
         # filter : [height, width, output_channels, in_channels]
         w = tf.get_variable('w',
                             [k_h, k_w, output_shape[-1],
-                            input_.get_shape()[-1]],
+                             input_.get_shape()[-1]],
                             initializer=tf.random_normal_initializer(stddev=stddev))
         deconv = tf.nn.conv2d_transpose(input_, w,
                                         output_shape=output_shape,
@@ -158,7 +154,7 @@ def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=
         matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32,
                                  tf.random_normal_initializer(stddev=stddev))
         bias = tf.get_variable("bias", [output_size],
-            initializer=tf.constant_initializer(bias_start))
+                               initializer=tf.constant_initializer(bias_start))
         if with_w:
             return tf.matmul(input_, matrix) + bias, matrix, bias
         else:
@@ -202,8 +198,7 @@ class UserModel(Tower):
         self.dcgan_init(image_size=image_size,
                         output_size=output_size,
                         c_dim=c_dim,
-                        z_dim=z_dim,
-                        )
+                        z_dim=z_dim)
 
     @model_property
     def inference(self):
@@ -241,8 +236,7 @@ class UserModel(Tower):
                    gf_dim=64,
                    df_dim=64,
                    gfc_dim=1024,
-                   dfc_dim=1024,
-                   ):
+                   dfc_dim=1024):
         """
 
         Args:
@@ -299,7 +293,7 @@ class UserModel(Tower):
                                              self.image_size,
                                              self.image_size,
                                              self.c_dim],
-                                      name='x_reshaped') - 128)/ 127.
+                                      name='x_reshaped') - 128) / 127.
 
             # create generator
             self.G = self.generator(self.z)
@@ -313,19 +307,23 @@ class UserModel(Tower):
             # we are using the cross entropy loss for all these losses
             # note the use of the soft label smoothing here to prevent D from getting overly confident
             # on real samples
-            self.d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits,
-                                              tf.ones_like(self.D) - self.soft_label_margin,
-                                              name="loss_D_real"))
-            self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_,
-                                              tf.zeros_like(self.D_),
-                                              name="loss_D_fake"))
+            d_real = tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits,
+                                                             tf.ones_like(self.D) - self.soft_label_margin,
+                                                             name="loss_D_real")
+            self.d_loss_real = tf.reduce_mean(d_real)
+            d_fake = tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_,
+                                                             tf.zeros_like(self.D_),
+                                                             name="loss_D_fake")
+            self.d_loss_fake = tf.reduce_mean(d_fake)
             self.d_loss = (self.d_loss_real + self.d_loss_fake) / 2.
-            # the typical GAN set-up is that of a minimax game where D is trying to minimize its own error and G is trying to maximize D's error
-            # however note how we are flipping G labels here: instead of maximizing D's error, we are minimizing D's error on the 'wrong' label
+            # the typical GAN set-up is that of a minimax game where D is trying to minimize
+            # its own error and G is trying to maximize D's error however note how we are flipping G labels here:
+            # instead of maximizing D's error, we are minimizing D's error on the 'wrong' label
             # this trick helps produce a stronger gradient
-            self.g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_,
-                                              tf.ones_like(self.D_) + self.soft_label_margin,
-                                              name="loss_G"))
+            g_loss = tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_,
+                                                             tf.ones_like(self.D_) + self.soft_label_margin,
+                                                             name="loss_G")
+            self.g_loss = tf.reduce_mean(g_loss)
 
             # debug
             self.summaries.append(image_summary("G", self.G, max_outputs=3))
@@ -429,19 +427,19 @@ class UserModel(Tower):
             self.h0 = tf.reshape(self.z_, [-1, s16, s16, self.gf_dim * 8])
             h0 = tf.nn.relu(self.g_bn0(self.h0, train=self.is_training))
 
-            self.h1, self.h1_w, self.h1_b = deconv2d(h0,
-                [self.batch_size, s8, s8, self.gf_dim * 4], name='g_h1', with_w=True)
+            self.h1, self.h1_w, self.h1_b = deconv2d(h0, [self.batch_size, s8, s8, self.gf_dim * 4],
+                                                     name='g_h1', with_w=True)
             h1 = tf.nn.relu(self.g_bn1(self.h1, train=self.is_training))
 
-            h2, self.h2_w, self.h2_b = deconv2d(h1,
-                [self.batch_size, s4, s4, self.gf_dim * 2], name='g_h2', with_w=True)
+            h2, self.h2_w, self.h2_b = deconv2d(h1, [self.batch_size, s4, s4, self.gf_dim * 2],
+                                                name='g_h2', with_w=True)
             h2 = tf.nn.relu(self.g_bn2(h2, train=self.is_training))
 
-            h3, self.h3_w, self.h3_b = deconv2d(h2,
-                [self.batch_size, s2, s2, self.gf_dim * 1], name='g_h3', with_w=True)
+            h3, self.h3_w, self.h3_b = deconv2d(h2, [self.batch_size, s2, s2, self.gf_dim * 1],
+                                                name='g_h3', with_w=True)
             h3 = tf.nn.relu(self.g_bn3(h3, train=self.is_training))
 
-            h4, self.h4_w, self.h4_b = deconv2d(h3,
-                [self.batch_size, s, s, self.c_dim], name='g_h4', with_w=True)
+            h4, self.h4_w, self.h4_b = deconv2d(h3, [self.batch_size, s, s, self.c_dim],
+                                                name='g_h4', with_w=True)
 
             return tf.nn.tanh(h4)

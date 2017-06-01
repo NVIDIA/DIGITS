@@ -1,4 +1,4 @@
-{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
 
 {% from "helper.html" import print_flashes %}
 {% from "helper.html" import print_errors %}
@@ -17,7 +17,7 @@
     </div>
 
     <div class="col-sm-6">
-        <h3>Test a record from valiation set</h3>
+        <h3>Test a record from validation set</h3>
         <div class="form-group">
             <div class="form-group{{mark_errors([form.validation_record])}}">
                 {{ form.validation_record.label }}

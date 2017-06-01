@@ -1,6 +1,5 @@
 # Model Store
 
-
 ## Introduction
 Model Store lists models in user-specified servers.
 Users can imports models from Model Store into DIGITS.
@@ -8,65 +7,112 @@ Users can imports models from Model Store into DIGITS.
 
 ## Setting up environment variable
 The configuration of Model Store requires one environment variable DIGITS_MODEL_STORE_URL to be set.
-NVIDIA plans to publish one public Model Store at http://developer.download.nvidia.com/compute/machine-learning/modelstore/4.5.0.
+NVIDIA plans to publish one public Model Store at http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0.
 You can set up the environment variable with that url before launching DIGITS.
 For example, run the following command in your Bash shell.
 ``` shell
-export DIGITS_MODEL_STORE_URL='http://developer.download.nvidia.com/compute/machine-learning/modelstore/4.5.0'
+export DIGITS_MODEL_STORE_URL='http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0'
 ```
 If multiple model stores are available, specify their url's, separated by the comma (,).
 ``` shell
 export DIGITS_MODEL_STORE_URL='http://localhost/mymodelstore,http://dlserver/teammodelstore'
 ```
 
+DIGITS 5.0 introduces the concept of a "model store," which is a collection of trained models that can be used as pre-trained weights to accelerate training convergence.
+A DIGITS server can be configured to connect to one or more model stores to download these trained models from the store to the server.
 
-## Browse and import model
-First launch DIGITS.
-Click Pretrained Models tab, and select 'Retrieve from Model Store' under 'Load Model.'
-The new page shows models available in model stores.
+By default, DIGITS is configured to connect to the official NVIDIA model store.
+See instructions below for creating and connecting to your own store[s].
 
-![List models](images/model-store-list.png)
+## Usage
 
-Hover the Note field to show complete text.
-Enter keyword in 'Filter list by' to limit results.
-Click 'Update model list' button will retrieve the latest model list (see limitation).
-Click 'Import' will import that model into DIGITS (may takes a few seconds, depends on network speed).
+From the DIGITS home page, click on "Pretrained Models", then "Load Model" > "Images" > "Retrieve from Model Store".
 
-After successfully importing the model, DIGITS redirects the browser to Home page.
+![Home page](images/model-store/home.jpg)
 
-![Imported models](images/model-store-import.png)
+On the model store page, you will see a list of all the models available for download.
+Click on the small download icon (first column) to download a model from the store to the DIGITS server.
 
-The Pretrained Models table will show the newly imported model.
-At this moment, you can use that imported model like other pretrained models.
+![Official store](images/model-store/official.png)
 
+After downloading a model, you can return to the homepage to see the list of pretrained models.
+To make use of the downloaded model for training, select it as a "Pretrained Network" in the "New Model" form.
+> NOTE: In order to automatically popluate to Python Layers the path of the Python layer file which comes with "Pretrained Models," you need to click "Customize" next to the selected "Pretrained Model."
 
 ## Create your own Model Store server
-You can host your Model Store via Python's built-in SimpleHTTPServer.
-First, in shell, cd to your own Model Store.
-Then run the following command to start server at port 8000.
+
+You are welcome to create your own model store and use it to share models with others.
+Here we will explain how to use Python's built-in SimpleHTTPServer to do it, but you can easily do the same thing with Apache or Nginx or whatever else you like.
+
+Create a new directory on the server you'll be using for your store.
+Collect some snapshot tarballs from DIGITS training jobs that you'd like to use for your store.
+Unzip each tarball into its own directory (each should have a file called `info.json`).
+Finally, create a file in the top directory called `master.json`.
+```sh
+$ cat master.json
+{
+    "msg": "Luke's Model Store",
+    "children": [
+        "lenet",
+        "alexnet",
+        "googlenet",
+        "detectnet"
+    ]
+}
 ```
-python -m SimpleHTTPServer 8000
+Your directory structure should look something like this:
+```sh
+$ tree -F
+.
+├── alexnet/
+│   ├── deploy.prototxt
+│   ├── info.json
+│   ├── labels.txt
+│   ├── mean.binaryproto
+│   ├── snapshot_iter_11310.caffemodel
+│   ├── solver.prototxt
+│   └── train_val.prototxt
+├── detectnet/
+│   ├── deploy.prototxt
+│   ├── info.json
+│   ├── mean.binaryproto
+│   ├── original.prototxt
+│   ├── snapshot_iter_19140.caffemodel
+│   ├── solver.prototxt
+│   └── train_val.prototxt
+├── googlenet/
+│   ├── deploy.prototxt
+│   ├── info.json
+│   ├── labels.txt
+│   ├── mean.binaryproto
+│   ├── snapshot_iter_33450.caffemodel
+│   ├── solver.prototxt
+│   └── train_val.prototxt
+├── lenet/
+│   ├── deploy.prototxt
+│   ├── info.json
+│   ├── labels.txt
+│   ├── mean.binaryproto
+│   ├── snapshot_iter_28140.caffemodel
+│   ├── solver.prototxt
+│   └── train_val.prototxt
+└── master.json
+```
+Finally, use Python to start a server to serve these files
+```sh
+$ python -m SimpleHTTPServer
+```
+Now, restart your DIGITS server and configure it to connect to your new server:
+```sh
+$ DIGITS_MODEL_STORE_URL=http://localhost:8000 ./digits-devserver
+```
+To use multiple model stores, just separate the URLs with a comma:
+```sh
+$ DIGITS_MODEL_STORE_URL="http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0,http://localhost:8000" ./digits-devserver
 ```
 
-At the top directory, create a master.json file (if your server does not support Apache directory listing).
-The following is a sample master.json file.
-```
-{"msg":"This is my own model store server.", "children":["Model01","Model02"]}
-```
-Model01 and Model02 are subdirectories containing the actual models.
-Each model must at least include one info.json file, one weight file and one model file.
-The info.json file is in the format of same file inside DIGITS downloaded model.
-The subdirectory can optionally contain aux.json, which points to files not directly from DIGITS.
-The following is a sample aux.json file.
-```
-{"license": "3-clause BSD license", "logo": "logo.png", "dataset":"MNIST"}
-```
-If `"license"` is defined, it will be shown on license field of that model.
-The `license.txt` inside that subdirectory will be displayed when users clicking the license name.
-`"logo"` is optional and once defined, DIGITS will display `logo.png` from the same subdirectory.
+> NOTE: If you have installed DIGITS with a deb package, see [UbuntuInstall.md](UbuntuInstall.md) for instructions about how to reconfigure and restart your server.
 
+When you have configured everything properly, you should see something like this:
 
-## Limitation
-Some web server may limit frequent requests from the same machine to stop malicious activities.
-Therefore, DIGITS implemented a cache mechanism to reduce server-to-server communication.
-The button, 'Update model list', invalidates cache and retrieve meta data from all models.
+![Custom store](images/model-store/custom.jpg)

@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 import os
-import tempfile
 
 # Find the best implementation available
 try:
@@ -139,7 +138,7 @@ class Visualization(VisualizationInterface):
         else:
             raise ValueError("Unhandled number of channels: %d" % channels)
 
-        #image.save(fname)
+        # image.save(fname)
 
         image_html = digits.utils.image.embed_image_html(image)
 
@@ -187,12 +186,7 @@ class Visualization(VisualizationInterface):
                     self.animated_images = [None] * (4 * self.grid_size - 4)
                 print("animated: %s" % repr(self.animated_images))
 
-                if (
-                       col_id == 0 or
-                       row_id == 0 or
-                       col_id == (self.grid_size - 1) or
-                       row_id == (self.grid_size - 1)
-                   ):
+                if (col_id == 0 or row_id == 0 or col_id == (self.grid_size - 1) or row_id == (self.grid_size - 1)):
                     if row_id == 0:
                         idx = col_id
                     elif col_id == (self.grid_size - 1):
@@ -251,11 +245,10 @@ class Visualization(VisualizationInterface):
             with open(self.attributes_file, 'rb') as f:
                 attributes_z = pickle.load(f)
 
-            #inner_products = np.inner(z, attributes_z)
+            # inner_products = np.inner(z, attributes_z)
             inner_products = np.empty((40))
             for i in range(40):
-                #if i in [ 1,  2, 18, 19, 20, 21, 25, 27, 31, 33, 36]:
-                if True: #i in [ 0,  1,  2,  3,  5,  6,  7,  8,  9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23, 24, 25, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39]:
+                if True:
                     attr = attributes_z[i]
                     inner_products[i] = np.inner(z, attr) / np.linalg.norm(attr)
                 else:

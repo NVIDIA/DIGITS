@@ -1,4 +1,4 @@
-// Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+// Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 var PretrainedModel = function(params) {
   var props = _.extend({
     selector: '#pretrainedModelContent',

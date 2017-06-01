@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import math
@@ -148,7 +148,7 @@ class DataIngestion(DataIngestionInterface):
         for dirpath, dirnames, filenames in os.walk(folder, followlinks=True):
             for filename in filenames:
                 if filename.lower().endswith(image.SUPPORTED_EXTENSIONS):
-                    image_files.append('%s' % os.path.join(folder, filename))
+                    image_files.append('%s' % os.path.join(dirpath, filename))
         if len(image_files) == 0:
             raise ValueError("Unable to find supported images in %s" % folder)
         return sorted(image_files)

@@ -1,20 +1,17 @@
-import wxversion
-
-import wx
-import numpy as np
-import random
 import time
-
+import numpy as np
+import wx
 
 # This has been set up to optionally use the wx.BufferedDC if
 # USE_BUFFERED_DC is True, it will be used. Otherwise, it uses the raw
 # wx.Memory DC , etc.
 
-#USE_BUFFERED_DC = False
+# USE_BUFFERED_DC = False
 USE_BUFFERED_DC = True
 
 myEVT = wx.NewEventType()
 DISPLAY_GRID_EVT = wx.PyEventBinder(myEVT, 1)
+
 
 class MyEvent(wx.PyCommandEvent):
     """Event to signal that a count value is ready"""
@@ -29,6 +26,7 @@ class MyEvent(wx.PyCommandEvent):
 
         """
         return self._value
+
 
 class BufferedWindow(wx.Window):
 
@@ -62,10 +60,9 @@ class BufferedWindow(wx.Window):
         self.paint_count = 0
 
     def Draw(self, dc):
-        ## just here as a place holder.
-        ## This method should be over-ridden when subclassed
+        # just here as a place holder.
+        # This method should be over-ridden when subclassed
         pass
-
 
     def OnPaint(self, event):
         # All that is needed here is to draw the buffer to screen
@@ -75,11 +72,11 @@ class BufferedWindow(wx.Window):
             dc = wx.PaintDC(self)
             dc.DrawBitmap(self._Buffer, 0, 0)
 
-    def OnSize(self,event):
+    def OnSize(self, event):
         # The Buffer init is done here, to make sure the buffer is always
         # the same size as the Window
-        #Size  = self.GetClientSizeTuple()
-        Size  = self.ClientSize
+        # Size = self.GetClientSizeTuple()
+        Size = self.ClientSize
 
         # Make new offscreen bitmap: this bitmap will always have the
         # current drawing in it, so it can be used to save the image to
@@ -88,9 +85,9 @@ class BufferedWindow(wx.Window):
         self.UpdateDrawing()
 
     def SaveToFile(self, FileName, FileType=wx.BITMAP_TYPE_PNG):
-        ## This will save the contents of the buffer
-        ## to the specified file. See the wxWindows docs for
-        ## wx.Bitmap::SaveFile for the details
+        # This will save the contents of the buffer
+        # to the specified file. See the wxWindows docs for
+        # wx.Bitmap::SaveFile for the details
         self._Buffer.SaveFile(FileName, FileType)
 
     def UpdateDrawing(self):
@@ -106,21 +103,21 @@ class BufferedWindow(wx.Window):
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         self.Draw(dc)
-        del dc # need to get rid of the MemoryDC before Update() is called.
+        del dc  # need to get rid of the MemoryDC before Update() is called.
         self.Refresh()
         self.Update()
 
+
 class DrawWindow(BufferedWindow):
     def __init__(self, *args, **kwargs):
-        ## Any data the Draw() function needs must be initialized before
-        ## calling BufferedWindow.__init__, as it will call the Draw
-        ## function.
+        # Any data the Draw() function needs must be initialized before
+        # calling BufferedWindow.__init__, as it will call the Draw function.
         self.DrawData = {}
         BufferedWindow.__init__(self, *args, **kwargs)
 
     def Draw(self, dc):
-        dc.SetBackground( wx.Brush("White") )
-        dc.Clear() # make sure you clear the bitmap!
+        dc.SetBackground(wx.Brush("White"))
+        dc.Clear()  # make sure you clear the bitmap!
 
         # Here's the actual drawing code.
         for key, data in self.DrawData.items():
@@ -136,17 +133,17 @@ class DrawWindow(BufferedWindow):
                 grid_size = int(np.sqrt(img_count))
 
                 size = (grid_size * width, grid_size * height)
-                if True: # self.size != size:
+                if True:  # self.size != size:
                     self.size = size
                     self.SetSize(size)
 
-                image = wx.EmptyImage(width,height)
+                image = wx.EmptyImage(width, height)
                 for i in xrange(img_count):
                     x = width * (i // grid_size)
                     y = height * (i % grid_size)
                     s = data[i].tostring()
                     image.SetData(s)
-                    wxBitmap = image.ConvertToBitmap()       #
+                    wxBitmap = image.ConvertToBitmap()
                     dc.DrawBitmap(wxBitmap, x=x, y=y)
 
 
@@ -158,11 +155,11 @@ class TestFrame(wx.Frame):
 
     def __init__(self, parent=None, grid_size=640, attributes=[]):
         wx.Frame.__init__(self, parent,
-                          size = (grid_size + self.SLIDER_WIDTH + self.SLIDER_BORDER, grid_size + self.STATUS_HEIGHT),
+                          size=(grid_size + self.SLIDER_WIDTH + self.SLIDER_BORDER, grid_size + self.STATUS_HEIGHT),
                           title="GAN Demo",
                           style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
-        ## Set up the MenuBar
+        # Set up the MenuBar
         MenuBar = wx.MenuBar()
 
         file_menu = wx.Menu()
@@ -185,8 +182,9 @@ class TestFrame(wx.Frame):
 
         # Sliders
         vbox = wx.BoxSizer(wx.VERTICAL)
-        self.speed_slider = wx.Slider(panel, -1, value=5, minValue=0, maxValue=10, pos=wx.DefaultPosition, size=(self.SLIDER_WIDTH, -1),
-                                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
+        self.speed_slider = wx.Slider(panel, -1, value=5, minValue=0, maxValue=10, pos=wx.DefaultPosition,
+                                      size=(self.SLIDER_WIDTH, -1),
+                                      style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
         slider_text = wx.StaticText(panel, label='Speed')
         vbox.Add(slider_text, 0, wx.ALIGN_CENTRE)
         vbox.Add(self.speed_slider, 0, wx.ALIGN_CENTRE)
@@ -194,8 +192,9 @@ class TestFrame(wx.Frame):
         self.attribute_sliders = []
         for attribute in attributes:
             slider_text = wx.StaticText(panel, label=attribute)
-            slider = wx.Slider(panel, -1, value=0, minValue=-100, maxValue=100, pos=wx.DefaultPosition, size=(self.SLIDER_WIDTH, -1),
-                                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
+            slider = wx.Slider(panel, -1, value=0, minValue=-100, maxValue=100, pos=wx.DefaultPosition,
+                               size=(self.SLIDER_WIDTH, -1),
+                               style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
             vbox.Add(slider_text, 0, wx.ALIGN_CENTRE)
             vbox.Add(slider, 0, wx.ALIGN_CENTRE)
             self.attribute_sliders.append(slider)
@@ -221,7 +220,7 @@ class TestFrame(wx.Frame):
 
         self.Bind(DISPLAY_GRID_EVT, self.OnDisplayCell)
 
-    def OnQuit(self,event):
+    def OnQuit(self, event):
         self.Close(True)
 
     def OnDisplayCell(self, evt):
@@ -235,6 +234,7 @@ class TestFrame(wx.Frame):
                 self.statusbar.SetStatusText('%.1ffps' % fps)
                 self.last_fps_update = time.time()
         self.last_frame_timestamp = time.time()
+
 
 class DemoApp(wx.App):
 

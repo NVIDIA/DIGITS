@@ -25,7 +25,6 @@ class ConfigForm(Form):
             else:
                 return True
 
-
     gan_view_task_id = utils.forms.SelectField(
         'Task',
         choices=[

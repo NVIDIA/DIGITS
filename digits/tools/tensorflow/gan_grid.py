@@ -22,13 +22,11 @@ import time
 
 import datetime
 import inspect
-import json
 import logging
 import math
 import numpy as np
 import os
 import pickle
-import time
 
 from six.moves import xrange  # noqa
 import tensorflow as tf
@@ -48,13 +46,10 @@ from utils import model_property  # noqa
 import tf_data
 import gandisplay
 
-
-
 # Constants
 TF_INTRA_OP_THREADS = 0
 TF_INTER_OP_THREADS = 0
 MIN_LOGS_PER_TRAIN_EPOCH = 8  # torch default: 8
-
 
 CELEBA_ALL_ATTRIBUTES = """
                          5_o_Clock_Shadow Arched_Eyebrows Attractive Bags_Under_Eyes Bald Bangs
@@ -67,7 +62,8 @@ CELEBA_ALL_ATTRIBUTES = """
                         """.split()
 
 CELEBA_EDITABLE_ATTRIBUTES = [
-    'Bald', 'Black_Hair', 'Blond_Hair', 'Eyeglasses', 'Male', 'Mustache', 'Smiling', 'Young', 'Attractive', 'Pale_Skin', 'Big_Nose'
+    'Bald', 'Black_Hair', 'Blond_Hair', 'Eyeglasses', 'Male', 'Mustache',
+    'Smiling', 'Young', 'Attractive', 'Pale_Skin', 'Big_Nose'
 ]
 
 CELEBA_EDITABLE_ATTRIBUTES_IDS = [CELEBA_ALL_ATTRIBUTES.index(attr) for attr in CELEBA_EDITABLE_ATTRIBUTES]
@@ -377,14 +373,13 @@ def Inference(sess, model):
         with open(FLAGS.attributes_file, 'rb') as f:
             attribute_zs = pickle.load(f)
 
-        while not False: # model.queue_coord.should_stop():
-
+        while not False:
+            # model.queue_coord.should_stop():
             attributes = app.GetAttributes()
-
             z = np.zeros(100)
 
             for idx, attr_scale in enumerate(attributes):
-                z += (attr_scale / 25. ) * attribute_zs[CELEBA_EDITABLE_ATTRIBUTES_IDS[idx]]
+                z += (attr_scale / 25) * attribute_zs[CELEBA_EDITABLE_ATTRIBUTES_IDS[idx]]
 
             feed_dict = {model.time_placeholder: float(t),
                          model.attribute_placeholder: z}
@@ -394,12 +389,12 @@ def Inference(sess, model):
                 save_weight_visualization(weight_vars, activation_ops, w, a)
 
             # @TODO(tzaman): error on no output?
-            #for i in range(len(keys)):
-            #    #    for j in range(len(preds)):
-            #    # We're allowing multiple predictions per image here. DIGITS doesnt support that iirc
-            #    logging.info('Predictions for image ' + str(model.dataloader.get_key_index(keys[i])) +
-            #                 ': ' + json.dumps(preds[i].tolist()))
-            #logging.info('Predictions shape: %s' % str(preds.shape))
+            # for i in range(len(keys)):
+            #     for j in range(len(preds)):
+            #     We're allowing multiple predictions per image here. DIGITS doesnt support that iirc
+            #     logging.info('Predictions for image ' + str(model.dataloader.get_key_index(keys[i])) +
+            #                  ': ' + json.dumps(preds[i].tolist()))
+            # logging.info('Predictions shape: %s' % str(preds.shape))
             app.DisplayCell(preds)
 
             t += 1e-5 * app.GetSpeed() * FLAGS.batch_size
@@ -445,7 +440,7 @@ def input_generator(zs_file, batch_size):
         return euclidean_norm
 
     def dot_product(x, y):
-        return tf.reduce_sum(tf.mul(x,y))
+        return tf.reduce_sum(tf.mul(x, y))
 
     def slerp(initial, final, progress):
         omega = tf.acos(dot_product(initial / l2_norm(initial), final / l2_norm(final)))
@@ -479,6 +474,7 @@ def input_generator(zs_file, batch_size):
     batch = tf.pack(tensors) + attribute_placeholder
 
     return batch, time_placeholder, attribute_placeholder
+
 
 def main(_):
 

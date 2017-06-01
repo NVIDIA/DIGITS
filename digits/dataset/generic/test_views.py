@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import json
@@ -198,6 +198,12 @@ class BaseViewsTestWithDataset(BaseViewsTest):
 
 
 class GenericViewsTest(BaseViewsTest):
+
+    @classmethod
+    def setUpClass(cls, **kwargs):
+        if extensions.data.get_extension(cls.EXTENSION_ID) is None:
+            raise unittest.SkipTest('Extension "%s" is not installed' % cls.EXTENSION_ID)
+        super(GenericViewsTest, cls).setUpClass()
 
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/generic/new/%s' % self.EXTENSION_ID)
