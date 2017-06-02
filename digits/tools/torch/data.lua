@@ -129,7 +129,9 @@ local warp = function(im, augRot, augScale)
         flow:add(flow_rot)
     end
 
-    return image.warp(im, flow, 'bilinear', false)
+    -- @TODO(tzaman): remove below :double() casting once below is merged:
+    --  https://github.com/torch/image/pull/196
+    return image.warp(im:double(), flow:double(), 'bilinear', false):float()
 end
 
 -- Adds noise to the image
