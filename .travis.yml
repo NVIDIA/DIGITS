@@ -25,7 +25,7 @@ env:
 matrix:
     include:
         - env: LINT_CHECK
-          addons:>>>>>>> a1461cc... Update Object Detection example doc (#1323)
+          addons:
               apt:
                   packages:
                       - closure-linter
