@@ -131,9 +131,9 @@ install:
     - mkdir -p ~/.config/matplotlib
     - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
-    - if [ "$DIGITS_TEST_FRAMEWORK" == "tensorflow" ]; then travis_wait ./scripts/travis/install-tensorflow.sh; fi
     - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
     - pip install -r ./requirements.txt --force-reinstall
+    - if [ "$DIGITS_TEST_FRAMEWORK" == "tensorflow" ]; then travis_wait ./scripts/travis/install-tensorflow.sh; fi
     - pip install -r ./requirements_test.txt
     - pip install -e .
     - if [ "$WITH_PLUGINS" != "false" ]; then find ./plugins/*/* -maxdepth 0 -type d | xargs -n1 pip install -e; fi
