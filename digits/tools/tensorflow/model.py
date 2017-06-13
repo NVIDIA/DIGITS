@@ -219,7 +219,7 @@ class Model(object):
         tower = obj_tower(x, y, input_shape, self.nclasses, is_training, is_inference)
         self.towers.append(tower)
         return tower
-
+            
     @model_property
     def train(self):
         return self._train
@@ -283,8 +283,8 @@ class Model(object):
         """
         Return list of losses
 
-        If user-defined model returns only one loss then this is encapsulated into the expected list of
-        dicts structure
+        If user-defined model returns only one loss then this is encapsulated into
+        the expected list of dicts structure
         """
         if isinstance(tower.loss, list):
             return tower.loss
@@ -303,6 +303,7 @@ class Tower(object):
         self.x = x
         self.y = y
         self.train = None
+
 
     def gradientUpdate(self, grad):
         return grad
