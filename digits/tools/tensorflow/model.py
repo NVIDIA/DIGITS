@@ -126,9 +126,9 @@ class Model(object):
         else:
             with tf.name_scope('parallelize'):
                 # Split them up
-                batch_x_split = tf.split(0, len(available_devices), batch_x, name='split_batch')
+                batch_x_split = tf.split(batch_x, len(available_devices), 0, name='split_batch')
                 if self.stage != digits.STAGE_INF:  # Has no labels
-                    batch_y_split = tf.split(0, len(available_devices), batch_y, name='split_batch')
+                    batch_y_split = tf.split(batch_y, len(available_devices), 0, name='split_batch')
 
         # Run the user model through the build_model function that should be filled in
         grad_towers = []
