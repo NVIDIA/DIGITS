@@ -143,7 +143,6 @@ tf.app.flags.DEFINE_float(
 tf.app.flags.DEFINE_float(
     'augHSVv', 0., """The stddev of HSV's Value shift as pre-processing augmentation""")
 
-
 def save_timeline_trace(run_metadata, save_dir, step):
     tl = timeline.Timeline(run_metadata.step_stats)
     ctf = tl.generate_chrome_trace_format(show_memory=True)
@@ -261,7 +260,7 @@ def load_snapshot(sess, weight_path, var_candidates):
                     logging.info('NOT restoring %s -> %s' % (vm, vt.name))
 
     logging.info('Restoring %s variable ops.' % len(vars_restore))
-    tf.train.Saver(vars_restore, max_to_keep=0, sharded=FLAGS.serving_export).restore(sess, weight_path)
+    tf.train.Saver(vars_restore, max_to_keep=0, sharded=FLAGwwwS.serving_export).restore(sess, weight_path)
     logging.info('Variables restored.')
 
 
@@ -493,7 +492,7 @@ def main(_):
 
         if FLAGS.validation_db:
             with tf.name_scope(digits.STAGE_VAL) as stage_scope:
-                val_model = Model(digits.STAGE_VAL, FLAGS.croplen, nclasses)
+                val_model = Model(digits.STAGE_VAL, FLAGS.croplen, nclasses, reuse_variable=True)
                 val_model.create_dataloader(FLAGS.validation_db)
                 val_model.dataloader.setup(FLAGS.validation_labels,
                                            False,
