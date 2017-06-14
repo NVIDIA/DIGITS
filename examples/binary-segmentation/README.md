@@ -61,7 +61,7 @@ Set the number of training epochs to `150`.
 ### Using Caffe
 
 Select the `Custom network` tab then click `Caffe`.
-In the text area copy/paste the contents of this [Caffe model](segmentation-model.prototxt).
+In the text area, copy/paste the contents of this [Caffe model](segmentation-model.prototxt).
 Set the base learning rate to `1e-7`.
 
 You may click `Visualize` to review the network topology:
@@ -71,8 +71,14 @@ You may click `Visualize` to review the network topology:
 ### Using Torch7
 
 Select the `Custom network` tab then click `Torch`.
-In the text area copy/paste the contents of this [Torch model](segmentation-model.lua).
+In the text area, copy/paste the contents of this [Torch model](segmentation-model.lua).
 Set the base learning rate to `0.001`.
+
+### Using Tensorflow
+
+Select the `Custom netowrk` tab then click `Tensorflow`,
+In the text area, copy/paste the contents of this [Tensorflow model](binary_segmentation-TF-modified.py).
+Set the base learning rate to `1e-5`
 
 ### Some words on the model
 
@@ -98,6 +104,8 @@ When training completes, your network loss may look like:
 The `create_images.py` script created many images we can use for testing.
 You may also run the command again to produce new images.
 To help visualize the output of the network, select the `Image` visualization method and set `Pixel Conversion` to `clip`:
+
+For Tensorflow only, select `HWC` for data order
 
 ![select visualization](select-visualization.png)
 

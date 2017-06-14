@@ -34,7 +34,7 @@ tf_enabled, err = test_tf_import(tf_python_exe)
 
 if not tf_enabled:
     print('Tensorflow support disabled.')
-#    print('Failed importing Tensorflow with python executable "%s"\n%s' % (tf_python_exe, err))
+#   print('Failed importing Tensorflow with python executable "%s"\n%s' % (tf_python_exe, err))
 
 if tf_enabled:
     option_list['tensorflow'] = {
