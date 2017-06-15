@@ -20,7 +20,8 @@ class UserModel(Tower):
 
     @model_property
     def loss(self):
-        loss = digits.classification_loss(self.inference, self.y)
-        accuracy = digits.classification_accuracy(self.inference, self.y)
+        model = self.inference
+        loss = digits.classification_loss(model, self.y)
+        accuracy = digits.classification_accuracy(model, self.y)
         self.summaries.append(tf.summary.scalar(accuracy.op.name, accuracy))
         return loss

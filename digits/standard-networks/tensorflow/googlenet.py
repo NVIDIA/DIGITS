@@ -17,16 +17,16 @@ class UserModel(Tower):
         # rescale to proper form, really we expect 256 x 256 x 1 in HWC form
         model = tf.reshape(self.x, shape=[-1, self.input_shape[0], self.input_shape[1], self.input_shape[2]])
 
-        conv_7x7_2s_vars = create_vars([7, 7, self.input_shape[2], 64], 'conv_7x7_2s')
+        conv_7x7_2s_vars = create_conv_vars([7, 7, self.input_shape[2], 64], 'conv_7x7_2s')
         model = conv_layer_with_relu(model, conv_7x7_2s_vars.weight, conv_7x7_2s_vars.bias, 7)
 
         model = max_pool(model, 3, 2)
         model = tf.nn.local_response_normalization(model)
 
-        conv_1x1_vs_vars = create_vars([1, 1, 64, 64], 'conv_1x1_vs')
+        conv_1x1_vs_vars = create_conv_vars([1, 1, 64, 64], 'conv_1x1_vs')
         model = conv_layer_with_relu(model, conv_1x1_vs_vars.weight, conv_1x1_vs_vars.bias, 1, 'VALID')
 
-        conv_3x3_1s_vars = create_vars([3, 3, 64, 192], 'conv_3x3_1s')
+        conv_3x3_1s_vars = create_conv_vars([3, 3, 64, 192], 'conv_3x3_1s')
         model = conv_layer_with_relu(model, conv_3x3_1s_vars.weight, conv_3x3_1s_vars.bias, 3)
 
         model = tf.nn.local_response_normalization(model)
@@ -44,6 +44,8 @@ class UserModel(Tower):
         inception_settings_4b = InceptionSettings(480, all_inception_settings['4b'])
         model = inception(model, inception_settings_4b, '4b')
 
+        aux_branch_1 = auxiliary_classifier(model, 512, "aux_1")
+
         inception_settings_4c = InceptionSettings(512, all_inception_settings['4c'])
         model = inception(model, inception_settings_4c, '4c')
 
@@ -53,7 +55,9 @@ class UserModel(Tower):
         inception_settings_4e = InceptionSettings(512, all_inception_settings['4e'])
         model = inception(model, inception_settings_4e, '4e')
 
-        inception_settings_4f = InceptionSettings(832, all_inception_settings['4f'])
+        aux_branch_2 = auxiliary_classifier(model, 528, "aux_2")
+
+        inception_settings_4f = InceptionSettings(528, all_inception_settings['4f'])
         model = inception(model, inception_settings_4f, '4f')
 
         model = max_pool(model, 3, 2)
@@ -61,21 +65,29 @@ class UserModel(Tower):
         inception_settings_5b = InceptionSettings(832, all_inception_settings['5b'])
         model = inception(model, inception_settings_5b, '5b')
 
-        inception_settings_5c = InceptionSettings(1024, all_inception_settings['5c'])
+        inception_settings_5c = InceptionSettings(832, all_inception_settings['5c'])
         model = inception(model, inception_settings_5c, '5c')
 
         model = avg_pool(model, 7, 1)
 
-        fc_weight = create_weight([1024, 1000], 'fc')
-        fc_bias = create_bias(1000, 'fc')
-        model = fully_connect(model, fc_weight, fc_bias)
+        fc_vars = create_fc_vars([1024, self.nclasses], 'fc')
+        model = fully_connect(model, fc_vars.weight, fc_vars.bias)
 
         model = tf.nn.softmax(model)
 
-        return model
+        if self.is_training:
+            return tf.add(tf.add(aux_branch_1, aux_branch_2), model)
+        else:
+            return model
 
     @model_property
     def loss(self):
+        model = self.inference
+        loss = digits.classification_loss(model, self.y)
+        accuracy = digits.classification_accuracy(model, self.y)
+        self.summaries.append(tf.summary.scalar(accuracy.op.name, accuracy))
+        return loss
+
 
     def inception(model, inception_setting, layer_name):
         variables = create_inception_variables(inception_setting, layer_name)
@@ -96,12 +108,12 @@ class UserModel(Tower):
         
     def create_inception_variables(inception_setting, layer_name):
         model_dim = inception_setting.model_dim
-        conv_1x1_1_var = create_vars([1, 1, model_dim, inception_setting.conv_1x1_1_layers], layer_name + '-' + 'conv_1x1_1')
-        conv_1x1_2_var = create_vars([1, 1, model_dim, inception_setting.conv_1x1_2_layers], layer_name + '-' + 'conv_1x1_2')
-        conv_1x1_3_var = create_vars([1, 1, model_dim, inception_setting.conv_1x1_3_layers], layer_name + '-' + 'conv_1x1_3')
-        conv_3x3_var = create_vars([3, 3, inception_setting.conv_1x1_2_layers, inception_setting.conv_3x3_layers], layer_name + '-' + 'conv_3x3')
-        conv_5x5_var = create_vars([5, 5, inception_setting.conv_5x5_layers, inception_setting.conv_5x5_layers], layer_name + '-' + 'conv_5x5'),
-        conv_pool_var = create_vars([1, 1, model_dim, inception_setting.conv_pool_layers], layer_name + '-' + 'conv_pool')
+        conv_1x1_1_var = create_conv_vars([1, 1, model_dim, inception_setting.conv_1x1_1_layers], layer_name + '-conv_1x1_1')
+        conv_1x1_2_var = create_conv_vars([1, 1, model_dim, inception_setting.conv_1x1_2_layers], layer_name + '-conv_1x1_2')
+        conv_1x1_3_var = create_conv_vars([1, 1, model_dim, inception_setting.conv_1x1_3_layers], layer_name + '-conv_1x1_3')
+        conv_3x3_var = create_conv_vars([3, 3, inception_setting.conv_1x1_2_layers, inception_setting.conv_3x3_layers], layer_name + '-conv_3x3')
+        conv_5x5_var = create_conv_vars([5, 5, inception_setting.conv_5x5_layers, inception_setting.conv_5x5_layers], layer_name + '-conv_5x5'),
+        conv_pool_var = create_conv_vars([1, 1, model_dim, inception_setting.conv_pool_layers], layer_name + '-conv_pool')
 
         weights = {
             'conv_1x1_1': conv_1x1_1_var.weight
@@ -122,6 +134,21 @@ class UserModel(Tower):
         }
 
         return {weights: weights, biases: biases}
+
+    def auxiliary_classifier(model, input_size, name):
+        aux_classifier = avg_pool(model, 5, 3, 'VALID')
+
+        conv_vars = create_conv_vars([1, 1, input_size, input_size], name + '-conv_1x1')
+        aux_classifier = conv_layer_with_relu(aux_classifier, conv_vars.weight, conv_vars.bias, 1)
+
+        fc_vars = create_fc_vars(input_size, self.nclasses, name + '-fc')
+        aux_classifier = fully_connect(aux_classifier, fc_vars.weights, fc_vars.bias)
+
+        aux_classifier = tf.nn.dropout(aux_classifier, 0.7)
+
+        aux_classifier = tf.nn.softmax(aux_classifier)
+
+        return aux_classifier
 
     def conv_layer_with_relu(model, weights, biases, stride_size, padding='SAME'):
         new_model = tf.nn.conv2d(model, weights, strides=[1, stride_size, stride_size, 1], padding=padding)
@@ -144,9 +171,14 @@ class UserModel(Tower):
         fc_model = tf.nn.relu(fc_model)
         return fc_model
 
-    def create_vars(size, name):
+    def create_conv_vars(size, name):
         weight = create_weight(size, name + '_W')
         bias = create_bias(size[3], name + '_b')
+        return {weight: weight, bias: bias}
+
+    def create_fc_vars(size, name):
+        weight = create_weight(size, name + '_W')
+        bias = create_bias(size[1], name + '_b')
         return {weight: weight, bias: bias}
 
     def create_weight(size, name):
