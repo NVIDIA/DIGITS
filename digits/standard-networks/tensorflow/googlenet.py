@@ -24,7 +24,7 @@ class UserModel(Tower):
         model = tf.nn.local_response_normalization(model)
 
         conv_1x1_vs_vars = create_vars([1, 1, 64, 64], 'conv_1x1_vs')
-        model = conv_layer_with_relu(model, conv_1x1_vs_vars.weight, conv_1x1_vs_vars.bias, 1)
+        model = conv_layer_with_relu(model, conv_1x1_vs_vars.weight, conv_1x1_vs_vars.bias, 1, 'VALID')
 
         conv_3x3_1s_vars = create_vars([3, 3, 64, 192], 'conv_3x3_1s')
         model = conv_layer_with_relu(model, conv_3x3_1s_vars.weight, conv_3x3_1s_vars.bias, 3)
@@ -63,6 +63,16 @@ class UserModel(Tower):
 
         inception_settings_5c = InceptionSettings(1024, all_inception_settings['5c'])
         model = inception(model, inception_settings_5c, '5c')
+
+        model = avg_pool(model, 7, 1)
+
+        fc_weight = create_weight([1024, 1000], 'fc')
+        fc_bias = create_bias(1000, 'fc')
+        model = fully_connect(model, fc_weight, fc_bias)
+
+        model = tf.nn.softmax(model)
+
+        return model
 
     @model_property
     def loss(self):
@@ -126,6 +136,13 @@ class UserModel(Tower):
     def avg_pool(model, kernal_size, stride_size, padding='SAME'):
         new_model = tf.nn.avg_pool(model, ksize=[1, kernal_size, kernal_size, 1], strides=[1, stride_size, stride_size, 1], padding=padding)
         return new_model
+
+    def fully_connect(model, weights, biases):
+        fc_model = tf.reshape(model, [-1, weights.get_shape().as_list()[0]])
+        fc_model = tf.matmul(fc_model, weights)
+        fc_model = tf.add(fc_model, biases)
+        fc_model = tf.nn.relu(fc_model)
+        return fc_model
 
     def create_vars(size, name):
         weight = create_weight(size, name + '_W')
