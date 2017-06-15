@@ -44,6 +44,7 @@ class UserModel(Tower):
         inception_settings_4b = InceptionSettings(480, all_inception_settings['4b'])
         model = inception(model, inception_settings_4b, '4b')
 
+        # first auxiliary branch for making training faster
         aux_branch_1 = auxiliary_classifier(model, 512, "aux_1")
 
         inception_settings_4c = InceptionSettings(512, all_inception_settings['4c'])
@@ -55,6 +56,7 @@ class UserModel(Tower):
         inception_settings_4e = InceptionSettings(512, all_inception_settings['4e'])
         model = inception(model, inception_settings_4e, '4e')
 
+        # second auxiliary branch for making training faster
         aux_branch_2 = auxiliary_classifier(model, 528, "aux_2")
 
         inception_settings_4f = InceptionSettings(528, all_inception_settings['4f'])
