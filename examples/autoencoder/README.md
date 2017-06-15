@@ -93,7 +93,7 @@ After training for 30 epochs the loss function should look similar to this:
 
 ## Model creation (Tensorflow)
 
-The following example was made using TensorFlow-Slim. However ou can also do this in vanilla Tensorflow and Keras
+The following example was made using TensorFlow-Slim. However you can also do this in vanilla Tensorflow and Keras
 
 Select the dataset you just created and under the `Custom network` tab, select `Tensorflow`. There you can paste the following network definition:
 ```python

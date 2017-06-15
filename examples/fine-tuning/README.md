@@ -74,9 +74,7 @@ The description is similar to the standard LeNet model except for the following 
 
 In the `Custom network` text area, paste the contents of this [python file](lenet-fine-tune-tf.py).
 The description is similar to the standard LeNet model except for the following differences:
-- in the `loss` function, we are returning not just the loss but also a list of weights and biases we want to train
-- there is a function that creates a list which contains weights and biases we are interested in training, referred to by their names
-- to allow access to the weights and biases in the class, we assigned the weights and biases to the self variable so it may be accessiable else where
+- the weight and bias with the name `out` had their tensorflow variable renamed to `wout_not_in_use` and `bout_not_in_use`. This signifies that these weights will not be used and the original weights are frozen
 
 ## Verification
 
