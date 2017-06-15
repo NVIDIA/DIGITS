@@ -55,7 +55,7 @@ class UserModel(Tower):
         inception_settings_4d = InceptionSettings(512, UserModel.all_inception_settings['4d'])
         model = self.inception(model, inception_settings_4d, '4d')
 
-        inception_settings_4e = InceptionSettings(512, UserModel.all_inception_settings['4e'])
+        inception_settings_4e = InceptionSettings(512, UserModel.all_inception_settings['4e'])
         model = self.inception(model, inception_settings_4e, '4e')
 
         # second auxiliary branch for making training faster
@@ -71,7 +71,7 @@ class UserModel(Tower):
 
         inception_settings_5c = InceptionSettings(832, UserModel.all_inception_settings['5c'])
         model = self.inception(model, inception_settings_5c, '5c')
-
+        
         model = self.avg_pool(model, 7, 1, 'VALID')
 
         fc_weight, fc_bias = self.create_fc_vars([1024, self.nclasses], 'fc')
@@ -145,7 +145,7 @@ class UserModel(Tower):
         conv_weight, conv_bias = self.create_conv_vars([1, 1, input_size, input_size], name + '-conv_1x1')
         aux_classifier = self.conv_layer_with_relu(aux_classifier, conv_weight, conv_bias, 1)
 
-        fc_weight, fc_bias = self.create_fc_vars([input_size, self.nclasses], name + '-fc')
+        fc_weight, fc_bias = self.create_fc_vars([4*4*input_size, self.nclasses], name + '-fc')
         aux_classifier = self.fully_connect(aux_classifier, fc_weight, fc_bias)
 
         aux_classifier = tf.nn.dropout(aux_classifier, 0.7)
