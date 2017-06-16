@@ -287,6 +287,7 @@ class Model(object):
         If user-defined model returns only one loss then this is encapsulated into
         the expected list of dicts structure
         """
+
         if isinstance(tower.loss, list):
             return tower.loss
         else:
