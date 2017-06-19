@@ -1,15 +1,15 @@
 class UserModel(Tower):
 
     all_inception_settings = {
-        '3b': [[64], [96, 128], [16, 32], [32]],
-        '3c': [[128], [128, 192], [32, 96], [64]],
-        '4b': [[192], [96, 208], [16, 48], [64]],
-        '4c': [[160], [112, 224], [24, 64], [64]],
-        '4d': [[128], [128, 256], [24, 64], [64]],
-        '4e': [[112], [144, 288], [32, 64], [64]],
-        '4f': [[256], [160, 320], [32, 128], [128]],
-        '5b': [[256], [160, 320], [32, 128], [128]],
-        '5c': [[384], [192, 384], [48, 128], [128]]
+        '3a': [[64], [96, 128], [16, 32], [32]],
+        '3b': [[128], [128, 192], [32, 96], [64]],
+        '4a': [[192], [96, 208], [16, 48], [64]],
+        '4b': [[160], [112, 224], [24, 64], [64]],
+        '4c': [[128], [128, 256], [24, 64], [64]],
+        '4d': [[112], [144, 288], [32, 64], [64]],
+        '4e': [[256], [160, 320], [32, 128], [128]],
+        '5a': [[256], [160, 320], [32, 128], [128]],
+        '5b': [[384], [192, 384], [48, 128], [128]]
     }
 
     @model_property
@@ -22,7 +22,6 @@ class UserModel(Tower):
 
         model = self.max_pool(model, 3, 2)
 
-        # according to Tim, this is slow as hell
         model = tf.nn.local_response_normalization(model)
 
         conv_1x1_vs_weight, conv_1x1_vs_bias = self.create_conv_vars([1, 1, 64, 64], 'conv_1x1_vs')
@@ -35,19 +34,22 @@ class UserModel(Tower):
 
         model = self.max_pool(model, 3, 2)
 
-        inception_settings_3b = InceptionSettings(192, UserModel.all_inception_settings['3b'])
-        model = self.inception(model, inception_settings_3b, '3b')
+        inception_settings_3a = InceptionSettings(192, UserModel.all_inception_settings['3a'])
+        model = self.inception(model, inception_settings_3a, '3a')
 
-        inception_settings_3c = InceptionSettings(256, UserModel.all_inception_settings['3c'])
-        model = self.inception(model, inception_settings_3c, '3c')
+        inception_settings_3b = InceptionSettings(256, UserModel.all_inception_settings['3b'])
+        model = self.inception(model, inception_settings_3b, '3b')
 
         model = self.max_pool(model, 3, 2)
 
-        inception_settings_4b = InceptionSettings(480, UserModel.all_inception_settings['4b'])
-        model = self.inception(model, inception_settings_4b, '4b')
+        inception_settings_4a = InceptionSettings(480, UserModel.all_inception_settings['4a'])
+        model = self.inception(model, inception_settings_4a, '4a')
 
         # first auxiliary branch for making training faster
         aux_branch_1 = self.auxiliary_classifier(model, 512, "aux_1")
+
+        inception_settings_4b = InceptionSettings(512, UserModel.all_inception_settings['4b'])
+        model = self.inception(model, inception_settings_4b, '4b')
 
         inception_settings_4c = InceptionSettings(512, UserModel.all_inception_settings['4c'])
         model = self.inception(model, inception_settings_4c, '4c')
@@ -55,29 +57,24 @@ class UserModel(Tower):
         inception_settings_4d = InceptionSettings(512, UserModel.all_inception_settings['4d'])
         model = self.inception(model, inception_settings_4d, '4d')
 
-        inception_settings_4e = InceptionSettings(512, UserModel.all_inception_settings['4e'])
-        model = self.inception(model, inception_settings_4e, '4e')
-
         # second auxiliary branch for making training faster
         aux_branch_2 = self.auxiliary_classifier(model, 528, "aux_2")
 
-        inception_settings_4f = InceptionSettings(528, UserModel.all_inception_settings['4f'])
-        model = self.inception(model, inception_settings_4f, '4f')
+        inception_settings_4e = InceptionSettings(528, UserModel.all_inception_settings['4e'])
+        model = self.inception(model, inception_settings_4e, '4e')
 
         model = self.max_pool(model, 3, 2)
 
+        inception_settings_5a = InceptionSettings(832, UserModel.all_inception_settings['5a'])
+        model = self.inception(model, inception_settings_5a, '5a')
+
         inception_settings_5b = InceptionSettings(832, UserModel.all_inception_settings['5b'])
         model = self.inception(model, inception_settings_5b, '5b')
-
-        inception_settings_5c = InceptionSettings(832, UserModel.all_inception_settings['5c'])
-        model = self.inception(model, inception_settings_5c, '5c')
         
         model = self.avg_pool(model, 7, 1, 'VALID')
 
         fc_weight, fc_bias = self.create_fc_vars([1024, self.nclasses], 'fc')
         model = self.fully_connect(model, fc_weight, fc_bias)
-
-#        model = tf.nn.softmax(model)
 
         if self.is_training:
             return tf.add(tf.add(aux_branch_1, aux_branch_2), model)
@@ -150,8 +147,6 @@ class UserModel(Tower):
 
         aux_classifier = tf.nn.dropout(aux_classifier, 0.7)
 
-#        aux_classifier = tf.nn.softmax(aux_classifier)
-
         return aux_classifier
 
     def conv_layer_with_relu(self, model, weights, biases, stride_size, padding='SAME'):
@@ -190,7 +185,7 @@ class UserModel(Tower):
         return weight
 
     def create_bias(self, size, name):
-        bias = tf.get_variable(name, [size], initializer=tf.constant_initializer(0.0))
+        bias = tf.get_variable(name, [size], initializer=tf.constant_initializer(0.2))
         return bias
 
 class InceptionSettings():
