@@ -14,9 +14,6 @@ Table of Contents
     * [Supervised Regression Learning](#supervised-regression-learning)
     * [Command Line Inference](#command-line-inference)
     * [Multi-GPU training](#multi-gpu-training)
-* [Tutorials](#tutorials)
-    * [Training an autoencoder](#training-an-autoencoder)
-    * [Training a regression model](#training-a-regression-model)
 
 ## Enabling support for Torch7 in DIGITS
 
