@@ -19,7 +19,8 @@ Depends: ${misc:Depends}, ${python:Depends},
  python-lmdb (>= 0.87),
  python-setuptools,
  python-wtforms (>= 2.0.1)
-Recommends: torch7-nv
+Recommends: torch7-nv,
+ tensorflow-gpu
 Conflicts: digits-devbox-config (<< 3.0.0), torch7
 Description: NVIDIA DIGITS webserver
  This package installs the DIGITS webserver as a service.
@@ -27,4 +28,3 @@ Description: NVIDIA DIGITS webserver
  DIGITS is the Deep Learning GPU Training System from NVIDIA. It provides an
  interactive environment for training, evaluating and experimenting with neural
  networks.
-

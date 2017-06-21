@@ -19,3 +19,4 @@ do
     fi
 done
 
+echo "bust-cache.sh finished"

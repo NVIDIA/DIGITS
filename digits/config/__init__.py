@@ -12,6 +12,7 @@ from . import (  # noqa
     torch,
     server_name,
     store_option,
+    tensorflow,
 )
 
 

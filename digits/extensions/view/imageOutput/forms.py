@@ -23,6 +23,18 @@ class ConfigForm(Form):
                 'is ignored in the case of a grayscale image)'
     )
 
+    data_order = utils.forms.SelectField(
+        'Data order',
+        choices=[
+            ('chw', 'CHW'),
+            ('hwc', 'HWC'),
+            ],
+        default='chw',
+        tooltip="Set the order of the data. For Caffe and Torch models this "
+                "is often CHW, for Tensorflow it's HWC."
+                "W=Width, H=Height, C=Channels"
+        )
+
     pixel_conversion = utils.forms.SelectField(
         'Pixel conversion',
         choices=[
@@ -32,4 +44,14 @@ class ConfigForm(Form):
         default='normalize',
         tooltip='Select method to convert pixel values to the target bit '
                 'range'
+    )
+
+    show_input = utils.forms.SelectField(
+        'Show input as image',
+        choices=[
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        ],
+        default='no',
+        tooltip='Show input as image'
     )

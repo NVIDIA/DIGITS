@@ -72,6 +72,10 @@ optional arguments:
 
 Now that you're up and running, check out the [Getting Started Guide](GettingStarted.md).
 
+# Development
+
+If you are interested in developing for DIGITS or work with its source code, check out the [Development Setup Guide](DevelopmentSetup.md)
+
 ## Troubleshooting
 
 Most configuration options should have appropriate defaults.

@@ -634,6 +634,10 @@ def handle_error(e):
             details['trace'] = trace.split('\n')
         return flask.jsonify({'error': details}), status_code
     else:
+        message = message.replace('\\n', '<br />')
+        if isinstance(e, digits.frameworks.errors.NetworkVisualizationError):
+            trace = message
+            message = ''
         return flask.render_template('error.html',
                                      title=error_type,
                                      message=message,

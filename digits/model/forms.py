@@ -121,6 +121,15 @@ class ModelForm(Form):
         tooltip="How many epochs of training between running through one pass of the validation data?"
     )
 
+    traces_interval = utils.forms.IntegerField(
+        'Tracing Interval (in steps)',
+        validators=[
+            validators.NumberRange(min=0)
+        ],
+        default=0,
+        tooltip="Generation of a timeline trace every few steps"
+    )
+
     random_seed = utils.forms.IntegerField(
         'Random seed',
         validators=[
@@ -155,12 +164,15 @@ class ModelForm(Form):
     solver_type = utils.forms.SelectField(
         'Solver type',
         choices=[
-            ('SGD', 'Stochastic gradient descent (SGD)'),
-            ('NESTEROV', "Nesterov's accelerated gradient (NAG)"),
-            ('ADAGRAD', 'Adaptive gradient (AdaGrad)'),
-            ('RMSPROP', 'RMSprop'),
+            ('SGD', 'SGD (Stochastic Gradient Descent)'),
+            ('MOMENTUM', 'Momentum'),
+            ('NESTEROV', "NAG (Nesterov's accelerated gradient)"),
+            ('ADAGRAD', 'AdaGrad (Adaptive Gradient)'),
+            ('ADAGRADDA', 'AdaGradDA (AdaGrad Dual Averaging)'),
             ('ADADELTA', 'AdaDelta'),
-            ('ADAM', 'Adam'),
+            ('ADAM', 'Adam (Adaptive Moment Estimation)'),
+            ('RMSPROP', 'RMSprop'),
+            ('FTRL', 'FTRL (Follow-The-Regularized-Leader)'),
         ],
         default='SGD',
         tooltip="What type of solver will be used?",
@@ -300,10 +312,11 @@ class ModelForm(Form):
     )
 
     def validate_custom_network_snapshot(form, field):
-        if form.method.data == 'custom':
-            for filename in field.data.strip().split(os.path.pathsep):
-                if filename and not os.path.exists(filename):
-                    raise validators.ValidationError('File "%s" does not exist' % filename)
+        pass
+#        if form.method.data == 'custom':
+#            for filename in field.data.strip().split(os.path.pathsep):
+#                if filename and not os.path.exists(filename):
+#                    raise validators.ValidationError('File "%s" does not exist' % filename)
 
     # Select one of several GPUs
     select_gpu = wtforms.RadioField(

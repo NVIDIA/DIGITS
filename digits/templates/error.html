@@ -10,7 +10,9 @@
 <body>
 <h2>{{title}}</h2>
 {% if message %}
+{% autoescape false %}
 <p class="text-danger">{{message}}</p>
+{% endautoescape %}
 {% endif %}
 {% if description %}
 <p class="text-danger">{{description}}</p>

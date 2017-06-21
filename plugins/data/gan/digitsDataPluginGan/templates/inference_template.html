@@ -1,0 +1,255 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<script>
+var attributes_rows = 0
+
+
+function cell_name(row, column) {
+    return "attributes_attr_" + row + "_" + column;
+}
+
+function update_attributes_params() {
+    console.log("change");
+
+    var params_str = "";
+
+    for (row=0; row<attributes_rows; row++) {
+        for (column=0; column<{{form.editable_attribute_ids|length}}; column++) {
+           var name = cell_name(row, column);
+           var cell = document.getElementById(name)
+           var value = cell.value != "" ? cell.value : "0";
+           params_str += value + " ";
+        }
+        params_str += "\n";
+    }
+
+    document.getElementById('attributes_params').value = params_str;
+
+    console.log("params: " + params_str);
+}
+
+function add_attributes_row() {
+    var table = document.getElementById("attributes_table");
+
+    // Create an empty <tr> element and add it to the 1st position of the table:
+    var row = table.insertRow(attributes_rows + 1);
+
+    for (column=0; column<{{form.editable_attribute_ids|length}}; column++) {
+        var cell = row.insertCell(column);
+        var i = document.createElement("input");
+        i.type = "text";
+        i.name = cell_name(attributes_rows, column);
+        i.id = i.name;
+        i.size = 2;
+        i.onchange = function() {
+            update_attributes_params();
+        };
+        cell.appendChild(i);
+    }
+    attributes_rows += 1;
+}
+</script>
+
+<h3>GAN inference Options</h3>
+
+<div class="form-group">
+
+    <h4>Choose a type of dataset</h4>
+
+    <div class="form-group{{mark_errors([form.dataset_type])}}">
+        {{ form.dataset_type.label }}
+        {{ form.dataset_type.tooltip }}
+        {{ form.dataset_type(class='form-control') }}
+    </div>
+
+    <h4>Choose a task</h4>
+
+    <div class="form-group{{mark_errors([form.task_id])}}">
+        {{ form.task_id.label }}
+        {{ form.task_id.tooltip }}
+        {{ form.task_id(class='form-control') }}
+    </div>
+
+    <div id="task_class">
+        <h4>MNIST Class sweep parameters</h4>
+
+        <h5>Use with "GAN" visualization method (select "Grid" task).</h5>
+
+        <div class="form-group{{mark_errors([form.class_z_vector])}}">
+            {{ form.class_z_vector.label }}
+            {{ form.class_z_vector.tooltip }}
+            {{ form.class_z_vector(class='form-control') }}
+        </div>
+    </div>
+
+    <div id="task_style">
+        <h4>MNIST Style sweep parameters</h4>
+
+        <h5>Use with "GAN" visualization method (select "Grid" task).</h5>
+
+        <div class="form-group{{mark_errors([form.style_z1_vector])}}">
+            {{ form.style_z1_vector.label }}
+            {{ form.style_z1_vector.tooltip }}
+            {{ form.style_z1_vector(class='form-control') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.style_z2_vector])}}">
+            {{ form.style_z2_vector.label }}
+            {{ form.style_z2_vector.tooltip }}
+            {{ form.style_z2_vector(class='form-control') }}
+        </div>
+    </div>
+
+    <div id="task_genimg">
+        <h4>Image generation parameters</h4>
+
+        <h5>Use with "Image Output" visualization method (select "HWC" data order)</h5>
+
+        <div class="form-group{{mark_errors([form.genimg_z_vector])}}">
+            {{ form.genimg_z_vector.label }}
+            {{ form.genimg_z_vector.tooltip }}
+            {{ form.genimg_z_vector(class='form-control') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.genimg_class_id])}}">
+            {{ form.genimg_class_id.label }}
+            {{ form.genimg_class_id.tooltip }}
+            {{ form.genimg_class_id(class='form-control') }}
+        </div>
+    </div>
+
+    <div id="task_attributes">
+        <h4>CelebA Additive Attributes</h4>
+
+        <h5>Use with "Image Output" visualization method (HWC data order).</h5>
+
+        <div class="form-group{{mark_errors([form.attributes_file])}}">
+            {{ form.attributes_file.label }}
+            {{ form.attributes_file.tooltip }}
+            {{ form.attributes_file(class='form-control autocomplete_path') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.attributes_z_vector])}}">
+            {{ form.attributes_z_vector.label }}
+            {{ form.attributes_z_vector.tooltip }}
+            {{ form.attributes_z_vector(class='form-control') }}
+        </div>
+
+        <h5>Add or remove attributes by filling corresponding box with +1 or -1
+        (or any other multiplier).</h5>
+
+        <div class="form-group{{mark_errors([form.attributes_params])}}">
+            {{ form.attributes_params.label }}
+            {{ form.attributes_params.tooltip }}
+            {{ form.attributes_params(class='form-control') }}
+        </div>
+
+        <table class="table" id="attributes_table">
+            <tr>
+                {% for attr_id in form.editable_attribute_ids %}
+                    <th>{{form.attributes[attr_id]}}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+            <script>
+            add_attributes_row()
+            </script>
+            </tr>
+        </table>
+        <input type="button" value="Add row" onclick="add_attributes_row();"/>
+    </div>
+
+    <div id="task_enclist">
+        <h4>Encode file list</h4>
+
+        <h5>Use with "GAN" visualization method (select "Encoder" task).</h5>
+
+        <div class="form-group{{mark_errors([form.enc_file_list])}}">
+            {{ form.enc_file_list.label }}
+            {{ form.enc_file_list.tooltip }}
+            {{ form.enc_file_list(class='form-control autocomplete_path', placeholder='file') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.enc_image_folder])}}">
+            {{ form.enc_image_folder.label }}
+            {{ form.enc_image_folder.tooltip }}
+            {{ form.enc_image_folder(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.enc_num_images])}}">
+            {{ form.enc_num_images.label }}
+            {{ form.enc_num_images.tooltip }}
+            {{ form.enc_num_images(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+    </div>
+
+    <div id="task_analogy">
+        <h4>Analogy</h4>
+
+        <h5>Use with "GAN" visualization method</h5>
+
+        <div class="form-group{{mark_errors([form.attributes_z1_vector])}}">
+            {{ form.attributes_z1_vector.label }}
+            {{ form.attributes_z1_vector.tooltip }}
+            {{ form.attributes_z1_vector(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.attributes_z2_vector])}}">
+            {{ form.attributes_z2_vector.label }}
+            {{ form.attributes_z2_vector.tooltip }}
+            {{ form.attributes_z2_vector(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.attributes_z3_vector])}}">
+            {{ form.attributes_z3_vector.label }}
+            {{ form.attributes_z3_vector.tooltip }}
+            {{ form.attributes_z3_vector(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+    </div>
+
+    <div id="task_animation">
+        <h4>Animation</h4>
+
+        <h5>Use with "GAN" visualization method</h5>
+
+        <div class="form-group{{mark_errors([form.animation_num_transitions])}}">
+            {{ form.animation_num_transitions.label }}
+            {{ form.animation_num_transitions.tooltip }}
+            {{ form.animation_num_transitions(class='form-control autocomplete_path', placeholder='folder') }}
+        </div>
+
+        <div class="form-group{{mark_errors([form.animation_z_vectors])}}">
+            {{ form.animation_z_vectors.label }}
+            {{ form.animation_z_vectors.tooltip }}
+            {{ form.animation_z_vectors(class='form-control autocomplete_path', placeholder='z vectors') }}
+        </div>
+    </div>
+
+</div>
+
+<script>
+$("#task_id").change(function() {
+    task_ids = [
+        'class', 'style', 'genimg', 'attributes',
+        'enclist', 'analogy', 'animation'
+    ]
+
+    console.log($(this).val())
+
+    if ($(this).val()) {
+
+        for (i=0; i<task_ids.length; i++)
+        {
+            div_name = "#task_" + task_ids[i]
+            console.log("div name: " + div_name)
+            $(div_name).hide();
+        }
+        $("#task_" + $(this).val()).show();
+    }
+});
+$("#task_id").change();
+</script>

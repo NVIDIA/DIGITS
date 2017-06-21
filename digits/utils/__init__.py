@@ -25,7 +25,7 @@ def is_url(url):
 
 def wait_time():
     """Wait a random number of seconds"""
-    return uniform(0.3, 0.5)
+    return uniform(0.05, 0.1)
 
 # From http://code.activestate.com/recipes/578900-non-blocking-readlines/
 

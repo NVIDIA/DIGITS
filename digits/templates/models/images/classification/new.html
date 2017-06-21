@@ -41,8 +41,7 @@ function syncAceEditor(){
                     <div id="dataset-summary"></div>
                 </div>
             </div>
-
-            <div class="col">
+            <div class="col" id="python-layers">
                 <div class="well">
                     <h4 style="display:inline-block;">Python Layers</h4>
                     {{form.python_layer_from_client.explanation(file='/models/python_layer_explanation.html')}}
@@ -66,23 +65,23 @@ function syncAceEditor(){
         </div>
         <script>
 
-         // Show/home python_layer_file form fields according to the checkbox
-         function python_layer_file_state() {
-             var from_client = $("#python_layer_from_client").prop("checked");
-             if (from_client) {
-                 $(".python-layer-server-side-file").hide();
-                 $(".python-layer-client-side-file").show();
-             }
-             else{
-                 $(".python-layer-server-side-file").show();
-                 $(".python-layer-client-side-file").hide();
-             }
-         }
+        // Show/home python_layer_file form fields according to the checkbox
+        function python_layer_file_state() {
+            var from_client = $("#python_layer_from_client").prop("checked");
+            if (from_client) {
+                $(".python-layer-server-side-file").hide();
+                $(".python-layer-client-side-file").show();
+            }
+            else{
+                $(".python-layer-server-side-file").show();
+                $(".python-layer-client-side-file").hide();
+            }
+        }
 
-         $("#python_layer_from_client").click(function() {
-             python_layer_file_state();
-         });
-         python_layer_file_state();
+        $("#python_layer_from_client").click(function() {
+            python_layer_file_state();
+        });
+        python_layer_file_state();
 
 $("#dataset").change(function() {
     if ($(this).val()) {
@@ -130,6 +129,11 @@ $("#dataset").change();
                     {{form.val_interval.label}}
                     {{form.val_interval.tooltip}}
                     {{form.val_interval(class='form-control')}}
+                </div>
+                <div class="form-group{{mark_errors([form.val_interval])}}" id="timeline-traces" style="display:none;">
+                    {{form.traces_interval.label}}
+                    {{form.traces_interval.tooltip}}
+                    {{form.traces_interval(class='form-control')}}
                 </div>
                 {# TODO: neat progress bar #}
                 <div class="form-group{{mark_errors([form.random_seed])}}">
@@ -367,7 +371,6 @@ showHideSolverSpecificOptions();
                 </div>
             </div>
         </div>
-
         <div class="col-sm-4">
             <div class="well" id="data-transformation">
                 <h4>Data Transformations</h4>
@@ -399,7 +402,7 @@ function customizeNetwork(network, snapshot_list, framework) {
         data = null;
         if (snapshot_list)
             data = {'snapshot_epoch': $('#'+snapshot_list).val()};
-        $.ajax("{{url_for('digits.model.views.customize')}}?network=" + network+"&framework="+framework,
+        $.ajax("{{url_for('digits.model.views.customize')}}?network=" + network + "&framework="+framework,
                 {
                     type: "POST",
                     data: data
@@ -448,8 +451,10 @@ framework = {
     name : '{{ fw.get_name() }}',
     can_shuffle : '{{ fw.can_shuffle_data() }}'=='True',
     can_accumulate_gradients : '{{ fw.can_accumulate_gradients() }}'=='True',
-    data_aug_types : [{% for dttype in fw.SUPPORTED_DATA_TRANSFORMATION_TYPES %} '{{dttype}}' {% if not loop.last %} , {% endif %} {% endfor %}],
-    data_trans_types : [{% for datype in fw.SUPPORTED_DATA_AUGMENTATION_TYPES %} '{{datype}}' {% if not loop.last %} , {% endif %} {% endfor %}],
+    supports_python_layers_file : '{{ fw.supports_python_layers_file() }}'=='True',
+    supports_timeline_traces : '{{ fw.supports_timeline_traces() }}'=='True',
+    data_aug_types : [{% for dttype in fw.SUPPORTED_DATA_AUGMENTATION_TYPES %} '{{dttype}}' {% if not loop.last %} , {% endif %} {% endfor %}],
+    data_trans_types : [{% for datype in fw.SUPPORTED_DATA_TRANSFORMATION_TYPES %} '{{datype}}' {% if not loop.last %} , {% endif %} {% endfor %}],
     };
 frameworks['{{ fw.get_id() }}'] = framework;
 {% endfor %}
@@ -468,6 +473,16 @@ function setFramework(fwid)
         $("select[name=solver_type] > option:selected").prop("selected", false);
     }
 
+    if (frameworks[fwid].supports_python_layers_file)
+        $("#python-layers").show();
+    else
+        $("#python-layers").hide();
+
+    if (frameworks[fwid].supports_timeline_traces)
+        $("#timeline-traces").show();
+    else
+        $("#timeline-traces").hide();
+
     $(".data-transformation-input").hide();
     $(".data-augmentation-input").hide();
     $.each(frameworks[fwid].data_trans_types, function( index, value ) {
@@ -478,11 +493,12 @@ function setFramework(fwid)
     });
 
     // Hide the entire box including title when none is available
-    if (frameworks[fwid].data_aug_types.length)
+    if (frameworks[fwid].data_trans_types.length)
         $("#data-transformation").show();
     else
         $("#data-transformation").hide();
-    if (frameworks[fwid].data_trans_types.length)
+    
+    if (frameworks[fwid].data_aug_types.length)
         $("#data-augmentation").show();
     else
         $("#data-augmentation").hide();
@@ -598,24 +614,57 @@ function setFramework(fwid)
 
                             });
 
+
+function process_tf_vis(data){
+    // Processes a tensorflow graph_def string such that it is loaded in a tensorboard-style graph
+    var height = String($(window).height() - 200) + 'px' // Bootbox dynamic height hack
+    var the_data = '<script>function load() {document.getElementById("test1").pbtxt = ' + data + ' ;}</scr'+'ipt>';
+    the_data += '<link rel="import" href="{{ url_for('static', filename='tb/tf-graph-basic.build.html', ver=dir_hash) }}" onload=load()>';
+    the_data += '<div style="height:' + height + '"><tf-graph-basic id="test1"></tf-graph-basic></div>';
+    return the_data;
+}
+
 function visualizeNetwork() {
-    framework = $('#framework').val();
+    var framework = $('#framework').val();
+    var is_tf = framework.includes("ensorflow") // @TODO(tzaman) - dirty
+    var num_sel_gpus = 0
+    var sel_gpus = $("#select_gpus").val()
+    if (sel_gpus) {
+        num_sel_gpus = sel_gpus.length
+    } else if ($("#select_gpu_count").val()) {
+        num_sel_gpus = $("#select_gpu_count").val()
+    }
+    var bootboxClass = (is_tf ? "full-bootbox" : "wide-bootbox");
     syncAceEditor(); // Sync ace editor to custom_network editor
+    var bbox_content = $('<div class="text-center"><i class="glyphicon glyphicon-refresh glyphicon-spin"></i> Loading...</div>' );
+    var bbox = bootbox.alert({
+        message: bbox_content,
+        animate: false,
+        closeButton: false,
+        className: bootboxClass,
+        });
     $.ajax("{{url_for('digits.model.views.visualize_network')}}?framework="+framework,
         {
             type: "POST",
-            data: $('#custom_network').serialize()
+            data: {custom_network: $('#custom_network').val(),
+                dataset_id: $('#dataset').val(),
+                solver_type: $('#solver_type').val(),
+                use_mean: document.getElementById('use_mean').value,
+                crop_size: document.getElementById('crop_size').value,
+                num_gpus: num_sel_gpus,
+                },
             }
         )
     .done(function(data) {
-            bootbox.alert({
-                message: data,
-                animate: false,
-                className: "wide-bootbox",
-                });
-            $(".wide-bootbox").animate({scrollTop: 0}, "");
+            if (is_tf)
+                data = process_tf_vis(data);
+            bbox_content.html(data);
+            $("."+bootboxClass).animate({scrollTop: 0}, "");
         })
-    .fail(function(data) { errorAlert(data); });
+    .fail(function(data) {
+        bbox.modal("hide")
+        errorAlert(data);
+    });
     return false;
 }
                     </script>
