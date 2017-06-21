@@ -31,7 +31,7 @@ opt = lapp[[
 -y,--ccn2 (default no) should be 'yes' if ccn2 is used in network. Default : false
 -s,--save (default .) save directory
 
---testMany (default no) If this option is 'yes', then "image" input parameter should specify the file with all the images to be tested
+--testMany (default no) If this option is 'yes', then the "image" input parameter should specify the text-file containing a list of image files to be tested
 --testUntil (default -1) specifies how many images in the "image" file to be tested. This parameter is only valid when testMany is set to "yes"
 --subtractMean (default 'image') Select mean subtraction method. Possible values are 'image', 'pixel' or 'none'.
 --labels (default '') file contains label definitions
@@ -268,11 +268,11 @@ local function predictBatch(inputs, model)
             prediction,classes = prediction:float():sort(true)
             for j=1,topN do
                 -- output format : LABEL_ID (LABEL_NAME) CONFIDENCE
-                logmessage.display(0,'For image ' .. index ..', predicted class '..tostring(j)..': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. prediction[j])
+                logmessage.display(0,'For image ' .. index .. ', predicted class ' .. tostring(j) .. ': ' .. classes[j] .. ' (' .. class_labels[classes[j]] .. ') ' .. prediction[j])
             end
         else
             allPredictions = utils.dataToJson(prediction)
-            logmessage.display(0,'Predictions for image ' .. index ..': '..allPredictions)
+            logmessage.display(0,'Predictions for image ' .. index .. ': ' .. allPredictions)
         end
     end
 end

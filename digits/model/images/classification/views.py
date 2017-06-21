@@ -190,11 +190,8 @@ def create():
                         elif epoch == -1:
                             pretrained_model = old_job.train_task().pretrained_model
                         else:
-                            for filename, e in old_job.train_task().snapshots:
-                                if e == epoch:
-                                    pretrained_model = filename
-                                    break
-
+                            # verify snapshot exists
+                            pretrained_model = old_job.train_task().get_snapshot(epoch, download=True)
                             if pretrained_model is None:
                                 raise werkzeug.exceptions.BadRequest(
                                     "For the job %s, selected pretrained_model for epoch %d is invalid!"
@@ -204,6 +201,8 @@ def create():
                                     "Pretrained_model for the selected epoch doesn't exist. "
                                     "May be deleted by another user/process. "
                                     "Please restart the server to load the correct pretrained_model details.")
+                            # get logical path
+                            pretrained_model = old_job.train_task().get_snapshot(epoch)
                         break
 
             elif form.method.data == 'pretrained':
@@ -269,6 +268,8 @@ def create():
             data_aug['rot'] = form.aug_rot.data
             data_aug['scale'] = form.aug_scale.data
             data_aug['noise'] = form.aug_noise.data
+            data_aug['contrast'] = form.aug_contrast.data
+            data_aug['whitening'] = form.aug_whitening.data
             data_aug['hsv_use'] = form.aug_hsv_use.data
             data_aug['hsv_h'] = form.aug_hsv_h.data
             data_aug['hsv_s'] = form.aug_hsv_s.data
@@ -294,6 +295,7 @@ def create():
                 batch_size=form.batch_size.data[0],
                 batch_accumulation=form.batch_accumulation.data,
                 val_interval=form.val_interval.data,
+                traces_interval=form.traces_interval.data,
                 pretrained_model=pretrained_model,
                 crop_size=form.crop_size.data,
                 use_mean=form.use_mean.data,
@@ -344,6 +346,16 @@ def show(job, related_jobs=None):
     )
 
 
+@blueprint.route('/timeline_tracing', methods=['GET'])
+def timeline_tracing():
+    """
+    Shows timeline trace of a model
+    """
+    job = job_from_request()
+
+    return flask.render_template('models/timeline_tracing.html', job=job)
+
+
 @blueprint.route('/large_graph', methods=['GET'])
 def large_graph():
     """
@@ -351,7 +363,7 @@ def large_graph():
     """
     job = job_from_request()
 
-    return flask.render_template('models/images/classification/large_graph.html', job=job)
+    return flask.render_template('models/large_graph.html', job=job)
 
 
 @blueprint.route('/classify_one.json', methods=['POST'])
@@ -694,8 +706,8 @@ def top_n():
 
 def get_datasets():
     return [(j.id(), j.name()) for j in sorted(
-        [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationDatasetJob)
-         and (j.status.is_running() or j.status == Status.DONE)],
+        [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationDatasetJob) and
+         (j.status.is_running() or j.status == Status.DONE)],
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
     ]

@@ -34,6 +34,11 @@ from digits import utils, log  # noqa
 import caffe.io  # noqa
 import caffe_pb2  # noqa
 
+if digits.config.config_value('tensorflow')['enabled']:
+    import tensorflow as tf
+else:
+    tf = None
+
 logger = logging.getLogger('digits.tools.create_db')
 
 
@@ -301,6 +306,91 @@ def create_db(input_file, output_dir,
         raise ValueError('invalid backend')
 
     logger.info('Database created after %d seconds.' % (time.time() - start))
+
+
+def _create_tfrecords(image_count, write_queue, batch_size, output_dir,
+                      summary_queue, num_threads,
+                      mean_files=None,
+                      encoding=None,
+                      lmdb_map_size=None,
+                      **kwargs):
+    """
+    Creates the TFRecords database(s)
+    """
+    LIST_FILENAME = 'list.txt'
+
+    if not tf:
+        raise ValueError("Can't create TFRecords as support for Tensorflow "
+                         "is not enabled.")
+
+    wait_time = time.time()
+    threads_done = 0
+    images_loaded = 0
+    images_written = 0
+    image_sum = None
+    compute_mean = bool(mean_files)
+
+    os.makedirs(output_dir)
+
+    # We need shards to achieve good mixing properties because TFRecords
+    # is a sequential/streaming reader, and has no random access.
+
+    num_shards = 16  # @TODO(tzaman) put some logic behind this
+
+    writers = []
+    with open(os.path.join(output_dir, LIST_FILENAME), 'w') as outfile:
+        for shard_id in xrange(num_shards):
+            shard_name = 'SHARD_%03d.tfrecords' % (shard_id)
+            filename = os.path.join(output_dir, shard_name)
+            writers.append(tf.python_io.TFRecordWriter(filename))
+            outfile.write('%s\n' % (filename))
+
+    shard_id = 0
+    while (threads_done < num_threads) or not write_queue.empty():
+
+        # Send update every 2 seconds
+        if time.time() - wait_time > 2:
+            logger.debug('Processed %d/%d' % (images_written, image_count))
+            wait_time = time.time()
+
+        processed_something = False
+
+        if not summary_queue.empty():
+            result_count, result_sum = summary_queue.get()
+            images_loaded += result_count
+            # Update total_image_sum
+            if compute_mean and result_count > 0 and result_sum is not None:
+                if image_sum is None:
+                    image_sum = result_sum
+                else:
+                    image_sum += result_sum
+            threads_done += 1
+            processed_something = True
+
+        if not write_queue.empty():
+            writers[shard_id].write(write_queue.get())
+            shard_id += 1
+            if shard_id >= num_shards:
+                shard_id = 0
+            images_written += 1
+            processed_something = True
+
+        if not processed_something:
+            time.sleep(0.2)
+
+    if images_loaded == 0:
+        raise LoadError('no images loaded from input file')
+    logger.debug('%s images loaded' % images_loaded)
+
+    if images_written == 0:
+        raise WriteError('no images written to database')
+    logger.info('%s images written to database' % images_written)
+
+    if compute_mean:
+        _save_means(image_sum, images_written, mean_files)
+
+    for writer in writers:
+        writer.close()
 
 
 def _create_lmdb(image_count, write_queue, batch_size, output_dir,
@@ -595,6 +685,9 @@ def _load_thread(load_queue, write_queue, summary_queue,
         if backend == 'lmdb':
             datum = _array_to_datum(image, label, encoding)
             write_queue.put(datum)
+        elif backend == 'tfrecords':
+            tf_example = _array_to_tf_feature(image, label, encoding)
+            write_queue.put(tf_example)
         else:
             write_queue.put((image, label))
 
@@ -611,6 +704,50 @@ def _initial_image_sum(width, height, channels):
         return np.zeros((height, width), np.float64)
     else:
         return np.zeros((height, width, channels), np.float64)
+
+
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+
+def _array_to_tf_feature(image, label, encoding):
+    """
+    Creates a tensorflow Example from a numpy.ndarray
+    """
+    if not encoding:
+        image_raw = image.tostring()
+        encoding_id = 0
+    else:
+        s = StringIO()
+        if encoding == 'png':
+            PIL.Image.fromarray(image).save(s, format='PNG')
+            encoding_id = 1
+        elif encoding == 'jpg':
+            PIL.Image.fromarray(image).save(s, format='JPEG', quality=90)
+            encoding_id = 2
+        else:
+            raise ValueError('Invalid encoding type')
+        image_raw = s.getvalue()
+
+    depth = image.shape[2] if len(image.shape) > 2 else 1
+
+    example = tf.train.Example(
+        features=tf.train.Features(
+            feature={
+                'height': _int64_feature(image.shape[0]),
+                'width': _int64_feature(image.shape[1]),
+                'depth': _int64_feature(depth),
+                'label': _int64_feature(label),
+                'image_raw': _bytes_feature(image_raw),
+                'encoding':  _int64_feature(encoding_id),
+                # @TODO(tzaman) - add bitdepth flag?
+            }
+        ))
+    return example.SerializeToString()
 
 
 def _array_to_datum(image, label, encoding):
@@ -763,7 +900,7 @@ if __name__ == '__main__':
                         )
     parser.add_argument('-b', '--backend',
                         default='lmdb',
-                        help='The database backend - lmdb[default] or hdf5')
+                        help='The database backend - lmdb[default], hdf5 or tfrecords')
     parser.add_argument('--lmdb_map_size',
                         type=int,
                         help='The initial map size for LMDB (in MB)')

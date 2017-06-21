@@ -16,7 +16,7 @@ from . import ModelJob
 from digits.pretrained_model.job import PretrainedModelJob
 from digits import frameworks, extensions
 from digits.utils import auth
-from digits.utils.routing import request_wants_json
+from digits.utils.routing import request_wants_json, job_from_request, get_request_arg
 from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
@@ -100,6 +100,18 @@ def customize():
     })
 
 
+@blueprint.route('/timeline_trace_data', methods=['POST'])
+def timeline_trace_data():
+    """
+    Shows timeline trace of a model
+    """
+    job = job_from_request()
+    step = get_request_arg('step')
+    if step is None:
+        raise werkzeug.exceptions.BadRequest('step is a required field')
+    return job.train_task().timeline_trace(int(step))
+
+
 @blueprint.route('/view-config/<extension_id>', methods=['GET'])
 def view_config(extension_id):
     """
@@ -122,9 +134,19 @@ def visualize_network():
     if not framework:
         raise werkzeug.exceptions.BadRequest('framework not provided')
 
-    fw = frameworks.get_framework_by_id(framework)
-    ret = fw.get_network_visualization(flask.request.form['custom_network'])
+    dataset = None
+    if 'dataset_id' in flask.request.form:
+        dataset = scheduler.get_job(flask.request.form['dataset_id'])
 
+    fw = frameworks.get_framework_by_id(framework)
+    ret = fw.get_network_visualization(
+        desc=flask.request.form['custom_network'],
+        dataset=dataset,
+        solver_type=flask.request.form['solver_type'] if 'solver_type' in flask.request.form else None,
+        use_mean=flask.request.form['use_mean'] if 'use_mean' in flask.request.form else None,
+        crop_size=flask.request.form['crop_size'] if 'crop_size' in flask.request.form else None,
+        num_gpus=flask.request.form['num_gpus'] if 'num_gpus' in flask.request.form else None,
+    )
     return ret
 
 
@@ -273,13 +295,13 @@ def download(job_id, extension):
             mode = 'gz'
         elif extension in ['tar.bz2']:
             mode = 'bz2'
-        with tarfile.open(fileobj=b, mode='w:%s' % mode) as tf:
+        with tarfile.open(fileobj=b, mode='w:%s' % mode) as tar:
             for path, name in job.download_files(epoch):
-                tf.add(path, arcname=name)
-            tf_info = tarfile.TarInfo("info.json")
-            tf_info.size = len(info_io.getvalue())
+                tar.add(path, arcname=name)
+            tar_info = tarfile.TarInfo("info.json")
+            tar_info.size = len(info_io.getvalue())
             info_io.seek(0)
-            tf.addfile(tf_info, info_io)
+            tar.addfile(tar_info, info_io)
     elif extension in ['zip']:
         with zipfile.ZipFile(b, 'w') as zf:
             for path, name in job.download_files(epoch):
