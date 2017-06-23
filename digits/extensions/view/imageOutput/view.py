@@ -29,6 +29,7 @@ class Visualization(VisualizationInterface):
 
         # view options
         self.channel_order = kwargs['channel_order'].upper()
+        self.data_order = kwargs['data_order'].upper()
         self.normalize = (kwargs['pixel_conversion'] == 'normalize')
 
     @staticmethod
@@ -76,8 +77,13 @@ class Visualization(VisualizationInterface):
         """
         Process one inference and return data to visualize
         """
-        # assume the only output is a CHW image
+
         data = output_data[output_data.keys()[0]].astype('float32')
+
+        if self.data_order == 'HWC':
+            data = (data.transpose((2, 0, 1)))
+
+        # assume CHW at this point
         channels = data.shape[0]
         if channels == 3 and self.channel_order == 'BGR':
             data = data[[2, 1, 0], ...]  # BGR to RGB

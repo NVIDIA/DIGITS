@@ -18,6 +18,7 @@ env:
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=NVIDIA
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=BVLC
         - DIGITS_TEST_FRAMEWORK=torch
+        - DIGITS_TEST_FRAMEWORK=tensorflow
         - DIGITS_TEST_FRAMEWORK=none
 
 matrix:
@@ -82,6 +83,7 @@ addons:
             - cmake
             - cython
             - git
+            - gfortran
             - graphviz
             - libboost-filesystem-dev
             - libboost-python-dev
@@ -128,6 +130,7 @@ install:
     - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
     - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
+    - if [ "$DIGITS_TEST_FRAMEWORK" == "tensorflow" ]; then travis_wait ./scripts/travis/install-tensorflow.sh; fi
     - pip install -r ./requirements.txt
     - pip install -r ./requirements_test.txt
     - pip install -e .

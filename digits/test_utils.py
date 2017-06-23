@@ -68,3 +68,21 @@ class TorchMixin(object):
         supercls = super(TorchMixin, cls)
         if hasattr(supercls, 'setUpClass'):
             supercls.setUpClass()
+
+
+class TensorflowMixin(object):
+    """
+    Mixin for tensorflow tests
+    """
+    FRAMEWORK = 'tensorflow'
+
+    @classmethod
+    def setUpClass(cls):
+        skipIfNotFramework('tensorflow')
+        if cls.FRAMEWORK == 'tensorflow' and not config_value('tensorflow')['enabled']:
+            raise unittest.SkipTest('Tensorflow not found')
+
+        # Call super.setUpClass() unless we're the last in the class hierarchy
+        supercls = super(TensorflowMixin, cls)
+        if hasattr(supercls, 'setUpClass'):
+            supercls.setUpClass()
