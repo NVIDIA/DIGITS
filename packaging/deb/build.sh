@@ -98,5 +98,3 @@ mkdir -p "$DIST_ROOT"
 docker cp "${DOCKER_BUILD_ID}:/dist" "$DIST_DIR"
 docker rm "$DOCKER_BUILD_ID"
 find "$DIST_DIR" -type f | sort
-
-echo "build.sh finished"
