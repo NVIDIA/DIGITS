@@ -45,4 +45,4 @@ TensorFlow should then install effortlessly and pull in all its required dependi
 
 ## Getting Started With TensorFlow In DIGITS
 
-Follow [these instructions](GettingStartedTensorFlow.md) for information on getting started with TensorFlow in DIGITS
+Follow [these instructions](GettingStartedTensorflow.md) for information on getting started with TensorFlow in DIGITS
