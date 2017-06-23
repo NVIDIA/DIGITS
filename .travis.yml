@@ -132,7 +132,6 @@ install:
     - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
     - ./scripts/travis/install-openblas.sh $OPENBLAS_ROOT
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
-<<<<<<< HEAD
     - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
     - pip install -r ./requirements.txt --force-reinstall
     - if [ "$DIGITS_TEST_FRAMEWORK" == "tensorflow" ]; then travis_wait ./scripts/travis/install-tensorflow.sh; fi
