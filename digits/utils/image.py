@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import math
@@ -34,7 +34,7 @@ from . import is_url, HTTP_TIMEOUT, errors
 
 # List of supported file extensions
 # Use like "if filename.endswith(SUPPORTED_EXTENSIONS)"
-SUPPORTED_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.bmp', '.ppm')
+SUPPORTED_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.bmp', '.ppm', '.pgm')
 
 
 def load_image(path):
@@ -63,7 +63,7 @@ def load_image(path):
             image = PIL.Image.open(path)
             image.load()
         except IOError as e:
-            raise errors.LoadImageError, 'IOError: %s' % e.message
+            raise errors.LoadImageError, 'IOError: Trying to load "%s": %s' % (path, e.message)
     else:
         raise errors.LoadImageError, '"%s" not found' % path
 
@@ -427,7 +427,7 @@ def vis_square(images,
             if C is not set, a heatmap is computed for the result
 
     Keyword arguments:
-    padsize -- how many pixels go inbetween the tiles
+    padsize -- how many pixels go between the tiles
     normalize -- if true, scales (min, max) across all images out to (0, 1)
     colormap -- a string representing one of the supported colormaps
     """

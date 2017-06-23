@@ -11,7 +11,7 @@ return function(params)
     end
 
     if pcall(function() require('cudnn') end) then
-       print('Using CuDNN backend')
+       --print('Using CuDNN backend')
        backend = cudnn
        convLayer = cudnn.SpatialConvolution
        convLayerName = 'cudnn.SpatialConvolution'

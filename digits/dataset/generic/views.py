@@ -1,6 +1,7 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
+import os
 # Find the best implementation available
 try:
     from cStringIO import StringIO
@@ -147,8 +148,9 @@ def explore():
     db = job.path(flask.request.args.get('db'))
     db_path = job.path(db)
 
-    if COLOR_PALETTE_ATTRIBUTE in job.extension_userdata \
-            and job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]:
+    if (os.path.basename(db_path) == 'labels' and
+            COLOR_PALETTE_ATTRIBUTE in job.extension_userdata and
+            job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]):
         # assume single-channel 8-bit palette
         palette = job.extension_userdata[COLOR_PALETTE_ATTRIBUTE]
         palette = np.array(palette).reshape((len(palette) / 3, 3)) / 255.

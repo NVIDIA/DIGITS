@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import os
@@ -29,7 +29,7 @@ def load_url_list():
     if 'DIGITS_MODEL_STORE_URL' in os.environ:
         url_list = os.environ['DIGITS_MODEL_STORE_URL']
     else:
-        url_list = ""
+        url_list = "http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0"
 
     return validate(url_list).split(',')
 

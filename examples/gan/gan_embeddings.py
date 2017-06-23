@@ -43,7 +43,7 @@ def save_tb_embeddings(embeddings_filename):
         projector.visualize_embeddings(summary_writer, config)
 
         # save embeddings
-        sess=tf.Session()
+        sess = tf.Session()
         sess.run(embedding_var.initializer)
         saver = tf.train.Saver([embedding_var])
         saver.save(sess, os.path.join(TB_DIR, 'model.ckpt'))

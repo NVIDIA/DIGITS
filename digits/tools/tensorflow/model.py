@@ -54,13 +54,14 @@ def average_gradients(tower_grads):
                 # Append on a 'tower' dimension which we will average over below.
                 grads.append(expanded_g)
             # Average over the 'tower' dimension.
-            grad = tf.concat(0, grads)
-            grad = tf.reduce_mean(grad, 0)
+            grads_transformed = tf.concat(grads, 0)
+            grads_transformed = tf.reduce_mean(grads_transformed, 0)
+
             # Keep in mind that the Variables are redundant because they are shared
             # across towers. So .. we will just return the first tower's pointer to
             # the Variable.
             v = grad_and_vars[0][1]
-            grad_and_var = (grad, v)
+            grad_and_var = (grads_transformed, v)
             average_grads.append(grad_and_var)
         return average_grads
 
@@ -126,9 +127,9 @@ class Model(object):
         else:
             with tf.name_scope('parallelize'):
                 # Split them up
-                batch_x_split = tf.split(0, len(available_devices), batch_x, name='split_batch')
+                batch_x_split = tf.split(batch_x, len(available_devices), 0, name='split_batch')
                 if self.stage != digits.STAGE_INF:  # Has no labels
-                    batch_y_split = tf.split(0, len(available_devices), batch_y, name='split_batch')
+                    batch_y_split = tf.split(batch_y, len(available_devices), 0, name='split_batch')
 
         # Run the user model through the build_model function that should be filled in
         grad_towers = []
@@ -163,7 +164,7 @@ class Model(object):
                         losses += ops.get_collection(ops.GraphKeys.REGULARIZATION_LOSSES, scope=None)
                         tower_loss = tf.add_n(losses, name='loss')
 
-                        self.summaries.append(tf.scalar_summary(tower_loss.op.name, tower_loss))
+                        self.summaries.append(tf.summary.scalar(tower_loss.op.name, tower_loss))
 
                     # Reuse the variables in this scope for the next tower/device
                     tf.get_variable_scope().reuse_variables()
@@ -235,7 +236,7 @@ class Model(object):
         if not len(self.summaries):
             logging.error("No summaries defined. Please define at least one summary.")
             exit(-1)
-        return tf.merge_summary(self.summaries)
+        return tf.summary.merge(self.summaries)
 
     @model_property
     def global_step(self):
@@ -250,7 +251,7 @@ class Model(object):
         #  define it entirely in tf ops, instead of a placeholder and feeding.
         with tf.device('/cpu:0'):
             lr = tf.placeholder(tf.float32, shape=[], name='learning_rate')
-            self.summaries.append(tf.scalar_summary('lr', lr))
+            self.summaries.append(tf.summary.scalar('lr', lr))
             return lr
 
     @model_property
@@ -283,8 +284,8 @@ class Model(object):
         """
         Return list of losses
 
-        If user-defined model returns only one loss then this is encapsulated into the expected list of
-        dicts structure
+        If user-defined model returns only one loss then this is encapsulated into
+        the expected list of dicts structure
         """
         if isinstance(tower.loss, list):
             return tower.loss

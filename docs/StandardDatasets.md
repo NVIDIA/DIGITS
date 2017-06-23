@@ -59,13 +59,13 @@ mnist/
 │   ├── 8/
 │   ├── 9/
 │   ├── labels.txt
-│   └── test.txt
+│   └── train.txt
 └── test/
     ├── 0/
     ├── ...
     ├── 9/
     ├── labels.txt
-    └── train.txt
+    └── test.txt
 ```
 
 Then, you can use `~/mnist/train` for your training images and `~/mnist/test` for your validation or test images.
@@ -98,13 +98,13 @@ cifar10
 │   ├── ship/
 │   ├── truck/
 │   ├── labels.txt
-│   └── test.txt
+│   └── train.txt
 └── test/
     ├── airplane/
     ├── ...
     ├── truck/
     ├── labels.txt
-    └── train.txt
+    └── test.txt
 ```
 
 Then, you can use `~/cifar10/train` for your training images and `~/cifar10/test` for your validation or test images.

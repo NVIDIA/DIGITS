@@ -1,11 +1,11 @@
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from ..job import ImageDatasetJob
 from digits.dataset import tasks
 from digits.utils import subclass, override, constants
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 1
 
 

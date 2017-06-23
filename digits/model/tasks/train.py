@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from collections import OrderedDict, namedtuple
@@ -13,7 +13,7 @@ from digits import device_query
 from digits.task import Task
 from digits.utils import subclass, override
 
-# NOTE: Increment this everytime the picked object changes
+# NOTE: Increment this every time the picked object changes
 PICKLE_VERSION = 2
 
 # Used to store network outputs
@@ -474,7 +474,9 @@ class TrainTask(Task):
 
         assert hasattr(self.dataset, 'labels_file'), 'labels_file not set'
         assert self.dataset.labels_file, 'labels_file not set'
-        assert os.path.exists(self.dataset.path(self.dataset.labels_file)), 'labels_file does not exist'
+        assert os.path.exists(self.dataset.path(self.dataset.labels_file)), 'labels_file does not exist: {}'.format(
+            self.dataset.path(self.dataset.labels_file)
+        )
 
         labels = []
         with open(self.dataset.path(self.dataset.labels_file)) as infile:

@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from collections import OrderedDict
@@ -27,7 +27,7 @@ from digits.utils.filesystem import tail
 import caffe
 import caffe_pb2
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 5
 
 # Constants
@@ -1362,13 +1362,17 @@ class CaffeTrainTask(TrainTask):
                         if top in net.blobs and top not in added_activations:
                             data = net.blobs[top].data[0]
                             normalize = True
-                            # don't normalize softmax layers
+                            # don't normalize softmax layers but scale by 255 to fill image range
                             if layer.type == 'Softmax':
-                                normalize = False
-                            vis = utils.image.get_layer_vis_square(data,
-                                                                   normalize=normalize,
-                                                                   allow_heatmap=bool(top != 'data'),
-                                                                   channel_order='BGR')
+                                vis = utils.image.get_layer_vis_square(data * 255,
+                                                                       normalize=False,
+                                                                       allow_heatmap=bool(top != 'data'),
+                                                                       channel_order='BGR')
+                            else:
+                                vis = utils.image.get_layer_vis_square(data,
+                                                                       normalize=normalize,
+                                                                       allow_heatmap=bool(top != 'data'),
+                                                                       channel_order='BGR')
                             mean, std, hist = self.get_layer_statistics(data)
                             visualizations.append(
                                 {

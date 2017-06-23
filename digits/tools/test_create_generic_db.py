@@ -1,7 +1,8 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
 import shutil
 import tempfile
+import unittest
 
 from . import create_generic_db
 from digits import extensions
@@ -24,6 +25,8 @@ class BaseTest(object):
     """
     @classmethod
     def setUpClass(cls):
+        if extensions.data.get_extension(cls.EXTENSION_ID) is None:
+            raise unittest.SkipTest('Extension "%s" is not installed' % cls.EXTENSION_ID)
         cls.dataset_dir = tempfile.mkdtemp()
         cls.extension_class = extensions.data.get_extension(cls.EXTENSION_ID)
         cls.extension = cls.extension_class(**cls.EXTENSION_PARAMS)

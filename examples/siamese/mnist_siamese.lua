@@ -59,7 +59,7 @@ return function(params)
     function siameseLabelHook(input, dblabel)
         -- cosine embedding criterion requires negative samples to be
         -- assigned class -1
-        dblabel[torch.eq(dblabel,0)]=torch.eq(dblabel,0):fill(-1)
+        dblabel[torch.eq(dblabel,0)]=-1
         return dblabel
     end
 
@@ -71,4 +71,3 @@ return function(params)
         labelHook = siameseLabelHook
     }
 end
-

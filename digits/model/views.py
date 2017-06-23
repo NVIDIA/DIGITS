@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import io
@@ -295,13 +295,13 @@ def download(job_id, extension):
             mode = 'gz'
         elif extension in ['tar.bz2']:
             mode = 'bz2'
-        with tarfile.open(fileobj=b, mode='w:%s' % mode) as tf:
+        with tarfile.open(fileobj=b, mode='w:%s' % mode) as tar:
             for path, name in job.download_files(epoch):
-                tf.add(path, arcname=name)
-            tf_info = tarfile.TarInfo("info.json")
-            tf_info.size = len(info_io.getvalue())
+                tar.add(path, arcname=name)
+            tar_info = tarfile.TarInfo("info.json")
+            tar_info.size = len(info_io.getvalue())
             info_io.seek(0)
-            tf.addfile(tf_info, info_io)
+            tar.addfile(tar_info, info_io)
     elif extension in ['zip']:
         with zipfile.ZipFile(b, 'w') as zf:
             for path, name in job.download_files(epoch):
