@@ -17,7 +17,6 @@ TAGS
 /build/
 /dist/
 *.egg-info/
-<<<<<<< HEAD
 
 #Intellij files
 .idea/
@@ -27,6 +26,4 @@ TAGS
 
 #.project
 .project
-=======
->>>>>>> digits-master/tensorflow
 /.project
