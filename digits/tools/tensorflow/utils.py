@@ -10,23 +10,26 @@ Digits default Tensorflow Ops as helper functions.
 
 import functools
 import tensorflow as tf
-from tensorflow.python.client import timeline, device_lib
+from tensorflow.python.client import device_lib
 
 STAGE_TRAIN = 'train'
 STAGE_VAL = 'val'
 STAGE_INF = 'inf'
 
+
 class GraphKeys(object):
     TEMPLATE = "model"
     QUEUE_RUNNERS = "queue_runner"
     MODEL = "model"
-    LOSS = "loss" # The namescope
-    LOSSES = "losses" # The collection
+    LOSS = "loss"  # The namescope
+    LOSSES = "losses"  # The collection
     LOADER = "data"
+
 
 def model_property(function):
     # From https://danijar.com/structuring-your-tensorflow-models/
     attribute = '_cache_' + function.__name__
+
     @property
     @functools.wraps(function)
     def decorator(self):
@@ -35,6 +38,7 @@ def model_property(function):
         return getattr(self, attribute)
     return decorator
 
+
 def classification_loss(pred, y):
     """
     Definition of the loss for regular classification
@@ -42,20 +46,25 @@ def classification_loss(pred, y):
     ssoftmax = tf.nn.sparse_softmax_cross_entropy_with_logits(pred, y, name='cross_entropy_single')
     return tf.reduce_mean(ssoftmax, name='cross_entropy_batch')
 
+
 def mse_loss(lhs, rhs):
     return tf.reduce_mean(tf.square(lhs - rhs))
 
+
 def constrastive_loss(lhs, rhs, y, margin=1.0):
-    """ Contrastive loss confirming to the Caffe definition
     """
-    d = tf.reduce_sum(tf.square(tf.sub(lhs,rhs)), 1)
+    Contrastive loss confirming to the Caffe definition
+    """
+    d = tf.reduce_sum(tf.square(tf.sub(lhs, rhs)), 1)
     d_sqrt = tf.sqrt(1e-6 + d)
     loss = (y * d) + ((1 - y) * tf.square(tf.maximum(margin - d_sqrt, 0)))
-    return tf.reduce_mean(loss) # Note: constant component removed (/2)
+    return tf.reduce_mean(loss)  # Note: constant component removed (/2)
+
 
 def classification_accuracy_top_n(pred, y, top_n):
     single_acc_t = tf.nn.in_top_k(pred, y, top_n)
-    return  tf.reduce_mean(tf.cast(single_acc_t, tf.float32), name='accuracy_top_%d'%top_n)
+    return tf.reduce_mean(tf.cast(single_acc_t, tf.float32), name='accuracy_top_%d' % top_n)
+
 
 def classification_accuracy(pred, y):
     """
@@ -65,27 +74,30 @@ def classification_accuracy(pred, y):
     single_acc = tf.equal(y, tf.argmax(pred, 1))
     return tf.reduce_mean(tf.cast(single_acc, tf.float32), name='accuracy')
 
+
 def nhwc_to_nchw(x):
-    #x = tf.reshape(x, [1, 3, 4, 2])
     return tf.transpose(x, [0, 3, 1, 2])
 
+
 def hwc_to_chw(x):
-    #x = tf.reshape(x, [2, 3, 1])
     return tf.transpose(x, [2, 0, 1])
 
+
 def nchw_to_nhwc(x):
-    #x = tf.reshape(x, [1, 2, 3, 4])
     return tf.transpose(x, [0, 2, 3, 1])
 
+
 def chw_to_hwc(x):
-    #x = tf.reshape(x, [1, 2, 3])
     return tf.transpose(x, [1, 2, 0])
+
 
 def bgr_to_rgb(x):
     return tf.reverse(x, [False, False, True])
 
+
 def rgb_to_bgr(x):
     return tf.reverse(x, [False, False, True])
+
 
 def get_available_gpus():
     """

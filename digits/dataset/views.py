@@ -6,6 +6,7 @@ import werkzeug.exceptions
 
 from . import images as dataset_images
 from . import generic
+from digits import extensions
 from digits.utils.routing import job_from_request, request_wants_json
 from digits.webapp import scheduler
 
@@ -54,3 +55,31 @@ def summary():
         return generic.views.summary(job)
     else:
         raise werkzeug.exceptions.BadRequest('Invalid job type')
+
+
+@blueprint.route('/inference-form/<extension_id>/<job_id>', methods=['GET'])
+def inference_form(extension_id, job_id):
+    """
+    Returns a rendering of an inference form
+    """
+    inference_form_html = ""
+
+    if extension_id != "all-default":
+        extension_class = extensions.data.get_extension(extension_id)
+        if not extension_class:
+            raise RuntimeError("Unable to find data extension with ID=%s"
+                               % job_id.dataset.extension_id)
+        job = scheduler.get_job(job_id)
+        if hasattr(job, 'extension_userdata'):
+            extension_userdata = job.extension_userdata
+        else:
+            extension_userdata = {}
+        extension_userdata.update({'is_inference_db': True})
+        extension = extension_class(**extension_userdata)
+
+        form = extension.get_inference_form()
+        if form:
+            template, context = extension.get_inference_template(form)
+            inference_form_html = flask.render_template_string(template, **context)
+
+    return inference_form_html

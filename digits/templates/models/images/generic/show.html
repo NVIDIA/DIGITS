@@ -29,6 +29,8 @@
                 <dt>Pretrained Model</dt>
                 <dd>{{task.pretrained_model}}</dd>
                 {% endif %}
+                <dt>Visualizations</dt>
+                <dd><a href="http://localhost:6006/" target="new">Tensorboard</a></dd>
             </dl>
         </div>
     </div>
@@ -214,30 +216,54 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     </div>
                 </div>
 
-{% if inference_form_html %}
-{{ inference_form_html|safe }}
-<div class="form-group">
-    <label for="show_visualizations">
-        <input id="show_visualizations" name="show_visualizations" type="checkbox" value="y">
-        Show visualizations and statistics
-    </label>
-    <span name="show_visualizations_explanation"
-        class="explanation-tooltip glyphicon glyphicon-question-sign"
-        data-container="body"
-        title="For each layer in the network, show statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
-        ></span>
-</div>
-
-<button name="infer-db-btn"
-    formaction="{{url_for('digits.model.images.generic.views.infer_extension', job_id=job.id())}}"
-    formmethod="post"
-    formenctype="multipart/form-data"
-    formtarget="_blank"
-    class="btn btn-primary">
-    Test
-</button>
-{% else %}
                 <div class="row">
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <h3>Select Inference form</h3>
+                            <div class="form-group">
+                                <select id="data_extension_id" name="data_extension_id" class="form-control">
+                                    {% for key in data_extensions.keys()|sort %}
+                                        <option value="{{ key }}">{{ data_extensions[key] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" id="custom-inference-form" >
+                    <div id="custom-inference-form-html">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="show_visualizations">
+                                <input id="show_visualizations" name="show_visualizations" type="checkbox" value="y">
+                                Show visualizations and statistics
+                            </label>
+                            <span name="show_visualizations_explanation"
+                                class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                data-container="body"
+                                title="For each layer in the network, show statistics for the weights/activations and attempt to represent the data visually. Can delay classification considerably."
+                                ></span>
+                        </div>
+
+                        <input type="hidden" name="Language" value="English">
+
+                        <button name="infer-db-btn"
+                            formaction="{{url_for('digits.model.images.generic.views.infer_extension', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            formtarget="_blank"
+                            class="btn btn-primary">
+                            Test
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row" id="default-inference-form">
                     <div class="col-sm-6">
                         <h3>Test a single image</h3>
                         <div class="form-group">
@@ -344,10 +370,40 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             ></span>
                     </div>
                 </div>
-{% endif %}
             </form>
         </div>
     </div>
 </div>
+
+<script>
+$("#data_extension_id").change(function() {
+    if ($(this).val()) {
+
+        $.ajax("/datasets/inference-form/" + $(this).val() + "/" + "{{ job.dataset.id() }}",
+            {
+                type: "GET",
+                }
+            )
+        .done(function(data) {
+                if (data.length > 0)
+                {
+                    $("#default-inference-form").hide();
+                    $("#custom-inference-form-html").html(data);
+                    $("#custom-inference-form-html").show();
+                }
+                else
+                {
+                    $("#custom-inference-form-html").hide();
+                    $("#default-inference-form").show();
+                }
+            })
+        .fail(function(data) {
+            $("#custom-inference-form-html").html("");
+            errorAlert(data);
+            });
+        }
+    });
+$("#data_extension_id").change();
+</script>
 
 {% endblock %}

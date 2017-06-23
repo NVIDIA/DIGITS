@@ -23,6 +23,8 @@ class DbReader(object):
         with self._db.begin() as txn:
             self.total_entries = txn.stat()['entries']
 
+        self.txn = self._db.begin()
+
     def entries(self):
         """
         Generator returning all entries in the DB
@@ -31,3 +33,7 @@ class DbReader(object):
             cursor = txn.cursor()
             for item in cursor:
                 yield item
+
+    def entry(self, key):
+        """Return single entry"""
+        return self.txn.get(key)

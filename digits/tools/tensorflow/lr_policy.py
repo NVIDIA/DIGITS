@@ -15,7 +15,10 @@ from __future__ import print_function
 import logging
 import math
 
-logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.INFO)
+
 
 class LRPolicy(object):
     """This class contains details of learning rate policies that are used in caffe.
@@ -59,9 +62,13 @@ class LRPolicy(object):
         if (self.max_steps < len(self.stepvalues_list)):
             self.policy = 'step'
             self.stepvalues_list[0] = 1
-            logging.info("Maximum iterations (i.e., %s) is less than provided step values count (i.e, %s), so learning rate policy is reset to (%s) policy with the step value (%s).", self.max_steps, len(self.stepvalues_list), self.policy, self.stepvalues_list[0])
-        else:
-            # Converting stepsize percentages into values
+            logging.info("Maximum iterations (i.e., %s) is less than provided step values count "
+                         "(i.e, %s), so learning rate policy is reset to (%s) policy with the "
+                         "step value (%s).",
+                         self.max_steps, len(self.stepvalues_list),
+                         self.policy,
+                         self.stepvalues_list[0])
+        else:            # Converting stepsize percentages into values
             for i in range(len(self.stepvalues_list)):
                 self.stepvalues_list[i] = round(self.max_steps * self.stepvalues_list[i] / 100)
                 # Avoids 'nan' values during learning rate calculation
@@ -70,10 +77,10 @@ class LRPolicy(object):
 
         if (self.policy == 'step') or (self.policy == 'sigmoid'):
             # If the policy is not multistep, then even though multiple step values
-            #  are provided as input, we will consider only the first value.
+            # are provided as input, we will consider only the first value.
             self.step_size = self.stepvalues_list[0]
         elif (self.policy == 'multistep'):
-            self.current_step = 0 # This counter is important to take arbitary steps
+            self.current_step = 0  # This counter is important to take arbitary steps
             self.stepvalue_size = len(self.stepvalues_list)
 
     def get_learning_rate(self, step):
@@ -84,7 +91,7 @@ class LRPolicy(object):
             rate: the learning rate for the requested step
         """
         rate = 0
-        progress = 100 * (step / self.max_steps) # expressed in percent units
+        progress = 100 * (step / self.max_steps)  # expressed in percent units
 
         if self.policy == "fixed":
             rate = self.base_rate
@@ -98,11 +105,12 @@ class LRPolicy(object):
         elif self.policy == "multistep":
             if ((self.current_step < self.stepvalue_size) and (step > self.stepvalues_list[self.current_step])):
                 self.current_step = self.current_step + 1
-            rate = self.base_rate * math.pow(self.gamma, self.current_step);
+            rate = self.base_rate * math.pow(self.gamma, self.current_step)
         elif self.policy == "poly":
             rate = self.base_rate * math.pow(1.0 - (step / self.max_steps), self.power)
         elif self.policy == "sigmoid":
-            rate = self.base_rate * (1.0 / (1.0 + math.exp(self.gamma * (progress - 100 * self.step_size / self.max_steps))));
+            rate = self.base_rate * \
+                (1.0 / (1.0 + math.exp(self.gamma * (progress - 100 * self.step_size / self.max_steps))))
         else:
             logging.error("Unknown learning rate policy: %s", self.policy)
             exit(-1)

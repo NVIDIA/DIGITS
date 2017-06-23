@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 import itertools
 import json
-import math
 import os
 import shutil
 import tempfile
@@ -17,16 +16,12 @@ except ImportError:
     from StringIO import StringIO
 
 from bs4 import BeautifulSoup
-from google.protobuf import text_format
 
 from digits.config import config_value
 import digits.dataset.images.classification.test_views
-from digits.frameworks import CaffeFramework
 import digits.test_views
 from digits import test_utils
 import digits.webapp
-
-import caffe_pb2
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -98,19 +93,22 @@ end
 """
 
     TENSORFLOW_NETWORK = \
-"""
-def build_model(params):
-    ninputs = params['input_shape'][0] * params['input_shape'][1] * params['input_shape'][2]
-    W = tf.get_variable('W', [ninputs, params['nclasses']], initializer=tf.constant_initializer(0.0))
-    b = tf.get_variable('b', [params['nclasses']], initializer=tf.constant_initializer(0.0)),
-    model = tf.reshape(params['x'], shape=[-1, ninputs])
-    model = tf.add(tf.matmul(model, W), b)
-    def loss(y):
-        return digits.classification_loss(model, y)
-    return {
-        'model' : model,
-        'loss' : loss
-        }
+        """
+class UserModel(Tower):
+
+    @model_property
+    def inference(self):
+        ninputs = self.input_shape[0] * self.input_shape[1] * self.input_shape[2]
+        W = tf.get_variable('W', [ninputs, self.nclasses], initializer=tf.constant_initializer(0.0))
+        b = tf.get_variable('b', [self.nclasses], initializer=tf.constant_initializer(0.0)),
+        model = tf.reshape(self.x, shape=[-1, ninputs])
+        model = tf.add(tf.matmul(model, W), b)
+        return model
+
+    @model_property
+    def loss(self):
+        loss = digits.classification_loss(self.inference, self.y)
+        return loss
 """
 
     @classmethod
@@ -142,14 +140,15 @@ def build_model(params):
 
     @classmethod
     def network(cls):
-        if cls.FRAMEWORK=='torch':
+        if cls.FRAMEWORK == 'torch':
             return cls.TORCH_NETWORK
-        elif cls.FRAMEWORK=='caffe':
+        elif cls.FRAMEWORK == 'caffe':
             return cls.CAFFE_NETWORK
-        elif cls.FRAMEWORK=='tensorflow':
+        elif cls.FRAMEWORK == 'tensorflow':
             return cls.TENSORFLOW_NETWORK
         else:
             raise Exception('Unknown cls.FRAMEWORK "%s"' % cls.FRAMEWORK)
+
 
 class BaseViewsTestWithDataset(BaseViewsTest,
                                digits.dataset.images.classification.test_views.BaseViewsTestWithDataset):
@@ -521,17 +520,17 @@ class BaseTestCreation(BaseViewsTestWithDataset):
                 """
         elif self.FRAMEWORK == 'tensorflow':
             bogus_net = """
-                def build_model(params):
-                    model = BogusCode(0)
+class UserModel(Tower):
 
-                    def loss(y):
-                        return BogusCode(0)
+    @model_property
+    def inference(self):
+        model = BogusCode(0)
+        return model
 
-                    return {
-                        'model' : model,
-                        'loss' : loss,
-                    }
-                """
+    @model_property
+    def loss(y):
+        return BogusCode(0)
+"""
         job_id = self.create_model(json=True, network=bogus_net)
         assert self.model_wait_completion(job_id) == 'Error', 'job should have failed'
         job_info = self.job_info_html(job_id=job_id, job_type='models')
@@ -840,6 +839,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # if no GPUs, just test inference during a normal training job
 
         # get number of GPUs
+        if self.FRAMEWORK == 'tensorflow':
+            raise unittest.SkipTest('Tensorflow CPU inference during training not supported')
+
         gpu_count = 1
         if (config_value('gpu_list') and
                 config_value('caffe')['cuda_enabled'] and
@@ -1047,7 +1049,7 @@ return function(p)
 end
 """
     TENSORFLOW_NETWORK = \
-"""
+        """
 @TODO(tzaman)
 """
 
@@ -1309,28 +1311,30 @@ class TestSweepCreation(BaseViewsTestWithDataset, test_utils.CaffeMixin):
             assert not self.model_exists(job_id), 'model exists after delete'
 
 
-## Tensorflow
+# Tensorflow
 
-#class TestTensorflowViews(BaseTestViews, test_utils.TensorflowMixin):
-#    # @TODO(tzaman) For TF i need to pass a proper dataset too - how to do this best?
-#    pass
 
 class TestTensorflowCreation(BaseTestCreation, test_utils.TensorflowMixin):
     pass
 
-class TestTensorflowCreatedUnencodedShuffle(BaseTestCreated, test_utils.TensorflowMixin):
+
+class TestTensorflowCreatedWideUnencodedShuffle(BaseTestCreatedWide, test_utils.TensorflowMixin):
     ENCODING = 'none'
     SHUFFLE = True
 
+
 class TestTensorflowCreatedHdf5(BaseTestCreated, test_utils.TensorflowMixin):
     BACKEND = 'hdf5'
+
 
 class TestTensorflowCreatedTallHdf5Shuffle(BaseTestCreatedTall, test_utils.TensorflowMixin):
     BACKEND = 'hdf5'
     SHUFFLE = True
 
+
 class TestTensorflowDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.TensorflowMixin):
     pass
+
 
 class TestTensorflowCreatedDataAug(BaseTestCreatedDataAug, test_utils.TensorflowMixin):
     AUG_FLIP = 'fliplrud'
@@ -1343,9 +1347,11 @@ class TestTensorflowCreatedDataAug(BaseTestCreatedDataAug, test_utils.Tensorflow
     AUG_HSV_V = 0.06
     TRAIN_EPOCHS = 2
 
+
 class TestTensorflowCreatedWideMultiStepLR(BaseTestCreatedWide, test_utils.TensorflowMixin):
     LR_POLICY = 'multistep'
     LR_MULTISTEP_VALUES = '50,75,90'
+
 
 class TestTensorflowLeNet(BaseTestCreated, test_utils.TensorflowMixin):
     IMAGE_WIDTH = 28
@@ -1354,11 +1360,11 @@ class TestTensorflowLeNet(BaseTestCreated, test_utils.TensorflowMixin):
 
     # standard lenet model will adjust to color
     # or grayscale images
-    TENSORFLOW_NETWORK=open(
-            os.path.join(
-                os.path.dirname(digits.__file__),
-                'standard-networks', 'tensorflow', 'lenet.py')
-            ).read()
+    TENSORFLOW_NETWORK = open(os.path.join(os.path.dirname(digits.__file__),
+                                           'standard-networks',
+                                           'tensorflow',
+                                           'lenet.py')).read()
+
 
 class TestTensorflowLeNetSlim(BaseTestCreated, test_utils.TensorflowMixin):
     IMAGE_WIDTH = 28
@@ -1367,8 +1373,7 @@ class TestTensorflowLeNetSlim(BaseTestCreated, test_utils.TensorflowMixin):
 
     # standard lenet model will adjust to color
     # or grayscale images
-    TENSORFLOW_NETWORK=open(
-            os.path.join(
-                os.path.dirname(digits.__file__),
-                'standard-networks', 'tensorflow', 'lenet_slim.py')
-            ).read()
+    TENSORFLOW_NETWORK = open(os.path.join(os.path.dirname(digits.__file__),
+                                           'standard-networks',
+                                           'tensorflow',
+                                           'lenet_slim.py')).read()

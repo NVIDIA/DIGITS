@@ -20,7 +20,6 @@ import magic
 import math
 import numpy as np
 import os
-import sys
 import tensorflow as tf
 
 # Local imports
@@ -29,23 +28,25 @@ import utils as digits
 
 # Constants
 MIN_FRACTION_OF_EXAMPLES_IN_QUEUE = 0.4
-MAX_ABSOLUTE_EXAMPLES_IN_QUEUE = 4096 # The queue size cannot exceed this number
+MAX_ABSOLUTE_EXAMPLES_IN_QUEUE = 4096  # The queue size cannot exceed this number
 NUM_THREADS_DATA_LOADER = 6
-LOG_MEAN_FILE = False # Logs the mean file as loaded in TF to TB
+LOG_MEAN_FILE = False  # Logs the mean file as loaded in TF to TB
 
 # Supported extensions for Loaders
 DB_EXTENSIONS = {
     'hdf5': ['.H5', '.HDF5'],
     'lmdb': ['.MDB', '.LMDB'],
-    'tfrecords' :['.TFRECORDS'],
+    'tfrecords': ['.TFRECORDS'],
     'filelist': ['.TXT'],
     'file': ['.JPG', '.JPEG', '.PNG'],
+    'gangrid': ['.GAN'],
 }
 
-LIST_DELIMITER = ' ' # For the FILELIST format
+LIST_DELIMITER = ' '  # For the FILELIST format
 
-logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',datefmt='%Y-%m-%d %H:%M:%S',
+logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
+
 
 def get_backend_of_source(db_path):
     """
@@ -65,7 +66,7 @@ def get_backend_of_source(db_path):
         files_in_path = [db_path]
 
     # Keep the below priority ordering
-    for db_fmt in ['hdf5', 'lmdb', 'tfrecords', 'filelist', 'file']:
+    for db_fmt in ['hdf5', 'lmdb', 'tfrecords', 'filelist', 'file', 'gangrid']:
         ext_list = DB_EXTENSIONS[db_fmt]
         for ext in ext_list:
             if any(ext in os.path.splitext(fn)[1].upper() for fn in files_in_path):
@@ -73,6 +74,7 @@ def get_backend_of_source(db_path):
 
     logging.error("Cannot infer backend from db_path (%s)." % (db_path))
     exit(-1)
+
 
 class MeanLoader(object):
     """
@@ -105,19 +107,20 @@ class MeanLoader(object):
             data = np.array(blob.data, dtype="float32").reshape(blob.channels, blob.height, blob.width)
             if blob.channels == 3:
                 # converting from BGR to RGB
-                data = data[[2,1,0],...] # channel swap
+                data = data[[2, 1, 0], ...]  # channel swap
                 # convert to (height, width, channels)
-                data = data.transpose((1,2,0))
+                data = data.transpose((1, 2, 0))
             elif blob.channels == 1:
                 # convert to (height, width)
                 data = data[0]
             else:
-                logging.error('Unknown amount of channels (%d) in mean file (%s)' % (blob.channels, self._mean_file_path))
+                logging.error('Unknown amount of channels (%d) in mean file (%s)' %
+                              (blob.channels, self._mean_file_path))
                 exit(-1)
-        elif file_extension in IMG_FILE_EXT:
-            img = Image.open(self._mean_file_path)
-            img.load()
-            data = np.asarray(img, dtype="float32")
+        # elif file_extension in IMG_FILE_EXT:
+        #     img = Image.open(self._mean_file_path)
+        #     img.load()
+        #     data = np.asarray(img, dtype="float32")
         else:
             logging.error('Failed loading mean file: Unsupported extension (%s)' % (file_extension))
             exit(-1)
@@ -130,11 +133,7 @@ class MeanLoader(object):
                 # Explicitly add channel dim
                 data = data[:, :, None]
 
-            # Normalize to [0:1]
-            if self._bitdepth == 16:
-                data = data / 65535
-            else:
-                data = data / 255
+            # return data in original pixel scale
             self.tf_mean_image = tf.constant(data, name='Const_Mean_Image')
 
         else:
@@ -169,7 +168,7 @@ class LoaderFactory(object):
         self.batch_k = None
         self.stage = None
         self._seed = None
-        self.unencoded_data_format = 'whc'
+        self.unencoded_data_format = 'hwc'
         self.unencoded_channel_scheme = 'rgb'
         self.summaries = None
         self.aug_dict = {}
@@ -178,7 +177,7 @@ class LoaderFactory(object):
         pass
 
     @staticmethod
-    def set_source(db_path):
+    def set_source(db_path, is_inference=False):
         """
         Returns the correct backend.
         """
@@ -192,11 +191,14 @@ class LoaderFactory(object):
             loader = FileListLoader()
         elif backend == 'tfrecords':
             loader = TFRecordsLoader()
+        elif backend == 'gangrid':
+            loader = GanGridLoader()
         else:
             logging.error("Backend (%s) not implemented" % (backend))
             exit(-1)
         loader.backend = backend
         loader.db_path = db_path
+        loader.is_inference = is_inference
         return loader
 
     def setup(self, labels_db_path, shuffle, bitdepth, batch_size, num_epochs=None, seed=None):
@@ -240,7 +242,7 @@ class LoaderFactory(object):
         return self.total
 
     def reshape_decode(self, data, shape):
-        if self.float_data: #@TODO(tzaman): this is LMDB specific - Make generic!
+        if self.float_data:  # @TODO(tzaman): this is LMDB specific - Make generic!
             data = tf.reshape(data, shape)
             data = digits.chw_to_hwc(data)
         else:
@@ -255,20 +257,22 @@ class LoaderFactory(object):
                     logging.error('Unsupported mime type (%s); cannot be decoded' % (self.data_mime))
                     exit(-1)
             else:
-                data = tf.decode_raw(data, self.image_dtype, name='raw_decoder')
+                if self.backend == 'lmdb':
+                    data = tf.decode_raw(data, self.image_dtype, name='raw_decoder')
 
                 # if data is in CHW, set the shape and convert to HWC
                 if self.unencoded_data_format == 'chw':
-                    data = tf.reshape(data, [shape[2],shape[0],shape[1]])
+                    data = tf.reshape(data, [shape[0], shape[1], shape[2]])
                     data = digits.chw_to_hwc(data)
-                else: #'hwc'
+                else:  # 'hwc'
                     data = tf.reshape(data, shape)
 
                 if (self.channels == 3) and self.unencoded_channel_scheme == 'bgr':
                     data = digits.bgr_to_rgb(data)
 
             # Convert to float
-            data = tf.image.convert_image_dtype(data, tf.float32) # Converts to [0:1) range
+            data = tf.to_float(data)
+            # data = tf.image.convert_image_dtype(data, tf.float32) # normalize to [0:1) range
         return data
 
     def create_input_pipeline(self):
@@ -290,24 +294,25 @@ class LoaderFactory(object):
         # @TODO(tzaman) the container can be used if the reset function is implemented:
         # see https://github.com/tensorflow/tensorflow/issues/4535#issuecomment-248990633
         #
-        #with tf.container('queue-container'):
+        # with tf.container('queue-container'):
 
         key_queue = self.get_queue()
 
         single_label = None
         single_label_shape = None
         if self.stage == digits.STAGE_INF:
-            single_key, single_data, single_data_shape = self.get_single_data(key_queue)
+            single_key, single_data, single_data_shape, _, _ = self.get_single_data(key_queue)
         else:
-            single_key, single_data, single_data_shape, single_label, single_label_shape = self.get_single_data(key_queue)
+            single_key, single_data, single_data_shape, single_label, single_label_shape = \
+                self.get_single_data(key_queue)
 
-        single_data_shape = tf.reshape(single_data_shape, [3]) # Shape the shape to have three dimensions
+        single_data_shape = tf.reshape(single_data_shape, [3])  # Shape the shape to have three dimensions
         single_data = self.reshape_decode(single_data, single_data_shape)
 
-        if self.labels_db_path: # Using a seperate label db; label can be anything
+        if self.labels_db_path:  # Using a seperate label db; label can be anything
             single_label_shape = tf.reshape(single_label_shape, [3])  # Shape the shape
             single_label = self.labels_db.reshape_decode(single_label, single_label_shape)
-        elif single_label is not None: # Not using a seperate label db; label is a scalar
+        elif single_label is not None:  # Not using a seperate label db; label is a scalar
             single_label = tf.reshape(single_label, [])
 
         # Mean Subtraction
@@ -315,42 +320,57 @@ class LoaderFactory(object):
             with tf.name_scope('mean_subtraction'):
                 single_data = self.mean_loader.subtract_mean_op(single_data)
                 if LOG_MEAN_FILE:
-                    self.summaries.append(tf.image_summary('mean_image', tf.expand_dims(self.mean_loader.tf_mean_image, 0), max_images=1))
+                    self.summaries.append(tf.image_summary('mean_image',
+                                                           tf.expand_dims(self.mean_loader.tf_mean_image, 0),
+                                          max_images=1))
 
         # (Random) Cropping
         if self.croplen:
             with tf.name_scope('cropping'):
                 if self.stage == digits.STAGE_TRAIN:
-                    single_data = tf.random_crop(single_data, [self.croplen, self.croplen, self.channels], seed=self._seed)
-                else : # Validation or Inference
+                    single_data = tf.random_crop(single_data,
+                                                 [self.croplen, self.croplen, self.channels],
+                                                 seed=self._seed)
+                else:  # Validation or Inference
                     single_data = tf.image.resize_image_with_crop_or_pad(single_data, self.croplen, self.croplen)
 
         # Data Augmentation
         if self.aug_dict:
             with tf.name_scope('augmentation'):
                 flipflag = self.aug_dict['aug_flip']
-                if  flipflag == 'fliplr' or flipflag == 'fliplrud':
+                if flipflag == 'fliplr' or flipflag == 'fliplrud':
                     single_data = tf.image.random_flip_left_right(single_data, seed=self._seed)
-                if  flipflag == 'flipud' or flipflag == 'fliplrud':
+                if flipflag == 'flipud' or flipflag == 'fliplrud':
                     single_data = tf.image.random_flip_up_down(single_data, seed=self._seed)
 
                 noise_std = self.aug_dict['aug_noise']
                 if noise_std > 0.:
                     # Note the tf.random_normal requires a static shape
-                    single_data = tf.add(single_data, tf.random_normal(self.get_shape(), mean=0.0, stddev=noise_std, dtype=tf.float32, seed=self._seed, name='AWGN'))
+                    single_data = tf.add(single_data, tf.random_normal(self.get_shape(),
+                                                                       mean=0.0,
+                                                                       stddev=noise_std,
+                                                                       dtype=tf.float32,
+                                                                       seed=self._seed,
+                                                                       name='AWGN'))
 
                 contrast_fact = self.aug_dict['aug_contrast']
                 if contrast_fact > 0:
-                    single_data = tf.image.random_contrast(single_data, lower=1.-contrast_fact, upper=1.+contrast_fact, seed=self._seed)
+                    single_data = tf.image.random_contrast(single_data,
+                                                           lower=1.-contrast_fact,
+                                                           upper=1.+contrast_fact,
+                                                           seed=self._seed)
 
                 # @TODO(tzaman): rewrite the below HSV stuff entirely in a TF PR to be done in one single operation
                 aug_hsv = self.aug_dict['aug_HSV']
                 if aug_hsv['h'] > 0.:
                     single_data = tf.image.random_hue(single_data, aug_hsv['h'], seed=self._seed)
                 if aug_hsv['s'] > 0.:
-                    single_data = tf.image.random_saturation(single_data, 1-aug_hsv['s'], 1+aug_hsv['s'], seed=self._seed)
+                    single_data = tf.image.random_saturation(single_data,
+                                                             1 - aug_hsv['s'],
+                                                             1 + aug_hsv['s'],
+                                                             seed=self._seed)
                 if aug_hsv['v'] > 0.:
-                     # closely resembles V - temporary until rewritten
+                    # closely resembles V - temporary until rewritten
                     single_data = tf.image.random_brightness(single_data, aug_hsv['v'], seed=self._seed)
 
                 # @TODO(tzaman) whitening is so invasive that we need a way to add it to the val/inf too in a
@@ -359,9 +379,10 @@ class LoaderFactory(object):
                 if aug_whitening:
                     # Subtract off its own mean and divide by the standard deviation of its own the pixels.
                     with tf.name_scope('whitening'):
-                        single_data = tf.image.per_image_whitening(single_data) # N.B. also converts to float
+                        single_data = tf.image.per_image_standardization(single_data)  # N.B. also converts to float
 
-        max_queue_capacity = min(math.ceil(self.total * MIN_FRACTION_OF_EXAMPLES_IN_QUEUE), MAX_ABSOLUTE_EXAMPLES_IN_QUEUE)
+        max_queue_capacity = min(math.ceil(self.total * MIN_FRACTION_OF_EXAMPLES_IN_QUEUE),
+                                 MAX_ABSOLUTE_EXAMPLES_IN_QUEUE)
 
         single_batch = [single_key, single_data]
         if single_label is not None:
@@ -369,34 +390,33 @@ class LoaderFactory(object):
 
         if self.backend == 'tfrecords' and self.shuffle:
             batch = tf.train.shuffle_batch(
-                    single_batch,
-                    batch_size=self.batch_size,
-                    num_threads=NUM_THREADS_DATA_LOADER,
-                    capacity=10*self.batch_size, # Max amount that will be loaded and queued
-                    shapes=[[0], self.get_shape(), []], # Only makes sense is dynamic_pad=False #@TODO(tzaman) - FIXME
-                    min_after_dequeue=5*self.batch_size,
-                    allow_smaller_final_batch=True, # Happens if total%batch_size!=0
-                    name='batcher'
-                )
+                single_batch,
+                batch_size=self.batch_size,
+                num_threads=NUM_THREADS_DATA_LOADER,
+                capacity=10*self.batch_size,  # Max amount that will be loaded and queued
+                shapes=[[0], self.get_shape(), []],  # Only makes sense is dynamic_pad=False #@TODO(tzaman) - FIXME
+                min_after_dequeue=5*self.batch_size,
+                allow_smaller_final_batch=True,  # Happens if total%batch_size!=0
+                name='batcher'
+            )
         else:
             batch = tf.train.batch(
-                    single_batch,
-                    batch_size=self.batch_size,
-                    dynamic_pad=True, # Allows us to not supply fixed shape a priori
-                    enqueue_many=False, # Each tensor is a single example
-                    #shapes=[[],[28,28,1],[]], # Only makes sense is dynamic_pad=False
-                    num_threads=NUM_THREADS_DATA_LOADER,
-                    capacity=max_queue_capacity, # Max amount that will be loaded and queued
-                    allow_smaller_final_batch=True, # Happens if total%batch_size!=0
-                    name='batcher',
-                )
+                single_batch,
+                batch_size=self.batch_size,
+                dynamic_pad=True,  # Allows us to not supply fixed shape a priori
+                enqueue_many=False,  # Each tensor is a single example
+                # set number of threads to 1 for tfrecords (used for inference)
+                num_threads=NUM_THREADS_DATA_LOADER if not self.is_inference else 1,
+                capacity=max_queue_capacity,  # Max amount that will be loaded and queued
+                allow_smaller_final_batch=True,  # Happens if total%batch_size!=0
+                name='batcher',
+            )
 
-        self.batch_k = batch[0] # Key
-        self.batch_x = batch[1] # Input
+        self.batch_k = batch[0]  # Key
+        self.batch_x = batch[1]  # Input
         if len(batch) == 3:
             # There's a label (unlike during inferencing)
-            self.batch_y = batch[2] # Output (label)
-
+            self.batch_y = batch[2]  # Output (label)
 
 
 class LmdbLoader(LoaderFactory):
@@ -447,13 +467,13 @@ class LmdbLoader(LoaderFactory):
 
     def get_queue(self):
         return tf.train.string_input_producer(
-                self.keys,
-                num_epochs=self.num_epochs,
-                capacity=self.total,
-                shuffle=self.shuffle,
-                seed=self._seed,
-                name='input_producer'
-            )
+            self.keys,
+            num_epochs=self.num_epochs,
+            capacity=self.total,
+            shuffle=self.shuffle,
+            seed=self._seed,
+            name='input_producer'
+        )
 
     def get_tf_data_type(self):
         """Returns the type of the data, in tf format.
@@ -495,7 +515,7 @@ class LmdbLoader(LoaderFactory):
                 data = np.asarray(datum.float_data, dtype='float32')
             else:
                 data = datum.data
-            label = np.asarray([datum.label], dtype=np.int64) # scalar label
+            label = np.asarray([datum.label], dtype=np.int64)  # scalar label
             return data, shape, label
 
         def get_data_op(key):
@@ -525,13 +545,14 @@ class LmdbLoader(LoaderFactory):
         Returns:
             key, single_data, single_data_shape, single_label, single_label_shape
         """
-        key = key_queue.dequeue() #Operation that dequeues one key and returns a string with the key
+        key = key_queue.dequeue()  # Operation that dequeues one key and returns a string with the key
         py_func_return_type = [self.get_tf_data_type(), tf.int32, self.get_tf_label_type(), tf.int32]
         d, ds, l, ls = tf.py_func(self.generate_data_op(), [key], py_func_return_type, name='data_reader')
         return key, d, ds, l, ls
 
     def __del__(self):
         self.lmdb_env.close()
+
 
 class FileListLoader(LoaderFactory):
     """ The FileListLoader loads files from a list of string(s) pointing to (a) file(s).
@@ -560,7 +581,7 @@ class FileListLoader(LoaderFactory):
             if len(self.keys) > 0:
                 # Assume the first entry in the line is a pointer to the file path
                 first_file_path = self.keys[0]
-            else :
+            else:
                 logging.error('Filelist (%s) contains no lines.' % (self.db_path))
                 exit(-1)
         else:
@@ -572,7 +593,7 @@ class FileListLoader(LoaderFactory):
         # Check first file for statistics
         im = Image.open(first_file_path)
         self.width, self.height = im.size
-        self.channels =  1 if im.mode == 'L' else 3 # @TODO(tzaman): allow more channels
+        self.channels = 1 if im.mode == 'L' else 3  # @TODO(tzaman): allow more channels
 
         self.data_mime = magic.from_file(first_file_path, mime=True)
 
@@ -588,13 +609,13 @@ class FileListLoader(LoaderFactory):
 
     def get_queue(self):
         return tf.train.string_input_producer(
-                self.keys,
-                num_epochs=self.num_epochs,
-                capacity=self.total,
-                shuffle=self.shuffle,
-                seed=self._seed,
-                name='input_producer'
-            )
+            self.keys,
+            num_epochs=self.num_epochs,
+            capacity=self.total,
+            shuffle=self.shuffle,
+            seed=self._seed,
+            name='input_producer'
+        )
 
     def get_single_data(self, key_queue):
         """
@@ -602,8 +623,9 @@ class FileListLoader(LoaderFactory):
             key, single_data, single_data_shape, single_label, single_label_shape
         """
         key, value = self.reader.read(key_queue)
-        shape = np.array([self.width, self.height, self.channels], dtype=np.int32) # @TODO: this is not dynamic
-        return key, value, shape # @TODO(tzaman) - Note: will only work for inferencing stage!
+        shape = np.array([self.width, self.height, self.channels], dtype=np.int32)  # @TODO: this is not dynamic
+        return key, value, shape  # @TODO(tzaman) - Note: will only work for inferencing stage!
+
 
 class TFRecordsLoader(LoaderFactory):
     """ The TFRecordsLoader connects directly into the tensorflow graph.
@@ -613,8 +635,7 @@ class TFRecordsLoader(LoaderFactory):
         pass
 
     def initialize(self):
-        self.float_data = False # For now only strings
-        self.keys = None # Not using keys
+        self.float_data = False  # For now only strings
         self.unencoded_data_format = 'hwc'
         self.unencoded_channel_scheme = 'rgb'
         self.reader = None
@@ -625,21 +646,24 @@ class TFRecordsLoader(LoaderFactory):
 
         # Count all the records @TODO(tzaman): account for shards!
         # Loop the records in path @TODO(tzaman) get this from a txt?
-        #self.db_path += '/test.tfrecords' # @TODO(tzaman) this is a hack
+        # self.db_path += '/test.tfrecords' # @TODO(tzaman) this is a hack
 
         self.shard_paths = []
-        list_db_files = self.db_path + '/list.txt'
+        list_db_files = os.path.join(self.db_path, 'list.txt')
         self.total = 0
-        with open(list_db_files) as f:
-            for line in f:
-                # Account for the relative path format in list.txt
-                shard_path = self.db_path + '/' + os.path.basename(line.strip())
-                record_iter = tf.python_io.tf_record_iterator(shard_path)
-                for r in record_iter:
-                    self.total += 1
-                if not self.total:
-                    raise ValueError('Database or shard contains no records (%s)' % (self.db_path))
-                self.shard_paths.append(shard_path)
+        if os.path.exists(list_db_files):
+            files = [os.path.join(self.db_path, f) for f in open(list_db_files, 'r').read().splitlines()]
+        else:
+            files = [self.db_path]
+        for shard_path in files:
+            # Account for the relative path format in list.txt
+            record_iter = tf.python_io.tf_record_iterator(shard_path)
+            for r in record_iter:
+                self.total += 1
+            if not self.total:
+                raise ValueError('Database or shard contains no records (%s)' % (self.db_path))
+            self.shard_paths.append(shard_path)
+        self.keys = ['%s:0' % p for p in self.shard_paths]
 
         # Use last record read to extract some preliminary data that is sometimes needed or useful
         example_proto = tf.train.Example()
@@ -675,23 +699,20 @@ class TFRecordsLoader(LoaderFactory):
             key, single_data, single_data_shape, single_label, single_label_shape
         """
 
-        _, serialized_example = self.reader.read(key_queue)
+        key, serialized_example = self.reader.read(key_queue)
         features = tf.parse_single_example(
             serialized_example,
             # Defaults are not specified since both keys are required.
             features={
-                'image_raw': tf.FixedLenFeature([], tf.string),
+                'image_raw': tf.FixedLenFeature([self.height, self.width, self.channels], tf.float32),
                 'label': tf.FixedLenFeature([], tf.int64),
             })
 
-        key = np.array([], dtype=np.int32) # @TODO: this is not dynamic
         d = features['image_raw']
-        ds = np.array([self.width, self.height, self.channels], dtype=np.int32) # @TODO: this is not dynamic
-        l = features['label']#l = tf.cast(features['label'], tf.int32)
-        ls = np.array([], dtype=np.int32) # @TODO: this is not dynamic
+        ds = np.array([self.height, self.width, self.channels], dtype=np.int32)  # @TODO: this is not dynamic
+        l = features['label']  # l = tf.cast(features['label'], tf.int32)
+        ls = np.array([], dtype=np.int32)  # @TODO: this is not dynamic
         return key, d, ds, l, ls
-
-
 
 
 class Hdf5Loader(LoaderFactory):
@@ -707,8 +728,8 @@ class Hdf5Loader(LoaderFactory):
             exit(-1)
 
         self.data_encoded = False
-        self.float_data = True # Always stored as float32
-        self.keys = None # Not using keys
+        self.float_data = True  # Always stored as float32
+        self.keys = None  # Not using keys
 
         self.h5dbs = []
         self.h5dbs_endrange = []
@@ -729,7 +750,7 @@ class Hdf5Loader(LoaderFactory):
 
     def check_hdf5_db(self, db):
         # Make sure we have data and labels in the db
-        if not "data" in db or not "label" in db:
+        if "data" not in db or "label" not in db:
             logging.error("The HDF5 loader requires both a 'data' and 'label' group in the HDF5 root.")
             exit(-1)
 
@@ -743,13 +764,13 @@ class Hdf5Loader(LoaderFactory):
 
     def get_queue(self):
         return tf.train.range_input_producer(
-                self.total,
-                num_epochs=self.num_epochs,
-                capacity=self.total,
-                shuffle=self.shuffle,
-                seed=self._seed,
-                name='input_producer'
-            )
+            self.total,
+            num_epochs=self.num_epochs,
+            capacity=self.total,
+            shuffle=self.shuffle,
+            seed=self._seed,
+            name='input_producer'
+        )
 
     def get_tf_data_type(self):
         """Returns the type of the data, in tf format.
@@ -781,14 +802,12 @@ class Hdf5Loader(LoaderFactory):
             if sample_key < end_range:
                 key_within_db = sample_key-prev_end_range
                 data = self.h5dbs[i]['data'][key_within_db]
-                # Convert from CHW to HWC
-                data = data.transpose((1, 2, 0)).astype(np.float32)/255.
                 shape = np.asarray(data.shape, dtype=np.int32)
                 label = self.h5dbs[i]['label'][key_within_db].astype(np.int64)
                 return data, shape, label
             prev_end_range = end_range
 
-        logging.error("Out of range") # @TODO(tzaman) out of range error
+        logging.error("Out of range")  # @TODO(tzaman) out of range error
         exit(-1)
 
     def generate_data_op(self):
@@ -821,7 +840,7 @@ class Hdf5Loader(LoaderFactory):
         Returns:
             key, single_data, single_data_shape, single_label, single_label_shape
         """
-        key = key_queue.dequeue() #Operation that dequeues one key and returns a string with the key
+        key = key_queue.dequeue()  # Operation that dequeues one key and returns a string with the key
         py_func_return_type = [self.get_tf_data_type(), tf.int32, self.get_tf_label_type(), tf.int32]
         d, ds, l, ls = tf.py_func(self.generate_data_op(), [key], py_func_return_type, name='data_reader')
         return key, d, ds, l, ls
@@ -829,3 +848,48 @@ class Hdf5Loader(LoaderFactory):
     def __del__(self):
         for db in self.h5dbs:
             db.close()
+
+class GanGridLoader(LoaderFactory):
+    """
+    The GanGridLoader generates data for a GAN.
+    """
+    def __init__(self):
+        pass
+
+    def initialize(self):
+        self.float_data = False  # For now only strings
+        self.keys = None  # Not using keys
+        self.unencoded_data_format = 'hwc'
+        self.unencoded_channel_scheme = 'rgb'
+        self.reader = None
+        self.image_dtype = tf.float32
+
+        self.channels = 1
+        self.height = 1
+        self.width = 100
+        self.data_encoded = False
+
+        self.total = 100000
+
+    def get_queue(self):
+        return tf.train.range_input_producer(
+            self.total,
+            num_epochs=self.num_epochs,
+            capacity=self.total,
+            shuffle=self.shuffle,
+            seed=self._seed,
+            name='input_producer'
+        )
+
+    def get_single_data(self, key_queue):
+        """
+        Returns:
+            key, single_data, single_data_shape, single_label, single_label_shape
+        """
+
+        key = tf.to_int32(key_queue.dequeue())  # Operation that dequeues an index
+
+        d = key
+        ds = np.array([1, 1, 1], dtype=np.int32)
+
+        return key, d, ds, None, None

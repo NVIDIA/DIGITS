@@ -11,16 +11,13 @@ import time
 
 import h5py
 import numpy as np
-import PIL.Image
 
 from .train import TrainTask
 import digits
 from digits import utils
 from digits.config import config_value
 from digits.utils import subclass, override, constants
-
-# Must import after importing digit.config
-import caffe_pb2
+import tensorflow as tf
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
@@ -29,6 +26,19 @@ PICKLE_VERSION = 1
 TENSORFLOW_MODEL_FILE = 'network.py'
 TENSORFLOW_SNAPSHOT_PREFIX = 'snapshot'
 TIMELINE_PREFIX = 'timeline'
+
+
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+
+def _float_array_feature(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+
 
 def subprocess_visible_devices(gpus):
     """
@@ -49,6 +59,7 @@ def subprocess_visible_devices(gpus):
         for visible_gpu in gpus:
             real_gpus.append(map_visible_to_real[visible_gpu])
     return ','.join(str(g) for g in real_gpus)
+
 
 @subclass
 class TensorflowTrainTask(TrainTask):
@@ -111,8 +122,7 @@ class TensorflowTrainTask(TrainTask):
         self.image_mean = None
         self.classifier = None
 
-    ### Task overrides
-
+    # Task overrides
     @override
     def name(self):
         return 'Train Tensorflow Model'
@@ -130,10 +140,35 @@ class TensorflowTrainTask(TrainTask):
         return True
 
     @override
+    def get_snapshot(self, epoch=-1, download=False):
+        """
+        return snapshot file for specified epoch
+        """
+        snapshot_filename = None
+
+        if len(self.snapshots) == 0:
+            return "no snapshots"
+
+        if epoch == -1 or not epoch:
+            epoch = self.snapshots[-1][1]
+            snapshot_filename = self.snapshots[-1][0]
+        else:
+            for f, e in self.snapshots:
+                if e == epoch:
+                    snapshot_filename = f
+                    break
+        if not snapshot_filename:
+            raise ValueError('Invalid epoch')
+        if download:
+            snapshot_filename = snapshot_filename + ".data-00000-of-00001"
+
+        return snapshot_filename
+
+    @override
     def task_arguments(self, resources, env):
-                
+
         args = [config_value('tensorflow')['executable'],
-                os.path.join(os.path.dirname(os.path.abspath(digits.__file__)),'tools', 'tensorflow', 'main.py'),
+                os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'tensorflow', 'main.py'),
                 '--network=%s' % self.model_file,
                 '--epoch=%d' % int(self.train_epochs),
                 '--networkDirectory=%s' % self.job_dir,
@@ -149,7 +184,7 @@ class TensorflowTrainTask(TrainTask):
 
         if self.use_mean != 'none':
             mean_file = self.dataset.get_mean_file()
-            assert mean_file != None, 'Failed to retrieve mean file.'
+            assert mean_file is not None, 'Failed to retrieve mean file.'
             args.append('--mean=%s' % self.dataset.path(mean_file))
 
         if hasattr(self.dataset, 'labels_file'):
@@ -168,7 +203,7 @@ class TensorflowTrainTask(TrainTask):
         if val_label_db_path:
             args.append('--validation_labels=%s' % val_label_db_path)
 
-        #learning rate policy input parameters
+        # learning rate policy input parameters
         if self.lr_policy['policy'] == 'fixed':
             pass
         elif self.lr_policy['policy'] == 'step':
@@ -226,7 +261,7 @@ class TensorflowTrainTask(TrainTask):
         if self.val_interval is not None:
             args.append('--validation_interval=%d' % self.val_interval)
 
-        #if self.traces_interval is not None:
+        # if self.traces_interval is not None:
         args.append('--log_runtime_stats_per_step=%d' % self.traces_interval)
 
         if 'gpus' in resources:
@@ -300,10 +335,10 @@ class TensorflowTrainTask(TrainTask):
             pattern_key_val = re.compile(r'([\w\-_]+)\ =\ ([^,^\ ]+)')
             # Now iterate through the keys and values on this line dynamically
             for (key, value) in re.findall(pattern_key_val, kvlist):
-                assert not('Inf' in value or 'NaN' in value), 'Network reported %s for %s.'  % (value, key)
+                assert not('Inf' in value or 'NaN' in value), 'Network reported %s for %s.' % (value, key)
                 value = float(value)
                 if key == 'lr':
-                    key = 'learning_rate' # Convert to special DIGITS key for learning rate
+                    key = 'learning_rate'  # Convert to special DIGITS key for learning rate
                 if stage == 'Training':
                     self.save_train_output(key, key, value)
                 elif stage == 'Validation':
@@ -367,11 +402,11 @@ class TensorflowTrainTask(TrainTask):
                 level = 'warning'
             elif level == 'ERROR':
                 level = 'error'
-            elif level == 'FAIL': #FAIL
+            elif level == 'FAIL':  # FAIL
                 level = 'critical'
             return (timestamp, level, message)
         else:
-            #self.logger.warning('Unrecognized task output "%s"' % line)
+            # self.logger.warning('Unrecognized task output "%s"' % line)
             return (None, None, None)
 
     def send_snapshot_update(self):
@@ -381,17 +416,13 @@ class TensorflowTrainTask(TrainTask):
         # TODO: move to TrainTask
         from digits.webapp import socketio
 
-        socketio.emit('task update',
-                {
-                    'task': self.html_id(),
-                    'update': 'snapshots',
-                    'data': self.snapshot_list(),
-                    },
-                namespace='/jobs',
-                room=self.job_id,
-                )
+        socketio.emit('task update', {'task': self.html_id(),
+                                      'update': 'snapshots',
+                                      'data': self.snapshot_list()},
+                      namespace='/jobs',
+                      room=self.job_id)
 
-    ### TrainTask overrides
+    # TrainTask overrides
     @override
     def after_run(self):
         if self.temp_unrecognized_output:
@@ -414,7 +445,7 @@ class TensorflowTrainTask(TrainTask):
                 if message:
                     lines.append(message)
             # return the last 20 lines
-            traceback = '\n\nLast output:\n' + '\n'.join(lines[len(lines)-20:]) if len(lines)>0 else ''
+            traceback = '\n\nLast output:\n' + '\n'.join(lines[len(lines)-20:]) if len(lines) > 0 else ''
             if self.traceback:
                 self.traceback = self.traceback + traceback
             else:
@@ -431,7 +462,7 @@ class TensorflowTrainTask(TrainTask):
             match = re.match(r'%s_(.*)\.json$' % TIMELINE_PREFIX, filename)
             if match:
                 step = int(match.group(1))
-                timeline_traces.append((os.path.join(self.job_dir, filename), step ))
+                timeline_traces.append((os.path.join(self.job_dir, filename), step))
         self.timeline_traces = sorted(timeline_traces, key=lambda tup: tup[1])
         return len(self.timeline_traces) > 0
 
@@ -441,18 +472,16 @@ class TensorflowTrainTask(TrainTask):
         snapshots = []
         for filename in os.listdir(self.job_dir):
             # find models
-            match = re.match(r'%s_(\d+)\.?(\d*)\.ckpt$' % self.snapshot_prefix, filename)
+            match = re.match(r'%s_(\d+)\.?(\d*)\.ckpt\.index$' % self.snapshot_prefix, filename)
             if match:
                 epoch = 0
+                # remove '.index' suffix from filename
+                filename = filename[:-6]
                 if match.group(2) == '':
                     epoch = int(match.group(1))
                 else:
                     epoch = float(match.group(1) + '.' + match.group(2))
-                snapshots.append( (
-                        os.path.join(self.job_dir, filename),
-                        epoch
-                        )
-                    )
+                snapshots.append((os.path.join(self.job_dir, filename), epoch))
         self.snapshots = sorted(snapshots, key=lambda tup: tup[1])
         return len(self.snapshots) > 0
 
@@ -489,20 +518,27 @@ class TensorflowTrainTask(TrainTask):
         snapshot_epoch -- which snapshot to use
         layers -- which layer activation[s] and weight[s] to visualize
         """
-        temp_image_handle, temp_image_path = tempfile.mkstemp(suffix='.png')
+        temp_image_handle, temp_image_path = tempfile.mkstemp(suffix='.tfrecords')
         os.close(temp_image_handle)
-        image = PIL.Image.fromarray(image)
-        try:
-            image.save(temp_image_path, format='png')
-        except KeyError:
-            error_message = 'Unable to save file to "%s"' % temp_image_path
-            self.logger.error(error_message)
-            raise digits.inference.errors.InferenceError(error_message)
+        if image.ndim < 3:
+            image = image[..., np.newaxis]
+        writer = tf.python_io.TFRecordWriter(temp_image_path)
+
+        image = image.astype('float')
+        record = tf.train.Example(features=tf.train.Features(feature={
+            'height': _int64_feature(image.shape[0]),
+            'width': _int64_feature(image.shape[1]),
+            'depth': _int64_feature(image.shape[2]),
+            'image_raw': _float_array_feature(image.flatten()),
+            'label': _int64_feature(0),
+            'encoding': _int64_feature(0)}))
+        writer.write(record.SerializeToString())
+        writer.close()
 
         file_to_load = self.get_snapshot(snapshot_epoch)
 
         args = [config_value('tensorflow')['executable'],
-                os.path.join(os.path.dirname(os.path.abspath(digits.__file__)),'tools', 'tensorflow', 'main.py'),
+                os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'tensorflow', 'main.py'),
                 '--inference_db=%s' % temp_image_path,
                 '--network=%s' % self.model_file,
                 '--networkDirectory=%s' % self.job_dir,
@@ -515,7 +551,7 @@ class TensorflowTrainTask(TrainTask):
 
         if self.use_mean != 'none':
             mean_file = self.dataset.get_mean_file()
-            assert mean_file != None, 'Failed to retrieve mean file.'
+            assert mean_file is not None, 'Failed to retrieve mean file.'
             args.append('--mean=%s' % self.dataset.path(mean_file))
 
         if self.use_mean == 'pixel':
@@ -528,7 +564,7 @@ class TensorflowTrainTask(TrainTask):
         if self.crop_size:
             args.append('--croplen=%d' % self.crop_size)
 
-        if layers=='all':
+        if layers == 'all':
             args.append('--visualize_inf=1')
             args.append('--save=%s' % self.job_dir)
 
@@ -547,25 +583,24 @@ class TensorflowTrainTask(TrainTask):
             # make only the selected GPU visible
             env['CUDA_VISIBLE_DEVICES'] = subprocess_visible_devices([gpu])
 
-
         p = subprocess.Popen(args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.job_dir,
-                close_fds=True,
-                env=env,
-                )
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT,
+                             cwd=self.job_dir,
+                             close_fds=True,
+                             env=env)
 
         try:
             while p.poll() is None:
                 for line in utils.nonblocking_readlines(p.stdout):
                     if self.aborted.is_set():
                         p.terminate()
-                        raise digits.inference.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                        raise digits.inference.errors.InferenceError('%s classify one task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))  # noqa
 
                     if line is not None and len(line) > 1:
                         if not self.process_test_output(line, predictions, 'one'):
-                            self.logger.warning('%s classify one task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
+                            self.logger.warning('%s classify one task unrecognized input: %s' % (
+                                self.get_framework_id(), line.strip()))
                             unrecognized_output.append(line)
                     else:
                         time.sleep(0.05)
@@ -576,7 +611,8 @@ class TensorflowTrainTask(TrainTask):
             if type(e) == digits.inference.errors.InferenceError:
                 error_message = e.__str__()
             else:
-                error_message = '%s classify one task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
+                error_message = '%s classify one task failed with error code %d \n %s' % (
+                    self.get_framework_id(), p.returncode, str(e))
             self.logger.error(error_message)
             if unrecognized_output:
                 unrecognized_output = '\n'.join(unrecognized_output)
@@ -600,7 +636,7 @@ class TensorflowTrainTask(TrainTask):
 
         visualizations = []
 
-        if layers=='all' and self.visualization_file:
+        if layers == 'all' and self.visualization_file:
             vis_db = h5py.File(self.visualization_file, 'r')
             # the HDF5 database is organized as follows:
             # <root>
@@ -611,68 +647,68 @@ class TensorflowTrainTask(TrainTask):
             #    |  |- activations
             #    |  |- weights
             #    |- 2
-            for layer_id,layer in vis_db['layers'].items():
+            for layer_id, layer in vis_db['layers'].items():
                 op_name = layer.attrs['op']
                 var_name = layer.attrs['var']
-                layer_desc = "%s\n%s" % (op_name,var_name)
+                layer_desc = "%s\n%s" % (op_name, var_name)
                 idx = int(layer_id)
                 # activations (tf: operation outputs)
                 if 'activations' in layer:
                     data = np.array(layer['activations'][...])
-                    if len(data.shape)>1 and data.shape[0]==1:
+                    if len(data.shape) > 1 and data.shape[0] == 1:
                         # skip batch dimension
                         data = data[0]
                     if len(data.shape) == 3:
                         data = data.transpose(2, 0, 1)
                     elif len(data.shape) == 4:
-                        data = data.transpose(3,2,0,1)
+                        data = data.transpose(3, 2, 0, 1)
                     vis = utils.image.get_layer_vis_square(data)
                     mean, std, hist = self.get_layer_statistics(data)
                     visualizations.append(
-                                             {
-                                                 'id':         idx,
-                                                 'name':       layer_desc,
-                                                 'vis_type':   'Activations',
-                                                 'vis': vis,
-                                                 'data_stats': {
-                                                                  'shape':      data.shape,
-                                                                  'mean':       mean,
-                                                                  'stddev':     std,
-                                                                  'histogram':  hist,
-                                                 }
-                                             }
-                                         )
+                        {
+                            'id': idx,
+                            'name': layer_desc,
+                            'vis_type': 'Activations',
+                            'vis': vis,
+                            'data_stats': {
+                                'shape': data.shape,
+                                'mean':  mean,
+                                'stddev':  std,
+                                'histogram': hist,
+                            }
+                        }
+                    )
                 # weights (tf: variables)
                 if 'weights' in layer:
                     data = np.array(layer['weights'][...])
                     if len(data.shape) == 3:
                         data = data.transpose(2, 0, 1)
                     elif len(data.shape) == 4:
-                        data = data.transpose(3,2,0,1)
+                        data = data.transpose(3, 2, 0, 1)
                     if 'MatMul' in layer_desc:
-                        vis = None # too many layers to display?
+                        vis = None  # too many layers to display?
                     else:
                         vis = utils.image.get_layer_vis_square(data)
                     mean, std, hist = self.get_layer_statistics(data)
                     parameter_count = reduce(operator.mul, data.shape, 1)
                     visualizations.append(
-                                           {
-                                               'id':          idx,
-                                               'name':        layer_desc,
-                                               'vis_type':    'Weights',
-                                               'vis':  vis,
-                                               'param_count': parameter_count,
-                                               'data_stats': {
-                                                                 'shape':      data.shape,
-                                                                 'mean':       mean,
-                                                                 'stddev':     std,
-                                                                 'histogram':  hist,
-                                               }
-                                           }
-                                         )
+                        {
+                            'id':  idx,
+                            'name': layer_desc,
+                            'vis_type': 'Weights',
+                            'vis': vis,
+                            'param_count': parameter_count,
+                            'data_stats': {
+                                'shape': data.shape,
+                                'mean': mean,
+                                'stddev': std,
+                                'histogram': hist,
+                            }
+                        }
+                    )
             # sort by layer ID
-            visualizations = sorted(visualizations,key=lambda x:x['id'])
-        return (predictions,visualizations)
+            visualizations = sorted(visualizations, key=lambda x: x['id'])
+        return (predictions, visualizations)
 
     def get_layer_statistics(self, data):
         """
@@ -688,11 +724,10 @@ class TensorflowTrainTask(TrainTask):
         std = np.std(data)
         y, x = np.histogram(data, bins=20)
         y = list(y)
-        ticks = x[[0,len(x)/2,-1]]
+        ticks = x[[0, len(x)/2, -1]]
         x = [(x[i]+x[i+1])/2.0 for i in xrange(len(x)-1)]
         ticks = list(ticks)
         return (mean, std, [y, x, ticks])
-
 
     def after_test_run(self, temp_image_path):
         try:
@@ -714,11 +749,11 @@ class TensorflowTrainTask(TrainTask):
         float_exp = '([-]?inf|nan|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
         # format of output while testing single image
-        match = re.match(r'For image \d+, predicted class \d+: \d+ \((.*?)\) %s'  % (float_exp), message)
+        match = re.match(r'For image \d+, predicted class \d+: \d+ \((.*?)\) %s' % (float_exp), message)
         if match:
             label = match.group(1)
             confidence = match.group(2)
-            assert not('inf' in confidence or 'nan' in confidence), 'Network reported %s for confidence value. Please check image and network'  % label
+            assert not('inf' in confidence or 'nan' in confidence), 'Network reported %s for confidence value. Please check image and network' % label  # noqa
             confidence = float(confidence)
             predictions.append((label, confidence))
             return True
@@ -747,9 +782,10 @@ class TensorflowTrainTask(TrainTask):
             return True
 
         if level in ['error', 'critical']:
-            raise digits.inference.errors.InferenceError('%s classify %s task failed with error message - %s' % (self.get_framework_id(), test_category, message))
+            raise digits.inference.errors.InferenceError('%s classify %s task failed with error message - %s' % (
+                self.get_framework_id(), test_category, message))
 
-        return False # control should never reach this line.
+        return False  # control should never reach this line.
 
     @override
     def infer_many(self, data, snapshot_epoch=None, gpu=None, resize=True):
@@ -776,30 +812,34 @@ class TensorflowTrainTask(TrainTask):
 
         # create a temporary folder to store images and a temporary file
         # to store a list of paths to the images
-        temp_dir_path = tempfile.mkdtemp()
-        try: # this try...finally clause is used to clean up the temp directory in any case
-            temp_imglist_handle, temp_imglist_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.txt')
-            for image in images:
-                temp_image_handle, temp_image_path = tempfile.mkstemp(
-                        dir=temp_dir_path, suffix='.png')
-                image = PIL.Image.fromarray(image)
-                try:
-                    image.save(temp_image_path, format='png')
-                except KeyError:
-                    error_message = 'Unable to save file to "%s"' % temp_image_path
-                    self.logger.error(error_message)
-                    raise digits.inference.errors.InferenceError(error_message)
-                os.write(temp_imglist_handle, "%s\n" % temp_image_path)
-                os.close(temp_image_handle)
-            os.close(temp_imglist_handle)
+        temp_dir_path = tempfile.mkdtemp(suffix='.tfrecords')
+        try:  # this try...finally clause is used to clean up the temp directory in any case
+            with open(os.path.join(temp_dir_path, 'list.txt'), 'w') as imglist_file:
+                for image in images:
+                    if image.ndim < 3:
+                        image = image[..., np.newaxis]
+                    image = image.astype('float')
+                    temp_image_handle, temp_image_path = tempfile.mkstemp(dir=temp_dir_path, suffix='.tfrecords')
+                    writer = tf.python_io.TFRecordWriter(temp_image_path)
+                    record = tf.train.Example(features=tf.train.Features(feature={
+                        'height': _int64_feature(image.shape[0]),
+                        'width': _int64_feature(image.shape[1]),
+                        'depth': _int64_feature(image.shape[2]),
+                        'image_raw': _float_array_feature(image.flatten()),
+                        'label': _int64_feature(0),
+                        'encoding': _int64_feature(0)}))
+                    writer.write(record.SerializeToString())
+                    writer.close()
+                    imglist_file.write("%s\n" % temp_image_path)
+                    os.close(temp_image_handle)
 
             file_to_load = self.get_snapshot(snapshot_epoch)
 
             args = [config_value('tensorflow')['executable'],
-                    os.path.join(os.path.dirname(os.path.abspath(digits.__file__)),'tools', 'tensorflow', 'main.py'),
+                    os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'tensorflow', 'main.py'),
                     '--testMany=1',
-                    '--allPredictions=1',   #all predictions are grabbed and formatted as required by DIGITS
-                    '--inference_db=%s' % str(temp_imglist_path),
+                    '--allPredictions=1',  # all predictions are grabbed and formatted as required by DIGITS
+                    '--inference_db=%s' % str(temp_dir_path),
                     '--network=%s' % self.model_file,
                     '--networkDirectory=%s' % self.job_dir,
                     '--weights=%s' % file_to_load,
@@ -810,7 +850,7 @@ class TensorflowTrainTask(TrainTask):
 
             if self.use_mean != 'none':
                 mean_file = self.dataset.get_mean_file()
-                assert mean_file != None, 'Failed to retrieve mean file.'
+                assert mean_file is not None, 'Failed to retrieve mean file.'
                 args.append('--mean=%s' % self.dataset.path(mean_file))
 
             if self.use_mean == 'pixel':
@@ -835,23 +875,25 @@ class TensorflowTrainTask(TrainTask):
             unrecognized_output = []
             predictions = []
             p = subprocess.Popen(args,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    cwd=self.job_dir,
-                    close_fds=True,
-                    env=env
-                    )
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 cwd=self.job_dir,
+                                 close_fds=True,
+                                 env=env)
 
             try:
                 while p.poll() is None:
                     for line in utils.nonblocking_readlines(p.stdout):
                         if self.aborted.is_set():
                             p.terminate()
-                            raise digits.inference.errors.InferenceError('%s classify many task got aborted. error code - %d' % (self.get_framework_id(), p.returncode))
+                            raise digits.inference.errors.InferenceError('%s classify many task got aborted.'
+                                                                         'error code - %d' % (self.get_framework_id(),
+                                                                                              p.returncode))
 
                         if line is not None and len(line) > 1:
                             if not self.process_test_output(line, predictions, 'many'):
-                                self.logger.warning('%s classify many task unrecognized input: %s' % (self.get_framework_id(), line.strip()))
+                                self.logger.warning('%s classify many task unrecognized input: %s' % (
+                                    self.get_framework_id(), line.strip()))
                                 unrecognized_output.append(line)
                         else:
                             time.sleep(0.05)
@@ -862,7 +904,8 @@ class TensorflowTrainTask(TrainTask):
                 if type(e) == digits.inference.errors.InferenceError:
                     error_message = e.__str__()
                 else:
-                    error_message = '%s classify many task failed with error code %d \n %s' % (self.get_framework_id(), p.returncode, str(e))
+                    error_message = '%s classify many task failed with error code %d \n %s' % (
+                        self.get_framework_id(), p.returncode, str(e))
                 self.logger.error(error_message)
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
@@ -870,7 +913,8 @@ class TensorflowTrainTask(TrainTask):
                 raise digits.inference.errors.InferenceError(error_message)
 
             if p.returncode != 0:
-                error_message = '%s classify many task failed with error code %d' % (self.get_framework_id(), p.returncode)
+                error_message = '%s classify many task failed with error code %d' % (self.get_framework_id(),
+                                                                                     p.returncode)
                 self.logger.error(error_message)
                 if unrecognized_output:
                     unrecognized_output = '\n'.join(unrecognized_output)
@@ -895,21 +939,19 @@ class TensorflowTrainTask(TrainTask):
         """
         return paths to model files
         """
-        return {
-                "Network": self.model_file
-                }
+        return {"Network": self.model_file}
 
     @override
     def get_network_desc(self):
         """
         return text description of network
         """
-        with open (os.path.join(self.job_dir,TENSORFLOW_MODEL_FILE), "r") as infile:
+        with open(os.path.join(self.job_dir, TENSORFLOW_MODEL_FILE), "r") as infile:
             desc = infile.read()
         return desc
 
     @override
-    def get_task_stats(self,epoch=-1):
+    def get_task_stats(self, epoch=-1):
         """
         return a dictionary of task statistics
         """
@@ -924,13 +966,13 @@ class TensorflowTrainTask(TrainTask):
             "framework": "tensorflow"
         }
 
-        if hasattr(self,"digits_version"):
+        if hasattr(self, "digits_version"):
             stats.update({"digits version": self.digits_version})
 
-        if hasattr(self.dataset,"resize_mode"):
+        if hasattr(self.dataset, "resize_mode"):
             stats.update({"image resize mode": self.dataset.resize_mode})
 
-        if hasattr(self.dataset,"labels_file"):
+        if hasattr(self.dataset, "labels_file"):
             stats.update({"labels file": self.dataset.labels_file})
 
         return stats
