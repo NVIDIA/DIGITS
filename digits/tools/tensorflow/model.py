@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import logging
 import tensorflow as tf
+import traceback
 from tensorflow.python.framework import ops
 
 # Local imports
@@ -70,7 +71,8 @@ class Model(object):
     """
     @TODO(tzaman)
     """
-    def __init__(self, stage, croplen, nclasses, optimization=None, momentum=None):
+    def __init__(self, stage, croplen, nclasses, optimization=None, momentum=None, reuse_variable=False):
+        print("Create Model called by: " + str(traceback.print_stack()))
         self.stage = stage
         self.croplen = croplen
         self.nclasses = nclasses
@@ -83,12 +85,13 @@ class Model(object):
         self.summaries = []
         self.towers = []
         self._train = None
+        self._reuse = reuse_variable
 
         # Touch to initialize
-        if optimization:
-            self.learning_rate
-            self.global_step
-            self.optimizer
+        # if optimization:
+        #     self.learning_rate
+        #     self.global_step
+        #     self.optimizer
 
     def create_dataloader(self, db_path):
         self.dataloader = tf_data.LoaderFactory.set_source(db_path, is_inference=(self.stage == digits.STAGE_INF))
@@ -147,35 +150,39 @@ class Model(object):
                                                      x=batch_x_split[dev_i],
                                                      y=None)
 
-                    with tf.variable_scope(digits.GraphKeys.MODEL, reuse=dev_i > 0):
+                    with tf.variable_scope(digits.GraphKeys.MODEL, reuse=dev_i > 0 or self._reuse):
+                        print("Reuse is: " + str(tf.get_variable_scope().reuse))
+                        print("Device is: " + str(dev_name))
+                        print("Self is: " + str(self))
+                        print("Inferencing is called by: " + str(traceback.print_stack()))
                         tower_model.inference  # touch to initialize
 
-                    if self.stage == digits.STAGE_INF:
-                        # For inferencing we will only use the inference part of the graph
-                        continue
+                        # Reuse the variables in this scope for the next tower/device
+                        tf.get_variable_scope().reuse_variables()
 
-                    with tf.name_scope(digits.GraphKeys.LOSS):
-                        for loss in self.get_tower_losses(tower_model):
-                            tf.add_to_collection(digits.GraphKeys.LOSSES, loss['loss'])
+                        if self.stage == digits.STAGE_INF:
+                            # For inferencing we will only use the inference part of the graph
+                            continue
 
-                        # Assemble all made within this scope so far. The user can add custom
-                        # losses to the digits.GraphKeys.LOSSES collection
-                        losses = tf.get_collection(digits.GraphKeys.LOSSES, scope=scope_tower)
-                        losses += ops.get_collection(ops.GraphKeys.REGULARIZATION_LOSSES, scope=None)
-                        tower_loss = tf.add_n(losses, name='loss')
+                        with tf.name_scope(digits.GraphKeys.LOSS):
+                            for loss in self.get_tower_losses(tower_model):
+                                tf.add_to_collection(digits.GraphKeys.LOSSES, loss['loss'])
 
-                        self.summaries.append(tf.summary.scalar(tower_loss.op.name, tower_loss))
+                            # Assemble all made within this scope so far. The user can add custom
+                            # losses to the digits.GraphKeys.LOSSES collection
+                            losses = tf.get_collection(digits.GraphKeys.LOSSES, scope=scope_tower)
+                            losses += ops.get_collection(ops.GraphKeys.REGULARIZATION_LOSSES, scope=None)
+                            tower_loss = tf.add_n(losses, name='loss')
 
-                    # Reuse the variables in this scope for the next tower/device
-                    tf.get_variable_scope().reuse_variables()
+                            self.summaries.append(tf.summary.scalar(tower_loss.op.name, tower_loss))
 
-                    if self.stage == digits.STAGE_TRAIN:
-                        grad_tower_losses = []
-                        for loss in self.get_tower_losses(tower_model):
-                            grad_tower_loss = self.optimizer.compute_gradients(loss['loss'], loss['vars'])
-                            grad_tower_loss = tower_model.gradientUpdate(grad_tower_loss)
-                            grad_tower_losses.append(grad_tower_loss)
-                        grad_towers.append(grad_tower_losses)
+                        if self.stage == digits.STAGE_TRAIN:
+                            grad_tower_losses = []
+                            for loss in self.get_tower_losses(tower_model):
+                                grad_tower_loss = self.optimizer.compute_gradients(loss['loss'], loss['vars'])
+                                grad_tower_loss = tower_model.gradientUpdate(grad_tower_loss)
+                                grad_tower_losses.append(grad_tower_loss)
+                            grad_towers.append(grad_tower_losses)
 
         # Assemble and average the gradients from all towers
         if self.stage == digits.STAGE_TRAIN:
