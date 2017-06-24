@@ -97,6 +97,7 @@ addons:
             - libhdf5-serial-dev
             - libleveldb-dev
             - liblmdb-dev
+            - libopenblas-dev
             - libopencv-dev
             - libprotobuf-dev
             - libsnappy-dev
@@ -130,7 +131,6 @@ before_install:
 install:
     - mkdir -p ~/.config/matplotlib
     - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
-    - ./scripts/travis/install-openblas.sh $OPENBLAS_ROOT
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
     - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
     - pip install -r ./requirements.txt --force-reinstall
