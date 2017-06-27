@@ -128,21 +128,23 @@ class DrawWindow(BufferedWindow):
                 img_count = data.shape[0]
                 height = data.shape[1]
                 width = data.shape[2]
-                channels = data.shape[3]
 
                 grid_size = int(np.sqrt(img_count))
 
                 size = (grid_size * width, grid_size * height)
+
                 if True:  # self.size != size:
                     self.size = size
                     self.SetSize(size)
 
                 image = wx.EmptyImage(width, height)
+
                 for i in xrange(img_count):
                     x = width * (i // grid_size)
                     y = height * (i % grid_size)
                     s = data[i].tostring()
                     image.SetData(s)
+
                     wxBitmap = image.ConvertToBitmap()
                     dc.DrawBitmap(wxBitmap, x=x, y=y)
 
@@ -185,6 +187,7 @@ class TestFrame(wx.Frame):
         self.speed_slider = wx.Slider(panel, -1, value=5, minValue=0, maxValue=10, pos=wx.DefaultPosition,
                                       size=(self.SLIDER_WIDTH, -1),
                                       style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
+
         slider_text = wx.StaticText(panel, label='Speed')
         vbox.Add(slider_text, 0, wx.ALIGN_CENTRE)
         vbox.Add(self.speed_slider, 0, wx.ALIGN_CENTRE)
@@ -195,6 +198,7 @@ class TestFrame(wx.Frame):
             slider = wx.Slider(panel, -1, value=0, minValue=-100, maxValue=100, pos=wx.DefaultPosition,
                                size=(self.SLIDER_WIDTH, -1),
                                style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
+
             vbox.Add(slider_text, 0, wx.ALIGN_CENTRE)
             vbox.Add(slider, 0, wx.ALIGN_CENTRE)
             self.attribute_sliders.append(slider)

@@ -39,4 +39,3 @@ make --jobs="$(nproc)"
 # mark cache
 WEEK=$(date +%Y-%W)
 echo "$WEEK" > "${INSTALL_DIR}/cache-version.txt"
-echo "install-caffe.sh finished"

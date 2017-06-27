@@ -307,6 +307,7 @@ class UserModel(Tower):
         # rescale to [0,1] range
         x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim],
                                 name='x_reshaped')
+
         self.images = x_reshaped / 255.
 
         # one-hot encode y - shape: [N] -> [N, self.y_dim]

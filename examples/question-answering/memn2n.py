@@ -126,9 +126,10 @@ class UserModel(Tower):
             s = tf.shape(t)[1]
             z = tf.zeros(tf.pack([1, s]))
             return tf.concat(0, [z, tf.slice(t, [1, 0], [-1, -1])], name=name)
+
         max_grad_norm = 40.0
         grads_and_vars = [(tf.clip_by_norm(g, max_grad_norm), v) for g, v in grads_and_vars]
-        grads_and_vars = [(add_gradient_noise(g), v) for g, v in grads_and_vars]
+        grads_and_vars = [(add_gradient_noise(g), v) for g, v in 
         nil_grads_and_vars = []
         for g, v in grads_and_vars:
             if v.name in self._nil_vars:

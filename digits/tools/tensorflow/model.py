@@ -56,6 +56,7 @@ def average_gradients(tower_grads):
             # Average over the 'tower' dimension.
             grads_transformed = tf.concat(grads, 0)
             grads_transformed = tf.reduce_mean(grads_transformed, 0)
+
             # Keep in mind that the Variables are redundant because they are shared
             # across towers. So .. we will just return the first tower's pointer to
             # the Variable.
@@ -303,7 +304,6 @@ class Tower(object):
         self.x = x
         self.y = y
         self.train = None
-
 
     def gradientUpdate(self, grad):
         return grad

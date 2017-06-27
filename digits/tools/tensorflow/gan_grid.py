@@ -385,16 +385,6 @@ def Inference(sess, model):
                          model.attribute_placeholder: z}
             preds = sess.run(fetches=inference_op, feed_dict=feed_dict)
 
-            if FLAGS.visualize_inf:
-                save_weight_visualization(weight_vars, activation_ops, w, a)
-
-            # @TODO(tzaman): error on no output?
-            # for i in range(len(keys)):
-            #     for j in range(len(preds)):
-            #     We're allowing multiple predictions per image here. DIGITS doesnt support that iirc
-            #     logging.info('Predictions for image ' + str(model.dataloader.get_key_index(keys[i])) +
-            #                  ': ' + json.dumps(preds[i].tolist()))
-            # logging.info('Predictions shape: %s' % str(preds.shape))
             app.DisplayCell(preds)
 
             t += 1e-5 * app.GetSpeed() * FLAGS.batch_size

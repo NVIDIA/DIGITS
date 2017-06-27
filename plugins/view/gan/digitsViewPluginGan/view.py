@@ -198,7 +198,7 @@ class Visualization(VisualizationInterface):
                     self.animated_images[idx] = data.astype('uint8')
                     print("set idx %d " % idx)
             else:
-                raise ValueEror("Unhandled image size: %d" % img_size)
+                raise ValueError("Unhandled image size: %d" % img_size)
 
             return {'image': image_html,
                     'col_id': col_id,
