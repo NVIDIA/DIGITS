@@ -1,3 +1,7 @@
+# The auxillary branches as spcified in the original googlenet V1 model do exist in this implementation of
+# googlenet but it is not used. To use it, be sure to check self.is_training to ensure that it is only used
+# during training.
+
 class UserModel(Tower):
 
     all_inception_settings = {
@@ -76,10 +80,7 @@ class UserModel(Tower):
         fc_weight, fc_bias = self.create_fc_vars([1024, self.nclasses], 'fc')
         model = self.fully_connect(model, fc_weight, fc_bias)
 
-        if self.is_training:
-            return tf.add(tf.add(aux_branch_1, aux_branch_2), model)
-        else:
-            return model
+        return model
 
     @model_property
     def loss(self):
@@ -146,6 +147,8 @@ class UserModel(Tower):
         aux_classifier = self.fully_connect(aux_classifier, fc_weight, fc_bias)
 
         aux_classifier = tf.nn.dropout(aux_classifier, 0.7)
+
+        # aux_classifier = tf.nn.softmax(aux_classifier)
 
         return aux_classifier
 
