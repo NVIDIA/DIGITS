@@ -220,7 +220,7 @@ class Model(object):
         tower = obj_tower(x, y, input_shape, self.nclasses, is_training, is_inference)
         self.towers.append(tower)
         return tower
-            
+
     @model_property
     def train(self):
         return self._train
