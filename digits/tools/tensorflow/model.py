@@ -14,7 +14,6 @@ from __future__ import print_function
 
 import logging
 import tensorflow as tf
-import traceback
 from tensorflow.python.framework import ops
 
 # Local imports
