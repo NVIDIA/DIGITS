@@ -14,7 +14,6 @@ from __future__ import print_function
 
 import logging
 import tensorflow as tf
-import traceback
 from tensorflow.python.framework import ops
 
 # Local imports
@@ -72,7 +71,6 @@ class Model(object):
     @TODO(tzaman)
     """
     def __init__(self, stage, croplen, nclasses, optimization=None, momentum=None, reuse_variable=False):
-        print("Create Model called by: " + str(traceback.print_stack()))
         self.stage = stage
         self.croplen = croplen
         self.nclasses = nclasses
@@ -151,10 +149,6 @@ class Model(object):
                                                      y=None)
 
                     with tf.variable_scope(digits.GraphKeys.MODEL, reuse=dev_i > 0 or self._reuse):
-                        print("Reuse is: " + str(tf.get_variable_scope().reuse))
-                        print("Device is: " + str(dev_name))
-                        print("Self is: " + str(self))
-                        print("Inferencing is called by: " + str(traceback.print_stack()))
                         tower_model.inference  # touch to initialize
 
                         # Reuse the variables in this scope for the next tower/device
