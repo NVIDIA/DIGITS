@@ -307,12 +307,12 @@ class UserModel(Tower):
             # we are using the cross entropy loss for all these losses
             # note the use of the soft label smoothing here to prevent D from getting overly confident
             # on real samples
-            d_real = tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits,
-                                                             tf.ones_like(self.D) - self.soft_label_margin,
+            d_real = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits,
+                                                             labels=(tf.ones_like(self.D) - self.soft_label_margin),
                                                              name="loss_D_real")
             self.d_loss_real = tf.reduce_mean(d_real)
-            d_fake = tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_,
-                                                             tf.zeros_like(self.D_),
+            d_fake = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_,
+                                                             labels=(tf.zeros_like(self.D_)),
                                                              name="loss_D_fake")
             self.d_loss_fake = tf.reduce_mean(d_fake)
             self.d_loss = (self.d_loss_real + self.d_loss_fake) / 2.
@@ -320,8 +320,8 @@ class UserModel(Tower):
             # its own error and G is trying to maximize D's error however note how we are flipping G labels here:
             # instead of maximizing D's error, we are minimizing D's error on the 'wrong' label
             # this trick helps produce a stronger gradient
-            g_loss = tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_,
-                                                             tf.ones_like(self.D_) + self.soft_label_margin,
+            g_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_,
+                                                             labels=(tf.ones_like(self.D_) + self.soft_label_margin),
                                                              name="loss_G")
             self.g_loss = tf.reduce_mean(g_loss)
 

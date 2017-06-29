@@ -148,8 +148,6 @@ class UserModel(Tower):
 
         aux_classifier = tf.nn.dropout(aux_classifier, 0.7)
 
-        # aux_classifier = tf.nn.softmax(aux_classifier)
-
         return aux_classifier
 
     def conv_layer_with_relu(self, model, weights, biases, stride_size, padding='SAME'):
