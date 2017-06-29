@@ -21,8 +21,7 @@ class ConfigForm(Form):
         else:
             # make sure the filesystem path exists
             if not os.path.exists(field.data) and not os.path.isdir(field.data):
-                raise wtforms.validators.ValidationError(
-                    'File does not exist or is not reachable')
+                raise wtforms.validators.ValidationError('File does not exist or is not reachable')
             else:
                 return True
 

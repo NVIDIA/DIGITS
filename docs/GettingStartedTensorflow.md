@@ -10,7 +10,7 @@ Table of Contents
     * [Tensors](#tensors)
 * [Other TensorFlow Tools in DIGITS](#other-tensorflow-tools-in-digits)
     * [Provided Helpful Functions](#provided-helpful-functions)
-    * [Visualization With TensorBoard](visualization-with-tensorboard)
+    * [Visualization With TensorBoard](#visualization-with-tensorboard)
 * [Examples](#examples)
     * [Simple Auto-Encoder Network](#simple-auto-encoder-network)
     * [Freezing Variables in Pre-Trained Models by Renaming](#freezing-variables-in-pre-trained-models-by-renaming)
@@ -131,11 +131,26 @@ Function Name       | Parameters          | Description
 
 ![TensorBoard](images/TensorBoard.png)
 
-TensorBoard is a visualization tools provided by TensorFlow to see the graph of your neural network. DIGITS provides easy access to TensorBoard for your network while creating it. The TensorBoard can be accessed by clicking on the ```Visualize``` button under ```Custom Network``` as seen in the image below.
+TensorBoard is a visualization tools provided by TensorFlow to see the graph of your neural network. DIGITS provides easy access to TensorBoard network visualization for your network while creating it. This can be accessed by clicking on the ```Visualize``` button under ```Custom Network``` as seen in the image below.
 
 ![Visualize TensorBoard](images/visualize_button.png)
 
 If there is something wrong with the network model, DIGITS will automatically provide with you the stacktrace and the error message to help you understand where the problem is.
+
+You can also spin up the full Tensorboard server while your model is training with the command
+```
+$ tensorboard --logdir <job_dir>/tb/
+```
+where `<job_dir>` is the directory where them model is being trained at, which can be found here:
+
+![Job Dir](images/job-dir.png)
+
+Afterwards, you can open up the Tensorboard page by going to
+```http://localhost:6006```
+
+Or you can click the ```Tensorboard``` link under Visualization
+
+![Visualize Button](images/visualize-btn.png)
 
 To know more about how TensorBoard works, its official documentation is availabile in the [official tensorflow documentaton](https://www.tensorflow.org/get_started/summaries_and_tensorboard)
 

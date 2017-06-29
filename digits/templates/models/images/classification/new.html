@@ -624,9 +624,35 @@ function process_tf_vis(data){
     return the_data;
 }
 
+//copied from https://stackoverflow.com/questions/4565112/javascript-how-to-find-out-if-the-user-browser-is-chrome/13348618#13348618
+function isChrome() {
+    var isChromium = window.chrome,
+    winNav = window.navigator,
+    vendorName = winNav.vendor,
+    isOpera = winNav.userAgent.indexOf("OPR") > -1,
+    isIEedge = winNav.userAgent.indexOf("Edge") > -1,
+    isIOSChrome = winNav.userAgent.match("CriOS");
+
+    if(isIOSChrome){
+        return true;
+    } else if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc." && isOpera == false && isIEedge == false) {
+        return true;
+    } else { 
+        return false;
+    }
+}
+
 function visualizeNetwork() {
     var framework = $('#framework').val();
     var is_tf = framework.includes("ensorflow") // @TODO(tzaman) - dirty
+
+    if (is_tf) {
+        if (!isChrome()) {
+            bootbox.alert({title: "Visualization Error", message: "Tensorflow network visualization is only available for Google Chrome"});
+            return;
+        }
+    }
+
     var num_sel_gpus = 0
     var sel_gpus = $("#select_gpus").val()
     if (sel_gpus) {
