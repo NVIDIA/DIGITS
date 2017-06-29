@@ -216,7 +216,7 @@ class UserModel(Tower):
                         y_dim=10,
                         output_size=28,
                         c_dim=1)
-        
+
     @model_property
     def inference(self):
         """ op to use for inference """
@@ -385,7 +385,7 @@ class UserModel(Tower):
 
             h3 = linear(h2, self.z_dim, 'd_h3_lin_retrain')
             return h3, h3
-          
+
     def generator(self, z, y=None):
         """
         Create the generator

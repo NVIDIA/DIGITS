@@ -146,7 +146,6 @@ class DrawWindow(BufferedWindow):
                     image.SetData(s)
 
                     wxBitmap = image.ConvertToBitmap()
-
                     dc.DrawBitmap(wxBitmap, x=x, y=y)
 
 
@@ -163,7 +162,6 @@ class TestFrame(wx.Frame):
                           style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         # Set up the MenuBar
-
         MenuBar = wx.MenuBar()
 
         file_menu = wx.Menu()
@@ -189,7 +187,6 @@ class TestFrame(wx.Frame):
         self.speed_slider = wx.Slider(panel, -1, value=5, minValue=0, maxValue=10, pos=wx.DefaultPosition,
                                       size=(self.SLIDER_WIDTH, -1),
                                       style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
-
         slider_text = wx.StaticText(panel, label='Speed')
         vbox.Add(slider_text, 0, wx.ALIGN_CENTRE)
         vbox.Add(self.speed_slider, 0, wx.ALIGN_CENTRE)
@@ -200,7 +197,6 @@ class TestFrame(wx.Frame):
             slider = wx.Slider(panel, -1, value=0, minValue=-100, maxValue=100, pos=wx.DefaultPosition,
                                size=(self.SLIDER_WIDTH, -1),
                                style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS)
-
             vbox.Add(slider_text, 0, wx.ALIGN_CENTRE)
             vbox.Add(slider, 0, wx.ALIGN_CENTRE)
             self.attribute_sliders.append(slider)

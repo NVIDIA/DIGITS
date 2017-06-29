@@ -77,7 +77,9 @@ Set the base learning rate to `0.001`.
 ### Using Tensorflow
 
 Select the `Custom netowrk` tab then click `Tensorflow`,
+
 In the text area, copy/paste the contents of this [Tensorflow model](binary_segmentation-TF.py).
+
 Set the base learning rate to `1e-5`
 
 ### Some words on the model

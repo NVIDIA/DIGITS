@@ -14,6 +14,7 @@ from tensorflow.contrib.tensorboard.plugins import projector
 TB_DIR = os.path.join(os.getcwd(), "gan-tb")
 SPRITE_IMAGE_FILENAME = os.path.join(TB_DIR, "sprite.png")
 
+
 def save_tb_embeddings(embeddings_filename):
     f = open(embeddings_filename, 'rb')
     embeddings = pickle.load(f)
@@ -47,6 +48,7 @@ def save_tb_embeddings(embeddings_filename):
         sess.run(embedding_var.initializer)
         saver = tf.train.Saver([embedding_var])
         saver.save(sess, os.path.join(TB_DIR, 'model.ckpt'))
+
 
 def save_sprite_image(images):
     n_embeddings = images.shape[0]

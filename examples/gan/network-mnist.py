@@ -42,7 +42,7 @@ class batch_norm(object):
             self.epsilon = epsilon
             self.momentum = momentum
             self.name = name
-            
+
     def __call__(self, x, train=True):
         """
         Functional interface
@@ -457,6 +457,7 @@ class UserModel(Tower):
             h1 = tf.reshape(h1, [self.batch_size, s4, s4, self.gf_dim * 2])
 
             h1 = conv_cond_concat(h1, yb)
+
             h2 = tf.nn.relu(self.g_bn2(deconv2d(h1, [self.batch_size, s2, s2, self.gf_dim * 2], name='g_h2'),
                                        train=self.is_training))
             h2 = conv_cond_concat(h2, yb)

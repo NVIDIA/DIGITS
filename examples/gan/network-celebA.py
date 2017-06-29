@@ -199,6 +199,7 @@ class UserModel(Tower):
                         output_size=output_size,
                         c_dim=c_dim,
                         z_dim=z_dim)
+
     @model_property
     def inference(self):
         """op to use for inference"""

@@ -29,8 +29,8 @@ cd "$INSTALL_DIR"
 
 # Redirect build output to a log and only show it if an error occurs
 # Otherwise there is too much output for TravisCI to display properly
-LOG_FILE="$LOCAL_DIR/torch-install.log"
-./install.sh -b >"$LOG_FILE" 2>&1 || (cat "$LOG_FILE" && false)
+LOG_FILE=$LOCAL_DIR/torch-install.log
+{ ./install-deps && ./install.sh -b ; } >$LOG_FILE 2>&1 || (cat $LOG_FILE && false)
 
 # install custom packages
 "${INSTALL_DIR}/install/bin/luarocks" install tds
