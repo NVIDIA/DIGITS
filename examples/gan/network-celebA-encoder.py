@@ -209,7 +209,7 @@ class UserModel(Tower):
         images_flat = tf.reshape(images, [self.batch_size, self.image_size * self.image_size * self.c_dim])
         # concatenate encoded z and generated image into a single flat structure
         zgen_flat = tf.reshape(self.DzGEN, [self.batch_size, self.z_dim])
-        return tf.concat(1, [zgen_flat, images_flat])
+        return tf.concat([zgen_flat, images_flat], 1)
 
     @model_property
     def loss(self):

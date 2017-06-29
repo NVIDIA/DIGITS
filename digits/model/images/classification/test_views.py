@@ -174,6 +174,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
     AUG_HSV_H = None
     AUG_HSV_S = None
     AUG_HSV_V = None
+    OPTIMIZER = None
 
     @classmethod
     def setUpClass(cls):
@@ -242,6 +243,8 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             data['aug_hsv_s'] = cls.AUG_HSV_S
         if cls.AUG_HSV_V is not None:
             data['aug_hsv_v'] = cls.AUG_HSV_V
+        if cls.OPTIMIZER is not None:
+            data['solver_type'] = cls.OPTIMIZER
 
         data.update(kwargs)
 
@@ -1158,6 +1161,10 @@ class TestCaffeLeNet(BaseTestCreated, test_utils.CaffeMixin):
     ).read()
 
 
+class TestCaffeLeNetADAMOptimizer(TestCaffeLeNet):
+    OPTIMIZER = 'ADAM'
+
+
 class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.TorchMixin):
     pass
 
@@ -1194,6 +1201,10 @@ class TestTorchLeNet(BaseTestCreated, test_utils.TorchMixin):
         # perform inference on a CuDNN-trained model without non-trivial
         # model tweaking
         raise unittest.SkipTest('Torch CPU inference on CuDNN-trained model not supported')
+
+
+class TestTorchLeNetADAMOptimizer(TestTorchLeNet):
+    OPTIMIZER = 'ADAM'
 
 
 class TestTorchLeNetHdf5Shuffle(TestTorchLeNet):
@@ -1364,6 +1375,10 @@ class TestTensorflowLeNet(BaseTestCreated, test_utils.TensorflowMixin):
                                            'standard-networks',
                                            'tensorflow',
                                            'lenet.py')).read()
+
+
+class TestTensorflowLeNetADAMOptimizer(TestTensorflowLeNet):
+    OPTIMIZER = 'ADAM'
 
 
 class TestTensorflowLeNetSlim(BaseTestCreated, test_utils.TensorflowMixin):
