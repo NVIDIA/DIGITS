@@ -1161,6 +1161,10 @@ class TestCaffeLeNet(BaseTestCreated, test_utils.CaffeMixin):
     ).read()
 
 
+class TestCaffeLeNetADAMOptimizer(TestCaffeLeNet):
+    OPTIMIZER = 'ADAM'
+
+
 class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.TorchMixin):
     pass
 
@@ -1197,6 +1201,11 @@ class TestTorchLeNet(BaseTestCreated, test_utils.TorchMixin):
         # perform inference on a CuDNN-trained model without non-trivial
         # model tweaking
         raise unittest.SkipTest('Torch CPU inference on CuDNN-trained model not supported')
+
+
+# test disabled because it requires tuning to get a passing result
+# class TestTorchLeNetADAMOptimizer(TestTorchLeNet):
+#     OPTIMIZER = 'ADAM'
 
 
 class TestTorchLeNetHdf5Shuffle(TestTorchLeNet):
