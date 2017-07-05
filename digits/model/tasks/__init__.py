@@ -10,3 +10,9 @@ __all__ = [
     'TorchTrainTask',
     'TrainTask',
 ]
+
+from digits.config import config_value  # noqa
+
+if config_value('tensorflow')['enabled']:
+    from .tensorflow_train import TensorflowTrainTask  # noqa
+    __all__.append('TensorflowTrainTask')

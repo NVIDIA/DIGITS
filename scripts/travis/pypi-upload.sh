@@ -15,3 +15,5 @@ username = luke.yeager
 password = ${PYPI_PASSWORD}
 EOF
 twine upload -r pypi dist/*
+
+echo "pypi-upload.sh finished"

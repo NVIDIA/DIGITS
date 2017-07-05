@@ -5,9 +5,9 @@ set -e
 
 echo "=== Checking for Python lint ..."
 if which flake8 >/dev/null 2>&1; then
-    python2 `which flake8` .
+    python2 `which flake8` --exclude ./examples,./digits/standard-networks/tensorflow,./digits/jobs .
 else
-    python2 -m flake8 .
+    python2 -m flake8 --exclude ./examples,./digits/standard-networks/tensorflow,./digits/jobs .
 fi
 
 echo "=== Checking for JavaScript lint ..."

@@ -43,6 +43,7 @@ class Job(StatusCls):
                 if isinstance(task, TrainTask):
                     # can't call this until the job_dir is set
                     task.detect_snapshots()
+                    task.detect_timeline_traces()
             return job
 
     def __init__(self, name, username, group='', persistent=True):

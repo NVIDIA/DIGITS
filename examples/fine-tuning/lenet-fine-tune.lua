@@ -13,17 +13,17 @@ return function(params)
     end
 
     if pcall(function() require('cudnn') end) then
-       print('Using CuDNN backend')
+       --print('Using CuDNN backend')
        backend = cudnn
        convLayer = cudnn.SpatialConvolution
        convLayerName = 'cudnn.SpatialConvolution'
     else
        print('Failed to load cudnn backend (is libcudnn.so in your library path?)')
        if pcall(function() require('cunn') end) then
-           print('Falling back to legacy cunn backend')
+           --print('Falling back to legacy cunn backend')
        else
-           print('Failed to load cunn backend (is CUDA installed?)')
-           print('Falling back to legacy nn backend')
+           --print('Failed to load cunn backend (is CUDA installed?)')
+           --print('Falling back to legacy nn backend')
        end
        backend = nn -- works with cunn or nn
        convLayer = nn.SpatialConvolutionMM

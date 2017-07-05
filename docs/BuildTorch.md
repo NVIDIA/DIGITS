@@ -16,7 +16,7 @@ Install some dependencies with Deb packages:
 sudo apt-get install --no-install-recommends git software-properties-common
 ```
 
-## Basic install
+## Basic Installation
 
 These instructions are based on [the official Torch instructions](http://torch.ch/docs/getting-started.html).
 ```sh

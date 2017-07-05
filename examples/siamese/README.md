@@ -92,6 +92,10 @@ Finally, the `nn.CosineEmbeddingCriterion` criterion is used. Similar to Caffe's
 pull apart images from different classes. However, since the `Cosine` distance is used, the model will learn to minimize the *angle* between features that are extracted from images of the same class
 and conversely will maximize the angle between features extracted from images from different classes. See below for a visual illustration of the impact this difference has on extracted features.
 
+## Using Tensorflow
+
+Under the `Custom Network` tab, select `Tensorflow`. There you can paste this [network definition](siamese-TF.py) then give your model a name and click `Create`.
+
 ## Verification
 
 After training the Caffe model for 30 epochs the loss function should look similar to this:

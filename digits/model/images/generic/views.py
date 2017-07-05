@@ -153,11 +153,8 @@ def create(extension_id=None):
                         elif epoch == -1:
                             pretrained_model = old_job.train_task().pretrained_model
                         else:
-                            for filename, e in old_job.train_task().snapshots:
-                                if e == epoch:
-                                    pretrained_model = filename
-                                    break
-
+                            # verify snapshot exists
+                            pretrained_model = old_job.train_task().get_snapshot(epoch, download=True)
                             if pretrained_model is None:
                                 raise werkzeug.exceptions.BadRequest(
                                     "For the job %s, selected pretrained_model for epoch %d is invalid!"
@@ -167,6 +164,8 @@ def create(extension_id=None):
                                     "Pretrained_model for the selected epoch doesn't exist. "
                                     "May be deleted by another user/process. "
                                     "Please restart the server to load the correct pretrained_model details.")
+                            # get logical path
+                            pretrained_model = old_job.train_task().get_snapshot(epoch)
                         break
             elif form.method.data == 'pretrained':
                 pretrained_job = scheduler.get_job(form.pretrained_networks.data)
@@ -228,6 +227,8 @@ def create(extension_id=None):
             data_aug['rot'] = form.aug_rot.data
             data_aug['scale'] = form.aug_scale.data
             data_aug['noise'] = form.aug_noise.data
+            data_aug['contrast'] = form.aug_contrast.data
+            data_aug['whitening'] = form.aug_whitening.data
             data_aug['hsv_use'] = form.aug_hsv_use.data
             data_aug['hsv_h'] = form.aug_hsv_h.data
             data_aug['hsv_s'] = form.aug_hsv_s.data
@@ -253,6 +254,7 @@ def create(extension_id=None):
                 batch_size=form.batch_size.data[0],
                 batch_accumulation=form.batch_accumulation.data,
                 val_interval=form.val_interval.data,
+                traces_interval=form.traces_interval.data,
                 pretrained_model=pretrained_model,
                 crop_size=form.crop_size.data,
                 use_mean=form.use_mean.data,
@@ -292,30 +294,26 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
+    data_extensions = get_data_extensions()
     view_extensions = get_view_extensions()
-
-    inference_form_html = None
-    if isinstance(job.dataset, GenericDatasetJob):
-        extension_class = extensions.data.get_extension(job.dataset.extension_id)
-        if not extension_class:
-            raise RuntimeError("Unable to find data extension with ID=%s"
-                               % job.dataset.extension_id)
-        extension_userdata = job.dataset.extension_userdata
-        extension_userdata.update({'is_inference_db': True})
-        extension = extension_class(**extension_userdata)
-
-        form = extension.get_inference_form()
-        if form:
-            template, context = extension.get_inference_template(form)
-            inference_form_html = flask.render_template_string(template, **context)
 
     return flask.render_template(
         'models/images/generic/show.html',
         job=job,
+        data_extensions=data_extensions,
         view_extensions=view_extensions,
         related_jobs=related_jobs,
-        inference_form_html=inference_form_html,
     )
+
+
+@blueprint.route('/timeline_tracing', methods=['GET'])
+def timeline_tracing():
+    """
+    Shows timeline trace of a model
+    """
+    job = job_from_request()
+
+    return flask.render_template('models/timeline_tracing.html', job=job)
 
 
 @blueprint.route('/large_graph', methods=['GET'])
@@ -325,7 +323,7 @@ def large_graph():
     """
     job = job_from_request()
 
-    return flask.render_template('models/images/generic/large_graph.html', job=job)
+    return flask.render_template('models/large_graph.html', job=job)
 
 
 @blueprint.route('/infer_one.json', methods=['POST'])
@@ -433,8 +431,13 @@ def infer_extension():
 
     inference_db_job = None
     try:
+        if 'data_extension_id' in flask.request.form:
+            data_extension_id = flask.request.form['data_extension_id']
+        else:
+            data_extension_id = model_job.dataset.extension_id
+
         # create an inference database
-        inference_db_job = create_inference_db(model_job)
+        inference_db_job = create_inference_db(model_job, data_extension_id)
         db_path = inference_db_job.get_feature_db_path(constants.TEST_DB)
 
         # create database creation job
@@ -715,10 +718,13 @@ def infer_many():
         ), status_code
 
 
-def create_inference_db(model_job):
+def create_inference_db(model_job, data_extension_id):
     # create instance of extension class
-    extension_class = extensions.data.get_extension(model_job.dataset.extension_id)
-    extension_userdata = model_job.dataset.extension_userdata
+    extension_class = extensions.data.get_extension(data_extension_id)
+    if hasattr(model_job.dataset, 'extension_userdata'):
+        extension_userdata = model_job.dataset.extension_userdata
+    else:
+        extension_userdata = {}
     extension_userdata.update({'is_inference_db': True})
     extension = extension_class(**extension_userdata)
 
@@ -742,7 +748,7 @@ def create_inference_db(model_job):
         batch_size=1,
         num_threads=1,
         force_same_shape=0,
-        extension_id=model_job.dataset.extension_id,
+        extension_id=data_extension_id,
         extension_userdata=extension.get_user_data(),
     )
 
@@ -766,13 +772,12 @@ def create_inference_db(model_job):
 def get_datasets(extension_id):
     if extension_id:
         jobs = [j for j in scheduler.jobs.values()
-                if isinstance(j, GenericDatasetJob)
-                and j.extension_id == extension_id
-                and (j.status.is_running() or j.status == Status.DONE)]
+                if isinstance(j, GenericDatasetJob) and
+                j.extension_id == extension_id and (j.status.is_running() or j.status == Status.DONE)]
     else:
         jobs = [j for j in scheduler.jobs.values()
-                if (isinstance(j, GenericImageDatasetJob) or isinstance(j, GenericDatasetJob))
-                and (j.status.is_running() or j.status == Status.DONE)]
+                if (isinstance(j, GenericImageDatasetJob) or isinstance(j, GenericDatasetJob)) and
+                (j.status.is_running() or j.status == Status.DONE)]
     return [(j.id(), j.name())
             for j in sorted(jobs, cmp=lambda x, y: cmp(y.id(), x.id()))]
 
@@ -860,6 +865,17 @@ def get_pretrained_networks_fulldetails():
         cmp=lambda x, y: cmp(y.id(), x.id())
     )
     ]
+
+
+def get_data_extensions():
+    """
+    return all enabled data extensions
+    """
+    data_extensions = {"all-default": "Default"}
+    all_extensions = extensions.data.get_extensions()
+    for extension in all_extensions:
+        data_extensions[extension.get_id()] = extension.get_title()
+    return data_extensions
 
 
 def get_view_extensions():
