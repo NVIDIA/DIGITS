@@ -493,7 +493,7 @@ def main(_):
 
         if FLAGS.validation_db:
             with tf.name_scope(digits.STAGE_VAL) as stage_scope:
-                val_model = Model(digits.STAGE_VAL, FLAGS.croplen, nclasses)
+                val_model = Model(digits.STAGE_VAL, FLAGS.croplen, nclasses, reuse_variable=True)
                 val_model.create_dataloader(FLAGS.validation_db)
                 val_model.dataloader.setup(FLAGS.validation_labels,
                                            False,
@@ -544,7 +544,7 @@ def main(_):
             load_snapshot(sess, FLAGS.weights, tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
 
         # Tensorboard: Merge all the summaries and write them out
-        writer = tf.train.SummaryWriter(os.path.join(FLAGS.summaries_dir, 'tb'), sess.graph)
+        writer = tf.summary.FileWriter(os.path.join(FLAGS.summaries_dir, 'tb'), sess.graph)
 
         # If we are inferencing, only do that.
         if FLAGS.inference_db:

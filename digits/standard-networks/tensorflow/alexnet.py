@@ -1,10 +1,16 @@
+from model import Tower
+from utils import model_property
+import tensorflow as tf
+import utils as digits
+
+
 class UserModel(Tower):
 
     @model_property
     def inference(self):
 
-        assert self.input_shape[0]==224, 'Input shape should be 224 pixels'
-        assert self.input_shape[1]==224, 'Input shape should be 224 pixels'
+        assert self.input_shape[0] == 224, 'Input shape should be 224 X 224 pixels'
+        assert self.input_shape[1] == 224, 'Input shape should be 224 X 224 pixels'
 
         # Create some wrappers for simplicity
         def conv2d(x, W, b, s, padding='SAME'):
@@ -20,10 +26,10 @@ class UserModel(Tower):
         # Create model
         def conv_net(x, weights, biases):
             conv1 = conv2d(x, weights['wc1'], biases['bc1'], s=4, padding='SAME')
-            #conv1 = tf.nn.local_response_normalization(conv1, depth_radius=2, alpha=2e-5, beta=0.75, bias=1.0)
+            # conv1 = tf.nn.local_response_normalization(conv1, depth_radius=2, alpha=2e-5, beta=0.75, bias=1.0)
             pool1 = maxpool2d(conv1, k=3, s=2)
             conv2 = conv2d(pool1, weights['wc2'], biases['bc2'], s=1, padding='SAME')
-            #conv2 = tf.nn.local_response_normalization(conv2, depth_radius=2, alpha=2e-5, beta=0.75, bias=1.0)
+            # conv2 = tf.nn.local_response_normalization(conv2, depth_radius=2, alpha=2e-5, beta=0.75, bias=1.0)
             pool2 = maxpool2d(conv2, k=3, s=2)
             conv3 = conv2d(pool2, weights['wc3'], biases['bc3'], s=1, padding='SAME')
             conv4 = conv2d(conv3, weights['wc4'], biases['bc4'], s=1, padding='SAME')
@@ -32,7 +38,7 @@ class UserModel(Tower):
 
             # Flatten
             flatten = tf.reshape(pool5, [-1, weights['wd1'].get_shape().as_list()[0]])
-            
+
             fc1 = tf.add(tf.matmul(flatten, weights['wd1']), biases['bd1'])
             fc1 = tf.nn.relu(fc1)
             if self.is_training:
@@ -42,17 +48,17 @@ class UserModel(Tower):
             fc2 = tf.nn.relu(fc2)
             if self.is_training:
                 fc2 = tf.nn.dropout(fc2, 0.5)
-            
+
             # Output, class prediction
             out = tf.add(tf.matmul(fc2, weights['out']), biases['out'])
             return out
-
 
         # Initialize W using stddev 1/sqrt(n), with n the input dimension size.
         # Store layers weight & bias
         weights = {
             # 11x11 conv, #channels input, 96 outputs
-            'wc1': tf.get_variable('wc1', [11, 11, self.input_shape[2], 96], initializer=tf.contrib.layers.xavier_initializer()),
+            'wc1': tf.get_variable('wc1', [11, 11, self.input_shape[2], 96],
+                                   initializer=tf.contrib.layers.xavier_initializer()),
             # 5x5 conv, 96 inputs, 256 outputs
             'wc2': tf.get_variable('wc2', [5, 5, 96, 256], initializer=tf.contrib.layers.xavier_initializer()),
             # 3x3 conv, 256 inputs, 384 outputs
@@ -87,7 +93,8 @@ class UserModel(Tower):
 
     @model_property
     def loss(self):
-        loss = digits.classification_loss(self.inference, self.y)
-        accuracy = digits.classification_accuracy(self.inference, self.y)
-        self.summaries.append(tf.scalar_summary(accuracy.op.name, accuracy))
+        model = self.inference
+        loss = digits.classification_loss(model, self.y)
+        accuracy = digits.classification_accuracy(model, self.y)
+        self.summaries.append(tf.summary.scalar(accuracy.op.name, accuracy))
         return loss

@@ -20,8 +20,7 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
     backend = wtforms.SelectField('DB backend',
                                   choices=[
                                       ('lmdb', 'LMDB'),
-                                      ('hdf5', 'HDF5'),
-                                      ('tfrecords', 'TFRecords'),
+                                      ('hdf5', 'HDF5')
                                   ],
                                   default='lmdb',
                                   )

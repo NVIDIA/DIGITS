@@ -87,8 +87,6 @@ class TensorflowFramework(Framework):
         # accounts for the number of classes, the `nClasses` external
         # parameter must be used, see documentation.
 
-        # @TODO: what is this function exactly?
-
         # return the same network description
         return previous_network
 

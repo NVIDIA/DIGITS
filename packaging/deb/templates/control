@@ -27,4 +27,3 @@ Description: NVIDIA DIGITS webserver
  DIGITS is the Deep Learning GPU Training System from NVIDIA. It provides an
  interactive environment for training, evaluating and experimenting with neural
  networks.
-

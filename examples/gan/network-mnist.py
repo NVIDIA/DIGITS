@@ -21,11 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import math
-import numpy as np
 import tensorflow as tf
-
-from tensorflow.python.framework import ops
+from model import Tower
+from utils import model_property
 
 image_summary = tf.summary.image
 scalar_summary = tf.summary.scalar
@@ -82,7 +80,7 @@ def conv_cond_concat(x, y):
     x_shapes = x.get_shape()
     y_shapes = y.get_shape()
     batch_size = tf.shape(x)[0]
-    return tf.concat(3, [x, y * tf.ones([batch_size, int(x_shapes[1]), int(x_shapes[2]), int(y_shapes[3])])])
+    return tf.concat([x, y * tf.ones([batch_size, int(x_shapes[1]), int(x_shapes[2]), int(y_shapes[3])])], 3)
 
 
 def conv2d(input_, output_dim,
@@ -138,7 +136,7 @@ def deconv2d(input_, output_shape,
         # filter : [height, width, output_channels, in_channels]
         w = tf.get_variable('w',
                             [k_h, k_w, output_shape[-1],
-                            input_.get_shape()[-1]],
+                             input_.get_shape()[-1]],
                             initializer=tf.random_normal_initializer(stddev=stddev))
         deconv = tf.nn.conv2d_transpose(input_, w,
                                         output_shape=output_shape,
@@ -179,7 +177,7 @@ def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=
         matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32,
                                  tf.random_normal_initializer(stddev=stddev))
         bias = tf.get_variable("bias", [output_size],
-            initializer=tf.constant_initializer(bias_start))
+                               initializer=tf.constant_initializer(bias_start))
         if with_w:
             return tf.matmul(input_, matrix) + bias, matrix, bias
         else:
@@ -219,8 +217,7 @@ class UserModel(Tower):
         self.dcgan_init(image_size=28,
                         y_dim=10,
                         output_size=28,
-                        c_dim=1,
-                        )
+                        c_dim=1)
 
     @model_property
     def inference(self):
@@ -306,7 +303,8 @@ class UserModel(Tower):
             self.z = tf.random_normal(shape=[self.batch_size, self.z_dim], dtype=tf.float32, seed=None, name='z')
 
             # rescale x to [0, 1]
-            x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim], name='x_reshaped')
+            x_reshaped = tf.reshape(self.x, shape=[self.batch_size, self.image_size, self.image_size, self.c_dim],
+                                    name='x_reshaped')
             self.images = x_reshaped / 255.
 
             # one hot encode the label - shape: [N] -> [N, self.y_dim]
@@ -317,7 +315,7 @@ class UserModel(Tower):
 
             # create one instance of the discriminator for real images (the input is
             # images from the dataset)
-            self.D, self.D_logits  = self.discriminator(self.images, self.y, reuse=False)
+            self.D, self.D_logits = self.discriminator(self.images, self.y, reuse=False)
 
             # create another instance of the discriminator for fake images (the input is
             # the discriminator). Note how we are reusing variables to share weights between
@@ -327,13 +325,23 @@ class UserModel(Tower):
             # aggregate losses across batch
 
             # we are using the cross entropy loss for all these losses
-            self.d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits, tf.ones_like(self.D), name="loss_D_real"))
-            self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_, tf.zeros_like(self.D_), name="loss_D_fake"))
+            d_real = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits,
+                                                             labels=tf.ones_like(self.D),
+                                                             name="loss_D_real")
+            self.d_loss_real = tf.reduce_mean(d_real)
+            d_fake = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_,
+                                                             labels=tf.zeros_like(self.D_),
+                                                             name="loss_D_fake")
+            self.d_loss_fake = tf.reduce_mean(d_fake)
             self.d_loss = (self.d_loss_real + self.d_loss_fake) / 2.
-            # the typical GAN set-up is that of a minimax game where D is trying to minimize its own error and G is trying to maximize D's error
-            # however note how we are flipping G labels here: instead of maximizing D's error, we are minimizing D's error on the 'wrong' label
+            # the typical GAN set-up is that of a minimax game where D is trying to minimize
+            # its own error and G is trying to maximize D's error however note how we are flipping G labels here:
+            # instead of maximizing D's error, we are minimizing D's error on the 'wrong' label
             # this trick helps produce a stronger gradient
-            self.g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(self.D_logits_, tf.ones_like(self.D_), name="loss_G"))
+            g_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_,
+                                                             labels=tf.ones_like(self.D_),
+                                                             name="loss_G")
+            self.g_loss = tf.reduce_mean(g_loss)
 
             # create some summaries for debug and monitoring
             self.summaries.append(histogram_summary("z", self.z))
@@ -413,10 +421,10 @@ class UserModel(Tower):
             h1 = lrelu(self.d_bn1(conv2d(h0, self.df_dim + self.y_dim, name='d_h1_conv'), train=self.is_training))
             sz = h1.get_shape()
             h1 = tf.reshape(h1, [self.batch_size, int(sz[1] * sz[2] * sz[3])])
-            h1 = tf.concat(1, [h1, y])
+            h1 = tf.concat([h1, y], 1)
 
             h2 = lrelu(self.d_bn2(linear(h1, self.dfc_dim, 'd_h2_lin'), train=self.is_training))
-            h2 = tf.concat(1, [h2, y])
+            h2 = tf.concat([h2, y], 1)
 
             h3 = linear(h2, 1, 'd_h3_lin')
 
@@ -442,23 +450,23 @@ class UserModel(Tower):
         - concatenate conditioing - [N, 14, 14, 138]
         - transpose convolution with 1 filter and stride 2 - [N, 28, 28, 1]
         """
-        with tf.variable_scope("generator") as scope:
+        with tf.variable_scope("generator"):
 
             s = self.output_size
             s2, s4 = int(s/2), int(s/4)
 
             yb = tf.reshape(y, [self.batch_size, 1, 1, self.y_dim])
-            z = tf.concat(1, [z, y])
+            z = tf.concat([z, y], 1)
 
             h0 = tf.nn.relu(self.g_bn0(linear(z, self.gfc_dim, 'g_h0_lin'), train=self.is_training))
-            h0 = tf.concat(1, [h0, y])
+            h0 = tf.concat([h0, y], 1)
 
             h1 = tf.nn.relu(self.g_bn1(linear(h0, self.gf_dim*2*s4*s4, 'g_h1_lin'), train=self.is_training))
             h1 = tf.reshape(h1, [self.batch_size, s4, s4, self.gf_dim * 2])
 
             h1 = conv_cond_concat(h1, yb)
-
-            h2 = tf.nn.relu(self.g_bn2(deconv2d(h1, [self.batch_size, s2, s2, self.gf_dim * 2], name='g_h2'), train=self.is_training))
+            h2 = tf.nn.relu(self.g_bn2(deconv2d(h1, [self.batch_size, s2, s2, self.gf_dim * 2], name='g_h2'),
+                                       train=self.is_training))
             h2 = conv_cond_concat(h2, yb)
 
             return tf.nn.sigmoid(deconv2d(h2, [self.batch_size, s, s, self.c_dim], name='g_h3'))

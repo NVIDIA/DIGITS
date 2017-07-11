@@ -5,7 +5,8 @@ import os
 
 from digits import utils
 from digits.utils import subclass
-from flask.ext.wtf import Form
+from flask_wtf import Form
+import wtforms.validators
 
 
 @subclass
@@ -20,11 +21,9 @@ class ConfigForm(Form):
         else:
             # make sure the filesystem path exists
             if not os.path.exists(field.data) and not os.path.isdir(field.data):
-                raise validators.ValidationError(
-                    'File does not exist or is not reachable')
+                raise wtforms.validators.ValidationError('File does not exist or is not reachable')
             else:
                 return True
-
 
     gan_view_task_id = utils.forms.SelectField(
         'Task',

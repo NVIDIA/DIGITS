@@ -787,7 +787,7 @@ class UserModel(Tower):
         offset = tf.Print(offset,[scale, offset], message='scale offset')
         model = self.x + offset
         self.model = model
-        return tf.transpose(model, (0, 3, 2, 1))  # net output expected in NCHW format
+        return tf.transpose(model, (0, 3, 1, 2))  # net output expected in NCHW format
 
     @model_property
     def loss(self):
@@ -1330,19 +1330,19 @@ class TestTensorflowCreatedWithGradientDataExtensionNoValSet(BaseTestCreatedWith
         super(TestTensorflowCreatedWithGradientDataExtensionNoValSet, cls).setUpClass(val_image_count=0)
 
 
-# class TestTensorflowCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension,
-#                                                                  test_utils.TensorflowMixin):
-#     MEAN = 'image'
-#
-#
-# class TestTensorflowCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension,
-#                                                                  test_utils.TensorflowMixin):
-#     MEAN = 'pixel'
-#
-#
-# class TestTensorflowCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension,
-#                                                                 test_utils.TensorflowMixin):
-#     MEAN = 'none'
+class TestTensorflowCreatedWithImageProcessingExtensionMeanImage(BaseTestCreatedWithImageProcessingExtension,
+                                                                 test_utils.TensorflowMixin):
+    MEAN = 'image'
+
+
+class TestTensorflowCreatedWithImageProcessingExtensionMeanPixel(BaseTestCreatedWithImageProcessingExtension,
+                                                                 test_utils.TensorflowMixin):
+    MEAN = 'pixel'
+
+
+class TestTensorflowCreatedWithImageProcessingExtensionMeanNone(BaseTestCreatedWithImageProcessingExtension,
+                                                                test_utils.TensorflowMixin):
+    MEAN = 'none'
 
 
 class TestTensorflowCreatedVariableSizeDataset(BaseTestCreatedWithImageProcessingExtension, test_utils.TensorflowMixin):

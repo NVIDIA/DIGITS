@@ -1,3 +1,9 @@
+from model import Tower
+from utils import model_property
+import tensorflow as tf
+import utils as digits
+
+
 class UserModel(Tower):
 
     @model_property
@@ -45,7 +51,8 @@ class UserModel(Tower):
         # Store layers weight & bias
         weights = {
             # 5x5 conv, 1 input, 20 outputs
-            'wc1': tf.get_variable('wc1', [5, 5, self.input_shape[2], 20], initializer=tf.contrib.layers.xavier_initializer()),
+            'wc1': tf.get_variable('wc1', [5, 5, self.input_shape[2], 20],
+                                   initializer=tf.contrib.layers.xavier_initializer()),
             # 5x5 conv, 20 inputs, 50 outputs
             'wc2': tf.get_variable('wc2', [5, 5, 20, 50], initializer=tf.contrib.layers.xavier_initializer()),
             # fully connected, 4*4*16=800 inputs, 500 outputs
@@ -67,7 +74,8 @@ class UserModel(Tower):
 
     @model_property
     def loss(self):
-        loss = digits.classification_loss(self.inference, self.y)
-        accuracy = digits.classification_accuracy(self.inference, self.y)
-        self.summaries.append(tf.scalar_summary(accuracy.op.name, accuracy))
+        model = self.inference
+        loss = digits.classification_loss(model, self.y)
+        accuracy = digits.classification_accuracy(model, self.y)
+        self.summaries.append(tf.summary.scalar(accuracy.op.name, accuracy))
         return loss

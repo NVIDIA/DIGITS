@@ -31,8 +31,8 @@ class ConfigForm(Form):
             ],
         default='chw',
         tooltip="Set the order of the data. For Caffe and Torch models this "
-                "is often CHW, for Tensorflow it's HWC."
-                "W=Width, H=Height, C=Channels"
+                "is often NCHW, for Tensorflow it's NHWC."
+                "N=Batch Size, W=Width, H=Height, C=Channels"
         )
 
     pixel_conversion = utils.forms.SelectField(

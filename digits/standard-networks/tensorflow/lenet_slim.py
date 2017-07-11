@@ -1,3 +1,10 @@
+from model import Tower
+from utils import model_property
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
+import utils as digits
+
+
 class UserModel(Tower):
 
     @model_property
@@ -7,7 +14,7 @@ class UserModel(Tower):
         x = x * 0.0125
         with slim.arg_scope([slim.conv2d, slim.fully_connected],
                             weights_initializer=tf.contrib.layers.xavier_initializer(),
-                            weights_regularizer=slim.l2_regularizer(0.0005) ):
+                            weights_regularizer=slim.l2_regularizer(0.0005)):
             model = slim.conv2d(x, 20, [5, 5], padding='VALID', scope='conv1')
             model = slim.max_pool2d(model, [2, 2], padding='VALID', scope='pool1')
             model = slim.conv2d(model, 50, [5, 5], padding='VALID', scope='conv2')
@@ -20,7 +27,8 @@ class UserModel(Tower):
 
     @model_property
     def loss(self):
-        loss = digits.classification_loss(self.inference, self.y)
-        accuracy = digits.classification_accuracy(self.inference, self.y)
-        self.summaries.append(tf.scalar_summary(accuracy.op.name, accuracy))
+        model = self.inference
+        loss = digits.classification_loss(model, self.y)
+        accuracy = digits.classification_accuracy(model, self.y)
+        self.summaries.append(tf.summary.scalar(accuracy.op.name, accuracy))
         return loss

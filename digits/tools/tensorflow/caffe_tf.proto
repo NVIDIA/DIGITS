@@ -1,6 +1,6 @@
 // Copyright (c) 2015-2016, NVIDIA CORPORATION. All rights reserved.
 // This file is a subset of the caffe.proto file from the Caffe project.
-// It is meant to reduce the dependency on Caffe from the Tensorflow rapper
+// It is meant to reduce the dependency on Caffe from the Tensorflow wrapper
 // For NVIDIA DIGITS
 
 syntax = "proto2";
