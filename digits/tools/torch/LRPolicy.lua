@@ -18,6 +18,8 @@ local LRPolicy = torch.class('LRPolicy')
 --      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
 --------------------------------------------------------------------------------------------------
 
+
+
 function LRPolicy:__init(...)
     local args = dok.unpack(
     {...},

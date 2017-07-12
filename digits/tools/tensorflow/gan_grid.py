@@ -28,11 +28,9 @@ import numpy as np
 import os
 import pickle
 
-from six.moves import xrange  # noqa
+from six.moves import xrange
 import tensorflow as tf
-import tensorflow.contrib.slim as slim  # noqa
-from tensorflow.python.client import timeline, device_lib  # noqa
-from tensorflow.python.ops import template  # noqa
+from tensorflow.python.client import timeline
 from tensorflow.python.lib.io import file_io
 from tensorflow.core.framework import summary_pb2
 
@@ -40,8 +38,7 @@ from tensorflow.core.framework import summary_pb2
 # Local imports
 import utils as digits
 import lr_policy
-from model import Model, Tower  # noqa
-from utils import model_property  # noqa
+from model import Model
 
 import tf_data
 import gandisplay

@@ -38,7 +38,7 @@ These instructions are based on [the official TensorFlow instructions]
 
 TensorFlow comes with pip, to install it, just simply use the command
 ```
-pip install tensorflow-gpu=1.2.0
+pip install tensorflow-gpu==1.2.0
 ```
 
 TensorFlow should then install effortlessly and pull in all its required dependices.

@@ -68,7 +68,12 @@ def average_gradients(tower_grads):
 
 class Model(object):
     """
-    @TODO(tzaman)
+    Wrapper around the actual tensorflow workflow process.
+    This is structured in a way that the user should only care about
+    creating the model while using the DIGITS UI to select the
+    optimizer and other options.
+
+    This class is executed to start a tensorflow workflow.
     """
     def __init__(self, stage, croplen, nclasses, optimization=None, momentum=None, reuse_variable=False):
         self.stage = stage

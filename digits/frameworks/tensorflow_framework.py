@@ -5,12 +5,12 @@ import os
 import re
 import subprocess
 import tempfile
+import sys
 
 from .errors import NetworkVisualizationError
 from .framework import Framework
 import digits
 from digits import utils
-from digits.config import config_value
 from digits.model.tasks import TensorflowTrainTask
 from digits.utils import subclass, override, constants
 
@@ -123,7 +123,7 @@ class TensorflowFramework(Framework):
 
         try:  # do this in a try..finally clause to make sure we delete the temp file
             # build command line
-            args = [config_value('tensorflow')['executable'],
+            args = [sys.executable,
                     os.path.join(os.path.dirname(digits.__file__), 'tools', 'tensorflow', 'main.py'),
                     '--network=%s' % os.path.basename(temp_network_path),
                     '--networkDirectory=%s' % os.path.dirname(temp_network_path),

@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import sys
 
 import h5py
 import numpy as np
@@ -15,7 +16,6 @@ import numpy as np
 from .train import TrainTask
 import digits
 from digits import utils
-from digits.config import config_value
 from digits.utils import subclass, override, constants
 import tensorflow as tf
 
@@ -167,7 +167,7 @@ class TensorflowTrainTask(TrainTask):
     @override
     def task_arguments(self, resources, env):
 
-        args = [config_value('tensorflow')['executable'],
+        args = [sys.executable,
                 os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'tensorflow', 'main.py'),
                 '--network=%s' % self.model_file,
                 '--epoch=%d' % int(self.train_epochs),
@@ -537,7 +537,7 @@ class TensorflowTrainTask(TrainTask):
 
         file_to_load = self.get_snapshot(snapshot_epoch)
 
-        args = [config_value('tensorflow')['executable'],
+        args = [sys.executable,
                 os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'tensorflow', 'main.py'),
                 '--inference_db=%s' % temp_image_path,
                 '--network=%s' % self.model_file,
@@ -835,7 +835,7 @@ class TensorflowTrainTask(TrainTask):
 
             file_to_load = self.get_snapshot(snapshot_epoch)
 
-            args = [config_value('tensorflow')['executable'],
+            args = [sys.executable,
                     os.path.join(os.path.dirname(os.path.abspath(digits.__file__)), 'tools', 'tensorflow', 'main.py'),
                     '--testMany=1',
                     '--allPredictions=1',  # all predictions are grabbed and formatted as required by DIGITS
