@@ -9,6 +9,7 @@ python: 2.7
 env:
     global:
         - OPENBLAS_ROOT=~/openblas
+        - PROTOBUF_ROOT=~/protobuf
         - CAFFE_ROOT=~/caffe
         - TORCH_ROOT=~/torch
         - secure: "WSqrE+PQm76DdoRLRGKTK6fRWfXZjIb0BWCZm3IgHgFO7OE6fcK2tBnpDNNw4XQjmo27FFWlEhxN32g18P84n5PvErHaH65IuS9Nv6FkLlPXZlVqGNxbPmEA4oTkD/6Y6kZyZWZtLh2+/1ijuzQAPnIy/4BEuL8pdO+PsoJ9hYM="
@@ -73,6 +74,7 @@ cache:
     apt: true
     directories:
         - $OPENBLAS_ROOT
+        - $PROTOBUF_ROOT
         - $CAFFE_ROOT
         - $TORCH_ROOT
 
@@ -94,9 +96,7 @@ addons:
             - libleveldb-dev
             - liblmdb-dev
             - libopencv-dev
-            - libprotobuf-dev
             - libsnappy-dev
-            - protobuf-compiler
             - python-dev
             - python-flask
             - python-gevent
@@ -110,7 +110,6 @@ addons:
             - python-opencv
             - python-pil
             - python-pip
-            - python-protobuf
             - python-psutil
             - python-pydot
             - python-requests
@@ -127,6 +126,7 @@ install:
     - mkdir -p ~/.config/matplotlib
     - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
     - ./scripts/travis/install-openblas.sh $OPENBLAS_ROOT
+    - ./scripts/travis/install-protobuf.sh $PROTOBUF_ROOT
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
     - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
     - pip install -r ./requirements.txt
