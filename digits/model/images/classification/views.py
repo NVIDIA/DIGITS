@@ -204,8 +204,10 @@ def create():
                                     "Pretrained_model for the selected epoch doesn't exist. "
                                     "May be deleted by another user/process. "
                                     "Please restart the server to load the correct pretrained_model details.")
-                        break
 
+                            # terrible hack to save the epoch for cloning
+                            form.saved_epoch.data = epoch
+                        break
             elif form.method.data == 'pretrained':
                 pretrained_job = scheduler.get_job(form.pretrained_networks.data)
                 model_def_path = pretrained_job.get_model_def_path()

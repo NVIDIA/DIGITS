@@ -121,6 +121,7 @@ before_install:
     - deactivate
     - virtualenv --system-site-packages ~/venv
     - source ~/venv/bin/activate
+    - sudo apt-get install libboost-filesystem1.55-dev libboost-python1.55-dev libboost-system1.55-dev libboost-thread1.55-dev
 
 install:
     - mkdir -p ~/.config/matplotlib
