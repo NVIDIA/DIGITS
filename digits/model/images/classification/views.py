@@ -19,7 +19,7 @@ from digits.inference import ImageInferenceJob
 from digits.pretrained_model.job import PretrainedModelJob
 from digits.status import Status
 from digits.utils import filesystem as fs
-from digits.utils.forms import fill_form_if_cloned, save_form_to_job
+from digits.utils.forms import fill_form_if_cloned, save_form_to_job, get_selected_gpu
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
@@ -333,6 +333,7 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
+    form = ImageClassificationModelForm()
     return flask.render_template(
         'models/images/classification/show.html',
         job=job,
@@ -340,7 +341,8 @@ def show(job, related_jobs=None):
             fw.get_id()
             for fw in frameworks.get_frameworks()
         ],
-        related_jobs=related_jobs
+        related_jobs=related_jobs,
+        gpu_list=form.gpu_list,
     )
 
 
@@ -384,6 +386,8 @@ def classify_one():
     if 'show_visualizations' in flask.request.form and flask.request.form['show_visualizations']:
         layers = 'all'
 
+    selected_gpu = get_selected_gpu(flask.request.form)
+
     # create inference job
     inference_job = ImageInferenceJob(
         username=utils.auth.get_username(),
@@ -391,7 +395,8 @@ def classify_one():
         model=model_job,
         images=[image_path],
         epoch=epoch,
-        layers=layers
+        layers=layers,
+        gpu=selected_gpu
     )
 
     # schedule tasks
@@ -477,6 +482,7 @@ def classify_many():
         epoch = float(flask.request.form['snapshot_epoch'])
 
     paths, ground_truths = read_image_list(image_list, image_folder, num_test_images)
+    selected_gpu = get_selected_gpu(flask.request.form)
 
     # create inference job
     inference_job = ImageInferenceJob(
@@ -485,7 +491,8 @@ def classify_many():
         model=model_job,
         images=paths,
         epoch=epoch,
-        layers='none'
+        layers='none',
+        gpu=selected_gpu
     )
 
     # schedule tasks
@@ -633,6 +640,7 @@ def top_n():
         num_test_images = None
 
     paths, _ = read_image_list(image_list, image_folder, num_test_images)
+    selected_gpu = get_selected_gpu(flask.request.form)
 
     # create inference job
     inference_job = ImageInferenceJob(
@@ -641,7 +649,8 @@ def top_n():
         model=model_job,
         images=paths,
         epoch=epoch,
-        layers='none'
+        layers='none',
+        gpu=selected_gpu
     )
 
     # schedule tasks

@@ -21,7 +21,7 @@ class InferenceTask(Task):
     A task for inference jobs
     """
 
-    def __init__(self, model, images, epoch, layers, resize, **kwargs):
+    def __init__(self, model, images, epoch, layers, resize, gpu=None, **kwargs):
         """
         Arguments:
         model  -- trained model to perform inference on
@@ -40,7 +40,7 @@ class InferenceTask(Task):
         self.inference_log_file = "inference.log"
 
         # resources
-        self.gpu = None
+        self.gpu = gpu
 
         # generated data
         self.inference_data_filename = None
@@ -180,6 +180,8 @@ class InferenceTask(Task):
                 if resources[gpu_key]:
                     for resource in resources[gpu_key]:
                         if resource.remaining() >= 1:
+                            if self.gpu is not None and self.gpu != int(resource.identifier):
+                                continue
                             self.gpu = int(resource.identifier)
                             reserved_resources[gpu_key] = [(resource.identifier, 1)]
                             break

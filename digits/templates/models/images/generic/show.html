@@ -8,6 +8,7 @@
 <script src="{{ url_for('static', filename='js/model-graphs.js', ver=dir_hash) }}"></script>
 
 {% set task = job.train_task() %}
+{% set show_multi_gpu_form = gpu_list| length > 1 %}
 
 <div class="row">
     <div class="col-sm-6">
@@ -97,12 +98,8 @@
                 >
                 <h2>Trained Models</h2>
                 <div class="row">
-                    <div class="col-sm-12">
+                    <div class="col-sm-6">
                         <label for="snapshot_epoch">Select Model</label>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-8">
                         <div class="form-group">
                             <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
                             </select>
@@ -133,8 +130,7 @@ function updateSnapshotList(data) {
 updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescape %});
                             </script>
                         </div>
-                    </div>
-                    <div class="col-sm-4">
+                        {% if show_multi_gpu_form %}
                         <button
                             formaction="{{url_for('digits.model.views.download', job_id=job.id())}}"
                             formmethod="post"
@@ -149,7 +145,41 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             class="btn btn-success">
                             Make Pretrained Model
                         </button>
+                        {% endif %}
                     </div>
+                    {% if show_multi_gpu_form %}
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="select_one_of_gpus">Select which GPU you would like to use</label>
+                            <select class="form-control" id="select_one_of_gpus" name="select_one_of_gpus" size="4">
+                                <option selected="" value="next">Next available</option>
+                                {% for gpu_id, gpu_description in gpu_list %}
+                                    <option value="{{ gpu_id }}">{{ gpu_description }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-sm-6">
+                        <label for="empty space">&nbsp;</label>
+                    </div>
+                    <div class="col-sm-6">
+                         <button
+                            formaction="{{url_for('digits.model.views.download', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-info">
+                            Download Model
+                        </button>
+                        <button
+                            formaction="{{url_for('digits.model.views.to_pretrained', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-success">
+                            Make Pretrained Model
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="row">
                     <div class="col-sm-6">
