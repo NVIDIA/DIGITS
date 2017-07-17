@@ -70,6 +70,12 @@ The description is similar to the standard LeNet model except for the following 
 - the `fineTuneHook` hook sets the `accGradParameters` fields of the original layers to `nil` in order to keep the existing features unchanged
 - the `fineTuneHook` adds a `nn.Linear(10, 2)` layer on top of the network
 
+### Using Tensorflow
+
+In the `Custom network` text area, paste the contents of this [python file](lenet-fine-tune-tf.py).
+The description is similar to the standard LeNet model except for the following differences:
+- the weight and bias with the name `out` had their tensorflow variable renamed to `wout_not_in_use` and `bout_not_in_use`. This signifies that these weights will not be used and the original weights are frozen
+
 ## Verification
 
 Now if you give your network a name and click `Create` the loss function should go down very sharply and the validation accuracy should exceed 90%:

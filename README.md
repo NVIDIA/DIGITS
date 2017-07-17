@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/NVIDIA/DIGITS.svg?branch=master)](https://travis-ci.org/NVIDIA/DIGITS)
 
 DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is a webapp for training deep learning models.
+The currently supported frameworks are: Caffe, Torch, and Tensorflow.
 
 # Installation
 
@@ -18,6 +19,7 @@ Once you have installed DIGITS, visit [docs/GettingStarted.md](docs/GettingStart
 
 Then, take a look at some of the other documentation at [docs/](docs/) and [examples/](examples/):
 
+* [Getting started with TensorFlow](docs/GettingStartedTensorflow.md)
 * [Getting started with Torch](docs/GettingStartedTorch.md)
 * [Fine-tune a pretrained model](examples/fine-tuning/README.md)
 * [Train an autoencoder network](examples/autoencoder/README.md)

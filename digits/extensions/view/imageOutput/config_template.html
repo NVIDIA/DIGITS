@@ -12,8 +12,20 @@
     {{ form.channel_order(class='form-control') }}
 </div>
 
+<div class="form-group{{mark_errors([form.data_order])}}">
+    {{ form.data_order.label }}
+    {{ form.data_order.tooltip }}
+    {{ form.data_order(class='form-control') }}
+</div>
+
 <div class="form-group{{mark_errors([form.pixel_conversion])}}">
     {{ form.pixel_conversion.label }}
     {{ form.pixel_conversion.tooltip }}
     {{ form.pixel_conversion(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.show_input])}}">
+    {{ form.show_input.label }}
+    {{ form.show_input.tooltip }}
+    {{ form.show_input(class='form-control') }}
 </div>

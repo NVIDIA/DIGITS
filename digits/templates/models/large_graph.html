@@ -1,0 +1,39 @@
+{# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "layout.html" %}
+
+{% block title %}
+{{job.name()}} - Large graph
+{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='js/model-graphs.js', ver=dir_hash) }}"></script>
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{ url_for('digits.views.show_job', job_id=job.id()) }}">{{job.job_type()}}</a></li>
+{% endblock %}
+
+{% block content %}
+
+{% set task = job.train_task() %}
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="well">
+            {% set combined_graph_data = job.train_task().combined_graph_data(cull=False) %}
+            {% if combined_graph_data %}
+            <div id="combined-graph" style="height:800px;width:100%;background:white"></div>
+            <script>
+                drawCombinedGraph({% autoescape false %}{{combined_graph_data}}{% endautoescape %});
+            </script>
+            {% else %}
+            <i>No data.</i>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

@@ -1,6 +1,22 @@
 # Model Store
 
 ## Introduction
+Model Store lists models in user-specified servers.
+Users can imports models from Model Store into DIGITS.
+
+
+## Setting up environment variable
+The configuration of Model Store requires one environment variable DIGITS_MODEL_STORE_URL to be set.
+NVIDIA plans to publish one public Model Store at http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0.
+You can set up the environment variable with that url before launching DIGITS.
+For example, run the following command in your Bash shell.
+``` shell
+export DIGITS_MODEL_STORE_URL='http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0'
+```
+If multiple model stores are available, specify their url's, separated by the comma (,).
+``` shell
+export DIGITS_MODEL_STORE_URL='http://localhost/mymodelstore,http://dlserver/teammodelstore'
+```
 
 DIGITS 5.0 introduces the concept of a "model store," which is a collection of trained models that can be used as pre-trained weights to accelerate training convergence.
 A DIGITS server can be configured to connect to one or more model stores to download these trained models from the store to the server.

@@ -12,12 +12,19 @@ __all__ = [
     'TorchFramework',
 ]
 
+if config_value('tensorflow')['enabled']:
+    from .tensorflow_framework import TensorflowFramework
+    __all__.append('TensorflowFramework')
+
 #
 #  create framework instances
 #
 
 # torch is optional
 torch = TorchFramework() if config_value('torch')['enabled'] else None
+
+# tensorflow is optional
+tensorflow = TensorflowFramework() if config_value('tensorflow')['enabled'] else None
 
 # caffe is mandatory
 caffe = CaffeFramework()
@@ -35,6 +42,8 @@ def get_frameworks():
     frameworks = [caffe]
     if torch:
         frameworks.append(torch)
+    if tensorflow:
+        frameworks.append(tensorflow)
     return frameworks
 
 

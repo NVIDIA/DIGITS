@@ -74,6 +74,7 @@ function LRPolicy:GetLearningRate(iter)
   else
     --have to include additional comments
     print("Unknown learning rate policy: " .. self.policy)
+    os.exit(-1)
   end
 
   return rate

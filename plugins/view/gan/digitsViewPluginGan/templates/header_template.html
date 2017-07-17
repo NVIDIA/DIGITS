@@ -1,0 +1,28 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+<script type="text/javascript" src="/extension-static/view/image-segmentation/js/app.js"></script>
+<link rel="stylesheet" href="/extension-static/view/image-segmentation/css/app.css">
+
+
+<table>
+    {% if animated_image %}
+        <tr>
+            <h4>Animation</h4>
+            <img src="{{animated_image}}" style="max-width:100%;" />
+        </tr>
+    {% endif %}
+    {% if task_id == 'grid' %}
+        <tr>
+            <h4>Grid</h4>
+        </tr>
+        {% for row_id in rows %}
+            <tr>
+                {% for col_id in cols %}
+                <td>
+                <div id="{{ col_id }}_{{ row_id }}">
+                </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    {% endif %}
+</table>

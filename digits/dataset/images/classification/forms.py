@@ -20,13 +20,15 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
     backend = wtforms.SelectField('DB backend',
                                   choices=[
                                       ('lmdb', 'LMDB'),
-                                      ('hdf5', 'HDF5'),
+                                      ('hdf5', 'HDF5')
                                   ],
                                   default='lmdb',
                                   )
 
     def validate_backend(form, field):
         if field.data == 'lmdb':
+            form.compression.data = 'none'
+        elif field.data == 'tfrecords':
             form.compression.data = 'none'
         elif field.data == 'hdf5':
             form.encoding.data = 'none'

@@ -1,0 +1,76 @@
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% extends "layout.html" %}
+
+{% block title %}
+{{job.name()}} - Timeline Trace
+{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='js/timeline-tracing.js', ver=dir_hash) }}"></script>
+<link rel="import" href="{{ url_for('static', filename='tb/trace_viewer_full.html', ver=dir_hash) }}">
+{% endblock %}
+
+{% block nav %}
+<li class="active"><a href="{{ url_for('digits.views.show_job', job_id=job.id()) }}">{{job.job_type()}}</a></li>
+{% endblock %}
+
+{% block content %}
+
+{% set task = job.train_task() %}
+
+<div class="page-header">
+    <h1>Timeline Trace</h1>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-xs-2">
+            <select id="timeline-trace-list" name="timeline-trace-list" class="form-control"></select>
+        </div>
+        <div class="col-xs-2">
+            <button class="btn btn-info" onclick="showTimeline()">
+                Show Timeline Trace
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>#trace-viewer:focus { outline: none; }</style>
+<div id="timeline-trace" style="width:100vw; padding:20px;position:absolute; left:0px;"></div>
+
+<script type="text/javascript">
+var tlt = new TimelineTrace('timeline-trace');
+
+var job_id ='{{job.id()}}';
+function updateTimelineList(data) {
+    for (var i=0; i<data.length; i++) {
+        option = data[i];
+        $("#timeline-trace-list").append('<option value="'+option[0]+'">'+option[1]+'</option>');
+    }
+}
+updateTimelineList({% autoescape false %}{{ task.timeline_trace_list() }}{% endautoescape %});
+
+function showTimeline() {
+    var e = document.getElementById("timeline-trace-list");
+    var step = e.options[e.selectedIndex].value;
+
+    $.ajax("{{url_for('digits.model.views.timeline_trace_data')}}",
+    {
+        type: "POST",
+        data: {'step': step, job_id: job_id},
+    }
+    )
+    .done(function(data) {
+        tlt.onResult(step, $.parseJSON(data));
+    })
+    .fail(function(data) {
+        errorAlert(data);
+    });
+    return false;
+}
+
+
+</script>
+
+{% endblock %}

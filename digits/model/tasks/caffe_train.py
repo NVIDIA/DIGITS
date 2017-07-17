@@ -934,8 +934,7 @@ class CaffeTrainTask(TrainTask):
                 args.append('--gpu=%s' % identifiers[0])
             elif len(identifiers) > 1:
                 if config_value('caffe')['flavor'] == 'NVIDIA':
-                    if (utils.parse_version(config_value('caffe')['version'])
-                            < utils.parse_version('0.14.0-alpha')):
+                    if (utils.parse_version(config_value('caffe')['version']) < utils.parse_version('0.14.0-alpha')):
                         # Prior to version 0.14, NVcaffe used the --gpus switch
                         args.append('--gpus=%s' % ','.join(identifiers))
                     else:

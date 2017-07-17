@@ -50,8 +50,9 @@ class CreateDbTask(Task):
         self.input_file = input_file
         self.db_name = db_name
         self.backend = backend
-        if backend == 'hdf5':
+        if backend == 'hdf5' or backend == 'tfrecords':
             # the list of hdf5 files is stored in a textfile
+            # tfrecords can be sharded as well
             self.textfile = os.path.join(self.db_name, 'list.txt')
         self.image_dims = image_dims
         if image_dims[2] == 3:
