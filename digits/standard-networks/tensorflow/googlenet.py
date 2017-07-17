@@ -1,6 +1,14 @@
+# Preferred settings for this model is:
+# Training epochs = 80
+# Crop Size = 224
+# Under advanced learning rate options:
+# Step Size = 10.0
+# Gamma = 0.96
+
 # The auxillary branches as spcified in the original googlenet V1 model do exist in this implementation of
 # googlenet but it is not used. To use it, be sure to check self.is_training to ensure that it is only used
 # during training.
+
 from model import Tower
 from utils import model_property
 import tensorflow as tf

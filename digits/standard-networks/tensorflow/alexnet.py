@@ -1,3 +1,7 @@
+# Preferred settings for this model is:
+# Base Learning Rate = 0.001
+# Crop Size = 224
+
 from model import Tower
 from utils import model_property
 import tensorflow as tf
