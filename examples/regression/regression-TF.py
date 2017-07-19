@@ -12,13 +12,13 @@ class UserModel(Tower):
         normed = tf.multiply(self.x, const)
 
         # The reshaping have to be done for tensorflow to get the shape right
-        right_shape = tf.reshape(normed, shape=[-1, 32, 32])
+        right_shape = tf.reshape(normed, shape=[-1, 50, 50])
         transposed = tf.transpose(right_shape, [0, 2, 1])
-        squeezed = tf.reshape(transposed, shape=[-1, 1024])
+        squeezed = tf.reshape(transposed, shape=[-1, 2500])
 
         # Define weights
         weights = {
-            'w1': tf.get_variable('w1', [1024, 2])
+            'w1': tf.get_variable('w1', [2500, 2])
         }
         biases = {
             'b1': tf.get_variable('b1', [2])

@@ -1,6 +1,7 @@
 # Preferred settings for this model is:
 # Training epochs = 80
 # Crop Size = 224
+# Learning Rate = 0.001
 # Under advanced learning rate options:
 # Step Size = 10.0
 # Gamma = 0.96
