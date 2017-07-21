@@ -60,7 +60,7 @@ class TensorflowFramework(Framework):
             path = os.path.join(networks_dir, filename)
             if os.path.isfile(path):
                 match = None
-                match = re.match(r'%s.py' % network, filename)
+                match = re.match(r'%s.py$' % network, filename)
                 if match:
                     with open(path) as infile:
                         return infile.read()
