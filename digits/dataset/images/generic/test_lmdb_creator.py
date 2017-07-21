@@ -32,7 +32,7 @@ import caffe_pb2  # noqa
 
 IMAGE_SIZE = 10
 TRAIN_IMAGE_COUNT = 100
-VAL_IMAGE_COUNT = 20
+VAL_IMAGE_COUNT = 250
 
 
 def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
