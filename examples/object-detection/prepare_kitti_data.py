@@ -179,7 +179,7 @@ if __name__ == '__main__':
     )
     print 'Calculating image to video mapping ...'
     mapping = get_image_to_video_mapping(
-        os.path.join(args.output_dir, 'raw'),
+        os.path.join(args.output_dir, 'raw', 'devkit'),
     )
     print 'Splitting images by video ...'
     split_by_video(
