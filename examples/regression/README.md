@@ -160,17 +160,19 @@ class UserModel(Tower):
 
     @model_property
     def inference(self):
+        dimension_h = self.input_shape[0]
+        dimension_w = self.input_shape[1]
         const = tf.constant(0.004)
         normed = tf.multiply(self.x, const)
 
         # The reshaping have to be done for tensorflow to get the shape right
-        right_shape = tf.reshape(normed, shape=[-1, 50, 50]) 
+        right_shape = tf.reshape(normed, shape=[-1, dimension_h, dimension_w]) 
         transposed = tf.transpose(right_shape, [0, 2, 1])
-        squeezed = tf.reshape(transposed, shape=[-1, 2500])
+        squeezed = tf.reshape(transposed, shape=[-1, dimension_h * dimension_w])
         
         # Define weights
         weights = {
-            'w1': tf.get_variable('w1', [2500, 2])
+            'w1': tf.get_variable('w1', [dimension_h * dimension_w, 2])
         }
         biases = {
             'b1': tf.get_variable('b1', [2])

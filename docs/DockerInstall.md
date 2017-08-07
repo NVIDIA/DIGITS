@@ -10,20 +10,20 @@ To run DIGITS smoothly, Nvidia Docker must be installed. Follow [this guide](htt
 To fetch the latest DIGITS's docker image, run the following:
 
 ```bash
-sudo docker pull nvidia/digits:latest
+docker pull nvidia/digits:latest
 ```
 
 To fetch DIGITS 6 RC, run the following:
 
 ```bash
-sudo docker pull nvidia/digits.6-rc
+docker pull nvidia/digits.6-rc
 ```
 
 ## Running DIGITS on Nvidia Docker
 To run DIGITS with Nvidia Docker, use the following command:
 
 ```bash
-sudo docker run -v <path to data>:/data/ -p 5000:5000 nvidia/digits:latest
+nvidia-docker run -v <path to data>:/data/ -p 5000:5000 nvidia/digits:latest
 ```
 
 where `<path to data>` is where you have stored data sets or other files necessary for DIGITS to use on your system.

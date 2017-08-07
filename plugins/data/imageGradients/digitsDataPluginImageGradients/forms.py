@@ -47,13 +47,13 @@ class DatasetForm(Form):
 
     image_width = wtforms.IntegerField(
         u'Image Width',
-        default=32,
+        default=50,
         validators=[validators.DataRequired()]
     )
 
     image_height = wtforms.IntegerField(
         u'Image Height',
-        default=32,
+        default=50,
         validators=[validators.DataRequired()]
     )
 
