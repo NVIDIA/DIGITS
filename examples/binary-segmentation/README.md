@@ -105,7 +105,7 @@ The `create_images.py` script created many images we can use for testing.
 You may also run the command again to produce new images.
 To help visualize the output of the network, select the `Image` visualization method and set `Pixel Conversion` to `clip`:
 
-For Tensorflow only, select `HWC` for data order
+**For Tensorflow only, select `HWC` for data order**
 
 ![select visualization](select-visualization.png)
 
