@@ -16,7 +16,7 @@ docker pull nvidia/digits:latest
 To fetch DIGITS 6 RC, run the following:
 
 ```bash
-docker pull nvidia/digits.6-rc
+docker pull nvidia/digits:6.0-rc
 ```
 
 ## Running DIGITS on Nvidia Docker
