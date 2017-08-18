@@ -20,7 +20,7 @@ Along with that requirement, the following should be installed
 * cuDNN 5.1 ([download page](https://developer.nvidia.com/cudnn))
 
 ### A Note About cuDNN and TensorFlow
-Currently tensorflow v1.2.1 targets cuDNN 5.1. The latest cuDNN version is 6. **To have tensorflow running in digits, you must have cuDNN 5.1 installed. Currently, cuDNN 6 is incompatiable with tensorflow.** To install it, use the following command in a terminal
+Currently tensorflow v1.2.1 targets cuDNN 5.1. **To have tensorflow v1.2.1 running in digits, you must have cuDNN 5.1 installed.** To install it, use the following command in a terminal
 
 ```
 sudo apt-get install libcudnn5
