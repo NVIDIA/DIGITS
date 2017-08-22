@@ -8,7 +8,7 @@ This guide is based on [google's protobuf installation guide](https://github.com
 
 These Deb packages must be installed to build Protobuf 3
 ```
-sudo apt-get install autoconf automake libtool curl make g++ unzip
+sudo apt-get install autoconf automake libtool curl make g++ git python-dev python-setuptools unzip
 ```
 
 ## Download Source
