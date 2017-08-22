@@ -28,7 +28,7 @@ class GenericImageModelJob(ImageModelJob):
     def download_files(self, epoch=-1):
         task = self.train_task()
 
-        snapshot_filename = task.get_snapshot(epoch, download=True)
+        snapshot_filenames = task.get_snapshot(epoch, download=True)
 
         # get model files
         model_files = task.get_model_files()
@@ -41,7 +41,12 @@ class GenericImageModelJob(ImageModelJob):
                 os.path.basename(task.dataset.get_mean_file())))
 
         # add snapshot
-        download_files.append((snapshot_filename,
-                               os.path.basename(snapshot_filename)))
+        if not isinstance(snapshot_filenames, list):
+            download_files.append((snapshot_filenames,
+                                  os.path.basename(snapshot_filenames)))
+        else:
+            for snapshot_filename in snapshot_filenames:
+                download_files.append((snapshot_filename,
+                                       os.path.basename(snapshot_filename)))
 
         return download_files
