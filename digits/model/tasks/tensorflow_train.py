@@ -144,25 +144,30 @@ class TensorflowTrainTask(TrainTask):
         """
         return snapshot file for specified epoch
         """
-        snapshot_filename = None
+        snapshot_pre = None
 
         if len(self.snapshots) == 0:
             return "no snapshots"
 
         if epoch == -1 or not epoch:
             epoch = self.snapshots[-1][1]
-            snapshot_filename = self.snapshots[-1][0]
+            snapshot_pre = self.snapshots[-1][0]
         else:
             for f, e in self.snapshots:
                 if e == epoch:
-                    snapshot_filename = f
+                    snapshot_pre = f
                     break
-        if not snapshot_filename:
+        if not snapshot_pre:
             raise ValueError('Invalid epoch')
         if download:
-            snapshot_filename = snapshot_filename + ".data-00000-of-00001"
+            snapshot_file = snapshot_pre + ".data-00000-of-00001"
+            meta_file = snapshot_pre + ".meta"
+            index_file = snapshot_pre + ".index"
+            snapshot_files = [snapshot_file, meta_file, index_file]
+        else:
+            snapshot_files = snapshot_pre
 
-        return snapshot_filename
+        return snapshot_files
 
     @override
     def task_arguments(self, resources, env):
