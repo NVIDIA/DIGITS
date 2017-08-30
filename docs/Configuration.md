@@ -16,3 +16,4 @@ DIGITS uses environment variables for configuration.
 | `DIGITS_LOGFILE_LEVEL` | DEBUG | Minimum log message level to be saved (DEBUG/INFO/WARNING/ERROR/CRITICAL). Default is INFO. |
 | `DIGITS_SERVER_NAME` | The Big One | The name of the server (accessible in the UI under "Info"). Default is the system hostname. |
 | `DIGITS_MODEL_STORE_URL` | http://localhost/modelstore | A list of URL's, separated by comma. Default is the official NVIDIA store. |
+| `DIGITS_URL_PREFIX` | /custom-prefix | A path to prepend before every URL. Sets the home-page to be at "http://localhost/custom-prefix" instead of "http://localhost/"/ |
