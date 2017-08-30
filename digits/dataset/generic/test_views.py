@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import json
@@ -74,7 +74,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         data = {
             'dataset_name': 'test_dataset',
             'group_name': 'test_group',
-            }
+        }
         data.update(kwargs)
 
         request_json = data.pop('json', False)
@@ -207,6 +207,7 @@ class GenericViewsTest(BaseViewsTest):
 
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/generic/new/%s' % self.EXTENSION_ID)
+        print rv.data
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         assert extensions.data.get_extension(self.EXTENSION_ID).get_title() in rv.data, 'unexpected page format'
 
@@ -265,7 +266,7 @@ class GenericCreationTest(BaseViewsTestWithDataset):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content1 = json.loads(rv.data)
 
-        ## Clone job1 as job2
+        # Clone job1 as job2
         options_2 = {
             'clone': job1_id,
         }
@@ -276,7 +277,7 @@ class GenericCreationTest(BaseViewsTestWithDataset):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content2 = json.loads(rv.data)
 
-        ## These will be different
+        # These will be different
         content1.pop('id')
         content2.pop('id')
         content1.pop('directory')
@@ -293,6 +294,7 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
     """
     Tests on a dataset that has already been created
     """
+
     def test_index_json(self):
         rv = self.app.get('/index.json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
@@ -312,7 +314,7 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
         status = self.edit_job(
             self.dataset_id,
             name='new name'
-            )
+        )
         assert status == 200, 'failed with %s' % status
         rv = self.app.get('/datasets/summary?job_id=%s' % self.dataset_id)
         assert rv.status_code == 200
@@ -322,7 +324,7 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
         status = self.edit_job(
             self.dataset_id,
             notes='new notes'
-            )
+        )
         assert status == 200, 'failed with %s' % status
 
     def test_explore_features(self):
@@ -362,7 +364,7 @@ class TestImageGradientCreation(GenericCreationTest, test_utils.DatasetMixin):
             test_image_count=10,
             image_width=cls.IMAGE_WIDTH,
             image_height=cls.IMAGE_HEIGHT,
-            )
+        )
 
     def test_entry_counts(self):
         assert self.get_entry_count(constants.TRAIN_DB) == 100
@@ -407,8 +409,8 @@ class TestImageProcessingCreated(GenericCreatedTest, test_utils.DatasetMixin):
             channel_conversion='L')
 
     def test_entry_counts(self):
-        assert self.get_entry_count(constants.TRAIN_DB) == self.NUM_IMAGES * (1.-self.FOLDER_PCT_VAL/100.)
-        assert self.get_entry_count(constants.VAL_DB) == self.NUM_IMAGES * (self.FOLDER_PCT_VAL/100.)
+        assert self.get_entry_count(constants.TRAIN_DB) == self.NUM_IMAGES * (1. - self.FOLDER_PCT_VAL / 100.)
+        assert self.get_entry_count(constants.VAL_DB) == self.NUM_IMAGES * (self.FOLDER_PCT_VAL / 100.)
 
 
 class TestImageProcessingCreatedWithSeparateValidationDirs(GenericCreatedTest, test_utils.DatasetMixin):

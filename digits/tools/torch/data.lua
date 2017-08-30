@@ -1,8 +1,7 @@
--- Copyright (c) 2015-2016, NVIDIA CORPORATION. All rights reserved.
+-- Copyright (c) 2015-2017, NVIDIA CORPORATION. All rights reserved.
 require 'torch' -- torch
 require 'nn' -- provides a normalization operator
 require 'utils' -- various utility functions
-require 'hdf5' -- import HDF5 now as it is unsafe to do it from a worker thread
 local threads = require 'threads' -- for multi-threaded data loader
 check_require('image') -- for color transforms
 
@@ -151,11 +150,11 @@ end
 local rot90 = function(im, rotFlag)
     local rot
     if rotFlag == 2 then
-        rot = im:transpose(2,3) --switch X and Y dimentions
+        rot = im:transpose(2,3) --switch X and Y dimensions
         rot = image.vflip(rot)
         return rot
     elseif rotFlag == 3 then
-        rot = im:transpose(2,3) --switch X and Y dimentions
+        rot = im:transpose(2,3) --switch X and Y dimensions
         rot = image.hflip(rot)
         return rot
     elseif rotFlag == 4 then -- vflip+hflip=180 deg rotation

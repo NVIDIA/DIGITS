@@ -1,0 +1,16 @@
+#!/bin/bash
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
+
+set -e
+
+echo "=== Checking for Python lint ..."
+if which flake8 >/dev/null 2>&1; then
+    python2 `which flake8` --exclude ./digits/jobs .
+else
+    python2 -m flake8 --exclude ./digits/jobs .
+fi
+
+echo "=== Checking for JavaScript lint ..."
+gjslint --flagfile .gjslintrc --recurse .
+
+echo "=== No lint found."

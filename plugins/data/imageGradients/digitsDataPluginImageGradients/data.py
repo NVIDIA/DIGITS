@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from digits.utils import subclass, override, constants
@@ -10,6 +10,7 @@ import os
 
 TEMPLATE = "templates/template.html"
 INFERENCE_TEMPLATE = "templates/inference_template.html"
+
 
 @subclass
 class DataIngestion(DataIngestionInterface):
@@ -32,7 +33,7 @@ class DataIngestion(DataIngestionInterface):
         label = np.array([xslope, yslope])
         a = xslope * 255 / self.image_width
         b = yslope * 255 / self.image_height
-        image = a * (self.xx - self.image_width/2) + b * (self.yy - self.image_height/2) + 127.5
+        image = a * (self.xx - self.image_width / 2) + b * (self.yy - self.image_height / 2) + 127.5
 
         image = image.astype('uint8')
 

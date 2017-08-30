@@ -1,11 +1,11 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from ..job import DatasetJob
 from digits.dataset import tasks
 from digits.utils import subclass, override, constants
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 1
 
 
@@ -14,6 +14,7 @@ class GenericDatasetJob(DatasetJob):
     """
     A Job that creates a dataset using a user-defined extension
     """
+
     def __init__(self,
                  backend,
                  feature_encoding,
@@ -44,7 +45,7 @@ class GenericDatasetJob(DatasetJob):
                 job=self,
                 backend=self.backend,
                 stage=stage,
-                )
+            )
             )
 
     def __setstate__(self, state):
@@ -122,6 +123,6 @@ class GenericDatasetJob(DatasetJob):
                     "entry_count": t.entry_count,
                     "feature_db_path": t.dbs['features'],
                     "label_db_path": t.dbs['labels'],
-                    } for t in self.create_db_tasks()],
+                } for t in self.create_db_tasks()],
                 'feature_dims': self.get_feature_dims()})
         return d

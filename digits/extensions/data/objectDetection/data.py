@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import csv
@@ -8,7 +8,6 @@ import random
 import StringIO
 
 import numpy as np
-import PIL.Image
 
 import digits
 from digits.utils import subclass, override, constants
@@ -32,7 +31,7 @@ class DataIngestion(DataIngestionInterface):
         # this instance is automatically populated with form field
         # attributes by superclass constructor
 
-        if self.custom_classes != '':
+        if hasattr(self, 'custom_classes') and self.custom_classes != '':
             s = StringIO.StringIO(self.custom_classes)
             reader = csv.reader(s)
             self.class_mappings = {}
@@ -99,7 +98,7 @@ class DataIngestion(DataIngestionInterface):
         # make sure label exists
         label_id = os.path.splitext(os.path.basename(entry))[0]
 
-        if not label_id in self.datasrc_annotation_dict:
+        if label_id not in self.datasrc_annotation_dict:
             raise ValueError("Label key %s not found in label folder" % label_id)
         annotations = self.datasrc_annotation_dict[label_id]
 
@@ -114,7 +113,7 @@ class DataIngestion(DataIngestionInterface):
 
         bboxList = sorted(
             bboxList,
-            key=operator.itemgetter(GroundTruthObj.lmdb_format_length()-1)
+            key=operator.itemgetter(GroundTruthObj.lmdb_format_length() - 1)
         )
 
         bboxList.reverse()
@@ -132,7 +131,6 @@ class DataIngestion(DataIngestionInterface):
             0,
             max_bboxes=self.max_bboxes,
             bbox_width=GroundTruthObj.lmdb_format_length())
-
 
         return feature, label
 
@@ -225,7 +223,7 @@ class DataIngestion(DataIngestionInterface):
         for dirpath, dirnames, filenames in os.walk(folder, followlinks=True):
             for filename in filenames:
                 if filename.lower().endswith(digits.utils.image.SUPPORTED_EXTENSIONS):
-                    image_files.append('%s' % os.path.join(folder, filename))
+                    image_files.append('%s' % os.path.join(dirpath, filename))
         if len(image_files) == 0:
             raise ValueError("Unable to find supported images in %s" % folder)
         # shuffle

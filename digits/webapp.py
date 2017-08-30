@@ -1,33 +1,36 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import os
 
 import flask
 from flask.ext.socketio import SocketIO
-from gevent import monkey; monkey.patch_all()
+from gevent import monkey
+monkey.patch_all()
 
-from .config import config_value
-from digits import utils
-from digits.utils import filesystem as fs
-from digits.utils.store import StoreCache
-import digits.scheduler
+from .config import config_value  # noqa
+from digits import utils  # noqa
+from digits.utils import filesystem as fs  # noqa
+from digits.utils.store import StoreCache  # noqa
+import digits.scheduler  # noqa
 
-### Create Flask, Scheduler and SocketIO objects
+# Create Flask, Scheduler and SocketIO objects
 
-app = flask.Flask(__name__)
+url_prefix = config_value('url_prefix')
+app = flask.Flask(__name__, static_url_path=url_prefix+'/static')
 app.config['DEBUG'] = True
 # Disable CSRF checking in WTForms
 app.config['WTF_CSRF_ENABLED'] = False
 # This is still necessary for SocketIO
 app.config['SECRET_KEY'] = os.urandom(12).encode('hex')
 app.url_map.redirect_defaults = False
-socketio = SocketIO(app, async_mode='gevent')
+app.config['URL_PREFIX'] = url_prefix
+socketio = SocketIO(app, async_mode='gevent', path=url_prefix+'/socket.io')
 app.config['store_cache'] = StoreCache()
 app.config['store_url_list'] = config_value('model_store')['url_list']
 scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
-### Register filters and views
+# Register filters and views
 
 app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.globals['server_version'] = digits.__version__
@@ -43,33 +46,47 @@ app.jinja_env.filters['has_permission'] = utils.auth.has_permission
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
-import digits.views
-app.register_blueprint(digits.views.blueprint)
-import digits.dataset.views
-app.register_blueprint(digits.dataset.views.blueprint, url_prefix='/datasets')
-import digits.dataset.generic.views
-app.register_blueprint(digits.dataset.generic.views.blueprint, url_prefix='/datasets/generic')
-import digits.dataset.images.views
-app.register_blueprint(digits.dataset.images.views.blueprint, url_prefix='/datasets/images')
-import digits.dataset.images.classification.views
-app.register_blueprint(digits.dataset.images.classification.views.blueprint, url_prefix='/datasets/images/classification')
-import digits.dataset.images.generic.views
-app.register_blueprint(digits.dataset.images.generic.views.blueprint, url_prefix='/datasets/images/generic')
-import digits.model.views
-app.register_blueprint(digits.model.views.blueprint, url_prefix='/models')
-import digits.model.images.views
-app.register_blueprint(digits.model.images.views.blueprint, url_prefix='/models/images')
-import digits.model.images.classification.views
-app.register_blueprint(digits.model.images.classification.views.blueprint, url_prefix='/models/images/classification')
-import digits.model.images.generic.views
-app.register_blueprint(digits.model.images.generic.views.blueprint, url_prefix='/models/images/generic')
-import digits.pretrained_model.views
-app.register_blueprint(digits.pretrained_model.views.blueprint, url_prefix='/pretrained_models')
-import digits.store.views
-app.register_blueprint(digits.store.views.blueprint, url_prefix='/store')
+import digits.views  # noqa
+app.register_blueprint(digits.views.blueprint,
+                       url_prefix=url_prefix)
+import digits.dataset.views  # noqa
+app.register_blueprint(digits.dataset.views.blueprint,
+                       url_prefix=url_prefix+'/datasets')
+import digits.dataset.generic.views  # noqa
+app.register_blueprint(digits.dataset.generic.views.blueprint,
+                       url_prefix=url_prefix+'/datasets/generic')
+import digits.dataset.images.views  # noqa
+app.register_blueprint(digits.dataset.images.views.blueprint,
+                       url_prefix=url_prefix+'/datasets/images')
+import digits.dataset.images.classification.views  # noqa
+app.register_blueprint(digits.dataset.images.classification.views.blueprint,
+                       url_prefix=url_prefix+'/datasets/images/classification')
+import digits.dataset.images.generic.views  # noqa
+app.register_blueprint(digits.dataset.images.generic.views.blueprint,
+                       url_prefix=url_prefix+'/datasets/images/generic')
+import digits.model.views  # noqa
+app.register_blueprint(digits.model.views.blueprint,
+                       url_prefix=url_prefix+'/models')
+import digits.model.images.views  # noqa
+app.register_blueprint(digits.model.images.views.blueprint,
+                       url_prefix=url_prefix+'/models/images')
+import digits.model.images.classification.views  # noqa
+app.register_blueprint(digits.model.images.classification.views.blueprint,
+                       url_prefix=url_prefix+'/models/images/classification')
+import digits.model.images.generic.views  # noqa
+app.register_blueprint(digits.model.images.generic.views.blueprint,
+                       url_prefix=url_prefix+'/models/images/generic')
+import digits.pretrained_model.views  # noqa
+app.register_blueprint(digits.pretrained_model.views.blueprint,
+                       url_prefix=url_prefix+'/pretrained_models')
+import digits.store.views  # noqa
+app.register_blueprint(digits.store.views.blueprint,
+                       url_prefix=url_prefix+'/store')
+
 
 def username_decorator(f):
     from functools import wraps
+
     @wraps(f)
     def decorated(*args, **kwargs):
         this_username = flask.request.cookies.get('username', None)
@@ -80,6 +97,6 @@ def username_decorator(f):
 for endpoint, function in app.view_functions.iteritems():
     app.view_functions[endpoint] = username_decorator(function)
 
-### Setup the environment
+# Setup the environment
 
 scheduler.load_past_jobs()

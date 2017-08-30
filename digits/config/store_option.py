@@ -1,10 +1,11 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import os
 from urlparse import urlparse
 
 from . import option_list
+
 
 def validate(value):
     if value == '':
@@ -18,6 +19,7 @@ def validate(value):
             else:
                 raise ValueError('"%s" is not a valid URL' % url)
     return ','.join(valid_url_list)
+
 
 def load_url_list():
     """
@@ -34,4 +36,3 @@ def load_url_list():
 option_list['model_store'] = {
     'url_list': load_url_list()
 }
-

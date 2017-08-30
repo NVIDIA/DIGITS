@@ -1,6 +1,7 @@
 # Temporary files
 *.swp
 *~
+.DS_Store
 TAGS
 
 # Compiled / optimized files
@@ -15,4 +16,17 @@ TAGS
 # setuptools
 /build/
 /dist/
-/*.egg-info/
+*.egg-info/
+
+#Intellij files
+.idea/
+
+#vscode
+.vscode/
+
+#.project
+.project
+/.project
+
+#.tb
+.tb/

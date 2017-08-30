@@ -1,10 +1,11 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from . import tasks
 import digits.frameworks
 from digits.job import Job
 from digits.utils import subclass, override
+
 
 @subclass
 class InferenceJob(Job):
@@ -20,11 +21,16 @@ class InferenceJob(Job):
         epoch   -- epoch of model snapshot to use
         layers  -- layers to import ('all' or 'none')
         """
-        super(InferenceJob, self).__init__(persistent = False, **kwargs)
+        super(InferenceJob, self).__init__(persistent=False, **kwargs)
 
         # get handle to framework object
         fw_id = model.train_task().framework_id
         fw = digits.frameworks.get_framework_by_id(fw_id)
+
+        if fw is None:
+            raise RuntimeError(
+                'The "%s" framework cannot be found. Check your server configuration.'
+                % fw_id)
 
         # create inference task
         self.tasks.append(fw.create_inference_task(
@@ -34,7 +40,7 @@ class InferenceJob(Job):
             epoch=epoch,
             layers=layers,
             resize=resize,
-            ))
+        ))
 
     @override
     def __getstate__(self):

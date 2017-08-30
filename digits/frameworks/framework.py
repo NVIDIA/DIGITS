@@ -1,5 +1,6 @@
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 from digits.inference.tasks import InferenceTask
+
 
 class Framework(object):
 
@@ -24,6 +25,18 @@ class Framework(object):
         return whether framework can shuffle input data during training
         """
         return self.CAN_SHUFFLE_DATA
+
+    def supports_python_layers_file(self):
+        """
+        return whether framework can shuffle input data during training
+        """
+        return self.SUPPORTS_PYTHON_LAYERS_FILE
+
+    def supports_timeline_traces(self):
+        """
+        return whether framework supports creating timeline traces
+        """
+        return self.SUPPORTS_TIMELINE_TRACING
 
     def supports_solver_type(self, solver_type):
         """
@@ -76,7 +89,7 @@ class Framework(object):
         """
         raise NotImplementedError('Please implement me')
 
-    def get_network_visualization(self, desc):
+    def get_network_visualization(self, **kwargs):
         """
         return visualization of network
         """
@@ -84,4 +97,3 @@ class Framework(object):
 
     def can_accumulate_gradients(self):
         return False
-

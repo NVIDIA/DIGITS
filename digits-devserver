@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
 set -e
 
-python -m digits $@
+python2 -m digits $@

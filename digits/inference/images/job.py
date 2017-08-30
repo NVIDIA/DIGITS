@@ -1,9 +1,9 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from ..job import InferenceJob
-from digits.job import Job
 from digits.utils import subclass, override
+
 
 @subclass
 class ImageInferenceJob(InferenceJob):

@@ -1,6 +1,22 @@
 # Model Store
 
 ## Introduction
+Model Store lists models in user-specified servers.
+Users can imports models from Model Store into DIGITS.
+
+
+## Setting up environment variable
+The configuration of Model Store requires one environment variable DIGITS_MODEL_STORE_URL to be set.
+NVIDIA plans to publish one public Model Store at http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0.
+You can set up the environment variable with that url before launching DIGITS.
+For example, run the following command in your Bash shell.
+``` shell
+export DIGITS_MODEL_STORE_URL='http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0'
+```
+If multiple model stores are available, specify their url's, separated by the comma (,).
+``` shell
+export DIGITS_MODEL_STORE_URL='http://localhost/mymodelstore,http://dlserver/teammodelstore'
+```
 
 DIGITS 5.0 introduces the concept of a "model store," which is a collection of trained models that can be used as pre-trained weights to accelerate training convergence.
 A DIGITS server can be configured to connect to one or more model stores to download these trained models from the store to the server.
@@ -10,14 +26,14 @@ See instructions below for creating and connecting to your own store[s].
 
 ## Usage
 
-From the DIGITS home page, click on "Pretrained Models", then "Load Model" > "Images" > "Retreive from Model Store".
+From the DIGITS home page, click on "Pretrained Models", then "Load Model" > "Images" > "Retrieve from Model Store".
 
 ![Home page](images/model-store/home.jpg)
 
 On the model store page, you will see a list of all the models available for download.
 Click on the small download icon (first column) to download a model from the store to the DIGITS server.
 
-![Official store](images/model-store/official.jpg)
+![Official store](images/model-store/official.png)
 
 After downloading a model, you can return to the homepage to see the list of pretrained models.
 To make use of the downloaded model for training, select it as a "Pretrained Network" in the "New Model" form.

@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 
@@ -28,7 +28,8 @@ class DataIngestionInterface(object):
         """
         Encode the entry associated with specified ID (returned by
         itemize_entries())
-        Returns a tuble (feature, label)
+        Returns a list of (feature, label) tuples, or a single tuple
+        if there is only one sample for the entry.
         Data are expected in HWC format
         Color images are expected in RGB order
         """

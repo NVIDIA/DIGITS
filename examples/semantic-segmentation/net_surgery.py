@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 """
 Downloads BVLC Alexnet and perform the require net surgery to convert into an FCN Alexnet
 """
@@ -19,7 +19,7 @@ FCN_ALEXNET_MODEL_FILENAME = "fcn_alexnet.caffemodel"
 
 def download(url, filename):
     print "Downloading %s..." % url
-    urllib.urlretrieve (url, filename)
+    urllib.urlretrieve(url, filename)
 
 
 def generate_fcn():
@@ -44,7 +44,7 @@ def generate_fcn():
 
 
 def transplant(new_net, net, suffix=''):
-	# from fcn.berkeleyvision.org
+    # from fcn.berkeleyvision.org
     for p in net.params:
         p_new = p + suffix
         if p_new not in new_net.params:

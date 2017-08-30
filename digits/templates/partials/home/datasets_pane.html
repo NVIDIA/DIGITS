@@ -1,4 +1,4 @@
-{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
 <!-- Datasets -->
 <div class="col-md-12" ng-show="tab.isSet(1)">
     <div class="row">
@@ -12,7 +12,7 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             {{category}} <span class="caret"></span>
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu dropdown-menu-right">
                             {% for id in options.keys()|sort %}
                             {% set option = options[id] %}
                             <li><a href="{{option["url"]}}">{{option["title"]}}</a></li>
@@ -109,7 +109,7 @@
                         ng-keydown="keydown($event)"
                         ng-class="{selected:job.selected}">
                         <td>
-                            <a href="/jobs/{[ job.id ]}" title="{[job.name]}">
+                            <a href="{{config['URL_PREFIX']}}/jobs/{[ job.id ]}" title="{[job.name]}">
                                 {[ job.name | major_name ]}
                             </a>
                             <small>
@@ -118,6 +118,9 @@
                         </td>
                         <td>
                             {[ job.refs | positive ]}
+                        </td>
+                        <td>
+                            <small>{[ job.extension ]}</small>
                         </td>
                         <td>
                             <span class="badge">{[ job.backend ]}</span>

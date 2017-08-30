@@ -1,15 +1,16 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import itertools
 import json
 import os
-import re
 import shutil
 import tempfile
 import time
 import unittest
-import urllib
+import caffe_pb2
+import math
+
 
 # Find the best implementation available
 try:
@@ -18,19 +19,14 @@ except ImportError:
     from StringIO import StringIO
 
 from bs4 import BeautifulSoup
-import flask
-import mock
-import PIL.Image
-from urlparse import urlparse
 
 from digits.config import config_value
 import digits.dataset.images.classification.test_views
 import digits.test_views
 from digits import test_utils
 import digits.webapp
-
-# Must import after importing digit.config
-import caffe_pb2
+from digits.frameworks import CaffeFramework
+from google.protobuf import text_format
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -40,12 +36,13 @@ TIMEOUT_MODEL = 60
 # Base classes (they don't start with "Test" so nose won't run them)
 ################################################################################
 
+
 class BaseViewsTest(digits.test_views.BaseViewsTest):
     """
     Provides some functions
     """
     CAFFE_NETWORK = \
-"""
+        """
 layer {
     name: "hidden"
     type: 'InnerProduct'
@@ -78,7 +75,7 @@ layer {
 """
 
     TORCH_NETWORK = \
-"""
+        """
 return function(p)
     -- adjust to number of classes
     local nclasses = p.nclasses or 1
@@ -100,6 +97,25 @@ return function(p)
 end
 """
 
+    TENSORFLOW_NETWORK = \
+        """
+class UserModel(Tower):
+
+    @model_property
+    def inference(self):
+        ninputs = self.input_shape[0] * self.input_shape[1] * self.input_shape[2]
+        W = tf.get_variable('W', [ninputs, self.nclasses], initializer=tf.constant_initializer(0.0))
+        b = tf.get_variable('b', [self.nclasses], initializer=tf.constant_initializer(0.0)),
+        model = tf.reshape(self.x, shape=[-1, ninputs])
+        model = tf.add(tf.matmul(model, W), b)
+        return model
+
+    @model_property
+    def loss(self):
+        loss = digits.classification_loss(self.inference, self.y)
+        return loss
+"""
+
     @classmethod
     def model_exists(cls, job_id):
         return cls.job_exists(job_id, 'models')
@@ -107,6 +123,10 @@ end
     @classmethod
     def model_status(cls, job_id):
         return cls.job_status(job_id, 'models')
+
+    @classmethod
+    def model_info(cls, job_id):
+        return cls.job_info(job_id, 'models')
 
     @classmethod
     def abort_model(cls, job_id):
@@ -125,10 +145,18 @@ end
 
     @classmethod
     def network(cls):
-        return cls.TORCH_NETWORK if cls.FRAMEWORK=='torch' else cls.CAFFE_NETWORK
+        if cls.FRAMEWORK == 'torch':
+            return cls.TORCH_NETWORK
+        elif cls.FRAMEWORK == 'caffe':
+            return cls.CAFFE_NETWORK
+        elif cls.FRAMEWORK == 'tensorflow':
+            return cls.TENSORFLOW_NETWORK
+        else:
+            raise Exception('Unknown cls.FRAMEWORK "%s"' % cls.FRAMEWORK)
+
 
 class BaseViewsTestWithDataset(BaseViewsTest,
-        digits.dataset.images.classification.test_views.BaseViewsTestWithDataset):
+                               digits.dataset.images.classification.test_views.BaseViewsTestWithDataset):
     """
     Provides a dataset
     """
@@ -145,10 +173,13 @@ class BaseViewsTestWithDataset(BaseViewsTest,
     AUG_ROT = None
     AUG_SCALE = None
     AUG_NOISE = None
+    AUG_CONTRAST = None
+    AUG_WHITENING = None
     AUG_HSV_USE = None
     AUG_HSV_H = None
     AUG_HSV_S = None
     AUG_HSV_V = None
+    OPTIMIZER = None
 
     @classmethod
     def setUpClass(cls):
@@ -175,17 +206,17 @@ class BaseViewsTestWithDataset(BaseViewsTest,
         if network is None:
             network = cls.network()
         data = {
-                'model_name':       'test_model',
-                'group_name':       'test_group',
-                'dataset':          cls.dataset_id,
-                'method':           'custom',
-                'custom_network':   network,
-                'batch_size':       10,
-                'train_epochs':     cls.TRAIN_EPOCHS,
-                'framework' :       cls.FRAMEWORK,
-                'random_seed':      0xCAFEBABE,
-                'shuffle':          'true' if cls.SHUFFLE else 'false'
-                }
+            'model_name':       'test_model',
+            'group_name':       'test_group',
+            'dataset':          cls.dataset_id,
+            'method':           'custom',
+            'custom_network':   network,
+            'batch_size':       10,
+            'train_epochs':     cls.TRAIN_EPOCHS,
+            'framework':       cls.FRAMEWORK,
+            'random_seed':      0xCAFEBABE,
+            'shuffle':          'true' if cls.SHUFFLE else 'false'
+        }
         if cls.CROP_SIZE is not None:
             data['crop_size'] = cls.CROP_SIZE
         if cls.LR_POLICY is not None:
@@ -205,6 +236,10 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             data['aug_scale'] = cls.AUG_SCALE
         if cls.AUG_NOISE is not None:
             data['aug_noise'] = cls.AUG_NOISE
+        if cls.AUG_CONTRAST is not None:
+            data['aug_contrast'] = cls.AUG_CONTRAST
+        if cls.AUG_WHITENING is not None:
+            data['aug_whitening'] = cls.AUG_WHITENING
         if cls.AUG_HSV_USE is not None:
             data['aug_hsv_use'] = cls.AUG_HSV_USE
         if cls.AUG_HSV_H is not None:
@@ -213,6 +248,8 @@ class BaseViewsTestWithDataset(BaseViewsTest,
             data['aug_hsv_s'] = cls.AUG_HSV_S
         if cls.AUG_HSV_V is not None:
             data['aug_hsv_v'] = cls.AUG_HSV_V
+        if cls.OPTIMIZER is not None:
+            data['solver_type'] = cls.OPTIMIZER
 
         data.update(kwargs)
 
@@ -261,10 +298,12 @@ class BaseViewsTestWithModel(BaseViewsTestWithDataset):
         cls.model_id = cls.create_model(json=True)
         assert cls.model_wait_completion(cls.model_id) == 'Done', 'create failed'
 
+
 class BaseTestViews(BaseViewsTest):
     """
     Tests which don't require a dataset or a model
     """
+
     def test_page_model_new(self):
         rv = self.app.get('/models/images/classification/new')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
@@ -274,9 +313,9 @@ class BaseTestViews(BaseViewsTest):
         assert not self.model_exists('foo'), "model shouldn't exist"
 
     def test_visualize_network(self):
-        rv = self.app.post('/models/visualize-network?framework='+self.FRAMEWORK,
-                data = {'custom_network': self.network()}
-                )
+        rv = self.app.post('/models/visualize-network?framework=' + self.FRAMEWORK,
+                           data={'custom_network': self.network()}
+                           )
         s = BeautifulSoup(rv.data, 'html.parser')
         if rv.status_code != 200:
             body = s.select('body')[0]
@@ -287,15 +326,17 @@ class BaseTestViews(BaseViewsTest):
         assert image is not None, "didn't return an image"
 
     def test_customize(self):
-        rv = self.app.post('/models/customize?network=lenet&framework='+self.FRAMEWORK)
+        rv = self.app.post('/models/customize?network=lenet&framework=' + self.FRAMEWORK)
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
+
 
 class BaseTestCreation(BaseViewsTestWithDataset):
     """
     Model creation tests
     """
+
     def test_create_json(self):
         job_id = self.create_model(json=True)
         self.abort_model(job_id)
@@ -334,14 +375,14 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert len(content['snapshots']) == 2, 'should take 2 snapshots'
 
     @unittest.skipIf(
-            not config_value('gpu_list'),
-            'no GPUs selected')
+        not config_value('gpu_list'),
+        'no GPUs selected')
     @unittest.skipIf(
-            not config_value('caffe')['cuda_enabled'],
-            'CUDA disabled')
+        not config_value('caffe')['cuda_enabled'],
+        'CUDA disabled')
     @unittest.skipIf(
-            config_value('caffe')['multi_gpu'],
-            'multi-GPU enabled')
+        config_value('caffe')['multi_gpu'],
+        'multi-GPU enabled')
     def test_select_gpu(self):
         for index in config_value('gpu_list').split(','):
             yield self.check_select_gpu, index
@@ -351,40 +392,40 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
 
     @unittest.skipIf(
-            not config_value('gpu_list'),
-            'no GPUs selected')
+        not config_value('gpu_list'),
+        'no GPUs selected')
     @unittest.skipIf(
-            not config_value('caffe')['cuda_enabled'],
-            'CUDA disabled')
+        not config_value('caffe')['cuda_enabled'],
+        'CUDA disabled')
     @unittest.skipIf(
-            not config_value('caffe')['multi_gpu'],
-            'multi-GPU disabled')
+        not config_value('caffe')['multi_gpu'],
+        'multi-GPU disabled')
     def test_select_gpus(self):
         # test all possible combinations
         gpu_list = config_value('gpu_list').split(',')
         for i in xrange(len(gpu_list)):
-            for combination in itertools.combinations(gpu_list, i+1):
+            for combination in itertools.combinations(gpu_list, i + 1):
                 yield self.check_select_gpus, combination
 
     def check_select_gpus(self, gpu_list):
         job_id = self.create_model(select_gpus_list=','.join(gpu_list), batch_size=len(gpu_list))
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
 
-    def classify_one_for_job(self, job_id, test_misclassification = True):
+    def classify_one_for_job(self, job_id, test_misclassification=True):
         # carry out one inference test per category in dataset
         for category in self.imageset_paths.keys():
             image_path = self.imageset_paths[category][0]
             image_path = os.path.join(self.imageset_folder, image_path)
-            with open(image_path,'rb') as infile:
+            with open(image_path, 'rb') as infile:
                 # StringIO wrapping is needed to simulate POST file upload.
                 image_upload = (StringIO(infile.read()), 'image.png')
 
             rv = self.app.post(
-                    '/models/images/classification/classify_one?job_id=%s' % job_id,
-                    data = {
-                        'image_file': image_upload,
-                        }
-                    )
+                '/models/images/classification/classify_one?job_id=%s' % job_id,
+                data={
+                    'image_file': image_upload,
+                }
+            )
             s = BeautifulSoup(rv.data, 'html.parser')
             body = s.select('body')
             assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
@@ -395,19 +436,19 @@ class BaseTestCreation(BaseViewsTestWithDataset):
 
     def test_classify_one_mean_image(self):
         # test the creation
-        job_id = self.create_model(use_mean = 'image')
+        job_id = self.create_model(use_mean='image')
         assert self.model_wait_completion(job_id) == 'Done', 'job failed'
         self.classify_one_for_job(job_id)
 
     def test_classify_one_mean_pixel(self):
         # test the creation
-        job_id = self.create_model(use_mean = 'pixel')
+        job_id = self.create_model(use_mean='pixel')
         assert self.model_wait_completion(job_id) == 'Done', 'job failed'
         self.classify_one_for_job(job_id)
 
     def test_classify_one_mean_none(self):
         # test the creation
-        job_id = self.create_model(use_mean = 'none')
+        job_id = self.create_model(use_mean='none')
         assert self.model_wait_completion(job_id) == 'Done', 'job failed'
         self.classify_one_for_job(job_id, False)
 
@@ -420,9 +461,9 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert len(content['snapshots']), 'should have at least snapshot'
 
         options = {
-                'method': 'previous',
-                'previous_networks': job1_id,
-                }
+            'method': 'previous',
+            'previous_networks': job1_id,
+        }
         options['%s-snapshot' % job1_id] = content['snapshots'][-1]
 
         job2_id = self.create_model(**options)
@@ -437,16 +478,16 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         content = json.loads(rv.data)
         assert len(content['snapshots']), 'should have at least snapshot'
         options_2 = {
-                'method': 'previous',
-                'previous_networks': job1_id,
-                }
+            'method': 'previous',
+            'previous_networks': job1_id,
+        }
         options_2['%s-snapshot' % job1_id] = content['snapshots'][-1]
         job2_id = self.create_model(**options_2)
         assert self.model_wait_completion(job2_id) == 'Done', 'second job failed'
         options_3 = {
-                'method': 'previous',
-                'previous_networks': job2_id,
-                }
+            'method': 'previous',
+            'previous_networks': job2_id,
+        }
         options_3['%s-snapshot' % job2_id] = -1
         job3_id = self.create_model(**options_3)
         assert self.model_wait_completion(job3_id) == 'Done', 'third job failed'
@@ -485,6 +526,19 @@ class BaseTestCreation(BaseViewsTestWithDataset):
                     }
                 end
                 """
+        elif self.FRAMEWORK == 'tensorflow':
+            bogus_net = """
+class UserModel(Tower):
+
+    @model_property
+    def inference(self):
+        model = BogusCode(0)
+        return model
+
+    @model_property
+    def loss(y):
+        return BogusCode(0)
+"""
         job_id = self.create_model(json=True, network=bogus_net)
         assert self.model_wait_completion(job_id) == 'Error', 'job should have failed'
         job_info = self.job_info_html(job_id=job_id, job_type='models')
@@ -517,7 +571,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content1 = json.loads(rv.data)
 
-        ## Clone job1 as job2
+        # Clone job1 as job2
         options_2 = {
             'clone': job1_id,
         }
@@ -528,7 +582,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content2 = json.loads(rv.data)
 
-        ## These will be different
+        # These will be different
         content1.pop('id')
         content2.pop('id')
         content1.pop('directory')
@@ -544,16 +598,18 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         job2 = digits.webapp.scheduler.get_job(job2_id)
         assert (job1.form_data == job2.form_data), 'form content does not match'
 
+
 class BaseTestCreated(BaseViewsTestWithModel):
     """
     Tests on a model that has already been created
     """
+
     def test_save(self):
         job = digits.webapp.scheduler.get_job(self.model_id)
         assert job.save(), 'Job failed to save'
 
     def test_get_snapshot(self):
-        job  = digits.webapp.scheduler.get_job(self.model_id)
+        job = digits.webapp.scheduler.get_job(self.model_id)
         task = job.train_task()
         f = task.get_snapshot(-1)
 
@@ -586,21 +642,22 @@ class BaseTestCreated(BaseViewsTestWithModel):
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert content['id'] == self.model_id, 'id %s != %s' % (content['id'], self.model_id)
-        assert content['dataset_id'] == self.dataset_id, 'dataset_id %s != %s' % (content['dataset_id'], self.dataset_id)
+        assert content['dataset_id'] == self.dataset_id, 'dataset_id %s != %s' % (
+            content['dataset_id'], self.dataset_id)
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
     def test_edit_name(self):
         status = self.edit_job(
-                self.dataset_id,
-                name='new name'
-                )
+            self.dataset_id,
+            name='new name'
+        )
         assert status == 200, 'failed with %s' % status
 
     def test_edit_notes(self):
         status = self.edit_job(
-                self.dataset_id,
-                notes='new notes'
-                )
+            self.dataset_id,
+            notes='new notes'
+        )
         assert status == 200, 'failed with %s' % status
 
     def test_classify_one(self):
@@ -608,17 +665,17 @@ class BaseTestCreated(BaseViewsTestWithModel):
         category = self.imageset_paths.keys()[0]
         image_path = self.imageset_paths[category][0]
         image_path = os.path.join(self.imageset_folder, image_path)
-        with open(image_path,'rb') as infile:
+        with open(image_path, 'rb') as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-                '/models/images/classification/classify_one?job_id=%s' % self.model_id,
-                data = {
-                    'image_file': image_upload,
-                    'show_visualizations': 'y',
-                    }
-                )
+            '/models/images/classification/classify_one?job_id=%s' % self.model_id,
+            data={
+                'image_file': image_upload,
+                'show_visualizations': 'y',
+            }
+        )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
@@ -631,17 +688,17 @@ class BaseTestCreated(BaseViewsTestWithModel):
         category = self.imageset_paths.keys()[-1]
         image_path = self.imageset_paths[category][-1]
         image_path = os.path.join(self.imageset_folder, image_path)
-        with open(image_path,'rb') as infile:
+        with open(image_path, 'rb') as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-                '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
-                data = {
-                    'image_file': image_upload,
-                    'show_visualizations': 'y',
-                    }
-                )
+            '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
+            data={
+                'image_file': image_upload,
+                'show_visualizations': 'y',
+            }
+        )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
         assert data['predictions'][0][0] == category, 'image misclassified'
@@ -660,9 +717,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
+            '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+            data={'image_list': file_upload}
+        )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
@@ -680,9 +737,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload, 'image_folder': self.imageset_folder}
-                )
+            '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+            data={'image_list': file_upload, 'image_folder': self.imageset_folder}
+        )
 
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
@@ -696,16 +753,16 @@ class BaseTestCreated(BaseViewsTestWithModel):
                 image_path = image
                 image_path = os.path.join(self.imageset_folder, image_path)
                 # test label_id with -1 and >len(labels)
-                textfile_images += '%s %s\n' % (image_path, 3*label_id-1)
+                textfile_images += '%s %s\n' % (image_path, 3 * label_id - 1)
             label_id += 1
 
         # StringIO wrapping is needed to simulate POST file upload.
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
+            '/models/images/classification/classify_many?job_id=%s' % self.model_id,
+            data={'image_list': file_upload}
+        )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
@@ -724,9 +781,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/classify_many.json?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
+            '/models/images/classification/classify_many.json?job_id=%s' % self.model_id,
+            data={'image_list': file_upload}
+        )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         data = json.loads(rv.data)
         assert 'classifications' in data, 'invalid response'
@@ -751,9 +808,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/top_n?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload}
-                )
+            '/models/images/classification/top_n?job_id=%s' % self.model_id,
+            data={'image_list': file_upload}
+        )
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, body)
@@ -774,9 +831,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-                '/models/images/classification/top_n?job_id=%s' % self.model_id,
-                data = {'image_list': file_upload, 'image_folder': self.imageset_folder}
-                )
+            '/models/images/classification/top_n?job_id=%s' % self.model_id,
+            data={'image_list': file_upload, 'image_folder': self.imageset_folder}
+        )
 
         s = BeautifulSoup(rv.data, 'html.parser')
         body = s.select('body')
@@ -790,6 +847,9 @@ class BaseTestCreated(BaseViewsTestWithModel):
         # if no GPUs, just test inference during a normal training job
 
         # get number of GPUs
+        if self.FRAMEWORK == 'tensorflow':
+            raise unittest.SkipTest('Tensorflow CPU inference during training not supported')
+
         gpu_count = 1
         if (config_value('gpu_list') and
                 config_value('caffe')['cuda_enabled'] and
@@ -800,14 +860,14 @@ class BaseTestCreated(BaseViewsTestWithModel):
         category = self.imageset_paths.keys()[-1]
         image_path = self.imageset_paths[category][-1]
         image_path = os.path.join(self.imageset_folder, image_path)
-        with open(image_path,'rb') as infile:
+        with open(image_path, 'rb') as infile:
             # StringIO wrapping is needed to simulate POST file upload.
             image_upload = (StringIO(infile.read()), 'image.png')
 
         # create a long-running training job
         job2_id = self.create_model(
             select_gpu_count=gpu_count,
-            batch_size=10*gpu_count,
+            batch_size=10 * gpu_count,
             train_epochs=1000,
         )
         try:
@@ -822,25 +882,27 @@ class BaseTestCreated(BaseViewsTestWithModel):
 
             rv = self.app.post(
                 '/models/images/classification/classify_one.json?job_id=%s' % self.model_id,
-                data = {'image_file': image_upload}
+                data={'image_file': image_upload}
             )
-            data = json.loads(rv.data)
+            json.loads(rv.data)
             assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         finally:
             self.delete_model(job2_id)
+
 
 class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
     """
     Test the interactions between datasets and models
     """
     # If you try to create a model using a deleted dataset, it should fail
+
     def test_create_model_deleted_dataset(self):
         dataset_id = self.create_dataset()
         assert self.delete_dataset(dataset_id) == 200, 'delete failed'
         assert not self.dataset_exists(dataset_id), 'dataset exists after delete'
 
         try:
-            model_id = self.create_model(dataset=dataset_id)
+            self.create_model(dataset=dataset_id)
         except RuntimeError:
             return
         assert False, 'Should have failed'
@@ -897,11 +959,14 @@ class BaseTestDatasetModelInteractions(BaseViewsTestWithDataset):
 class BaseTestCreatedWide(BaseTestCreated):
     IMAGE_WIDTH = 20
 
+
 class BaseTestCreatedTall(BaseTestCreated):
     IMAGE_HEIGHT = 20
 
+
 class BaseTestCreatedCropInForm(BaseTestCreated):
     CROP_SIZE = 8
+
 
 class BaseTestCreatedDataAug(BaseTestCreatedTall):
     AUG_FLIP = 'fliplrud'
@@ -914,9 +979,10 @@ class BaseTestCreatedDataAug(BaseTestCreatedTall):
     AUG_HSV_S = 0.04
     AUG_HSV_V = 0.06
 
+
 class BaseTestCreatedCropInNetwork(BaseTestCreated):
     CAFFE_NETWORK = \
-"""
+        """
 layer {
   name: "data"
   type: "Data"
@@ -972,7 +1038,7 @@ layer {
 }
 """
     TORCH_NETWORK = \
-"""
+        """
 return function(p)
     local nclasses = p.nclasses or 1
     local croplen = 8, channels
@@ -990,20 +1056,27 @@ return function(p)
     }
 end
 """
+    TENSORFLOW_NETWORK = \
+        """
+@TODO(tzaman)
+"""
 
 ################################################################################
 # Test classes
 ################################################################################
 
+
 class TestCaffeViews(BaseTestViews, test_utils.CaffeMixin):
     pass
+
 
 class TestCaffeCreation(BaseTestCreation, test_utils.CaffeMixin):
     pass
 
+
 class TestCaffeCreatedWideMoreNumOutput(BaseTestCreatedWide, test_utils.CaffeMixin):
     CAFFE_NETWORK = \
-"""
+        """
 layer {
     name: "hidden"
     type: 'InnerProduct'
@@ -1038,61 +1111,111 @@ layer {
 }
 """
 
+
 class TestCaffeDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.CaffeMixin):
     pass
+
 
 class TestCaffeCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.CaffeMixin):
     pass
 
+
 class TestCaffeCreatedCropInNetwork(BaseTestCreatedCropInNetwork, test_utils.CaffeMixin):
     pass
+
+
+@unittest.skipIf(
+    not CaffeFramework().can_accumulate_gradients(),
+    'This version of Caffe cannot accumulate gradients')
+class TestBatchAccumulationCaffe(BaseViewsTestWithDataset, test_utils.CaffeMixin):
+    TRAIN_EPOCHS = 1
+    IMAGE_COUNT = 10  # per class
+
+    def test_batch_accumulation_calculations(self):
+        batch_size = 10
+        batch_accumulation = 2
+
+        job_id = self.create_model(
+            batch_size=batch_size,
+            batch_accumulation=batch_accumulation,
+        )
+        assert self.model_wait_completion(job_id) == 'Done', 'create failed'
+        info = self.model_info(job_id)
+        solver = caffe_pb2.SolverParameter()
+        with open(os.path.join(info['directory'], info['solver file']), 'r') as infile:
+            text_format.Merge(infile.read(), solver)
+        assert solver.iter_size == batch_accumulation, \
+            'iter_size is %d instead of %d' % (solver.iter_size, batch_accumulation)
+        max_iter = int(math.ceil(
+            float(self.TRAIN_EPOCHS * self.IMAGE_COUNT * 3) /
+            (batch_size * batch_accumulation)
+        ))
+        assert solver.max_iter == max_iter,\
+            'max_iter is %d instead of %d' % (solver.max_iter, max_iter)
+
 
 class TestCaffeCreatedTallMultiStepLR(BaseTestCreatedTall, test_utils.CaffeMixin):
     LR_POLICY = 'multistep'
     LR_MULTISTEP_VALUES = '50,75,90'
 
+
 class TestTorchViews(BaseTestViews, test_utils.TorchMixin):
     pass
 
+
 class TestTorchCreation(BaseTestCreation, test_utils.TorchMixin):
     pass
+
 
 class TestTorchCreatedUnencodedShuffle(BaseTestCreated, test_utils.TorchMixin):
     ENCODING = 'none'
     SHUFFLE = True
 
+
 class TestTorchCreatedHdf5(BaseTestCreated, test_utils.TorchMixin):
     BACKEND = 'hdf5'
+
 
 class TestTorchCreatedTallHdf5Shuffle(BaseTestCreatedTall, test_utils.TorchMixin):
     BACKEND = 'hdf5'
     SHUFFLE = True
 
+
 class TestTorchDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.TorchMixin):
     pass
+
 
 class TestCaffeLeNet(BaseTestCreated, test_utils.CaffeMixin):
     IMAGE_WIDTH = 28
     IMAGE_HEIGHT = 28
 
-    CAFFE_NETWORK=open(
-            os.path.join(
-                os.path.dirname(digits.__file__),
-                'standard-networks', 'caffe', 'lenet.prototxt')
-            ).read()
+    CAFFE_NETWORK = open(
+        os.path.join(
+            os.path.dirname(digits.__file__),
+            'standard-networks', 'caffe', 'lenet.prototxt')
+    ).read()
+
+
+class TestCaffeLeNetADAMOptimizer(TestCaffeLeNet):
+    OPTIMIZER = 'ADAM'
+
 
 class TestTorchCreatedCropInForm(BaseTestCreatedCropInForm, test_utils.TorchMixin):
     pass
 
+
 class TestTorchCreatedDataAug(BaseTestCreatedDataAug, test_utils.TorchMixin):
     TRAIN_EPOCHS = 2
+
 
 class TestTorchCreatedCropInNetwork(BaseTestCreatedCropInNetwork, test_utils.TorchMixin):
     pass
 
+
 class TestTorchCreatedWideMultiStepLR(BaseTestCreatedWide, test_utils.TorchMixin):
     LR_POLICY = 'multistep'
     LR_MULTISTEP_VALUES = '50,75,90'
+
 
 class TestTorchLeNet(BaseTestCreated, test_utils.TorchMixin):
     IMAGE_WIDTH = 28
@@ -1101,11 +1224,11 @@ class TestTorchLeNet(BaseTestCreated, test_utils.TorchMixin):
 
     # standard lenet model will adjust to color
     # or grayscale images
-    TORCH_NETWORK=open(
-            os.path.join(
-                os.path.dirname(digits.__file__),
-                'standard-networks', 'torch', 'lenet.lua')
-            ).read()
+    TORCH_NETWORK = open(
+        os.path.join(
+            os.path.dirname(digits.__file__),
+            'standard-networks', 'torch', 'lenet.lua')
+    ).read()
 
     def test_inference_while_training(self):
         # override parent method to skip this test as the reference
@@ -1115,11 +1238,16 @@ class TestTorchLeNet(BaseTestCreated, test_utils.TorchMixin):
         raise unittest.SkipTest('Torch CPU inference on CuDNN-trained model not supported')
 
 
+class TestTorchLeNetADAMOptimizer(TestTorchLeNet):
+    OPTIMIZER = 'ADAM'
+
+
 class TestTorchLeNetHdf5Shuffle(TestTorchLeNet):
     BACKEND = 'hdf5'
     SHUFFLE = True
 
-class TestPythonLayer(BaseViewsTestWithDataset, test_utils.CaffeMixin):
+
+class TestCaffePythonLayer(BaseViewsTestWithDataset, test_utils.CaffeMixin):
     CAFFE_NETWORK = """\
 layer {
     name: "hidden"
@@ -1170,6 +1298,7 @@ layer {
     include { stage: "deploy" }
 }
 """
+
     def write_python_layer_script(self, filename):
         with open(filename, 'w') as f:
             f.write("""\
@@ -1192,12 +1321,12 @@ class PythonLayer(caffe.Layer):
         top[0].data[...] = np.sum(bottom[0].data) / 2. / bottom[0].num
 """)
 
-    ## This test makes a temporary python layer file whose path is set
-    ## as py_layer_server_file.  The job creation process copies that
-    ## file to the job_dir.  The CAFFE_NETWORK above, requires that
-    ## python script to be in the correct spot. If there is an error
-    ## in the script or if the script is named incorrectly, or does
-    ## not exist in the job_dir, then the test will fail.
+    # This test makes a temporary python layer file whose path is set
+    # as py_layer_server_file.  The job creation process copies that
+    # file to the job_dir.  The CAFFE_NETWORK above, requires that
+    # python script to be in the correct spot. If there is an error
+    # in the script or if the script is named incorrectly, or does
+    # not exist in the job_dir, then the test will fail.
     def test_python_layer(self):
         tmpdir = tempfile.mkdtemp()
         py_file = tmpdir + '/py_test.py'
@@ -1214,13 +1343,74 @@ class PythonLayer(caffe.Layer):
         content = json.loads(rv.data)
         assert len(content['snapshots']), 'should have at least snapshot'
 
+
 class TestSweepCreation(BaseViewsTestWithDataset, test_utils.CaffeMixin):
     """
     Model creation tests
     """
+
     def test_sweep(self):
         job_ids = self.create_model(json=True, learning_rate='[0.01, 0.02]', batch_size='[8, 10]')
         for job_id in job_ids:
             assert self.model_wait_completion(job_id) == 'Done', 'create failed'
             assert self.delete_model(job_id) == 200, 'delete failed'
             assert not self.model_exists(job_id), 'model exists after delete'
+
+
+# Tensorflow
+
+
+class TestTensorflowCreation(BaseTestCreation, test_utils.TensorflowMixin):
+    pass
+
+
+class TestTensorflowCreatedWideUnencodedShuffle(BaseTestCreatedWide, test_utils.TensorflowMixin):
+    ENCODING = 'none'
+    SHUFFLE = True
+
+
+class TestTensorflowCreatedHdf5(BaseTestCreated, test_utils.TensorflowMixin):
+    BACKEND = 'hdf5'
+
+
+class TestTensorflowCreatedTallHdf5Shuffle(BaseTestCreatedTall, test_utils.TensorflowMixin):
+    BACKEND = 'hdf5'
+    SHUFFLE = True
+
+
+class TestTensorflowDatasetModelInteractions(BaseTestDatasetModelInteractions, test_utils.TensorflowMixin):
+    pass
+
+
+class TestTensorflowCreatedDataAug(BaseTestCreatedDataAug, test_utils.TensorflowMixin):
+    AUG_FLIP = 'fliplrud'
+    AUG_NOISE = 0.03
+    AUG_CONTRAST = 0.1
+    AUG_WHITENING = True
+    AUG_HSV_USE = True
+    AUG_HSV_H = 0.02
+    AUG_HSV_S = 0.04
+    AUG_HSV_V = 0.06
+    TRAIN_EPOCHS = 2
+
+
+class TestTensorflowCreatedWideMultiStepLR(BaseTestCreatedWide, test_utils.TensorflowMixin):
+    LR_POLICY = 'multistep'
+    LR_MULTISTEP_VALUES = '50,75,90'
+
+
+class TestTensorflowLeNet(BaseTestCreated, test_utils.TensorflowMixin):
+    IMAGE_WIDTH = 28
+    IMAGE_HEIGHT = 28
+    TRAIN_EPOCHS = 20
+
+    # standard lenet model will adjust to color
+    # or grayscale images
+    TENSORFLOW_NETWORK = open(os.path.join(os.path.dirname(digits.__file__),
+                                           'standard-networks',
+                                           'tensorflow',
+                                           'lenet.py')).read()
+
+
+class TestTensorflowLeNetADAMOptimizer(TestTensorflowLeNet):
+    OPTIMIZER = 'ADAM'

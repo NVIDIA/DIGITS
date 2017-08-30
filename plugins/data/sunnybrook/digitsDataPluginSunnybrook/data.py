@@ -1,7 +1,6 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import csv
 import cv2
 import fnmatch
 import math
@@ -47,8 +46,10 @@ SAX_SERIES = {
 # Utility functions
 #
 
+
 def shrink_case(case):
     toks = case.split("-")
+
     def shrink_if_number(x):
         try:
             cvt = int(x)
@@ -59,6 +60,7 @@ def shrink_case(case):
 
 
 class Contour(object):
+
     def __init__(self, ctr_path):
         self.ctr_path = ctr_path
         match = re.search(r"/([^/]*)/contours-manual/IRCCI-expert/IM-0001-(\d{4})-icontour-manual.txt", ctr_path)
@@ -73,9 +75,11 @@ class Contour(object):
 
 def get_all_contours(contour_path):
     # walk the directory structure for all the contour files
-    contours = [os.path.join(dirpath, f)
+    contours = [
+        os.path.join(dirpath, f)
         for dirpath, dirnames, files in os.walk(contour_path)
-        for f in fnmatch.filter(files, 'IM-0001-*-icontour-manual.txt')]
+        for f in fnmatch.filter(files, 'IM-0001-*-icontour-manual.txt')
+    ]
     extracted = map(Contour, contours)
     return extracted
 
@@ -83,16 +87,17 @@ def get_all_contours(contour_path):
 def load_contour(contour, img_path):
     filename = "IM-%s-%04d.dcm" % (SAX_SERIES[contour.case], contour.img_no)
     full_path = os.path.join(img_path, contour.case, filename)
-    f = dicom.read_file(full_path)
-    img = f.pixel_array.astype(np.int)
+    img = load_image(full_path)
     ctrs = np.loadtxt(contour.ctr_path, delimiter=" ").astype(np.int)
     label = np.zeros_like(img, dtype="uint8")
     cv2.fillPoly(label, [ctrs], 1)
     return img, label
 
-#
-# Main class
-#
+
+def load_image(full_path):
+    f = dicom.read_file(full_path)
+    return f.pixel_array.astype(np.int)
+
 
 @subclass
 class DataIngestion(DataIngestionInterface):
@@ -123,22 +128,23 @@ class DataIngestion(DataIngestionInterface):
         palette = [0, 0, 0,  255, 255, 255] + [0] * (254 * 3)
         self.userdata[COLOR_PALETTE_ATTRIBUTE] = palette
 
-
     @override
     def encode_entry(self, entry):
-        img, label = load_contour(entry, self.image_folder)
+        if isinstance(entry, basestring):
+            img = load_image(entry)
+            label = np.array([0])
+        else:
+            img, label = load_contour(entry, self.image_folder)
+            label = label[np.newaxis, ...]
 
         if self.userdata['channel_conversion'] == 'L':
             feature = img[np.newaxis, ...]
         elif self.userdata['channel_conversion'] == 'RGB':
-            feature = np.empty(shape=(3, img.shape[0], img.shape[1]),
-                dtype=img.dtype)
+            feature = np.empty(shape=(3, img.shape[0], img.shape[1]), dtype=img.dtype)
             # just copy the same data over the three color channels
             feature[0] = img
             feature[1] = img
             feature[2] = img
-
-        label = label[np.newaxis, ...]
 
         return feature, label
 
@@ -210,6 +216,14 @@ class DataIngestion(DataIngestionInterface):
                 entries = ctrs[:n_val_entries]
         elif stage == constants.TEST_DB:
             if self.userdata['validation_record'] != 'none':
+                if self.userdata['test_image_file']:
+                    raise ValueError("Specify either an image or a record "
+                                     "from the validation set.")
+                # test record from validation set
                 entries = [ctrs[int(self.validation_record)]]
+
+            else:
+                # test image file
+                entries = [self.userdata['test_image_file']]
 
         return entries

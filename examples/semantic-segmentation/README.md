@@ -1,5 +1,7 @@
 # Using DIGITS to train a Semantic Segmentation neural network
 
+> NOTE: refer to this [Parallel-For-All blog post](https://devblogs.nvidia.com/parallelforall/image-segmentation-using-digits-5/) for a detailed review of Fully Convolutional Neworks for semantic segmentation.
+
 Table of Contents
 =================
 * [Introduction](#introduction)
@@ -22,7 +24,6 @@ For example in the image below a picture representing a horse rider is segmented
 In the resulting image mask, the person and the horse are correctly depicted using the color codes from the legend.
 
 ![example](example.png)
-
 
 ## Dataset creation
 
@@ -115,7 +116,8 @@ Other fields can be left to their default value.
 
 Finally, give your dataset a name and click `Create`:
 
-![dataset form](dataset-form.png)
+![dataset form 1](dataset-form-1.png)
+![dataset form 2](dataset-form-2.png)
 
 After you have created the dataset you may browse the contents of the databases by clicking the `Explore DB` button on the dataset job page:
 

@@ -1,0 +1,13 @@
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<small>Show the output of a text classification network</small>
+
+<div class="form-group{{mark_errors([form.max_classes])}}">
+    {{ form.max_classes.label }}
+    {{ form.max_classes.tooltip }}
+    {{ form.max_classes(class='form-control') }}
+</div>

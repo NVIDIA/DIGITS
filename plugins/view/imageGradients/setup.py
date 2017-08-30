@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
 import os
 from setuptools import setup, find_packages
@@ -21,7 +21,8 @@ setup(
     packages=find_packages(),
     entry_points={
         DIGITS_PLUGIN_GROUP: [
-        'class=digitsViewPluginImageGradients:Visualization',
-        ]},
+            'class=digitsViewPluginImageGradients:Visualization',
+        ]
+    },
     include_package_data=True,
 )

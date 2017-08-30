@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 
 import argparse
 import os.path
@@ -18,19 +18,23 @@ if not found_parent_dir:
 
 def main():
     parser = argparse.ArgumentParser(description='DIGITS server')
-    parser.add_argument('-p', '--port',
-            type=int,
-            default=5000,
-            help='Port to run app on (default 5000)'
-            )
-    parser.add_argument('-d', '--debug',
-            action='store_true',
-            help='Run the application in debug mode (reloads when the source changes and gives more detailed error messages)'
-            )
-    parser.add_argument('--version',
-            action='store_true',
-            help='Print the version number and exit'
-            )
+    parser.add_argument(
+        '-p', '--port',
+        type=int,
+        default=5000,
+        help='Port to run app on (default 5000)'
+    )
+    parser.add_argument(
+        '-d', '--debug',
+        action='store_true',
+        help=('Run the application in debug mode (reloads when the source '
+              'changes and gives more detailed error messages)')
+    )
+    parser.add_argument(
+        '--version',
+        action='store_true',
+        help='Print the version number and exit'
+    )
 
     args = vars(parser.parse_args())
 

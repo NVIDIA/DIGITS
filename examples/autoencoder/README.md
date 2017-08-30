@@ -1,11 +1,13 @@
-# Training an image autoencoder with DIGITS and Torch7
+# Training an image autoencoder with DIGITS
 
 Table of Contents
 =================
 * [Introduction](#introduction)
 * [Dataset creation](#dataset-creation)
-* [Model definition](#model-creation)
+* [Model definition (Torch)](#model-creation-torch)
+* [Model definition (Tensorflow)](#model-creation-tensorflow)
 * [Verification](#verification)
+* [Visualization for Tensorflow](#visualization-for-tensorflow)
 
 ## Introduction
 
@@ -34,7 +36,7 @@ In the generic dataset creation form you need to provide the paths to the train 
 
 ![Create generic dataset form](create-generic-dataset-form.png)
 
-## Model creation
+## Model creation (Torch)
 
 Now that you have a generic dataset to train on, you may create a generic model by clicking on `New Model\Images\Other` on the main page:
 
@@ -44,7 +46,7 @@ Select the dataset you just created and under the `Custom network` tab, select `
 ```lua
 local autoencoder = nn.Sequential()
 autoencoder:add(nn.MulConstant(0.00390625))
-autoencoder:add(nn.View(-1):setNumInputDims(3))  -- 1*28*8 -> 784
+autoencoder:add(nn.View(-1):setNumInputDims(3))  -- 1*28*28 -> 784
 autoencoder:add(nn.Linear(784,300))
 autoencoder:add(nn.ReLU())
 autoencoder:add(nn.Linear(300,50))
@@ -90,6 +92,44 @@ After training for 30 epochs the loss function should look similar to this:
 
 ![Training loss](training-loss.png)
 
+## Model creation (Tensorflow)
+
+The following example was made using TensorFlow-Slim. However you can also do this in vanilla Tensorflow and Keras
+
+Select the dataset you just created and under the `Custom network` tab, select `Tensorflow`. There you can paste the following network definition:
+```python
+# Tensorflow MNIST autoencoder model using TensorFlow-Slim
+# The format of the data in this example is: batch_size * height * width * channel
+class UserModel(Tower):
+
+    @model_property
+    def inference(self):
+
+        with slim.arg_scope([slim.fully_connected],
+                            weights_initializer=tf.contrib.layers.xavier_initializer(),
+                            weights_regularizer=slim.l2_regularizer(0.0005) ):
+            const = tf.constant(0.00390625)
+            model = tf.multiply(self.x, const)
+            model = tf.reshape(model, shape=[-1, 784]) # equivalent to `model = slim.flatten(_x)`
+            model = slim.fully_connected(model, 300, scope='fc1')
+            model = slim.fully_connected(model, 50, scope='fc2')
+            model = slim.fully_connected(model, 300, scope='fc3')
+            model = slim.fully_connected(model, 784, activation_fn=None, scope='fc4')
+            model = tf.reshape(model, shape=[-1, self.input_shape[0], self.input_shape[1], self.input_shape[2]])
+
+        # The below image summary makes it very easy to review your result
+        tf.summary.image(self.x.op.name, self.x, max_outputs=5, collections=['summaries'])
+        tf.summary.image(model.op.name, model, max_outputs=5, collections=['summaries'])
+
+        return model
+
+    @model_property
+    def loss(self):
+        return digits.mse_loss(self.inference, self.x)
+```
+
+The result from running the Tensorflow example should produce results that are similar to Torch.
+
 ## Verification
 
 Now we can assess the quality of the autoencoder. On the model page, select an image from the MNIST test set (one that the network has never seen during training) and
@@ -113,4 +153,10 @@ The reconstructed image, which looks similar to the normalized image:
 
 ![Reconstructed Image](reconstructed-image.png)
 
+### Visualization for Tensorflow
 
+To visualize the result of the autoencoder in Tensorflow properly, select `Image output` as `Visualization method`. Then select `HWC` as the `Data order`.
+
+![Tensorflow Settings](tensorflow-settings.png)
+
+Then follow the instructions for [verification](#verification)

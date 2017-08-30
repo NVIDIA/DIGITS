@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import os
@@ -19,10 +19,11 @@ from digits.status import Status
 from digits.utils import filesystem as fs
 from digits.utils import constants
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
-from digits.utils.routing import get_request_arg, request_wants_json, job_from_request
+from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
 blueprint = flask.Blueprint(__name__, __name__)
+
 
 @blueprint.route('/new', methods=['GET'])
 @blueprint.route('/new/<extension_id>', methods=['GET'])
@@ -38,7 +39,7 @@ def new(extension_id=None):
     form.pretrained_networks.choices = get_pretrained_networks()
     prev_network_snapshots = get_previous_network_snapshots()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
     return flask.render_template(
@@ -51,7 +52,7 @@ def new(extension_id=None):
         previous_networks_fullinfo=get_previous_networks_fulldetails(),
         pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
         multi_gpu=config_value('caffe')['multi_gpu'],
-        )
+    )
 
 
 @blueprint.route('<extension_id>.json', methods=['POST'])
@@ -73,7 +74,7 @@ def create(extension_id=None):
 
     prev_network_snapshots = get_previous_network_snapshots()
 
-    ## Is there a request to clone a job with ?clone=<job_id>
+    # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
     if not form.validate_on_submit():
@@ -84,18 +85,18 @@ def create(extension_id=None):
                 'models/images/generic/new.html',
                 extension_id=extension_id,
                 extension_title=extensions.data.get_extension(extension_id).get_title() if extension_id else None,
-                form= form,
+                form=form,
                 frameworks=frameworks.get_frameworks(),
                 previous_network_snapshots=prev_network_snapshots,
                 previous_networks_fullinfo=get_previous_networks_fulldetails(),
                 pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
                 multi_gpu=config_value('caffe')['multi_gpu'],
-                ), 400
+            ), 400
 
     datasetJob = scheduler.get_job(form.dataset.data)
     if not datasetJob:
         raise werkzeug.exceptions.BadRequest(
-                'Unknown dataset job_id "%s"' % form.dataset.data)
+            'Unknown dataset job_id "%s"' % form.dataset.data)
 
     # sweeps will be a list of the the permutations of swept fields
     # Get swept learning_rate
@@ -124,22 +125,22 @@ def create(extension_id=None):
         job = None
         try:
             job = GenericImageModelJob(
-                    username    = utils.auth.get_username(),
-                    name        = form.model_name.data + extra,
-                    group       = form.group_name.data,
-                    dataset_id  = datasetJob.id(),
-                    )
+                username=utils.auth.get_username(),
+                name=form.model_name.data + extra,
+                group=form.group_name.data,
+                dataset_id=datasetJob.id(),
+            )
 
             # get framework (hard-coded to caffe for now)
             fw = frameworks.get_framework_by_id(form.framework.data)
 
             pretrained_model = None
-            #if form.method.data == 'standard':
+            # if form.method.data == 'standard':
             if form.method.data == 'previous':
                 old_job = scheduler.get_job(form.previous_networks.data)
                 if not old_job:
                     raise werkzeug.exceptions.BadRequest(
-                            'Job not found: %s' % form.previous_networks.data)
+                        'Job not found: %s' % form.previous_networks.data)
 
                 use_same_dataset = (old_job.dataset_id == job.dataset_id)
                 network = fw.get_network_from_previous(old_job.train_task().network, use_same_dataset)
@@ -152,23 +153,29 @@ def create(extension_id=None):
                         elif epoch == -1:
                             pretrained_model = old_job.train_task().pretrained_model
                         else:
-                            for filename, e in old_job.train_task().snapshots:
-                                if e == epoch:
-                                    pretrained_model = filename
-                                    break
-
+                            # verify snapshot exists
+                            pretrained_model = old_job.train_task().get_snapshot(epoch, download=True)
                             if pretrained_model is None:
                                 raise werkzeug.exceptions.BadRequest(
-                                        "For the job %s, selected pretrained_model for epoch %d is invalid!"
-                                        % (form.previous_networks.data, epoch))
+                                    "For the job %s, selected pretrained_model for epoch %d is invalid!"
+                                    % (form.previous_networks.data, epoch))
+
+                            # the first is the actual file if a list is returned, other should be meta data
+                            if isinstance(pretrained_model, list):
+                                pretrained_model = pretrained_model[0]
+
                             if not (os.path.exists(pretrained_model)):
                                 raise werkzeug.exceptions.BadRequest(
-                                        "Pretrained_model for the selected epoch doesn't exists. May be deleted by another user/process. Please restart the server to load the correct pretrained_model details")
+                                    "Pretrained_model for the selected epoch doesn't exist. "
+                                    "May be deleted by another user/process. "
+                                    "Please restart the server to load the correct pretrained_model details.")
+                            # get logical path
+                            pretrained_model = old_job.train_task().get_snapshot(epoch)
                         break
             elif form.method.data == 'pretrained':
-                pretrained_job  = scheduler.get_job(form.pretrained_networks.data)
-                model_def_path  = pretrained_job.get_model_def_path()
-                weights_path    = pretrained_job.get_weights_path()
+                pretrained_job = scheduler.get_job(form.pretrained_networks.data)
+                model_def_path = pretrained_job.get_model_def_path()
+                weights_path = pretrained_job.get_weights_path()
 
                 network = fw.get_network_from_path(model_def_path)
                 pretrained_model = weights_path
@@ -178,7 +185,7 @@ def create(extension_id=None):
                 pretrained_model = form.custom_network_snapshot.data.strip()
             else:
                 raise werkzeug.exceptions.BadRequest(
-                        'Unrecognized method: "%s"' % form.method.data)
+                    'Unrecognized method: "%s"' % form.method.data)
 
             policy = {'policy': form.lr_policy.data}
             if form.lr_policy.data == 'fixed':
@@ -201,7 +208,7 @@ def create(extension_id=None):
                 policy['gamma'] = form.lr_sigmoid_gamma.data
             else:
                 raise werkzeug.exceptions.BadRequest(
-                        'Invalid learning rate policy')
+                    'Invalid learning rate policy')
 
             if config_value('caffe')['multi_gpu']:
                 if form.select_gpu_count.data:
@@ -220,15 +227,17 @@ def create(extension_id=None):
 
             # Set up data augmentation structure
             data_aug = {}
-            data_aug['flip']     = form.aug_flip.data
+            data_aug['flip'] = form.aug_flip.data
             data_aug['quad_rot'] = form.aug_quad_rot.data
-            data_aug['rot']      = form.aug_rot.data
-            data_aug['scale']    = form.aug_scale.data
-            data_aug['noise']    = form.aug_noise.data
-            data_aug['hsv_use']  = form.aug_hsv_use.data
-            data_aug['hsv_h']    = form.aug_hsv_h.data
-            data_aug['hsv_s']    = form.aug_hsv_s.data
-            data_aug['hsv_v']    = form.aug_hsv_v.data
+            data_aug['rot'] = form.aug_rot.data
+            data_aug['scale'] = form.aug_scale.data
+            data_aug['noise'] = form.aug_noise.data
+            data_aug['contrast'] = form.aug_contrast.data
+            data_aug['whitening'] = form.aug_whitening.data
+            data_aug['hsv_use'] = form.aug_hsv_use.data
+            data_aug['hsv_h'] = form.aug_hsv_h.data
+            data_aug['hsv_s'] = form.aug_hsv_s.data
+            data_aug['hsv_v'] = form.aug_hsv_v.data
 
             # Python Layer File may be on the server or copied from the client.
             fs.copy_python_layer_file(
@@ -239,30 +248,31 @@ def create(extension_id=None):
                  else ''), form.python_layer_server_file.data)
 
             job.tasks.append(fw.create_train_task(
-                        job = job,
-                        dataset = datasetJob,
-                        train_epochs = form.train_epochs.data,
-                        snapshot_interval = form.snapshot_interval.data,
-                        learning_rate = form.learning_rate.data[0],
-                        lr_policy = policy,
-                        gpu_count = gpu_count,
-                        selected_gpus = selected_gpus,
-                        batch_size = form.batch_size.data[0],
-                        batch_accumulation = form.batch_accumulation.data,
-                        val_interval = form.val_interval.data,
-                        pretrained_model = pretrained_model,
-                        crop_size = form.crop_size.data,
-                        use_mean = form.use_mean.data,
-                        network = network,
-                        random_seed = form.random_seed.data,
-                        solver_type = form.solver_type.data,
-                        rms_decay=form.rms_decay.data,
-                        shuffle = form.shuffle.data,
-                        data_aug = data_aug,
-                        )
-                    )
+                job=job,
+                dataset=datasetJob,
+                train_epochs=form.train_epochs.data,
+                snapshot_interval=form.snapshot_interval.data,
+                learning_rate=form.learning_rate.data[0],
+                lr_policy=policy,
+                gpu_count=gpu_count,
+                selected_gpus=selected_gpus,
+                batch_size=form.batch_size.data[0],
+                batch_accumulation=form.batch_accumulation.data,
+                val_interval=form.val_interval.data,
+                traces_interval=form.traces_interval.data,
+                pretrained_model=pretrained_model,
+                crop_size=form.crop_size.data,
+                use_mean=form.use_mean.data,
+                network=network,
+                random_seed=form.random_seed.data,
+                solver_type=form.solver_type.data,
+                rms_decay=form.rms_decay.data,
+                shuffle=form.shuffle.data,
+                data_aug=data_aug,
+            )
+            )
 
-            ## Save form data with the job so we can easily clone it later.
+            # Save form data with the job so we can easily clone it later.
             save_form_to_job(job, form)
 
             jobs.append(job)
@@ -279,7 +289,7 @@ def create(extension_id=None):
             raise
 
     if request_wants_json():
-        return flask.jsonify(jobs=[job.json_dict() for job in jobs])
+        return flask.jsonify(jobs=[j.json_dict() for j in jobs])
 
     # If there are multiple jobs launched, go to the home page.
     return flask.redirect('/')
@@ -289,30 +299,26 @@ def show(job, related_jobs=None):
     """
     Called from digits.model.views.models_show()
     """
+    data_extensions = get_data_extensions()
     view_extensions = get_view_extensions()
-
-    inference_form_html = None
-    if isinstance(job.dataset, GenericDatasetJob):
-        extension_class = extensions.data.get_extension(job.dataset.extension_id)
-        if not extension_class:
-            raise RuntimeError("Unable to find data extension with ID=%s"
-                % job.dataset.extension_id)
-        extension_userdata = job.dataset.extension_userdata
-        extension_userdata.update({'is_inference_db':True})
-        extension = extension_class(**extension_userdata)
-
-        form = extension.get_inference_form()
-        if form:
-            template, context = extension.get_inference_template(form)
-            inference_form_html = flask.render_template_string(template, **context)
 
     return flask.render_template(
         'models/images/generic/show.html',
         job=job,
+        data_extensions=data_extensions,
         view_extensions=view_extensions,
         related_jobs=related_jobs,
-        inference_form_html=inference_form_html,
-        )
+    )
+
+
+@blueprint.route('/timeline_tracing', methods=['GET'])
+def timeline_tracing():
+    """
+    Shows timeline trace of a model
+    """
+    job = job_from_request()
+
+    return flask.render_template('models/timeline_tracing.html', job=job)
 
 
 @blueprint.route('/large_graph', methods=['GET'])
@@ -322,7 +328,8 @@ def large_graph():
     """
     job = job_from_request()
 
-    return flask.render_template('models/images/generic/large_graph.html', job=job)
+    return flask.render_template('models/large_graph.html', job=job)
+
 
 @blueprint.route('/infer_one.json', methods=['POST'])
 @blueprint.route('/infer_one', methods=['POST', 'GET'])
@@ -359,14 +366,14 @@ def infer_one():
 
     # create inference job
     inference_job = ImageInferenceJob(
-        username= utils.auth.get_username(),
-        name= "Infer One Image",
+        username=utils.auth.get_username(),
+        name="Infer One Image",
         model=model_job,
         images=[image_path],
         epoch=epoch,
         layers=layers,
         resize=resize,
-        )
+    )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -402,7 +409,7 @@ def infer_one():
 
     if request_wants_json():
         return flask.jsonify({'outputs': dict((name, blob.tolist())
-                             for name, blob in outputs.iteritems())}), status_code
+                                              for name, blob in outputs.iteritems())}), status_code
     else:
         return flask.render_template(
             'models/images/generic/infer_one.html',
@@ -416,7 +423,7 @@ def infer_one():
             visualizations=model_visualization,
             total_parameters=sum(v['param_count'] for v in model_visualization
                                  if v['vis_type'] == 'Weights'),
-            ), status_code
+        ), status_code
 
 
 @blueprint.route('/infer_extension.json', methods=['POST'])
@@ -429,8 +436,13 @@ def infer_extension():
 
     inference_db_job = None
     try:
+        if 'data_extension_id' in flask.request.form:
+            data_extension_id = flask.request.form['data_extension_id']
+        else:
+            data_extension_id = model_job.dataset.extension_id
+
         # create an inference database
-        inference_db_job = create_inference_db(model_job)
+        inference_db_job = create_inference_db(model_job, data_extension_id)
         db_path = inference_db_job.get_feature_db_path(constants.TEST_DB)
 
         # create database creation job
@@ -451,7 +463,7 @@ def infer_extension():
             epoch=epoch,
             layers=layers,
             resize=False,
-            )
+        )
 
         # schedule tasks
         scheduler.add_job(inference_job)
@@ -492,7 +504,7 @@ def infer_extension():
     if request_wants_json():
         result = {}
         for i, key in enumerate(keys):
-            result[key] = dict((name, blob[i].tolist()) for name,blob in outputs.iteritems())
+            result[key] = dict((name, blob[i].tolist()) for name, blob in outputs.iteritems())
         return flask.jsonify({'outputs': result}), status_code
     else:
         return flask.render_template(
@@ -507,7 +519,7 @@ def infer_extension():
             visualizations=model_visualization,
             total_parameters=sum(v['param_count'] for v in model_visualization
                                  if v['vis_type'] == 'Weights'),
-            ), status_code
+        ), status_code
 
 
 @blueprint.route('/infer_db.json', methods=['POST'])
@@ -518,13 +530,13 @@ def infer_db():
     """
     model_job = job_from_request()
 
-    if not 'db_path' in flask.request.form or flask.request.form['db_path'] is None:
+    if 'db_path' not in flask.request.form or flask.request.form['db_path'] is None:
         raise werkzeug.exceptions.BadRequest('db_path is a required field')
 
     db_path = flask.request.form['db_path']
 
     if not os.path.exists(db_path):
-            raise werkzeug.exceptions.BadRequest('DB "%s" does not exit' % db_path)
+        raise werkzeug.exceptions.BadRequest('DB "%s" does not exit' % db_path)
 
     epoch = None
     if 'snapshot_epoch' in flask.request.form:
@@ -544,7 +556,7 @@ def infer_db():
         epoch=epoch,
         layers='none',
         resize=resize,
-        )
+    )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -581,7 +593,7 @@ def infer_db():
     if request_wants_json():
         result = {}
         for i, key in enumerate(keys):
-            result[key] = dict((name, blob[i].tolist()) for name,blob in outputs.iteritems())
+            result[key] = dict((name, blob[i].tolist()) for name, blob in outputs.iteritems())
         return flask.jsonify({'outputs': result}), status_code
     else:
         return flask.render_template(
@@ -593,7 +605,7 @@ def infer_db():
             header_html=header_html,
             app_begin_html=app_begin_html,
             app_end_html=app_end_html,
-            ), status_code
+        ), status_code
 
 
 @blueprint.route('/infer_many.json', methods=['POST'])
@@ -660,7 +672,7 @@ def infer_many():
         epoch=epoch,
         layers='none',
         resize=resize,
-        )
+    )
 
     # schedule tasks
     scheduler.add_job(inference_job)
@@ -708,14 +720,17 @@ def infer_many():
             header_html=header_html,
             app_begin_html=app_begin_html,
             app_end_html=app_end_html,
-            ), status_code
+        ), status_code
 
 
-def create_inference_db(model_job):
+def create_inference_db(model_job, data_extension_id):
     # create instance of extension class
-    extension_class = extensions.data.get_extension(model_job.dataset.extension_id)
-    extension_userdata = model_job.dataset.extension_userdata
-    extension_userdata.update({'is_inference_db':True})
+    extension_class = extensions.data.get_extension(data_extension_id)
+    if hasattr(model_job.dataset, 'extension_userdata'):
+        extension_userdata = model_job.dataset.extension_userdata
+    else:
+        extension_userdata = {}
+    extension_userdata.update({'is_inference_db': True})
     extension = extension_class(**extension_userdata)
 
     extension_form = extension.get_inference_form()
@@ -738,9 +753,9 @@ def create_inference_db(model_job):
         batch_size=1,
         num_threads=1,
         force_same_shape=0,
-        extension_id=model_job.dataset.extension_id,
+        extension_id=data_extension_id,
         extension_userdata=extension.get_user_data(),
-        )
+    )
 
     # schedule tasks and wait for job to complete
     scheduler.add_job(job)
@@ -762,13 +777,12 @@ def create_inference_db(model_job):
 def get_datasets(extension_id):
     if extension_id:
         jobs = [j for j in scheduler.jobs.values()
-                if isinstance(j, GenericDatasetJob)
-                and j.extension_id == extension_id
-                and (j.status.is_running() or j.status == Status.DONE)]
+                if isinstance(j, GenericDatasetJob) and
+                j.extension_id == extension_id and (j.status.is_running() or j.status == Status.DONE)]
     else:
         jobs = [j for j in scheduler.jobs.values()
-                if (isinstance(j, GenericImageDatasetJob) or isinstance(j, GenericDatasetJob))
-                and (j.status.is_running() or j.status == Status.DONE)]
+                if (isinstance(j, GenericImageDatasetJob) or isinstance(j, GenericDatasetJob)) and
+                (j.status.is_running() or j.status == Status.DONE)]
     return [(j.id(), j.name())
             for j in sorted(jobs, cmp=lambda x, y: cmp(y.id(), x.id()))]
 
@@ -817,23 +831,25 @@ def get_inference_visualizations(dataset, inputs, outputs):
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, GenericImageModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
 
 def get_previous_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, GenericImageModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
 
 def get_previous_network_snapshots():
     prev_network_snapshots = []
     for job_id, _ in get_previous_networks():
         job = scheduler.get_job(job_id)
         e = [(0, 'None')] + [(epoch, 'Epoch #%s' % epoch)
-                for _, epoch in reversed(job.train_task().snapshots)]
+                             for _, epoch in reversed(job.train_task().snapshots)]
         if job.train_task().pretrained_model:
             e.insert(0, (-1, 'Previous pretrained model'))
         prev_network_snapshots.append(e)
@@ -843,16 +859,29 @@ def get_previous_network_snapshots():
 def get_pretrained_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
 
 def get_pretrained_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x,y: cmp(y.id(), x.id())
-        )
-        ]
+        cmp=lambda x, y: cmp(y.id(), x.id())
+    )
+    ]
+
+
+def get_data_extensions():
+    """
+    return all enabled data extensions
+    """
+    data_extensions = {"all-default": "Default"}
+    all_extensions = extensions.data.get_extensions()
+    for extension in all_extensions:
+        data_extensions[extension.get_id()] = extension.get_title()
+    return data_extensions
+
 
 def get_view_extensions():
     """

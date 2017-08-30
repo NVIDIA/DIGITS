@@ -1,0 +1,47 @@
+{# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+{% if task_id=='grid' %}
+    <script>
+    $('#{{ row_id }}_{{ col_id }}').html('<img src="{{image}}" style="max-width:100%;" />');
+    </script>
+{% endif %}
+{% if task_id=='grid' or task_id=='animation' %}
+    {{key}}
+    <img src="{{image}}" style="max-width:100%;" />
+{% elif task_id=='encoder' %}
+    <table>
+    <tr>
+        <td width=100>
+            <img src="{{image_input}}" style="max-width:100%;" />
+        </td>
+        <td width=100>
+            <img src="{{image_output}}" style="max-width:100%;" />
+        </td>
+        <td>
+            {{z}}
+        </td>
+    </tr>
+    </table>
+{% elif task_id=='attributes' %}
+    <table>
+    <tr>
+        <td width=100>
+            <img src="{{image_input}}" style="max-width:100%;" />
+        </td>
+        <!-- <td width=100>
+            <img src="{{image_output}}" style="max-width:100%;" />
+        </td>
+        -->
+        <td>
+            {% for attribute in top5 %}
+            <span class="badge">{{attribute[1]}}</span> {{ attribute[0] }}
+            <br>
+            {% endfor %}
+        </td>
+    </tr>
+    </table>
+{% endif %}

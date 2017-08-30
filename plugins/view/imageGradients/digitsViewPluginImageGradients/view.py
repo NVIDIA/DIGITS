@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import numpy as np
@@ -100,14 +100,14 @@ class Visualization(VisualizationInterface):
         # assume only one output and grayscale input
 
         output_vector = output_data[output_data.keys()[0]]
-        grad = np.array(
-            [output_vector[0] * self.width,
+        grad = np.array([
+            output_vector[0] * self.width,
             output_vector[1] * self.height])
         grad_rotated_90 = np.array([-grad[1], grad[0]])
         center = np.array([self.width / 2, self.height / 2])
         arrow = grad * (self.arrow_size / 100.)
-        arrow_tip = center + arrow/2
-        arrow_tail = center - arrow/2
+        arrow_tip = center + arrow / 2
+        arrow_tail = center - arrow / 2
         # arrow tail (anticlockwise)
         at_acw = arrow_tail + 0.1 * grad_rotated_90
         # arrow tail (clockwise)

@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import os
@@ -14,6 +14,7 @@ import digits
 from digits.config import config_value
 from digits.model.tasks import CaffeTrainTask
 from digits.utils import subclass, override, parse_version
+
 
 @subclass
 class CaffeFramework(Framework):
@@ -33,6 +34,8 @@ class CaffeFramework(Framework):
 
     # whether this framework can shuffle data during training
     CAN_SHUFFLE_DATA = False
+    SUPPORTS_PYTHON_LAYERS_FILE = True
+    SUPPORTS_TIMELINE_TRACING = False
 
     if config_value('caffe')['flavor'] == 'NVIDIA':
         if parse_version(config_value('caffe')['version']) > parse_version('0.14.0-alpha'):
@@ -131,24 +134,25 @@ class CaffeFramework(Framework):
         return network
 
     @override
-    def get_network_visualization(self, desc):
+    def get_network_visualization(self, **kwargs):
         """
         return visualization of network
         """
+        desc = kwargs['desc']
         net = caffe_pb2.NetParameter()
         text_format.Merge(desc, net)
         # Throws an error if name is None
         if not net.name:
             net.name = 'Network'
-        return '<image src="data:image/png;base64,' + caffe.draw.draw_net(net, 'UD').encode('base64') + '" style="max-width:100%" />'
+        return ('<image src="data:image/png;base64,' +
+                caffe.draw.draw_net(net, 'UD').encode('base64') +
+                '" style="max-width:100%" />')
 
     @override
     def can_accumulate_gradients(self):
         if config_value('caffe')['flavor'] == 'BVLC':
             return True
         elif config_value('caffe')['flavor'] == 'NVIDIA':
-            return (parse_version(config_value('caffe')['version'])
-                    > parse_version('0.14.0-alpha'))
+            return (parse_version(config_value('caffe')['version']) > parse_version('0.14.0-alpha'))
         else:
             raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
-

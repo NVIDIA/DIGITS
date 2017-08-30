@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import math
@@ -16,6 +16,7 @@ from .forms import DatasetForm
 
 TEMPLATE = "template.html"
 
+
 @subclass
 class DataIngestion(DataIngestionInterface):
     """
@@ -31,7 +32,7 @@ class DataIngestion(DataIngestionInterface):
 
         self.random_indices = None
 
-        if not 'seed' in self.userdata:
+        if 'seed' not in self.userdata:
             # choose random seed and add to userdata so it gets persisted
             self.userdata['seed'] = random.randint(0, 1000)
 
@@ -54,11 +55,16 @@ class DataIngestion(DataIngestionInterface):
                 lines = f.read().splitlines()
                 for line in lines:
                     for val in line.split():
-                        palette.append(int(val))
+                        try:
+                            palette.append(int(val))
+                        except:
+                            raise ValueError("Your color map file seems to "
+                                             "be badly formatted: '%s' is not "
+                                             "an integer" % val)
                 # fill rest with zeros
-                palette = palette + [0] * (256*3 - len(palette))
+                palette = palette + [0] * (256 * 3 - len(palette))
                 self.userdata[COLOR_PALETTE_ATTRIBUTE] = palette
-                self.palette_img = PIL.Image.new("P", (1,1))
+                self.palette_img = PIL.Image.new("P", (1, 1))
                 self.palette_img.putpalette(palette)
 
         # get labels if those were provided
@@ -169,12 +175,12 @@ class DataIngestion(DataIngestionInterface):
                 os.path.split(label_image_list[idx])[1])[0]
             if feature_name != label_name:
                 raise ValueError("No corresponding feature/label pair found for (%s,%s)"
-                                 % (feature_name, label_name) )
+                                 % (feature_name, label_name))
 
         # split lists if there is no val folder
         if not self.has_val_folder:
-                feature_image_list = self.split_image_list(feature_image_list, stage)
-                label_image_list = self.split_image_list(label_image_list, stage)
+            feature_image_list = self.split_image_list(feature_image_list, stage)
+            label_image_list = self.split_image_list(label_image_list, stage)
 
         return zip(
             feature_image_list,
@@ -188,12 +194,16 @@ class DataIngestion(DataIngestionInterface):
         if self.userdata['colormap_method'] == "label":
             if image.mode not in ['P', 'L', '1']:
                 raise ValueError("Labels are expected to be single-channel (paletted or "
-                                 " grayscale) images - %s mode is '%s'"
-                                     % (filename, image.mode))
+                                 " grayscale) images - %s mode is '%s'. If your labels are "
+                                 "RGB images then set the 'Color Map Specification' field "
+                                 "to 'from text file' and provide a color map text file."
+                                 % (filename, image.mode))
         else:
             if image.mode not in ['RGB']:
-                raise ValueError("Labels are expected to be RGB images - %s mode is '%s'"
-                                     % (filename, image.mode))
+                raise ValueError("Labels are expected to be RGB images - %s mode is '%s'. "
+                                 "If your labels are palette or grayscale images then set "
+                                 "the 'Color Map Specification' field to 'from label image'."
+                                 % (filename, image.mode))
             image = image.quantize(palette=self.palette_img)
 
         return image
@@ -203,7 +213,7 @@ class DataIngestion(DataIngestionInterface):
         for dirpath, dirnames, filenames in os.walk(folder, followlinks=True):
             for filename in filenames:
                 if filename.lower().endswith(image.SUPPORTED_EXTENSIONS):
-                    image_files.append('%s' % os.path.join(folder, filename))
+                    image_files.append('%s' % os.path.join(dirpath, filename))
         if len(image_files) == 0:
             raise ValueError("Unable to find supported images in %s" % folder)
         return sorted(image_files)

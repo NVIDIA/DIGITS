@@ -1,41 +1,10 @@
 # Ubuntu Installation
 
-Deb packages for major releases (i.e. v3.0 and v4.0 but not v3.1) are provided for easy installation on Ubuntu 14.04 and 16.04.
-If these packages don't meet your needs, then you can follow [these instructions](BuildDigits.md) to build DIGITS and its dependencies from source.
-
-## Prerequisites
-
-You need an NVIDIA driver ([details and instructions](InstallCuda.md#driver)).
-
-Run the following commands to get access to some package repositories:
-```sh
-# For Ubuntu 14.04
-CUDA_REPO_PKG=http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_8.0.61-1_amd64.deb
-ML_REPO_PKG=http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/nvidia-machine-learning-repo-ubuntu1404_4.0-2_amd64.deb
-
-# For Ubuntu 16.04
-CUDA_REPO_PKG=http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
-ML_REPO_PKG=http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64/nvidia-machine-learning-repo-ubuntu1604_1.0.0-1_amd64.deb
-
-# Install repo packages
-wget "$CUDA_REPO_PKG" -O /tmp/cuda-repo.deb && sudo dpkg -i /tmp/cuda-repo.deb && rm -f /tmp/cuda-repo.deb
-wget "$ML_REPO_PKG" -O /tmp/ml-repo.deb && sudo dpkg -i /tmp/ml-repo.deb && rm -f /tmp/ml-repo.deb
-
-# Download new list of packages
-sudo apt-get update
-```
-
-## Installation
-
-Now that you have access to all the packages you need, installation is simple.
-```sh
-sudo apt-get install digits
-```
-Through package dependency chains, this installs `digits`, `caffe-nv`, `torch7-nv`, `libcudnn` and many more packages for you automatically.
+Starting from DIGITS 6, the preferred method of installation is using Docker and installing DIGITS inside a Docker container. Instructions to do so are [here](DockerInstall.md). If Docker don't meet your needs, then you can follow [these instructions](BuildDigits.md) to build DIGITS and its dependencies from source.
 
 ## Getting started
 
-The DIGITS server should now be running at `http://localhost/`.
+After getting DIGITS set up, the DIGITS server should now be running at `http://localhost:5000`.
 See comments below if you run into any issues.
 
 Now that you're up and running, check out the [Getting Started Guide](GettingStarted.md).

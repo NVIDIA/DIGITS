@@ -150,7 +150,7 @@ All classes which don't exist in the provided mapping are implicitly mapped to 0
 DetectNet is a single-class object detection network, and only cares about the "Car" class, which is expected to be ID 1.
 You can change the mapping in the DetectNet prototxt, but it's simplest to just make the class you care about map to 1.
 
-Custom class mappings may be used by specifiying a comma-separated list of class names in the Object Detection dataset creation form.
+Custom class mappings may be used by specifying a comma-separated list of class names in the Object Detection dataset creation form.
 All labels are converted to lower-case, so the matching is case-insensitive.
 
 For example, if you only want to detect pedestrians, enter `dontcare,pedestrian` in the "Custom classes" field to generate this mapping:

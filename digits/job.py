@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import os
@@ -14,8 +14,9 @@ from .status import Status, StatusCls
 from digits.config import config_value
 from digits.utils import sizeof_fmt, filesystem as fs
 
-# NOTE: Increment this everytime the pickled object changes
+# NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 2
+
 
 class Job(StatusCls):
     """
@@ -42,9 +43,10 @@ class Job(StatusCls):
                 if isinstance(task, TrainTask):
                     # can't call this until the job_dir is set
                     task.detect_snapshots()
+                    task.detect_timeline_traces()
             return job
 
-    def __init__(self, name, username, group = '', persistent = True):
+    def __init__(self, name, username, group='', persistent=True):
         """
         Arguments:
         name -- name of this job
@@ -66,7 +68,6 @@ class Job(StatusCls):
         self.persistent = persistent
 
         os.mkdir(self._dir)
-
 
     def __getstate__(self):
         """
@@ -97,14 +98,14 @@ class Job(StatusCls):
         Returns a dict used for a JSON representation
         """
         d = {
-                'id': self.id(),
-                'name': self.name(),
-                'status': self.status.name,
-                }
+            'id': self.id(),
+            'name': self.name(),
+            'status': self.status.name,
+        }
         if detailed:
             d.update({
                 'directory': self.dir(),
-                })
+            })
         return d
 
     def id(self):
@@ -134,7 +135,7 @@ class Job(StatusCls):
             path = os.path.join(self._dir, filename)
             if relative:
                 path = os.path.relpath(path, config_value('jobs_dir'))
-        return str(path).replace("\\","/")
+        return str(path).replace("\\", "/")
 
     def path_is_local(self, path):
         """assert that a path is local to _dir"""
@@ -224,27 +225,27 @@ class Job(StatusCls):
         from digits.webapp import app, socketio
 
         message = {
-                'update': 'status',
-                'status': self.status_of_tasks().name,
-                'css': self.status_of_tasks().css,
-                'running': self.status.is_running(),
-                'job_id': self.id(),
-                }
+            'update': 'status',
+            'status': self.status_of_tasks().name,
+            'css': self.status_of_tasks().css,
+            'running': self.status.is_running(),
+            'job_id': self.id(),
+        }
         with app.app_context():
             message['html'] = flask.render_template('status_updates.html', updates=self.status_history)
 
         socketio.emit('job update',
-                message,
-                namespace='/jobs',
-                room=self.id(),
-                )
+                      message,
+                      namespace='/jobs',
+                      room=self.id(),
+                      )
 
         # send message to job_management room as well
         socketio.emit('job update',
-                message,
-                namespace='/jobs',
-                room='job_management',
-                )
+                      message,
+                      namespace='/jobs',
+                      room='job_management',
+                      )
 
         if not self.status.is_running():
             if hasattr(self, 'event'):
@@ -311,11 +312,11 @@ class Job(StatusCls):
                       {
                           'job_id': self.id(),
                           'update': 'progress',
-                          'percentage': int(round(100*progress)),
+                          'percentage': int(round(100 * progress)),
                       },
                       namespace='/jobs',
                       room='job_management'
-                  )
+                      )
 
     def emit_attribute_changed(self, attribute, value):
         """
@@ -331,7 +332,7 @@ class Job(StatusCls):
                       },
                       namespace='/jobs',
                       room='job_management'
-                  )
+                      )
 
     def wait_completion(self):
         """

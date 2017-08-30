@@ -1,24 +1,83 @@
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 
-sudo: required
+os: linux
 dist: trusty
-
+sudo: required
 language: python
 python: 2.7
 
 env:
+    global:
+        - PROTOBUF_ROOT=~/protobuf
+        - CAFFE_ROOT=~/caffe
+        - TORCH_ROOT=~/torch
+        - OMP_NUM_THREADS=1
+        - OPENBLAS_MAIN_FREE=1
+        - secure: "WSqrE+PQm76DdoRLRGKTK6fRWfXZjIb0BWCZm3IgHgFO7OE6fcK2tBnpDNNw4XQjmo27FFWlEhxN32g18P84n5PvErHaH65IuS9Nv6FkLlPXZlVqGNxbPmEA4oTkD/6Y6kZyZWZtLh2+/1ijuzQAPnIy/4BEuL8pdO+PsoJ9hYM="
     matrix:
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=NVIDIA
         - DIGITS_TEST_FRAMEWORK=caffe CAFFE_FORK=BVLC
         - DIGITS_TEST_FRAMEWORK=torch
+        - DIGITS_TEST_FRAMEWORK=tensorflow
         - DIGITS_TEST_FRAMEWORK=none
-        - DEB_BUILD=true
+        - DIGITS_TEST_FRAMEWORK=none WITH_PLUGINS=false
+
+matrix:
+    include:
+        - env: LINT_CHECK
+          addons:
+              apt:
+                  packages:
+                      - closure-linter
+                      - python-flake8
+          install: true
+          script:
+              - ./digits-lint
+
+        - env: DIST
+          services: docker
+          addons:
+              apt:
+                  packages:
+                      - devscripts
+                      - debhelper
+                      - dput
+                      - gnupg
+          install:
+              - git fetch --unshallow
+              - git remote add nvidia-digits-upstream https://github.com/NVIDIA/DIGITS.git  # for forks
+              - git fetch nvidia-digits-upstream --tags
+              - pip install twine
+          script:
+              - DEBIAN_REVISION=1ppa1~trusty ./packaging/deb/build.sh
+              - DEBIAN_REVISION=1ppa1~xenial ./packaging/deb/build.sh
+              - python setup.py sdist bdist_wheel
+          deploy:
+              - provider: script
+                skip_cleanup: true
+                script: ./scripts/travis/ppa-upload.sh stable
+                on:
+                    repo: NVIDIA/DIGITS
+                    tags: true
+              - provider: script
+                skip_cleanup: true
+                script: ./scripts/travis/ppa-upload.sh dev
+                on:
+                    repo: NVIDIA/DIGITS
+                    branch: master
+              - provider: script  # not pypi because travis-ci/dpl#334
+                skip_cleanup: true
+                script: ./scripts/travis/pypi-upload.sh
+                on:
+                    repo: NVIDIA/DIGITS
+                    tags: true
 
 cache:
     apt: true
     directories:
-        - ~/caffe
-        - ~/torch
+        - $PROTOBUF_ROOT
+        - $CAFFE_ROOT
+        - $TORCH_ROOT
 
 addons:
     apt:
@@ -40,9 +99,7 @@ addons:
             - liblmdb-dev
             - libopenblas-dev
             - libopencv-dev
-            - libprotobuf-dev
             - libsnappy-dev
-            - protobuf-compiler
             - python-dev
             - python-flask
             - python-gevent
@@ -53,17 +110,15 @@ addons:
             - python-mock
             - python-nose
             - python-numpy
+            - python-opencv
             - python-pil
             - python-pip
-            - python-protobuf
             - python-psutil
+            - python-pydot
             - python-requests
             - python-scipy
             - python-six
             - python-skimage
-
-services:
-    - docker
 
 before_install:
     - deactivate
@@ -71,12 +126,16 @@ before_install:
     - source ~/venv/bin/activate
 
 install:
-    - ./scripts/travis/install-caffe.sh ~/caffe
-    - travis_wait ./scripts/travis/install-torch.sh ~/torch
-    - ./scripts/travis/install-python-requirements.sh
-    - ./scripts/travis/install-digits.sh
+    - mkdir -p ~/.config/matplotlib
+    - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
+    - ./scripts/travis/install-protobuf.sh $PROTOBUF_ROOT
+    - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
+    - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
+    - pip install -r ./requirements.txt --force-reinstall
+    - if [ "$DIGITS_TEST_FRAMEWORK" == "tensorflow" ]; then travis_wait ./scripts/travis/install-tensorflow.sh; fi
+    - pip install -r ./requirements_test.txt
+    - pip install -e .
+    - if [ "$WITH_PLUGINS" != "false" ]; then find ./plugins/*/* -maxdepth 0 -type d | xargs -n1 pip install -e; fi
 
 script:
-    - ./scripts/travis/test.sh
-    - ./scripts/travis/deb-build.sh
-
+    - ./digits-test -v

@@ -1,4 +1,4 @@
-{# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved. #}
+{# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved. #}
 
 <html>
 <head>
@@ -10,7 +10,9 @@
 <body>
 <h2>{{title}}</h2>
 {% if message %}
+{% autoescape false %}
 <p class="text-danger">{{message}}</p>
+{% endautoescape %}
 {% endif %}
 {% if description %}
 <p class="text-danger">{{description}}</p>

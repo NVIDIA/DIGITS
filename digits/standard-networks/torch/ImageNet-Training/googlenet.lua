@@ -1,4 +1,4 @@
--- source: https://github.com/soumith/imagenet-multiGPU.torch/blob/master/models/alexnet_cudnn.lua
+-- source: https://github.com/soumith/imagenet-multiGPU.torch/blob/master/models/googlenet.lua
 
 require 'nn'
 if pcall(function() require('cudnn') end) then
@@ -84,7 +84,7 @@ function createModel(nChannels, nClasses)
    main_branch:add(nn.Linear(1024,nClasses))
    main_branch:add(nn.LogSoftMax())
 
-   -- add auxillary classifier here (thanks to Christian Szegedy for the details)
+   -- add auxiliary classifier here (thanks to Christian Szegedy for the details)
    local aux_classifier = nn.Sequential()
    local l = backend.SpatialAveragePooling(5,5,3,3)
    if backend == cudnn then l = l:ceil() end

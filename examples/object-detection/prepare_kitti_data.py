@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 """
 Prepares KITTI data for ingestion by DIGITS
 """
@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import zipfile
+
 
 def extract_data(input_dir, output_dir):
     """
@@ -121,7 +122,7 @@ def split_for_training(split_dir, train_dir, val_dir,
         match = re.match('^(\d{4})_(\d{2})_(\d{2})_(\d+)$', images_dirname)
         if not match:
             raise ValueError('Unrecognized format of directory named "%s"' % images_dirname)
-        year = int(match.group(1))
+        # year = int(match.group(1))
         month = int(match.group(2))
         date = int(match.group(3))
         video_id = int(match.group(4))
@@ -195,4 +196,3 @@ if __name__ == '__main__':
         use_symlinks=(not args.no_symlinks),
     )
     print 'Done.'
-

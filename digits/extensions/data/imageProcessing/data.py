@@ -1,4 +1,4 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import math
@@ -29,7 +29,7 @@ class DataIngestion(DataIngestionInterface):
 
         self.random_indices = None
 
-        if not 'seed' in self.userdata:
+        if 'seed' not in self.userdata:
             # choose random seed and add to userdata so it gets persisted
             self.userdata['seed'] = random.randint(0, 1000)
 
@@ -132,12 +132,12 @@ class DataIngestion(DataIngestionInterface):
                 os.path.split(label_image_list[idx])[1])[0]
             if feature_name != label_name:
                 raise ValueError("No corresponding feature/label pair found for (%s,%s)"
-                                 % (feature_name, label_name) )
+                                 % (feature_name, label_name))
 
         # split lists if there is no val folder
         if not self.has_val_folder:
-                feature_image_list = self.split_image_list(feature_image_list, stage)
-                label_image_list = self.split_image_list(label_image_list, stage)
+            feature_image_list = self.split_image_list(feature_image_list, stage)
+            label_image_list = self.split_image_list(label_image_list, stage)
 
         return zip(
             feature_image_list,
@@ -148,7 +148,7 @@ class DataIngestion(DataIngestionInterface):
         for dirpath, dirnames, filenames in os.walk(folder, followlinks=True):
             for filename in filenames:
                 if filename.lower().endswith(image.SUPPORTED_EXTENSIONS):
-                    image_files.append('%s' % os.path.join(folder, filename))
+                    image_files.append('%s' % os.path.join(dirpath, filename))
         if len(image_files) == 0:
             raise ValueError("Unable to find supported images in %s" % folder)
         return sorted(image_files)

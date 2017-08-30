@@ -1,0 +1,30 @@
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<style media="screen" type="text/css">
+.input_text {
+    word-break: break-all;
+}
+</style>
+
+<table>
+    <tr>
+        <td class="input_text col-sm-8">{{input}}</td>
+
+    	<td class="col-sm-3" align="left">
+        {% for r in predictions %}
+        	<b>{{r[0]}}</b>
+        	<br>
+        {% endfor %}
+        <td class="col-sm-1" align="right">
+        {% for r in predictions %}
+            <span class="badge">{{r[1]}}%</span>
+            <br>
+        {% endfor %}
+    	</td>
+    </td>
+    </tr>
+</table>

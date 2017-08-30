@@ -1,10 +1,20 @@
-# Copyright (c) 2015-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from .caffe_framework import CaffeFramework
 from .framework import Framework
 from .torch_framework import TorchFramework
 from digits.config import config_value
+
+__all__ = [
+    'Framework',
+    'CaffeFramework',
+    'TorchFramework',
+]
+
+if config_value('tensorflow')['enabled']:
+    from .tensorflow_framework import TensorflowFramework
+    __all__.append('TensorflowFramework')
 
 #
 #  create framework instances
@@ -13,12 +23,16 @@ from digits.config import config_value
 # torch is optional
 torch = TorchFramework() if config_value('torch')['enabled'] else None
 
+# tensorflow is optional
+tensorflow = TensorflowFramework() if config_value('tensorflow')['enabled'] else None
+
 # caffe is mandatory
 caffe = CaffeFramework()
 
 #
 #  utility functions
 #
+
 
 def get_frameworks():
     """
@@ -28,7 +42,10 @@ def get_frameworks():
     frameworks = [caffe]
     if torch:
         frameworks.append(torch)
+    if tensorflow:
+        frameworks.append(tensorflow)
     return frameworks
+
 
 def get_framework_by_id(framework_id):
     """
@@ -38,5 +55,3 @@ def get_framework_by_id(framework_id):
         if fw.get_id() == framework_id:
             return fw
     return None
-
-

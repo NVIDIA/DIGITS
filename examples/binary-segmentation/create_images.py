@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 """
 Functions for creating a dummy image segmentation dataset
 """
@@ -12,11 +12,6 @@ import PIL.ImageDraw
 import shutil
 import time
 
-# Find the best implementation available
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
 INPUT_FOLDER = "input"
 TARGET_FOLDER = "target"
@@ -47,14 +42,14 @@ def create_images(folder, image_count, image_size, grid_size):
         draw.polygon(
             triangle,
             outline=0,
-            )
+        )
         # draw a full triangle
         draw = PIL.ImageDraw.Draw(image_target)
         draw.polygon(
             triangle,
             outline=0,
             fill=0
-            )
+        )
         # save images
         input_fname = os.path.join(input_folder, "%08d.png" % idx)
         target_fname = os.path.join(target_folder, "%08d.png" % idx)
@@ -75,7 +70,7 @@ def create_images(folder, image_count, image_size, grid_size):
             draw.polygon(
                 triangle,
                 outline=0,
-                )
+            )
     image_grid.save(os.path.join(folder, "grid.png"))
     return
 
@@ -83,18 +78,13 @@ def create_images(folder, image_count, image_size, grid_size):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create segmentation image pairs')
 
-    ### Positional arguments
-    parser.add_argument(
-        'output',
-        help='Output folder')
+    # Positional arguments
+    parser.add_argument('output', help='Output folder')
 
-    ### Optional arguments
+    # Optional arguments
     parser.add_argument(
-        '-c',
-        '--image_count',
-        type=int,
-        default=10000,
-        help='How many images to create')
+        '-c', '--image_count', type=int,
+        default=10000, help='How many images to create')
 
     parser.add_argument(
         '-s',
@@ -117,4 +107,3 @@ if __name__ == '__main__':
     create_images(args['output'], args['image_count'], args['image_size'], args['grid_size'])
 
     print 'Done after %s seconds' % (time.time() - start_time,)
-

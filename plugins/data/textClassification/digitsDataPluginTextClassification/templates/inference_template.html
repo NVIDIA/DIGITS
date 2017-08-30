@@ -1,0 +1,28 @@
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<div class="row">
+    <div class="col-sm-6">
+        <h3>Test a snippet</h3>
+        <div class="form-group">
+            <div class="form-group{{mark_errors([form.snippet])}}">
+                {{ form.snippet.label }}
+                {{ form.snippet.tooltip }}
+                {{ form.snippet(class='form-control', placeholder='text snippet') }}
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <h3>Test a data file</h3>
+        <div class="form-group">
+            <div class="form-group{{mark_errors([form.test_data_file])}}">
+                {{ form.test_data_file.label }}
+                {{ form.test_data_file.tooltip }}
+                {{ form.test_data_file(class='form-control autocomplete_path', placeholder='.csv file') }}
+            </div>
+        </div>
+    </div>
+</div>

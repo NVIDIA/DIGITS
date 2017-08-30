@@ -1,0 +1,35 @@
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+<div class="form-group{{mark_errors([form.train_data_file])}}">
+    {{ form.train_data_file.label }}
+    {{ form.train_data_file.tooltip }}
+    {{ form.train_data_file(class='form-control autocomplete_path', placeholder='.csv file') }}
+</div>
+
+<div class="form-group{{mark_errors([form.val_data_file])}}">
+    {{ form.val_data_file.label }}
+    {{ form.val_data_file.tooltip }}
+    {{ form.val_data_file(class='form-control autocomplete_path', placeholder='.csv file') }}
+</div>
+
+<div class="form-group{{mark_errors([form.alphabet])}}">
+    {{ form.alphabet.label }}
+    {{ form.alphabet.tooltip }}
+    {{ form.alphabet(class='form-control') }}
+</div>
+
+<div class="form-group{{mark_errors([form.class_labels_file])}}">
+    {{ form.class_labels_file.label }}
+    {{ form.class_labels_file.tooltip }}
+    {{ form.class_labels_file(class='form-control autocomplete_path', placeholder='.txt file') }}
+</div>
+
+<div class="form-group{{mark_errors([form.max_chars_per_sample])}}">
+    {{ form.max_chars_per_sample.label }}
+    {{ form.max_chars_per_sample.tooltip }}
+    {{ form.max_chars_per_sample(class='form-control') }}
+</div>

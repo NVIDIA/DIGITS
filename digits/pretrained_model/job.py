@@ -1,12 +1,11 @@
-# Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 import os
 
-from . import tasks
-import digits.frameworks
 from digits.job import Job
 from digits.utils import subclass, override
-from digits.pretrained_model.tasks import CaffeUploadTask, TorchUploadTask
+from digits.pretrained_model.tasks import CaffeUploadTask, TorchUploadTask, TensorflowUploadTask
+
 
 @subclass
 class PretrainedModelJob(Job):
@@ -14,11 +13,11 @@ class PretrainedModelJob(Job):
     A Job that uploads a pretrained model
     """
 
-    def __init__(self, weights_path, model_def_path, labels_path=None,framework="caffe",
-                image_type="3",resize_mode="Squash", width=224, height=224, **kwargs):
-        super(PretrainedModelJob, self).__init__(persistent = False, **kwargs)
+    def __init__(self, weights_path, model_def_path, labels_path=None, framework="caffe",
+                 image_type="3", resize_mode="Squash", width=224, height=224, **kwargs):
+        super(PretrainedModelJob, self).__init__(persistent=False, **kwargs)
 
-        self.framework  = framework
+        self.framework = framework
         self.image_info = {
             "image_type": image_type,
             "resize_mode": resize_mode,
@@ -38,8 +37,12 @@ class PretrainedModelJob(Job):
 
         if self.framework == "caffe":
             self.tasks.append(CaffeUploadTask(**taskKwargs))
-        else:
+        elif self.framework == "torch":
             self.tasks.append(TorchUploadTask(**taskKwargs))
+        elif self.framework == "tensorflow":
+            self.tasks.append(TensorflowUploadTask(**taskKwargs))
+        else:
+            raise Exception("framework of type " + self.framework + " is not supported")
 
     def get_weights_path(self):
         return self.tasks[0].get_weights_path()
@@ -52,8 +55,8 @@ class PretrainedModelJob(Job):
         python_layer_file_name = 'digits_python_layers.py'
         if os.path.exists(os.path.join(tmp_dir, python_layer_file_name)):
             return os.path.join(tmp_dir, python_layer_file_name)
-        elif os.path.exists(os.path.join(tmp_dir, python_layer_file_name+'c')):
-            return os.path.join(tmp_dir, python_layer_file_name+'c')
+        elif os.path.exists(os.path.join(tmp_dir, python_layer_file_name + 'c')):
+            return os.path.join(tmp_dir, python_layer_file_name + 'c')
         else:
             return None
 

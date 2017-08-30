@@ -1,7 +1,6 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-import operator
 import os.path
 import re
 import sys
@@ -11,8 +10,9 @@ from digits import utils
 from digits.task import Task
 from digits.utils import subclass, override
 
-# NOTE: Increment this everytime the pickled version changes
+# NOTE: Increment this every time the pickled version changes
 PICKLE_VERSION = 3
+
 
 @subclass
 class CreateDbTask(Task):
@@ -38,7 +38,7 @@ class CreateDbTask(Task):
         # Take keyword arguments out of kwargs
         self.image_folder = kwargs.pop('image_folder', None)
         self.shuffle = kwargs.pop('shuffle', True)
-        self.resize_mode = kwargs.pop('resize_mode' , None)
+        self.resize_mode = kwargs.pop('resize_mode', None)
         self.encoding = kwargs.pop('encoding', None)
         self.compression = kwargs.pop('compression', None)
         self.mean_file = kwargs.pop('mean_file', None)
@@ -50,8 +50,9 @@ class CreateDbTask(Task):
         self.input_file = input_file
         self.db_name = db_name
         self.backend = backend
-        if backend == 'hdf5':
+        if backend == 'hdf5' or backend == 'tfrecords':
             # the list of hdf5 files is stored in a textfile
+            # tfrecords can be sharded as well
             self.textfile = os.path.join(self.db_name, 'list.txt')
         self.image_dims = image_dims
         if image_dims[2] == 3:
@@ -60,6 +61,7 @@ class CreateDbTask(Task):
             self.image_channel_order = None
 
         self.entries_count = None
+        self.entries_error = None
         self.distribution = None
         self.create_db_log_file = "create_%s.log" % db_name
 
@@ -97,6 +99,14 @@ class CreateDbTask(Task):
             self.backend = 'lmdb'
         if not hasattr(self, 'compression') or self.compression is None:
             self.compression = 'none'
+
+        if not hasattr(self, 'entries_error'):
+            self.entries_error = 0
+            for key in self.distribution.keys():
+                self.distribution[key] = {
+                    'count': self.distribution[key],
+                    'error_count': 0
+                }
 
     @override
     def name(self):
@@ -140,14 +150,14 @@ class CreateDbTask(Task):
         args = [sys.executable, os.path.join(
             os.path.dirname(os.path.abspath(digits.__file__)),
             'tools', 'create_db.py'),
-                self.path(self.input_file),
-                self.path(self.db_name),
-                self.image_dims[1],
-                self.image_dims[0],
-                '--backend=%s' % self.backend,
-                '--channels=%s' % self.image_dims[2],
-                '--resize_mode=%s' % self.resize_mode,
-                ]
+            self.path(self.input_file),
+            self.path(self.db_name),
+            self.image_dims[1],
+            self.image_dims[0],
+            '--backend=%s' % self.backend,
+            '--channels=%s' % self.image_dims[2],
+            '--resize_mode=%s' % self.resize_mode,
+        ]
 
         if self.mean_file is not None:
             args.append('--mean_file=%s' % self.path(self.mean_file))
@@ -168,8 +178,6 @@ class CreateDbTask(Task):
 
     @override
     def process_output(self, line):
-        from digits.webapp import socketio
-
         self.create_db_log.write('%s\n' % line)
         self.create_db_log.flush()
 
@@ -180,7 +188,7 @@ class CreateDbTask(Task):
         # progress
         match = re.match(r'Processed (\d+)\/(\d+)', message)
         if match:
-            self.progress = float(match.group(1))/int(match.group(2))
+            self.progress = float(match.group(1)) / int(match.group(2))
             self.emit_progress_update()
             return True
 
@@ -190,19 +198,22 @@ class CreateDbTask(Task):
             if not hasattr(self, 'distribution') or self.distribution is None:
                 self.distribution = {}
 
-            self.distribution[match.group(1)] = int(match.group(2))
+            self.distribution[match.group(1)] = {
+                'count': int(match.group(2)),
+                'error_count': 0
+            }
+            self.update_distribution_graph()
+            return True
 
-            data = self.distribution_data()
-            if data:
-                socketio.emit('task update',
-                        {
-                            'task': self.html_id(),
-                            'update': 'distribution',
-                            'data': data,
-                            },
-                        namespace='/jobs',
-                        room=self.job_id,
-                        )
+        # add errors to the distribution
+        match = re.match(r'\[(.+) (\d+)\] LoadImageError: (.+)', message)
+        if match:
+            self.distribution[match.group(2)]['count'] -= 1
+            self.distribution[match.group(2)]['error_count'] += 1
+            if self.entries_error is None:
+                self.entries_error = 0
+            self.entries_error += 1
+            self.update_distribution_graph()
             return True
 
         # result
@@ -231,13 +242,13 @@ class CreateDbTask(Task):
 
         if self.backend == 'lmdb':
             socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'exploration-ready',
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+                          {
+                              'task': self.html_id(),
+                              'update': 'exploration-ready',
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )
 
         elif self.backend == 'hdf5':
             # add more path information to the list of h5 files
@@ -252,15 +263,15 @@ class CreateDbTask(Task):
 
         if self.mean_file:
             socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'mean-image',
-                        # XXX Can't use url_for here because we don't have a request context
-                        'data': '/files/' + self.path('mean.jpg', relative=True),
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+                          {
+                              'task': self.html_id(),
+                              'update': 'mean-image',
+                              # XXX Can't use url_for here because we don't have a request context
+                              'data': '/files/' + self.path('mean.jpg', relative=True),
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )
 
     def get_labels(self):
         """
@@ -286,7 +297,6 @@ class CreateDbTask(Task):
         self._labels = labels
         return self._labels
 
-
     def distribution_data(self):
         """
         Returns distribution data for a C3.js graph
@@ -301,25 +311,51 @@ class CreateDbTask(Task):
         if len(self.distribution.keys()) != len(labels):
             return None
 
-        values = ['Count']
+        label_count = 'Count'
+        label_error = 'LoadImageError'
+
+        error_values = [label_error]
+        count_values = [label_count]
         titles = []
         for key, value in sorted(
                 self.distribution.items(),
-                key=operator.itemgetter(1),
+                key=lambda item: item[1]['count'],
                 reverse=True):
-            values.append(value)
+            count_values.append(value['count'])
+            error_values.append(value['error_count'])
             titles.append(labels[int(key)])
 
-        return {
-                'data': {
-                    'columns': [values],
-                    'type': 'bar'
-                    },
-                'axis': {
-                    'x': {
-                        'type': 'category',
-                        'categories': titles,
-                        }
-                    },
-                }
+        # distribution graph always displays the Count data
+        data = {'columns': [count_values], 'type': 'bar'}
 
+        # only display error data if any error occurred
+        if sum(error_values[1:]) > 0:
+            data['columns'] = [count_values, error_values]
+            data['groups'] = [[label_count, label_error]]
+            data['colors'] = {label_count: '#1F77B4', label_error: '#B73540'}
+            data['order'] = 'false'
+
+        return {
+            'data': data,
+            'axis': {
+                'x': {
+                    'type': 'category',
+                    'categories': titles,
+                }
+            },
+        }
+
+    def update_distribution_graph(self):
+        from digits.webapp import socketio
+        data = self.distribution_data()
+
+        if data:
+            socketio.emit('task update',
+                          {
+                              'task': self.html_id(),
+                              'update': 'distribution',
+                              'data': data,
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )

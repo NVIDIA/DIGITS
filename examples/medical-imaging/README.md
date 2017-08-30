@@ -109,7 +109,7 @@ In the model creation form:
 - name your model `FCN-Alexnet-Sunnybrooke`
 
 You will also need to edit the definition of `FCN-Alexnet`.
-Remember that in the semantic segmentation example, there are 12 different classes.
+Remember that in the semantic segmentation example, there are 21 different classes.
 In this example, we only have two classes (background and left ventricle).
 It is straightforward to adjust the model description to train on a different number of classes.
 To this avail:
@@ -169,6 +169,8 @@ class Dice(caffe.Layer):
     def setup(self, bottom, top):
         if len(bottom) != 2:
             raise Exception("Need two inputs to compute Dice coefficient.")
+        # compute sum over all axes but the batch and channel axes
+        self.sum_axes = tuple(range(1, bottom[0].data.ndim - 1))
 
     def reshape(self, bottom, top):
         # check input dimensions match
@@ -182,13 +184,13 @@ class Dice(caffe.Layer):
         # compute prediction
         prediction = np.argmax(bottom[0].data, axis=1)
         # area of predicted contour
-        a_p = np.count_nonzero(prediction)
+        a_p = np.sum(prediction, axis=self.sum_axes)
         # area of contour in label
-        a_l = np.count_nonzero(label)
+        a_l = np.sum(label, axis=self.sum_axes)
         # area of intersection
-        a_pl = np.count_nonzero(prediction * label)
+        a_pl = np.sum(prediction * label, axis=self.sum_axes)
         # dice coefficient
-        dice_coeff = 2.*a_pl/(a_p + a_l)
+        dice_coeff = np.mean(2.*a_pl/(a_p + a_l))
         top[0].data[...] = dice_coeff
 
     def backward(self, top, propagate_down, bottom):
@@ -249,7 +251,7 @@ Now that we have a dataset of RGB images, we can easily re-use the pre-trained F
 - go to your `fcn_alexnet-sunnybrook-with_dice` model page
 - click the `Clone` button
 - select the `Sunnybrook-RGB` dataset
-- in `pretrained weights` point to the location of the FCN-Alexnet pre-trained model you created in the semantic segmentation example
+- in `pretrained model(s)` point to the location of the FCN-Alexnet pre-trained model you created in the semantic segmentation example
 - remember to re-upload your `dice.py` file
 - name your model `FCN-Alexnet-Sunnybrooke_with_dice-pretrained`
 - set the number of training epochs to `30`
@@ -296,4 +298,4 @@ This would allow us to directly aim for this metric during training.
 ### Data augmentation
 
 FCN-8s exhibits some amount of overfit: the training loss is consistently lower than the validation loss.
-In order to reduce overfit, we can artifically augment the training dataset by applying random perturbations (color, contract changes, etc.).
+In order to reduce overfit, we can artificially augment the training dataset by applying random perturbations (color, contract changes, etc.).

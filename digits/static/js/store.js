@@ -1,10 +1,10 @@
-// Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+// Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
 (function(angular) {
     'use strict';
     var app = angular.module('modelStore', []);
     app.controller('ModelListController', function($scope, $http) {
-        var end_point = '/store/models';
+        var end_point = URL_PREFIX + '/store/models';
         var get_model_list = function(refresh) {
             $http({
                 method: 'GET',
@@ -27,7 +27,7 @@
         $scope.download = function(id) {
             $http({
                 method: 'GET',
-                url: '/store/push?id=' + id,
+                url: URL_PREFIX + '/store/push?id=' + id,
             }).then(function successCallback(response) {
                 // nothing
             }, function errorCallback(response) {
@@ -55,8 +55,8 @@
 })(window.angular);
 
 $(document).ready(function() {
-    socket.on('update', function (msg) {
-        var scope = angular.element(document.getElementById("modelList")).scope();
+    socket.on('update', function(msg) {
+        var scope = angular.element(document.getElementById('modelList')).scope();
         if (msg.update == 'progress') {
             if (scope.set_attribute(msg.model_id, 'progress', msg.progress))
                 scope.$apply();

@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 from collections import OrderedDict, namedtuple
@@ -13,11 +13,12 @@ from digits import device_query
 from digits.task import Task
 from digits.utils import subclass, override
 
-# NOTE: Increment this everytime the picked object changes
+# NOTE: Increment this every time the picked object changes
 PICKLE_VERSION = 2
 
 # Used to store network outputs
 NetworkOutput = namedtuple('NetworkOutput', ['kind', 'data'])
+
 
 @subclass
 class TrainTask(Task):
@@ -41,6 +42,7 @@ class TrainTask(Task):
         batch_size -- if set, override any network specific batch_size with this value
         batch_accumulation -- accumulate gradients over multiple batches
         val_interval -- how many epochs between validating the model with an epoch of validation data
+        traces_interval -- amount of steps in between timeline traces
         pretrained_model -- filename for a model to use for fine-tuning
         crop_size -- crop each image down to a square of this size
         use_mean -- subtract the dataset's mean file or mean pixel
@@ -52,6 +54,7 @@ class TrainTask(Task):
         self.batch_size = kwargs.pop('batch_size', None)
         self.batch_accumulation = kwargs.pop('batch_accumulation', None)
         self.val_interval = kwargs.pop('val_interval', None)
+        self.traces_interval = kwargs.pop('traces_interval', None)
         self.pretrained_model = kwargs.pop('pretrained_model', None)
         self.crop_size = kwargs.pop('crop_size', None)
         self.use_mean = kwargs.pop('use_mean', None)
@@ -63,7 +66,7 @@ class TrainTask(Task):
         self.framework_id = kwargs.pop('framework_id', None)
         self.data_aug = kwargs.pop('data_aug', None)
 
-        super(TrainTask, self).__init__(job_dir = job.dir(), **kwargs)
+        super(TrainTask, self).__init__(job_dir=job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION
 
         self.job = job
@@ -75,6 +78,7 @@ class TrainTask(Task):
 
         self.current_epoch = 0
         self.snapshots = []
+        self.timeline_traces = []
 
         # data gets stored as dicts of lists (for graphing)
         self.train_outputs = OrderedDict()
@@ -102,24 +106,25 @@ class TrainTask(Task):
             va = state.pop('val_accuracy_updates', None)
             lr = state.pop('lr_updates', None)
             if tl:
-                state['train_outputs']['epoch'] = NetworkOutput('Epoch', [x[0] for x  in tl])
+                state['train_outputs']['epoch'] = NetworkOutput('Epoch', [x[0] for x in tl])
                 state['train_outputs']['loss'] = NetworkOutput('SoftmaxWithLoss', [x[1] for x in tl])
                 state['train_outputs']['learning_rate'] = NetworkOutput('LearningRate', [x[1] for x in lr])
             if vl:
                 state['val_outputs']['epoch'] = NetworkOutput('Epoch', [x[0] for x in vl])
                 if va:
-                    state['val_outputs']['accuracy'] = NetworkOutput('Accuracy', [x[1]/100 for x in va])
+                    state['val_outputs']['accuracy'] = NetworkOutput('Accuracy', [x[1] / 100 for x in va])
                 state['val_outputs']['loss'] = NetworkOutput('SoftmaxWithLoss', [x[1] for x in vl])
 
-        if state['use_mean'] == True:
+        if state['use_mean'] is True:
             state['use_mean'] = 'pixel'
-        elif state['use_mean'] == False:
+        elif state['use_mean'] is False:
             state['use_mean'] = 'none'
 
         state['pickver_task_train'] = PICKLE_VERSION
         super(TrainTask, self).__setstate__(state)
 
         self.snapshots = []
+        self.timeline_traces = []
         self.dataset = None
 
     @override
@@ -127,7 +132,7 @@ class TrainTask(Task):
         if 'gpus' not in resources:
             return None
         if not resources['gpus']:
-            return {} # don't use a GPU at all
+            return {}  # don't use a GPU at all
         if self.gpu_count is not None:
             identifiers = []
             for resource in resources['gpus']:
@@ -194,7 +199,7 @@ class TrainTask(Task):
             if hasattr(self, 'p') and self.p is not None:
                 data_cpu['pid'] = self.p.pid
                 try:
-                    ps = psutil.Process(self.p.pid) # 'self.p' is the system call object
+                    ps = psutil.Process(self.p.pid)  # 'self.p' is the system call object
                     if ps.is_running():
                         if psutil.version_info[0] >= 2:
                             data_cpu['cpu_pct'] = ps.cpu_percent(interval=1)
@@ -204,7 +209,7 @@ class TrainTask(Task):
                             data_cpu['cpu_pct'] = ps.get_cpu_percent(interval=1)
                             data_cpu['mem_pct'] = ps.get_memory_percent()
                             data_cpu['mem_used'] = ps.get_memory_info().rss
-                except psutil.NoSuchProcess:
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
                     # In rare case of instant process crash or PID went zombie (report nothing)
                     pass
 
@@ -218,18 +223,18 @@ class TrainTask(Task):
 
             with app.app_context():
                 html = flask.render_template('models/gpu_utilization.html',
-                        data_gpu = data_gpu,
-                        data_cpu = data_cpu)
+                                             data_gpu=data_gpu,
+                                             data_cpu=data_cpu)
 
                 socketio.emit('task update',
-                        {
-                            'task': self.html_id(),
-                            'update': 'gpu_utilization',
-                            'html': html,
-                            },
-                        namespace='/jobs',
-                        room=self.job_id,
-                        )
+                              {
+                                  'task': self.html_id(),
+                                  'update': 'gpu_utilization',
+                                  'html': html,
+                              },
+                              namespace='/jobs',
+                              room=self.job_id,
+                              )
             gevent.sleep(1)
 
     def send_progress_update(self, epoch):
@@ -240,7 +245,7 @@ class TrainTask(Task):
             return
 
         self.current_epoch = epoch
-        self.progress = epoch/self.train_epochs
+        self.progress = epoch / self.train_epochs
         self.emit_progress_update()
 
     def save_train_output(self, *args):
@@ -256,20 +261,20 @@ class TrainTask(Task):
             return
         self.last_train_update = time.time()
 
-        self.logger.debug('Training %s%% complete.' % round(100 * self.current_epoch/self.train_epochs,2))
+        self.logger.debug('Training %s%% complete.' % round(100 * self.current_epoch / self.train_epochs, 2))
 
         # loss graph data
         data = self.combined_graph_data()
         if data:
             socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'combined_graph',
-                        'data': data,
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+                          {
+                              'task': self.html_id(),
+                              'update': 'combined_graph',
+                              'data': data,
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )
 
             if data['columns']:
                 # isolate the Loss column data for the sparkline
@@ -283,20 +288,20 @@ class TrainTask(Task):
                               },
                               namespace='/jobs',
                               room='job_management',
-                          )
+                              )
 
         # lr graph data
         data = self.lr_graph_data()
         if data:
             socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'lr_graph',
-                        'data': data,
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+                          {
+                              'task': self.html_id(),
+                              'update': 'lr_graph',
+                              'data': data,
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )
 
     def save_val_output(self, *args):
         """
@@ -311,14 +316,14 @@ class TrainTask(Task):
         data = self.combined_graph_data()
         if data:
             socketio.emit('task update',
-                    {
-                        'task': self.html_id(),
-                        'update': 'combined_graph',
-                        'data': data,
-                        },
-                    namespace='/jobs',
-                    room=self.job_id,
-                    )
+                          {
+                              'task': self.html_id(),
+                              'update': 'combined_graph',
+                              'data': data,
+                          },
+                          namespace='/jobs',
+                          room=self.job_id,
+                          )
 
     def save_output(self, d, name, kind, value):
         """
@@ -430,7 +435,7 @@ class TrainTask(Task):
         """
         return None
 
-    def get_snapshot(self, epoch=-1):
+    def get_snapshot(self, epoch=-1, download=False):
         """
         return snapshot file for specified epoch
         """
@@ -452,7 +457,7 @@ class TrainTask(Task):
 
         return snapshot_filename
 
-    def get_snapshot_filename(self,epoch=-1):
+    def get_snapshot_filename(self, epoch=-1):
         """
         Return the filename for the specified epoch
         """
@@ -469,7 +474,9 @@ class TrainTask(Task):
 
         assert hasattr(self.dataset, 'labels_file'), 'labels_file not set'
         assert self.dataset.labels_file, 'labels_file not set'
-        assert os.path.exists(self.dataset.path(self.dataset.labels_file)), 'labels_file does not exist'
+        assert os.path.exists(self.dataset.path(self.dataset.labels_file)), 'labels_file does not exist: {}'.format(
+            self.dataset.path(self.dataset.labels_file)
+        )
 
         labels = []
         with open(self.dataset.path(self.dataset.labels_file)) as infile:
@@ -494,19 +501,50 @@ class TrainTask(Task):
             return None
 
         # return 100-200 values or fewer
-        stride = max(len(self.train_outputs['epoch'].data)/100,1)
+        stride = max(len(self.train_outputs['epoch'].data) / 100, 1)
         e = ['epoch'] + self.train_outputs['epoch'].data[::stride]
         lr = ['lr'] + self.train_outputs['learning_rate'].data[::stride]
 
         return {
-                'columns': [e, lr],
-                'xs': {
-                    'lr': 'epoch'
-                    },
-                'names': {
-                    'lr': 'Learning Rate'
-                    },
-                }
+            'columns': [e, lr],
+            'xs': {
+                'lr': 'epoch'
+            },
+            'names': {
+                'lr': 'Learning Rate'
+            },
+        }
+
+    def detect_timeline_traces(self):
+        """
+        Populate self.timeline_traces with snapshots that exist on disk
+        Returns True if at least one usable snapshot is found
+        """
+        return False
+
+    def has_timeline_traces(self):
+        """
+        Evaluates if there are timeline traces to be viewed at all
+        """
+        return len(self.timeline_traces) > 0
+
+    def timeline_trace(self, tid):
+        """
+        Returns the data of a selected timeline trace
+        """
+        for item in self.timeline_traces:
+            if item[1] == tid:
+                fn = item[0]
+                with open(fn, 'r') as file_data:
+                    return file_data.read()
+
+        raise ValueError('Requested timeline not found in timeline list')
+
+    def timeline_trace_list(self):
+        """
+        Returns an array of timeline trace id's for creating an HTML select field
+        """
+        return [[s[1], 'Trace #%s' % s[1]] for s in reversed(self.timeline_traces)]
 
     def combined_graph_data(self, cull=True):
         """
@@ -516,11 +554,11 @@ class TrainTask(Task):
         cull -- if True, cut down the number of data points returned to a reasonable size
         """
         data = {
-                'columns': [],
-                'xs': {},
-                'axes': {},
-                'names': {},
-                }
+            'columns': [],
+            'xs': {},
+            'axes': {},
+            'names': {},
+        }
 
         added_train_data = False
         added_val_data = False
@@ -528,7 +566,7 @@ class TrainTask(Task):
         if self.train_outputs and 'epoch' in self.train_outputs:
             if cull:
                 # max 200 data points
-                stride = max(len(self.train_outputs['epoch'].data)/100,1)
+                stride = max(len(self.train_outputs['epoch'].data) / 100, 1)
             else:
                 # return all data
                 stride = 1
@@ -539,7 +577,7 @@ class TrainTask(Task):
                     data['names'][col_id] = '%s (train)' % name
                     if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
                         data['columns'].append([col_id] + [
-                            (100*x if x is not None else 'none')
+                            (100 * x if x is not None else 'none')
                             for x in output.data[::stride]])
                         data['axes'][col_id] = 'y2'
                     else:
@@ -553,7 +591,7 @@ class TrainTask(Task):
         if self.val_outputs and 'epoch' in self.val_outputs:
             if cull:
                 # max 200 data points
-                stride = max(len(self.val_outputs['epoch'].data)/100,1)
+                stride = max(len(self.val_outputs['epoch'].data) / 100, 1)
             else:
                 # return all data
                 stride = 1
@@ -564,7 +602,7 @@ class TrainTask(Task):
                     data['names'][col_id] = '%s (val)' % name
                     if 'accuracy' in output.kind.lower() or 'accuracy' in name.lower():
                         data['columns'].append([col_id] + [
-                            (100*x if x is not None else 'none')
+                            (100 * x if x is not None else 'none')
                             for x in output.data[::stride]])
                         data['axes'][col_id] = 'y2'
                     else:
@@ -601,7 +639,7 @@ class TrainTask(Task):
         """
         raise NotImplementedError()
 
-    def get_task_stats(self,epoch=-1):
+    def get_task_stats(self, epoch=-1):
         """
         return a dictionary of task statistics
         """

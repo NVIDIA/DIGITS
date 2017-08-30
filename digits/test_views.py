@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
 import json
@@ -13,6 +13,7 @@ from . import webapp
 ################################################################################
 # Base classes (they don't start with "Test" so nose won't run them)
 ################################################################################
+
 
 class BaseViewsTest(object):
     """
@@ -35,7 +36,7 @@ class BaseViewsTest(object):
         cls.created_models = []
 
         rv = cls.app.post('/login', data={
-            'username':'digits-testsuite'})
+            'username': 'digits-testsuite'})
         assert rv.status_code == 302, 'Login failed with %s' % rv.status_code
 
     @classmethod
@@ -65,7 +66,7 @@ class BaseViewsTest(object):
         """
         url = '/%s/%s' % (job_type, job_id)
         rv = cls.app.get(url, follow_redirects=True)
-        assert rv.status_code in [200, 404], 'got status code "%s" from "%s"' % (rv.status_code, url)
+        assert rv.status_code in [200, 404], 'got status code "%s" from "%s"\n%s' % (rv.status_code, url, rv.data)
         return rv.status_code == 200
 
     @classmethod
@@ -130,7 +131,8 @@ class BaseViewsTest(object):
                 # make sure job appears in completed jobs
                 url = '/completed_jobs.json'
                 rv = cls.app.get(url)
-                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (
+                    job_id, url, rv.status_code)
                 info = json.loads(rv.data)
                 dataset_ids = [job['id'] for job in info['datasets']]
                 model_ids = [job['id'] for job in info['models']]
@@ -138,7 +140,8 @@ class BaseViewsTest(object):
                 # make sure job can be shown without error
                 url = '/jobs/%s' % job_id
                 rv = cls.app.get(url, follow_redirects=True)
-                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
+                assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (
+                    job_id, url, rv.status_code)
                 assert job_id in rv.data
                 return status
             assert (time.time() - start) < timeout, 'Job took more than %s seconds' % timeout
@@ -170,7 +173,9 @@ class BaseViewsTest(object):
 # Test classes
 ################################################################################
 
+
 class TestViews(BaseViewsTest):
+
     @classmethod
     def setUpClass(cls):
         test_utils.skipIfNotFramework('none')
@@ -192,7 +197,7 @@ class TestViews(BaseViewsTest):
 
     def check_autocomplete(self, absolute_path):
         path = '/' if absolute_path else './'
-        url = '/autocomplete/path?query=%s' % (urllib.quote(path,safe=''))
+        url = '/autocomplete/path?query=%s' % (urllib.quote(path, safe=''))
         rv = self.app.get(url)
         assert rv.status_code == 200
         status = json.loads(rv.data)
