@@ -37,7 +37,7 @@ try {
         $scope.add_job = function(job_id) {
             $http({
                 method: 'GET',
-                url: '/jobs/' + job_id + '/table_data.json',
+                url: URL_PREFIX + '/jobs/' + job_id + '/table_data.json',
             }).then(function success(response) {
                 var job = response.data.job;
                 for (var i = 0; i < $scope.jobs.length; i++) {
@@ -69,7 +69,7 @@ try {
         $scope.load_jobs = function() {
             $http({
                 method: 'GET',
-                url: '/completed_jobs.json',
+                url: URL_PREFIX + '/completed_jobs.json',
             }).then(function success(response) {
                 // Find the dataset reference count
                 var count = {};
@@ -393,7 +393,7 @@ try {
                  '<br><br>All related files will be permanently removed.'),
                 function(result) {
                     if (result)
-                        $.ajax('/jobs',
+                        $.ajax(URL_PREFIX + '/jobs',
                                {
                                    type: 'DELETE',
                                    data: {'job_ids': job_ids},
@@ -419,7 +419,7 @@ try {
                  (job_ids.length == 1 ? 'job?' : job_ids.length + ' jobs?')),
                 function(result) {
                     if (result)
-                        $.ajax('/abort_jobs',
+                        $.ajax(URL_PREFIX + '/abort_jobs',
                                {
                                    type: 'POST',
                                    data: {'job_ids': job_ids},
@@ -456,7 +456,7 @@ try {
                         // Case the user enters 'Ungrouped', change it to ''
                         if (result == 'Ungrouped')
                             result = '';
-                        $.ajax('/group',
+                        $.ajax(URL_PREFIX + '/group',
                                {
                                    type: 'POST',
                                    data: {
@@ -719,7 +719,7 @@ try {
             restrict: 'AE',
             replace: true,
             template: ('<span>' +
-                        '    <a href="/jobs/{[ job.id ]}" title="{[job.name]}">' +
+                        '    <a href="' + URL_PREFIX + '/jobs/{[ job.id ]}" title="{[job.name]}">' +
                         '        {[ job.name | major_name ]}' +
                         '    </a>' +
                         '    <small>' +

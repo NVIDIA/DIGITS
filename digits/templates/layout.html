@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/c3.min.css', ver=dir_hash) }}">
     <title>{% block title %}DIGITS{% endblock %}</title>
 
+    <script type="text/javascript">
+        var URL_PREFIX = "{{config['URL_PREFIX']}}";
+    </script>
     <script src="{{ url_for('static', filename='js/3rdparty/jquery-1.11.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/bootstrap-3.3.6.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/bootbox-4.3.0.min.js') }}"></script>
@@ -34,7 +37,7 @@
 <div class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
         <div class="navbar-header">
-            <a class="navbar-brand" href="/">DIGITS</a>
+            <a class="navbar-brand" href="{{ url_for("digits.views.home") }}">DIGITS</a>
         </div>
         <ul class="nav navbar-nav">
             {% block nav %}
@@ -44,9 +47,9 @@
             <li>
             <p class="navbar-text">
             {% if username %}
-            {{username}} (<a class="navbar-link" href="/logout">Logout</a>)
+            {{username}} (<a class="navbar-link" href="{{ url_for("digits.views.logout") }}">Logout</a>)
             {% else %}
-            <a class="navbar-link" href="/login">Login</a>
+            <a class="navbar-link" href="{{ url_for("digits.views.login") }}">Login</a>
             {% endif %}
             </p>
             </li>
