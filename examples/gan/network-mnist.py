@@ -368,7 +368,7 @@ class UserModel(Tower):
             nbins = 100
             hist_g = tf.histogram_fixed_width(self.G, value_range, nbins=nbins, dtype=tf.float32) / nbins
             hist_images = tf.histogram_fixed_width(self.images, value_range, nbins=nbins, dtype=tf.float32) / nbins
-            chi_square = tf.reduce_mean(tf.div(tf.square(hist_g - hist_images), hist_g + hist_images))
+            chi_square = tf.reduce_mean(tf.div(tf.square(hist_g - hist_images), hist_g + hist_images + 1e-5))
             self.summaries.append(scalar_summary("chi_square", chi_square))
         else:
             # Create only the generator
