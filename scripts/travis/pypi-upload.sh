@@ -8,9 +8,9 @@ ROOT_DIR=$( dirname "$(dirname "$LOCAL_DIR")")
 
 cd "$ROOT_DIR"
 set +x  # double-check that x is unset
+# remove repository to allow twine use default URL
 cat > ~/.pypirc << EOF
 [pypi]
-repository = https://pypi.python.org/pypi
 username = luke.yeager
 password = ${PYPI_PASSWORD}
 EOF
