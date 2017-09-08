@@ -65,12 +65,6 @@ matrix:
                 on:
                     repo: NVIDIA/DIGITS
                     branch: master
-              - provider: script  # not pypi because travis-ci/dpl#334
-                skip_cleanup: true
-                script: ./scripts/travis/pypi-upload.sh
-                on:
-                    repo: NVIDIA/DIGITS
-                    tags: true
 
 cache:
     apt: true
