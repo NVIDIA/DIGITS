@@ -1,9 +1,12 @@
 {# Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved. #}
 
 <!-- Scripts for communicating with the SocketIO server -->
-<script type="text/javascript" src="/static/js/3rdparty/socket.io-1.4.5.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/3rdparty/socket.io-1.4.5.min.js', ver=dir_hash) }}"></script>
 <script>
-var socket = io.connect('http://' + document.domain + ':' + location.port + "{{namespace}}");
+var socket = io.connect(
+    'http://' + document.domain + ':' + location.port + "{{namespace}}",
+    {path: "{{config['URL_PREFIX']}}/socket.io"}
+);
 
 $(window).bind("beforeunload", function() {
         socket.emit('leave');

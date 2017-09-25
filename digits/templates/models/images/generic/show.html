@@ -40,7 +40,7 @@
             <div id="dataset-summary"></div>
             {% if job.dataset %}
             <script>
-            $.ajax("/datasets/summary?job_id={{ job.dataset.id() }}",
+            $.ajax("{{url_for('digits.dataset.views.summary', job_id=job.dataset.id())}}",
             {
                 type: "GET",
                 }
@@ -178,7 +178,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     <script>
                         $("#view_extension_id").change(function() {
                             if ($(this).val()) {
-                                $.ajax("/models/view-config/" + $(this).val(),
+                                $.ajax("{{config['URL_PREFIX']}}/models/view-config/" + $(this).val(),
                                     {
                                         type: "GET",
                                         }

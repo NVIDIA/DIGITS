@@ -7,6 +7,7 @@ Table of Contents
 * [Model definition (Torch)](#model-creation-torch)
 * [Model definition (Tensorflow)](#model-creation-tensorflow)
 * [Verification](#verification)
+* [Visualization for Tensorflow](#visualization-for-tensorflow)
 
 ## Introduction
 
@@ -152,4 +153,10 @@ The reconstructed image, which looks similar to the normalized image:
 
 ![Reconstructed Image](reconstructed-image.png)
 
+### Visualization for Tensorflow
 
+To visualize the result of the autoencoder in Tensorflow properly, select `Image output` as `Visualization method`. Then select `HWC` as the `Data order`.
+
+![Tensorflow Settings](tensorflow-settings.png)
+
+Then follow the instructions for [verification](#verification)

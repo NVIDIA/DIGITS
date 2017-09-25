@@ -70,8 +70,8 @@ def save_binary(url, file_name, tmp_dir, progress):
     r = requests.get(os.path.join(url, file_name), stream=True)
     chunk_size = 1024
     total_length = int(r.headers.get('content-length'))
-    n_chuncks = (total_length / chunk_size) + bool(total_length % chunk_size)
-    progress.set_n_chunks(n_chuncks)
+    n_chunks = (total_length / chunk_size) + bool(total_length % chunk_size)
+    progress.set_n_chunks(n_chunks)
     full_path = os.path.join(tmp_dir, file_name)
     with open(full_path, 'wb') as f:
         for chunk in progress.incr(r.iter_content(chunk_size=chunk_size)):
@@ -80,16 +80,28 @@ def save_binary(url, file_name, tmp_dir, progress):
     return full_path
 
 
+def save_tensorflow_weights(url, file_name, tmp_dir, progress):
+    full_path = os.path.join(tmp_dir, file_name)
+    save_binary(url, file_name + ".index", tmp_dir, progress)
+    save_binary(url, file_name + ".meta", tmp_dir, progress)
+    save_binary(url, file_name + ".data-00000-of-00001", tmp_dir, progress)
+    return full_path
+
+
 def retrieve_files(url, directory, progress):
     model_url = os.path.join(url, directory)
     tmp_dir = tempfile.mkdtemp()
-    info = json.loads(requests.get(os.path.join(model_url, 'info.json')).content)
+    tmp = requests.get(os.path.join(model_url, 'info.json')).content
+    info = json.loads(tmp)
 
     # How many files will we download?
     n_files = 1 + ("model file" in info or "network file" in info) + ("labels file" in info)
     progress.set_n_files(n_files)
 
-    weights = save_binary(model_url, info["snapshot file"], tmp_dir, progress)
+    if (info["snapshot file"].endswith(".ckpt")):
+        weights = save_tensorflow_weights(model_url, info["snapshot file"], tmp_dir, progress)
+    else:
+        weights = save_binary(model_url, info["snapshot file"], tmp_dir, progress)
     if "model file" in info:
         remote_model_file = info["model file"]
     elif "network file" in info:

@@ -251,7 +251,7 @@ Now that we have a dataset of RGB images, we can easily re-use the pre-trained F
 - go to your `fcn_alexnet-sunnybrook-with_dice` model page
 - click the `Clone` button
 - select the `Sunnybrook-RGB` dataset
-- in `pretrained weights` point to the location of the FCN-Alexnet pre-trained model you created in the semantic segmentation example
+- in `pretrained model(s)` point to the location of the FCN-Alexnet pre-trained model you created in the semantic segmentation example
 - remember to re-upload your `dice.py` file
 - name your model `FCN-Alexnet-Sunnybrooke_with_dice-pretrained`
 - set the number of training epochs to `30`

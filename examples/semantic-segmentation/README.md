@@ -116,7 +116,8 @@ Other fields can be left to their default value.
 
 Finally, give your dataset a name and click `Create`:
 
-![dataset form](dataset-form.png)
+![dataset form 1](dataset-form-1.png)
+![dataset form 2](dataset-form-2.png)
 
 After you have created the dataset you may browse the contents of the databases by clicking the `Explore DB` button on the dataset job page:
 

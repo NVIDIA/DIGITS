@@ -15,7 +15,7 @@ if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/src/protoc" ]; then
     echo "Using cached build at $INSTALL_DIR ..."
 else
     rm -rf "$INSTALL_DIR"
-    git clone https://github.com/google/protobuf.git "$INSTALL_DIR" -b '3.3.x' --depth 1
+    git clone https://github.com/google/protobuf.git "$INSTALL_DIR" -b '3.2.x' --depth 1
     cd "$INSTALL_DIR"
 
     ./autogen.sh

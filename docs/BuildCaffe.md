@@ -5,6 +5,8 @@ We officially only support recent releases from [NVIDIA/caffe](https://github.co
 
 ## Dependencies
 
+Before Caffe can be build, Protobuf 3 needs to be build. Follow [this guide](BuildProtobuf.md) to build Protobuf 3
+
 For best performance, you'll want:
 
 * One or more NVIDIA GPUs ([details](InstallCuda.md#gpu))
@@ -14,15 +16,17 @@ For best performance, you'll want:
 
 Install some dependencies with Deb packages:
 ```sh
-sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libprotobuf-dev libsnappy-dev protobuf-compiler python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-protobuf python-scipy python-skimage python-sklearn
+sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-pydot python-scipy python-skimage python-sklearn
 ```
 
 ## Download source
+DIGITS is currently compatiable with `Caffe 0.15`
+
 
 ```sh
 # example location - can be customized
 export CAFFE_ROOT=~/caffe
-git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT
+git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT -b 'caffe-0.15'
 ```
 
 Setting the `CAFFE_ROOT` environment variable will help DIGITS automatically detect your Caffe installation, but this is optional.
@@ -47,5 +51,6 @@ cd $CAFFE_ROOT
 mkdir build
 cd build
 cmake ..
-make --jobs=4
+make -j"$(nproc)"
+make install
 ```

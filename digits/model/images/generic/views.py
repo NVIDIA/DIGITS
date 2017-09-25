@@ -159,6 +159,11 @@ def create(extension_id=None):
                                 raise werkzeug.exceptions.BadRequest(
                                     "For the job %s, selected pretrained_model for epoch %d is invalid!"
                                     % (form.previous_networks.data, epoch))
+
+                            # the first is the actual file if a list is returned, other should be meta data
+                            if isinstance(pretrained_model, list):
+                                pretrained_model = pretrained_model[0]
+
                             if not (os.path.exists(pretrained_model)):
                                 raise werkzeug.exceptions.BadRequest(
                                     "Pretrained_model for the selected epoch doesn't exist. "

@@ -10,6 +10,7 @@ Table of Contents
 * [Model creation](#model-creation)
     * [Using Caffe](#using-caffe)
     * [Using Torch7](#using-torch7)
+    * [Using Tensorflow](#using-tensorflow)
 * [Verification](#verification)
     * [Visualizing the network output](#visualizing-the-network-output)
 
@@ -65,14 +66,12 @@ Note that since labels may be vectors (or matrices), it is not possible to use a
 The first step in creating the dataset is to create the LMDB databases. In this example you will use the Python test script located in `/digits/dataset/images/generic/test_lmdb_creator.py`.
 This script creates a number of grayscale linear images and adds them to a train database and a validation database. For each image, the `x` and `y` (normalized) gradients are chosen randomly from a uniform distribution `[-0.5,0.5)`.
 
-To create a train database of 100 50x50 images:
+To create a train database of 1000 50x50 images:
 ```sh
-$ ./digits/dataset/images/generic/test_lmdb_creator.py -x 50 -y 50 -c 100 /tmp/my_dataset
-Creating images at "/tmp/my_dataset" ...
-Done after 11.3920481205 seconds
+$ ./digits/dataset/images/generic/test_lmdb_creator.py -x 50 -y 50 -c 1000 /tmp/my_dataset
 ```
 
-The script also creates a validation database of 20 samples. Overall, the script creates train image and label databases, validation image and label
+The script also creates a validation database of 250 samples. Overall, the script creates train image and label databases, validation image and label
 databases, train and validation mean images, and a test image.
 
 See for example the `test.png` image which is created using gradients of 0.5 in both directions:
@@ -161,19 +160,19 @@ class UserModel(Tower):
 
     @model_property
     def inference(self):
-        n_hidden = 32
-        
+        dimension_h = self.input_shape[0]
+        dimension_w = self.input_shape[1]
         const = tf.constant(0.004)
         normed = tf.multiply(self.x, const)
 
         # The reshaping have to be done for tensorflow to get the shape right
-        right_shape = tf.reshape(normed, shape=[-1, 32, 32]) 
+        right_shape = tf.reshape(normed, shape=[-1, dimension_h, dimension_w]) 
         transposed = tf.transpose(right_shape, [0, 2, 1])
-        squeezed = tf.reshape(transposed, shape=[-1, 1024])
+        squeezed = tf.reshape(transposed, shape=[-1, dimension_h * dimension_w])
         
         # Define weights
         weights = {
-            'w1': tf.get_variable('w1', [1024, 2])
+            'w1': tf.get_variable('w1', [dimension_h * dimension_w, 2])
         }
         biases = {
             'b1': tf.get_variable('b1', [2])

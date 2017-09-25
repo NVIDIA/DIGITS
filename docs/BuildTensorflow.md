@@ -2,17 +2,13 @@
 
 DIGITS now supports TensorFlow as an optional alternative backend to Caffe or Torch.
 
-> NOTE: TensorFlow support is still experimental!
-
-We recommend installing TensorFlow in a fixed and separate environment. This is because TensorFlow support is still in development and stability is not ensured.
-
 Installation for [Ubuntu](https://www.tensorflow.org/install/install_linux#installing_with_virtualenv)
 
 Installation for [Mac](https://www.tensorflow.org/install/install_mac#installing_with_virtualenv)
 
 ## Requirements
 
-DIGITS is current targeting tensorflow-gpu V1.2.
+DIGITS is current targeting tensorflow-gpu V1.2.1.
 
 TensorFlow for DIGITS requires one or more NVIDIA GPUs with CUDA Compute Capbility of 3.0 or higher. See [the official GPU support list](https://developer.nvidia.com/cuda-gpus) to see if your GPU supports it.
 
@@ -24,7 +20,7 @@ Along with that requirement, the following should be installed
 * cuDNN 5.1 ([download page](https://developer.nvidia.com/cudnn))
 
 ### A Note About cuDNN and TensorFlow
-Currently tensorflow v1.2 targets cuDNN 5.1. The latest cuDNN version is 6. **To have tensorflow running in digits, you must have cuDNN 5.1 installed. Currently, cuDNN 6 is incompatiable with tensorflow.** To install it, use the following command in a terminal
+Currently tensorflow v1.2.1 targets cuDNN 5.1. **To have tensorflow v1.2.1 running in digits, you must have cuDNN 5.1 installed.** To install it, use the following command in a terminal
 
 ```
 sudo apt-get install libcudnn5
@@ -38,7 +34,7 @@ These instructions are based on [the official TensorFlow instructions]
 
 TensorFlow comes with pip, to install it, just simply use the command
 ```
-pip install tensorflow-gpu==1.2.0
+pip install tensorflow-gpu==1.2.1
 ```
 
 TensorFlow should then install effortlessly and pull in all its required dependices.

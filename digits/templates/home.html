@@ -46,14 +46,15 @@
      id="all-jobs"
      ng-app="home_app"
      ng-controller="all_jobs_controller as jc"
-     ng-click="deselect_all();">
+     ng-click="deselect_all()"
+     ng-cloak>
     {[jc.running_jobs = (jobs | filter:is_running);'']}
     {[jc.dataset_jobs = (jobs | filter:is_dataset);'']}
     {[jc.model_jobs = (jobs | filter:is_model);'']}
     {[jc.pretrained_model_jobs = (jobs | filter:is_pretrained_model);'']}
     <section ng-controller="tab_controller as tab" ng-init="init({{request.args['tab']}})">
-        <div ng-controller="running_controller as c">
-            <div ng-if="jc.running_jobs.length">
+        <div ng-if="jc.running_jobs.length">
+            <div ng-controller="running_controller as c">
                 {[jobs = (jc.running_jobs | filter:search_text | sort_with_empty_at_end:this:jc.storage.show_groups);'']}
                 <h4>
                     Running Jobs
@@ -144,7 +145,7 @@
                                     ng-keydown="keydown($event)"
                                     ng-class="{selected:job.selected}">
                                     <td>
-                                        <a href="/jobs/{[ job.id ]}" title="{[job.name]}">
+                                        <a href="{{config['URL_PREFIX']}}/jobs/{[ job.id ]}" title="{[job.name]}">
                                             {[ job.name | major_name ]}
                                         </a>
                                         <small>
@@ -196,11 +197,11 @@
                     </div>
                 </div>
             </div>
-            <div ng-if="jc.running_jobs.length == 0">
-                <h4>
-                    No Jobs Running
-                </h4>
-            </div>
+        </div>
+        <div ng-if="jc.running_jobs.length == 0">
+            <h4>
+                No Jobs Running
+            </h4>
         </div>
 
         <!-- Tabs -->
