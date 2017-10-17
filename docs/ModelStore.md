@@ -7,11 +7,11 @@ Users can imports models from Model Store into DIGITS.
 
 ## Setting up environment variable
 The configuration of Model Store requires one environment variable DIGITS_MODEL_STORE_URL to be set.
-NVIDIA plans to publish one public Model Store at http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0.
+NVIDIA plans to publish one public Model Store at http://developer.download.nvidia.com/compute/machine-learning/modelstore/6.0.
 You can set up the environment variable with that url before launching DIGITS.
 For example, run the following command in your Bash shell.
 ``` shell
-export DIGITS_MODEL_STORE_URL='http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0'
+export DIGITS_MODEL_STORE_URL='http://developer.download.nvidia.com/compute/machine-learning/modelstore/6.0'
 ```
 If multiple model stores are available, specify their url's, separated by the comma (,).
 ``` shell
@@ -108,7 +108,7 @@ $ DIGITS_MODEL_STORE_URL=http://localhost:8000 ./digits-devserver
 ```
 To use multiple model stores, just separate the URLs with a comma:
 ```sh
-$ DIGITS_MODEL_STORE_URL="http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0,http://localhost:8000" ./digits-devserver
+$ DIGITS_MODEL_STORE_URL="http://developer.download.nvidia.com/compute/machine-learning/modelstore/6.0,http://localhost:8000" ./digits-devserver
 ```
 
 > NOTE: If you have installed DIGITS with a deb package, see [UbuntuInstall.md](UbuntuInstall.md) for instructions about how to reconfigure and restart your server.
