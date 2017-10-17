@@ -46,7 +46,8 @@
      id="all-jobs"
      ng-app="home_app"
      ng-controller="all_jobs_controller as jc"
-     ng-click="deselect_all();">
+     ng-click="deselect_all()"
+     ng-cloak>
     {[jc.running_jobs = (jobs | filter:is_running);'']}
     {[jc.dataset_jobs = (jobs | filter:is_dataset);'']}
     {[jc.model_jobs = (jobs | filter:is_model);'']}
