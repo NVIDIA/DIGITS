@@ -29,7 +29,7 @@ def load_url_list():
     if 'DIGITS_MODEL_STORE_URL' in os.environ:
         url_list = os.environ['DIGITS_MODEL_STORE_URL']
     else:
-        url_list = "http://developer.download.nvidia.com/compute/machine-learning/modelstore/5.0"
+        url_list = "http://developer.download.nvidia.com/compute/machine-learning/modelstore/6.0"
 
     return validate(url_list).split(',')
 
