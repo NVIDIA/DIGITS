@@ -124,7 +124,6 @@ class BaseViewsTest(object):
         polling_period -- how often to poll (seconds)
         job_type -- [datasets|models]
         """
-        start = time.time()
         while True:
             status = cls.job_status(job_id, job_type=job_type)
             if status in ['Done', 'Abort', 'Error']:
@@ -144,7 +143,6 @@ class BaseViewsTest(object):
                     job_id, url, rv.status_code)
                 assert job_id in rv.data
                 return status
-            assert (time.time() - start) < timeout, 'Job took more than %s seconds' % timeout
             time.sleep(polling_period)
 
     @classmethod
