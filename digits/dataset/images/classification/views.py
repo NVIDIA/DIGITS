@@ -264,6 +264,101 @@ def from_files(job, form):
         )
 
 
+def from_s3(job, form):
+    """
+    Add tasks for creating a dataset by parsing s3s of images
+    """
+    job.labels_file = utils.constants.LABELS_FILE
+
+    # Add Parses3Task
+
+    percent_val = form.s3_pct_val.data
+    val_parents = []
+
+    percent_test = form.s3_pct_test.data
+    test_parents = []
+
+    min_per_class = form.s3_train_min_per_class.data
+    max_per_class = form.s3_train_max_per_class.data
+
+    delete_files = not form.s3_keepcopiesondisk.data
+
+    parse_train_task = tasks.ParseS3Task(
+        job_dir=job.dir(),
+        s3_endpoint_url=form.s3_endpoint_url.data,
+        s3_bucket=form.s3_bucket.data,
+        s3_path=form.s3_path.data,
+        s3_accesskey=form.s3_accesskey.data,
+        s3_secretkey=form.s3_secretkey.data,
+        percent_val=percent_val,
+        percent_test=percent_test,
+        min_per_category=min_per_class if min_per_class > 0 else 1,
+        max_per_category=max_per_class if max_per_class > 0 else None
+    )
+    job.tasks.append(parse_train_task)
+
+    # set parents
+    val_parents = [parse_train_task]
+    test_parents = [parse_train_task]
+
+    # Add CreateDbTasks
+
+    backend = form.backend.data
+    encoding = form.encoding.data
+    compression = form.compression.data
+
+    job.tasks.append(
+        tasks.CreateDbTask(
+            job_dir=job.dir(),
+            parents=parse_train_task,
+            input_file=utils.constants.TRAIN_FILE,
+            db_name=utils.constants.TRAIN_DB,
+            backend=backend,
+            image_dims=job.image_dims,
+            resize_mode=job.resize_mode,
+            encoding=encoding,
+            compression=compression,
+            mean_file=utils.constants.MEAN_FILE_CAFFE,
+            labels_file=job.labels_file,
+            delete_files=delete_files,
+        )
+    )
+
+    if percent_val > 0:
+        job.tasks.append(
+            tasks.CreateDbTask(
+                job_dir=job.dir(),
+                parents=val_parents,
+                input_file=utils.constants.VAL_FILE,
+                db_name=utils.constants.VAL_DB,
+                backend=backend,
+                image_dims=job.image_dims,
+                resize_mode=job.resize_mode,
+                encoding=encoding,
+                compression=compression,
+                labels_file=job.labels_file,
+                delete_files=delete_files,
+            )
+        )
+
+    if percent_test > 0:
+        job.tasks.append(
+            tasks.CreateDbTask(
+                job_dir=job.dir(),
+                parents=test_parents,
+                input_file=utils.constants.TEST_FILE,
+                db_name=utils.constants.TEST_DB,
+                backend=backend,
+                image_dims=job.image_dims,
+                resize_mode=job.resize_mode,
+                encoding=encoding,
+                compression=compression,
+                labels_file=job.labels_file,
+                delete_files=delete_files,
+            )
+        )
+
+
 @blueprint.route('/new', methods=['GET'])
 @utils.auth.requires_login
 def new():
@@ -317,6 +412,9 @@ def create():
 
         elif form.method.data == 'textfile':
             from_files(job, form)
+
+        elif form.method.data == 's3':
+            from_s3(job, form)
 
         else:
             raise ValueError('method not supported')

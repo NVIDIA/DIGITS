@@ -50,6 +50,7 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
                                  choices=[
                                      ('folder', 'Folder'),
                                      ('textfile', 'Textfiles'),
+                                     ('s3', 'S3'),
                                  ],
                                  default='folder',
                                  )
@@ -366,4 +367,85 @@ class ImageClassificationDatasetForm(ImageDatasetForm):
         tooltip=("The 'i'th line of the file should give the string label "
                  "associated with the '(i-1)'th numeric label. (E.g. the string label "
                  "for the numeric label 0 is supposed to be on line 1.)"),
+    )
+
+    #
+    # Method - S3
+    #
+
+    s3_endpoint_url = utils.forms.StringField(
+        u'Training Images',
+        tooltip=('S3 end point URL'),
+    )
+
+    s3_bucket = utils.forms.StringField(
+        u'Bucket Name',
+        tooltip=('bucket name'),
+    )
+
+    s3_path = utils.forms.StringField(
+        u'Training Images Path',
+        tooltip=('Indicate a path which holds subfolders full of images. '
+                 'Each subfolder should be named according to the desired label for the images that it holds. '),
+    )
+
+    s3_accesskey = utils.forms.StringField(
+        u'Access Key',
+        tooltip=('Access Key to access this S3 End Point'),
+    )
+
+    s3_secretkey = utils.forms.StringField(
+        u'Secret Key',
+        tooltip=('Secret Key to access this S3 End Point'),
+    )
+
+    s3_keepcopiesondisk = utils.forms.BooleanField(
+        u'Keep Copies of Files on Disk',
+        tooltip=('Checking this box will keep raw files retrieved from S3 stored on disk after the job is completed'),
+    )
+
+    s3_pct_val = utils.forms.IntegerField(
+        u'% for validation',
+        default=25,
+        validators=[
+            validate_required_iff(method='s3'),
+            validators.NumberRange(min=0, max=100)
+        ],
+        tooltip=('You can choose to set apart a certain percentage of images '
+                 'from the training images for the validation set.'),
+    )
+
+    s3_pct_test = utils.forms.IntegerField(
+        u'% for testing',
+        default=0,
+        validators=[
+            validate_required_iff(method='s3'),
+            validators.NumberRange(min=0, max=100)
+        ],
+        tooltip=('You can choose to set apart a certain percentage of images '
+                 'from the training images for the test set.'),
+    )
+
+    s3_train_min_per_class = utils.forms.IntegerField(
+        u'Minimum samples per class',
+        default=2,
+        validators=[
+            validators.Optional(),
+            validators.NumberRange(min=1),
+        ],
+        tooltip=('You can choose to specify a minimum number of samples per class. '
+                 'If a class has fewer samples than the specified amount it will be ignored. '
+                 'Leave blank to ignore this feature.'),
+    )
+
+    s3_train_max_per_class = utils.forms.IntegerField(
+        u'Maximum samples per class',
+        validators=[
+            validators.Optional(),
+            validators.NumberRange(min=1),
+            validate_greater_than('s3_train_min_per_class'),
+        ],
+        tooltip=('You can choose to specify a maximum number of samples per class. '
+                 'If a class has more samples than the specified amount extra samples will be ignored. '
+                 'Leave blank to ignore this feature.'),
     )

@@ -216,6 +216,7 @@ def create_db(input_file, output_dir,
               image_folder=None,
               shuffle=True,
               mean_files=None,
+              delete_files=False,
               **kwargs):
     """
     Create a database of images from a list of image paths
@@ -233,6 +234,7 @@ def create_db(input_file, output_dir,
     resize_mode -- passed to utils.image.resize_image()
     shuffle -- if True, shuffle the images in the list before creating
     mean_files -- a list of mean files to save
+    delete_files -- if True, delete raw images after creation of database
     """
     # Validate arguments
 
@@ -305,7 +307,21 @@ def create_db(input_file, output_dir,
     else:
         raise ValueError('invalid backend')
 
-    logger.info('Database created after %d seconds.' % (time.time() - start))
+    if delete_files:
+        # delete files
+        deleted_files = 0
+        distribution = Counter()
+        with open(input_file) as infile:
+            for line in infile:
+                try:
+                    # delete file
+                    [path, label] = _parse_line(line, distribution)
+                    os.remove(path)
+                    deleted_files += 1
+                except ParseLineError:
+                    pass
+                logger.info("Deleted " + str(deleted_files) + " files")
+        logger.info('Database created after %d seconds.' % (time.time() - start))
 
 
 def _create_tfrecords(image_count, write_queue, batch_size, output_dir,
@@ -908,6 +924,9 @@ if __name__ == '__main__':
                         type=int,
                         default=2**31,
                         help='The size limit for HDF5 datasets')
+    parser.add_argument('--delete_files',
+                        action='store_true',
+                        help='Specifies whether to keep files after creation of dataset')
 
     args = vars(parser.parse_args())
 
@@ -927,6 +946,7 @@ if __name__ == '__main__':
                   compression=args['compression'],
                   lmdb_map_size=args['lmdb_map_size'],
                   hdf5_dset_limit=args['hdf5_dset_limit'],
+                  delete_files=args['delete_files']
                   )
     except Exception as e:
         logger.error('%s: %s' % (type(e).__name__, e.message))

@@ -10,6 +10,10 @@ import unittest
 from digits.config import config_value
 
 
+def skipTest(message):
+    raise unittest.SkipTest(message)
+
+
 def skipIfNotFramework(framework):
     """
     Raises SkipTest if DIGITS_TEST_FRAMEWORK is set
