@@ -93,6 +93,7 @@ function showResizeExample()
             <ul class="nav nav-tabs" id="db-tabs" role="tablist">
                 <li><a href="#db-folder" role="tab" data-toggle="tab">Use Image Folder</a></li>
                 <li><a href="#db-textfile" role="tab" data-toggle="tab">Use Text Files</a></li>
+                <li><a href="#db-s3" role="tab" data-toggle="tab">Use S3</a></li>
             </ul>
 
             <!-- Tab panes -->
@@ -308,6 +309,70 @@ hasTestFolderChanged();
                                 {{ form.textfile_local_labels_file.tooltip }}
                                 {{ form.textfile_local_labels_file(class='form-control autocomplete_path',placeholder='enter path') }}
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- S3 -->
+                <div class="tab-pane" id="db-s3">
+                    <div class="form-group{{mark_errors([form.s3_endpoint_url])}}">
+                        {{ form.s3_endpoint_url.label }}
+                        {{ form.s3_endpoint_url.tooltip }}
+                        {{ form.s3_endpoint_url(class='form-control', placeholder='S3 Endpoint URL(e.g. https://s3.yourcompany.com:443/)')}}
+                    </div>
+                    <div class="form-group{{mark_errors([form.s3_bucket])}}">
+                        {{ form.s3_bucket.label }}
+                        {{ form.s3_bucket.tooltip }}
+                        {{ form.s3_bucket(class='form-control', placeholder='Bucket Name')}}
+                    </div>
+                    <div class="form-group{{mark_errors([form.s3_path])}}">
+                        {{ form.s3_path.label }}
+                        {{ form.s3_path.tooltip }}
+                        {{ form.s3_path(class='form-control', placeholder='A Path To Image Folders')}}
+                    </div>
+                    <div class="form-group{{mark_errors([form.s3_accesskey])}}">
+                        {{ form.s3_accesskey.label }}
+                        {{ form.s3_accesskey.tooltip }}
+                        {{ form.s3_accesskey(class='form-control', placeholder='S3 Access Key')}}
+                    </div>
+                    <div class="form-group{{mark_errors([form.s3_secretkey])}}">
+                        {{ form.s3_secretkey.label }}
+                        {{ form.s3_secretkey.tooltip }}
+                        {{ form.s3_secretkey(class='form-control', placeholder='S3 Secret Key', type='password')}}
+                    </div>
+                    <div class="form-group{{mark_errors([form.s3_keepcopiesondisk])}}">
+                        {{ form.s3_keepcopiesondisk.label }}
+                        {{ form.s3_keepcopiesondisk.tooltip }}
+                        {{ form.s3_keepcopiesondisk(class='form-control', placeholder='S3 Secret Key', type='checkbox')}}
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-10 col-sm-offset-1">
+                            <small>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-sm-6{{mark_errors([form.s3_train_min_per_class])}}">
+                            {{ form.s3_train_min_per_class.label }}
+                            {{ form.s3_train_min_per_class.tooltip }}
+                            {{ form.s3_train_min_per_class(class='form-control') }}
+                        </div>
+                        <div class="form-group col-sm-6{{mark_errors([form.s3_train_max_per_class])}}">
+                            {{ form.s3_train_max_per_class.label }}
+                            {{ form.s3_train_max_per_class.tooltip }}
+                            {{ form.s3_train_max_per_class(class='form-control') }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-sm-6{{mark_errors([form.s3_pct_val])}}">
+                            {{ form.s3_pct_val.label }}
+                            {{ form.s3_pct_val.tooltip }}
+                            {{ form.s3_pct_val(class='form-control') }}
+                        </div>
+                        <div class="form-group col-sm-6{{mark_errors([form.s3_pct_test])}}">
+                            {{ form.s3_pct_test.label }}
+                            {{ form.s3_pct_test.tooltip }}
+                            {{ form.s3_pct_test(class='form-control') }}
                         </div>
                     </div>
                 </div>
