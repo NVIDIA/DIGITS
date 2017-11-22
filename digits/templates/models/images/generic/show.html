@@ -379,7 +379,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
 $("#data_extension_id").change(function() {
     if ($(this).val()) {
 
-        $.ajax("/datasets/inference-form/" + $(this).val() + "/" + "{{ job.dataset.id() }}",
+        $.ajax("{{config['URL_PREFIX']}}/datasets/inference-form/" + $(this).val() + "/" + "{{ job.dataset.id() }}",
             {
                 type: "GET",
                 }
