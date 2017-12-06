@@ -25,10 +25,12 @@ class ImageClassificationModelJob(ImageModelJob):
         return 'Image Classification Model'
 
     @override
-    def download_files(self, epoch=-1):
+    def download_files(self, epoch=-1, frozen_file=False):
         task = self.train_task()
-
-        snapshot_filenames = task.get_snapshot(epoch, download=True)
+        if frozen_file:
+            snapshot_filenames = task.get_snapshot(epoch, frozen_file=True)
+        else:
+            snapshot_filenames = task.get_snapshot(epoch, download=True)
 
         # get model files
         model_files = task.get_model_files()

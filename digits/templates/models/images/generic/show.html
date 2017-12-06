@@ -110,7 +110,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-8">
+                    <div class="col-sm-4">
                         <div class="form-group">
                             <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
                             </select>
@@ -142,7 +142,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             </script>
                         </div>
                     </div>
-                    <div class="col-sm-4">
+                    <div class="col-sm-8">
                         <button
                             formaction="{{url_for('digits.model.views.download', job_id=job.id())}}"
                             formmethod="post"

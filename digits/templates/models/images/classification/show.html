@@ -56,6 +56,93 @@
     </div>
 </div>
 
+<div id="nuance_modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <form method="post" id="nuance_form"
+                  action="{{ url_for('digits.model.views.publish_inference', job_id=job.id()) }}">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        &times;
+                    </button>
+                    <h4 class="modal-title">Publish to inference server</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                    <div class="row">
+                        <div class="col-sm-6" align="right">
+                            <label for="description">Description:</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" name="description" id="description"
+                                   class="form-control" placeholder="Description">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6" align="right">
+                            <label for="output_layer">Output layer:</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" name="output_layer" id="output_layer"
+                                   class="form-control" placeholder="softmax">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6" align="right">
+                            <label for="input_layer">Input layer:</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" name="input_layer" id="input_layer"
+                                   class="form-control" placeholder="in">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6" align="right">
+                            <label for="input_shape">Input shape:</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" name="input_shape" id="input_shape"
+                                   class="form-control" placeholder="224, 224">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6" align="right">
+                            <label for="output_shape">Output shape:</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" name="output_shape" id="output_shape"
+                                   class="form-control" placeholder="10">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6" align="right">
+                            <label>Modality:</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="checkbox-inline">
+                                <label><input type="checkbox" name="modality" value="CT">CT</label>
+                            </div>
+                            <div class="checkbox-inline">
+                                <label><input type="checkbox" name="modality" value="XA">X-ray</label>
+                            </div>
+                            <div class="checkbox-inline">
+                                <label><input type="checkbox" name="modality" value="MR">MR</label>
+                            </div>
+                        </div>
+                    </div>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-info">Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <div class="row">
     <div class="col-sm-12">
         <div class="well">
@@ -114,7 +201,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-6">
+                    <div class="col-sm-3">
                         <div class="form-group">
                             <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
                             </select>
@@ -146,7 +233,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             </script>
                         </div>
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-9">
                         <button
                             formaction="{{url_for('digits.model.views.download', job_id=job.id())}}"
                             formmethod="post"
@@ -160,6 +247,11 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             formenctype="multipart/form-data"
                             class="btn btn-success">
                             Make Pretrained Model
+                        </button>
+                        <!-- Trigger the modal with a button -->
+                        <button type="button" class="btn btn-success" data-toggle="modal"
+                                data-target="#nuance_modal">
+                            Publish to inference server
                         </button>
                     </div>
                 </div>
@@ -279,6 +371,12 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
         </div>
     </div>
 </div>
+
+<script>
+$('#nuance_form').submit(function() {
+    $('#nuance_modal').modal('toggle');
+});
+</script>
 
 {% endblock %}
 
