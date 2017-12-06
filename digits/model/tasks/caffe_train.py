@@ -1155,7 +1155,8 @@ class CaffeTrainTask(TrainTask):
             "solver file": self.solver_file,
             "train_val file": self.train_val_file,
             "deploy file": self.deploy_file,
-            "framework": "caffe"
+            "framework": "caffe",
+            "mean subtraction": self.use_mean
         }
 
         # These attributes only available in more recent jobs:

@@ -140,7 +140,7 @@ class TensorflowTrainTask(TrainTask):
         return True
 
     @override
-    def get_snapshot(self, epoch=-1, download=False):
+    def get_snapshot(self, epoch=-1, download=False, frozen_file=False):
         """
         return snapshot file for specified epoch
         """
@@ -164,6 +164,8 @@ class TensorflowTrainTask(TrainTask):
             meta_file = snapshot_pre + ".meta"
             index_file = snapshot_pre + ".index"
             snapshot_files = [snapshot_file, meta_file, index_file]
+        elif frozen_file:
+            snapshot_files = os.path.join(os.path.dirname(snapshot_pre), "frozen_model.pb")
         else:
             snapshot_files = snapshot_pre
 
@@ -968,7 +970,8 @@ class TensorflowTrainTask(TrainTask):
             "mean file": mean_file,
             "snapshot file": self.get_snapshot_filename(epoch),
             "model file": self.model_file,
-            "framework": "tensorflow"
+            "framework": "tensorflow",
+            "mean subtraction": self.use_mean
         }
 
         if hasattr(self, "digits_version"):

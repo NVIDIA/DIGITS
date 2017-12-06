@@ -5,7 +5,7 @@
         {% if messages %}
             {% for category, message in messages %}
                 <div class="alert alert-{{ category }}">
-                    {{ message }}
+                    {{ message | safe}}
                 </div>
             {% endfor %}
         {% endif %}

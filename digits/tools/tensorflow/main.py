@@ -33,7 +33,7 @@ from tensorflow.python.client import timeline, device_lib  # noqa
 from tensorflow.python.ops import template  # noqa
 from tensorflow.python.lib.io import file_io
 from tensorflow.core.framework import summary_pb2
-
+from tensorflow.python.tools import freeze_graph
 
 # Local imports
 import utils as digits
@@ -278,7 +278,7 @@ def save_snapshot(sess, saver, save_dir, snapshot_prefix, epoch, for_serving=Fal
     snapshot_file = os.path.join(save_dir, snapshot_prefix + '_' + epoch_fmt.format(epoch) + '.ckpt')
 
     logging.info('Snapshotting to %s', snapshot_file)
-    saver.save(sess, snapshot_file)
+    checkpoint_path = saver.save(sess, snapshot_file)
     logging.info('Snapshot saved.')
 
     if for_serving:
@@ -294,6 +294,8 @@ def save_snapshot(sess, saver, save_dir, snapshot_prefix, epoch, for_serving=Fal
             f.write(sess.graph_def.SerializeToString())
             logging.info('Saved graph to %s', filename_graph)
         # meta_graph_def = tf.train.export_meta_graph(filename='?')
+
+    return checkpoint_path, filename_graph
 
 
 def save_weight_visualization(w_names, a_names, w, a):
@@ -646,7 +648,6 @@ def main(_):
 
                     # @TODO(tzaman): account for variable batch_size value on very last epoch
                     current_epoch = round((step * batch_size_train) / train_model.dataloader.get_total(), epoch_round)
-
                     # Start with a forward pass
                     if ((step % logging_interval_step) == 0):
                         steps_since_log = step - step_last_log
@@ -664,13 +665,20 @@ def main(_):
 
                     # Saving Snapshot
                     if FLAGS.snapshotInterval > 0 and current_epoch >= next_snapshot_save:
-                        save_snapshot(sess, saver, FLAGS.save, snapshot_prefix, current_epoch, FLAGS.serving_export)
+                        checkpoint_path, graphdef_path = save_snapshot(sess,
+                                                                       saver,
+                                                                       FLAGS.save,
+                                                                       snapshot_prefix,
+                                                                       current_epoch,
+                                                                       FLAGS.serving_export
+                                                                       )
 
                         # To find next nearest epoch value that exactly divisible by FLAGS.snapshotInterval
                         next_snapshot_save = (round(float(current_epoch)/FLAGS.snapshotInterval) + 1) * \
                             FLAGS.snapshotInterval
                         last_snapshot_save_epoch = current_epoch
                     writer.flush()
+
             except tf.errors.OutOfRangeError:
                 logging.info('Done training for epochs: tf.errors.OutOfRangeError')
             except ValueError as err:
@@ -681,13 +689,18 @@ def main(_):
 
             # If required, perform final snapshot save
             if FLAGS.snapshotInterval > 0 and FLAGS.epoch > last_snapshot_save_epoch:
-                save_snapshot(sess, saver, FLAGS.save, snapshot_prefix, FLAGS.epoch, FLAGS.serving_export)
+                checkpoint_path, graphdef_path =\
+                    save_snapshot(sess, saver, FLAGS.save, snapshot_prefix, FLAGS.epoch, FLAGS.serving_export)
 
         print('Training wall-time:', time.time()-start)  # @TODO(tzaman) - removeme
 
         # If required, perform final Validation pass
         if FLAGS.validation_db and current_epoch >= next_validation:
             Validation(sess, val_model, current_epoch)
+
+        if FLAGS.train_db:
+            output_tensor = train_model.towers[0].inference
+            out_name, _ = output_tensor.name.split(':')
 
         if FLAGS.train_db:
             del train_model
@@ -700,8 +713,31 @@ def main(_):
         sess.close()
 
         writer.close()
-        logging.info('END')
-        exit(0)
+
+    tf.reset_default_graph()
+
+    del sess
+    if FLAGS.train_db:
+        path_frozen = os.path.join(FLAGS.save, 'frozen_model.pb')
+
+        print('Saving frozen model at path {}'.format(path_frozen))
+
+        freeze_graph.freeze_graph(
+            input_graph=graphdef_path,
+            input_saver='',
+            input_binary=True,
+            input_checkpoint=checkpoint_path,
+            output_node_names=out_name,
+            restore_op_name="save/restore_all",
+            filename_tensor_name="save/Const:0",
+            output_graph=path_frozen,
+            clear_devices=True,
+            initializer_nodes="",
+        )
+
+    logging.info('END')
+
+    exit(0)
 
 if __name__ == '__main__':
     tf.app.run()
