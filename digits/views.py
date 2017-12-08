@@ -104,6 +104,7 @@ def home(tab=2):
         for extension in data_extensions:
             ext_category = extension.get_category()
             ext_title = extension.get_title()
+            ext_title = ext_title[:21] + ' ..' if len(ext_title) > 21 else ext_title
             ext_id = extension.get_id()
             if ext_category not in new_dataset_options:
                 new_dataset_options[ext_category] = {}
