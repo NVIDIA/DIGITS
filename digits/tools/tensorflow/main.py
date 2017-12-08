@@ -699,8 +699,9 @@ def main(_):
             Validation(sess, val_model, current_epoch)
 
         if FLAGS.train_db:
-            output_tensor = train_model.towers[0].inference
-            out_name, _ = output_tensor.name.split(':')
+            if FLAGS.labels_list:
+                output_tensor = train_model.towers[0].inference
+                out_name, _ = output_tensor.name.split(':')
 
         if FLAGS.train_db:
             del train_model
@@ -718,22 +719,21 @@ def main(_):
 
     del sess
     if FLAGS.train_db:
-        path_frozen = os.path.join(FLAGS.save, 'frozen_model.pb')
-
-        print('Saving frozen model at path {}'.format(path_frozen))
-
-        freeze_graph.freeze_graph(
-            input_graph=graphdef_path,
-            input_saver='',
-            input_binary=True,
-            input_checkpoint=checkpoint_path,
-            output_node_names=out_name,
-            restore_op_name="save/restore_all",
-            filename_tensor_name="save/Const:0",
-            output_graph=path_frozen,
-            clear_devices=True,
-            initializer_nodes="",
-        )
+        if FLAGS.labels_list:
+            path_frozen = os.path.join(FLAGS.save, 'frozen_model.pb')
+            print('Saving frozen model at path {}'.format(path_frozen))
+            freeze_graph.freeze_graph(
+                input_graph=graphdef_path,
+                input_saver='',
+                input_binary=True,
+                input_checkpoint=checkpoint_path,
+                output_node_names=out_name,
+                restore_op_name="save/restore_all",
+                filename_tensor_name="save/Const:0",
+                output_graph=path_frozen,
+                clear_devices=True,
+                initializer_nodes="",
+            )
 
     logging.info('END')
 
