@@ -1,8 +1,6 @@
 # Building DIGITS
 
-The preferred installation method for DIGITS as of version 6 is using a dockerfile and installing it as a docker container. To install DIGITS with Docker, please follow [this guide](DockerInstall.md)
-
-If those don't work for you for some reason, the following instructions will walk you through building the latest version of DIGITS from source.
+The following instructions will walk you through building the latest version of DIGITS from source.
 **These instructions are for installation on Ubuntu 14.04 and 16.04.**
 
 Alternatively, see [this guide](BuildDigitsWindows.md) for setting up DIGITS and Caffe on Windows machines.

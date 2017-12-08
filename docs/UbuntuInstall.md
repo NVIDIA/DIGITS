@@ -1,7 +1,5 @@
 # Ubuntu Installation
 
-Starting from DIGITS 6, the preferred method of installation is using Docker and installing DIGITS inside a Docker container. Instructions to do so are [here](DockerInstall.md). If Docker don't meet your needs, then you can follow [these instructions](BuildDigits.md) to build DIGITS and its dependencies from source.
-
 ## Getting started
 
 After getting DIGITS set up, the DIGITS server should now be running at `http://localhost:5000`.

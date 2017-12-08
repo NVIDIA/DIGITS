@@ -9,7 +9,6 @@ The currently supported frameworks are: Caffe, Torch, and Tensorflow.
 
 | Installation method | Supported platform[s] | Available versions | Instructions |
 | --- | --- | --- | --- |
-| Docker | Linux | [DockerHub tags](https://hub.docker.com/r/nvidia/digits/tags/) | [nvidia-docker wiki](https://github.com/NVIDIA/nvidia-docker/wiki/DIGITS) |
 | Source | Ubuntu 14.04, 16.04 | [GitHub tags](https://github.com/NVIDIA/DIGITS/releases) | [docs/BuildDigits.md](docs/BuildDigits.md) |
 
 
