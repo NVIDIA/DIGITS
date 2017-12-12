@@ -137,6 +137,16 @@ input[readonly]:disabled {
     background-color: #EEE !important;
     cursor: not-allowed !important;
 }
+.checkbox-fix {
+    display: flex;
+}
+
+.checkbox-fix input[type=checkbox]{
+    margin: 4px 5px 5px 0;
+    padding: 0;
+    width: auto;
+    height: auto;
+}
 
 a.active {
 	font-weight: 900;
