@@ -490,7 +490,13 @@ def explore():
     if label is None:
         total_entries = reader.total_entries
     else:
-        total_entries = task.distribution[str(label)]
+        # After PR#1500, task.distribution[str(label)] is a dictionary
+        # with keys = 'count' and 'error_count'
+        label_entries = task.distribution[str(label)]
+        if isinstance(label_entries, dict):
+            total_entries = label_entries['count']
+        else:
+            total_entries = label_entries
 
     max_page = min((total_entries - 1) / size, page + 5)
     pages = range(min_page, max_page + 1)
