@@ -4,8 +4,10 @@ os: linux
 dist: trusty
 sudo: required
 language: python
-python: 2.7
-
+python:
+    - 2.7
+    - 3.6
+        
 env:
     global:
         - PROTOBUF_ROOT=~/protobuf
@@ -21,6 +23,8 @@ env:
         - DIGITS_TEST_FRAMEWORK=tensorflow
         - DIGITS_TEST_FRAMEWORK=none
         - DIGITS_TEST_FRAMEWORK=none WITH_PLUGINS=false
+        allow_failures:
+        - python: 3.6
 
 matrix:
     include:
