@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 
 import argparse
@@ -41,14 +42,14 @@ def main():
     import digits
 
     if args['version']:
-        print digits.__version__
+        print(digits.__version__)
         sys.exit()
 
-    print '  ___ ___ ___ ___ _____ ___'
-    print ' |   \_ _/ __|_ _|_   _/ __|'
-    print ' | |) | | (_ || |  | | \__ \\'
-    print ' |___/___\___|___| |_| |___/', digits.__version__
-    print
+    print('  ___ ___ ___ ___ _____ ___')
+    print(' |   \_ _/ __|_ _|_   _/ __|')
+    print(' | |) | | (_ || |  | | \__ \\')
+    print(' |___/___\___|___| |_| |___/', digits.__version__)
+    print()
 
     import digits.config
     import digits.log
@@ -56,7 +57,7 @@ def main():
 
     try:
         if not digits.webapp.scheduler.start():
-            print 'ERROR: Scheduler would not start'
+            print('ERROR: Scheduler would not start')
         else:
             digits.webapp.app.debug = args['debug']
             digits.webapp.socketio.run(digits.webapp.app, '0.0.0.0', args['port'])

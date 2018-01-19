@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 
+from __future__ import print_function
 import argparse
 import base64
 import h5py
@@ -142,7 +143,7 @@ def infer(input_list,
                 input_data.append(image)
                 n_input_samples = n_input_samples + 1
             except utils.errors.LoadImageError as e:
-                print e
+                print(e)
 
     # perform inference
     visualizations = None

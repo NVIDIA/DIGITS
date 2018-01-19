@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from digits import test_utils
 import os.path
 import tempfile
 
 try:
-    from s3_walker import S3Walker
+    from .s3_walker import S3Walker
     from boto.s3.bucket import Bucket
     from boto.s3.key import Key
     import_failed = False

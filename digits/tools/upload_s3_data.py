@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import os
 import ConfigParser
-from s3_walker import S3Walker
+from .s3_walker import S3Walker
 
 config = ConfigParser.RawConfigParser()
 config.read('upload_config.cfg')

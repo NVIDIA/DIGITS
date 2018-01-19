@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import os
 import os.path
@@ -276,7 +277,7 @@ class Job(StatusCls):
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print 'Caught %s while saving job %s: %s' % (type(e).__name__, self.id(), e)
+            print('Caught %s while saving job %s: %s' % (type(e).__name__, self.id(), e))
         return False
 
     def disk_size_fmt(self):

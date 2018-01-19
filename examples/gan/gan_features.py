@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.
 
+from __future__ import print_function
 import argparse
 import logging
 import numpy as np
@@ -28,6 +29,11 @@ logger = logging.getLogger('digits.tools.inference')
 
 # number of image embeddings to store
 N_EMBEDDINGS = 10000
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 
 def parse_datum(value):

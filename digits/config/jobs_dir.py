@@ -1,5 +1,6 @@
 # Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import os
 import tempfile
@@ -26,8 +27,8 @@ try:
     if not os.path.exists(value):
         os.makedirs(value)
 except:
-    print '"%s" is not a valid value for jobs_dir.' % value
-    print 'Set the envvar DIGITS_JOBS_DIR to fix your configuration.'
+    print('"%s" is not a valid value for jobs_dir.' % value)
+    print('Set the envvar DIGITS_JOBS_DIR to fix your configuration.')
     raise
 
 

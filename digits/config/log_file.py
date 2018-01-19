@@ -1,5 +1,6 @@
 # Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import logging
 import os
@@ -32,8 +33,8 @@ def load_logfile_filename():
                 pass
         except:
             if throw_error:
-                print '"%s" is not a valid value for logfile_filename.' % filename
-                print 'Set the envvar DIGITS_LOGFILE_FILENAME to fix your configuration.'
+                print('"%s" is not a valid value for logfile_filename.' % filename)
+                print('Set the envvar DIGITS_LOGFILE_FILENAME to fix your configuration.')
                 raise
             else:
                 filename = None

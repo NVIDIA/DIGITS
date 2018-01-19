@@ -10,6 +10,10 @@ from digits.utils import constants, override, image, subclass
 from digits.extensions.data.interface import DataIngestionInterface
 from .forms import DatasetForm, InferenceForm
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 DATASET_TEMPLATE = "templates/dataset_template.html"
 INFERENCE_TEMPLATE = "templates/inference_template.html"

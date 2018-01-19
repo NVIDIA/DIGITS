@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 
+from __future__ import absolute_import
 import argparse
 import logging
 import os
@@ -10,7 +11,7 @@ import re
 import sys
 import time
 import urllib
-from s3_walker import S3Walker
+from .s3_walker import S3Walker
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

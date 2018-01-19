@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import logging
 import logging.handlers
@@ -95,7 +96,7 @@ def setup_logging():
 
         return JobIdLoggerAdapter(webapp_logger, {})
     else:
-        print 'WARNING: log_file config option not found - no log file is being saved'
+        print('WARNING: log_file config option not found - no log file is being saved')
         return JobIdLoggerAdapter(main_logger, {})
 
 # Do it when this module is loaded

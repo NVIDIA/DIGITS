@@ -4,6 +4,7 @@
 Functions for creating temporary LMDBs
 Used in test_views
 """
+from __future__ import print_function
 
 import argparse
 import os
@@ -15,6 +16,12 @@ import time
 import lmdb
 import numpy as np
 import PIL.Image
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 
 if __name__ == '__main__':
     dirname = os.path.dirname(os.path.realpath(__file__))
@@ -73,13 +80,13 @@ def create_lmdbs(folder, file_list, image_count=None, db_batch_size=None):
             ground_truth = int(match.group(2))
             images.append([path, ground_truth])
 
-    print "Found %d image paths in image list" % len(images)
+    print("Found %d image paths in image list" % len(images))
 
     for phase, image_count in [
             ('train', train_image_count),
             ('val', val_image_count)]:
 
-        print "Will create %d pairs of %s images" % (image_count, phase)
+        print("Will create %d pairs of %s images" % (image_count, phase))
 
         # create DBs
         image_db = lmdb.open(os.path.join(folder, '%s_images' % phase),
@@ -146,7 +153,7 @@ def create_lmdbs(folder, file_list, image_count=None, db_batch_size=None):
                 label_batch = []
 
             if i % (image_count / 20) == 0:
-                print "%d/%d" % (i, image_count)
+                print("%d/%d" % (i, image_count))
 
         # close databases
         image_db.close()
@@ -222,6 +229,7 @@ def _save_mean(mean, filename):
     else:
         raise ValueError('unrecognized file extension')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create-LMDB tool - DIGITS')
 
@@ -235,12 +243,12 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     if os.path.exists(args['folder']):
-        print 'ERROR: Folder already exists'
+        print('ERROR: Folder already exists')
         sys.exit(1)
     else:
         os.makedirs(args['folder'])
 
-    print 'Creating images at "%s" ...' % args['folder']
+    print('Creating images at "%s" ...' % args['folder'])
 
     start_time = time.time()
 
@@ -250,4 +258,4 @@ if __name__ == '__main__':
         image_count=args['image_count'],
     )
 
-    print 'Done after %s seconds' % (time.time() - start_time,)
+    print('Done after %s seconds' % (time.time() - start_time,))

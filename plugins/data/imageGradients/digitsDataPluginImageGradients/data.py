@@ -8,6 +8,11 @@ from .forms import DatasetForm, InferenceForm
 import numpy as np
 import os
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 TEMPLATE = "templates/template.html"
 INFERENCE_TEMPLATE = "templates/inference_template.html"
 

@@ -1,5 +1,6 @@
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import operator
 import os
@@ -18,6 +19,12 @@ import digits
 from digits import utils
 from digits.utils import subclass, override, constants
 import tensorflow as tf
+from functools import reduce
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 # NOTE: Increment this everytime the pickled object changes
 PICKLE_VERSION = 1
@@ -459,7 +466,7 @@ class TensorflowTrainTask(TrainTask):
                 self.traceback = traceback
 
             if 'DIGITS_MODE_TEST' in os.environ:
-                print output
+                print(output)
 
     @override
     def detect_timeline_traces(self):

@@ -4,6 +4,7 @@
 """
 Classify an image using a model archive file
 """
+from __future__ import print_function
 
 import argparse
 import os
@@ -33,11 +34,11 @@ def unzip_archive(archive):
         pass
     else:
         if tarfile.is_tarfile(archive):
-            print 'Extracting tarfile ...'
+            print('Extracting tarfile ...')
             with tarfile.open(archive) as tf:
                 tf.extractall(path=tmpdir)
         elif zipfile.is_zipfile(archive):
-            print 'Extracting zipfile ...'
+            print('Extracting zipfile ...')
             with zipfile.ZipFile(archive) as zf:
                 zf.extractall(path=tmpdir)
         else:
@@ -64,7 +65,7 @@ def classify_with_archive(archive, image_files, batch_size=None, use_gpu=True):
         elif filename == 'labels.txt':
             labels_file = full_path
         else:
-            print 'Unknown file:', filename
+            print('Unknown file:', filename)
 
     assert caffemodel is not None, 'Caffe model file not found'
     assert deploy_file is not None, 'Deploy file not found'
@@ -94,4 +95,4 @@ if __name__ == '__main__':
                           use_gpu=(not args['nogpu']),
                           )
 
-    print 'Script took %f seconds.' % (time.time() - script_start_time,)
+    print('Script took %f seconds.' % (time.time() - script_start_time,))

@@ -20,6 +20,12 @@ from digits import frameworks, extensions
 from digits.utils import auth
 from digits.utils.routing import request_wants_json, job_from_request, get_request_arg
 from digits.webapp import scheduler
+from functools import reduce
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 blueprint = flask.Blueprint(__name__, __name__)
 

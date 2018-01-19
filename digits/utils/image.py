@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import math
 import os.path
@@ -16,6 +17,11 @@ import PIL.Image
 import scipy.misc
 
 from . import is_url, HTTP_TIMEOUT, errors
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 # Library defaults:
 #   PIL.Image:
@@ -55,17 +61,17 @@ def load_image(path):
             stream = StringIO(r.content)
             image = PIL.Image.open(stream)
         except requests.exceptions.RequestException as e:
-            raise errors.LoadImageError, e.message
+            raise errors.LoadImageError(e.message)
         except IOError as e:
-            raise errors.LoadImageError, e.message
+            raise errors.LoadImageError(e.message)
     elif os.path.exists(path):
         try:
             image = PIL.Image.open(path)
             image.load()
         except IOError as e:
-            raise errors.LoadImageError, 'IOError: Trying to load "%s": %s' % (path, e.message)
+            raise errors.LoadImageError('IOError: Trying to load "%s": %s' % (path, e.message))
     else:
-        raise errors.LoadImageError, '"%s" not found' % path
+        raise errors.LoadImageError('"%s" not found' % path)
 
     if image.mode in ['L', 'RGB']:
         # No conversion necessary
@@ -87,7 +93,7 @@ def load_image(path):
         new.paste(image, mask=image.convert('RGBA'))
         return new
     else:
-        raise errors.LoadImageError, 'Image mode "%s" not supported' % image.mode
+        raise errors.LoadImageError('Image mode "%s" not supported' % image.mode)
 
 
 def upscale(image, ratio):
@@ -511,7 +517,7 @@ def get_color_map(name):
         bluemap = [1, 0.5]
     else:
         if name != 'jet':
-            print 'Warning: colormap "%s" not supported. Using jet instead.' % name
+            print('Warning: colormap "%s" not supported. Using jet instead.' % name)
         redmap = [0, 0, 0, 0, 0.5, 1, 1, 1, 0.5]
         greenmap = [0, 0, 0.5, 1, 1, 1, 0.5, 0, 0]
         bluemap = [0.5, 1, 1, 1, 0.5, 0, 0, 0, 0]

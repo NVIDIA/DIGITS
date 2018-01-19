@@ -22,6 +22,12 @@ from .pretrained_model import PretrainedModelJob
 from .status import Status
 from digits.utils import errors
 
+try:
+    text_types = (str, unicode)  # Python 2
+except NameError:
+    text_types = (str, )         # Python 3
+
+
 """
 This constant configures how long to wait before automatically
 deleting completed non-persistent jobs
@@ -247,7 +253,7 @@ class Scheduler:
         Deletes an entire job folder from disk
         Returns True if the Job was found and deleted
         """
-        if isinstance(job, str) or isinstance(job, unicode):
+        if isinstance(job, text_types):
             job_id = str(job)
         elif isinstance(job, Job):
             job_id = job.id()

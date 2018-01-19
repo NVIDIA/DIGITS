@@ -6,6 +6,7 @@ Classify an image using individual model files
 
 Use this script as an example to build your own tool
 """
+from __future__ import print_function
 
 import argparse
 import os
@@ -19,6 +20,11 @@ import scipy.misc
 os.environ['GLOG_minloglevel'] = '2'  # Suppress most caffe output
 import caffe  # noqa
 from caffe.proto import caffe_pb2  # noqa
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 
 def get_net(caffemodel, deploy_file, use_gpu=True):
@@ -148,7 +154,7 @@ def forward_pass(images, net, transformer, batch_size=None):
             scores = np.copy(output)
         else:
             scores = np.vstack((scores, output))
-        print 'Processed %s/%s images in %f seconds ...' % (len(scores), len(caffe_images), (end - start))
+        print('Processed %s/%s images in %f seconds ...' % (len(scores), len(caffe_images), (end - start)))
 
     return scores
 
@@ -161,7 +167,7 @@ def read_labels(labels_file):
     labels_file -- path to a .txt file
     """
     if not labels_file:
-        print 'WARNING: No labels file provided. Results will be difficult to interpret.'
+        print('WARNING: No labels file provided. Results will be difficult to interpret.')
         return None
 
     labels = []
@@ -223,10 +229,10 @@ def classify(caffemodel, deploy_file, image_files,
         classifications.append(result)
 
     for index, classification in enumerate(classifications):
-        print '{:-^80}'.format(' Prediction for %s ' % image_files[index])
+        print('{:-^80}'.format(' Prediction for %s ' % image_files[index]))
         for label, confidence in classification:
-            print '{:9.4%} - "{}"'.format(confidence / 100.0, label)
-        print
+            print('{:9.4%} - "{}"'.format(confidence / 100.0, label))
+        print()
 
 
 if __name__ == '__main__':
@@ -257,4 +263,4 @@ if __name__ == '__main__':
         not args['nogpu'],
     )
 
-    print 'Script took %f seconds.' % (time.time() - script_start_time,)
+    print('Script took %f seconds.' % (time.time() - script_start_time,))

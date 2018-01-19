@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 
 import os
@@ -33,7 +34,7 @@ class DataDownloader(object):
         self.uncompressData()
 
         self.processData()
-        print "Dataset directory is created successfully at '%s'" % self.outdir
+        print("Dataset directory is created successfully at '%s'" % self.outdir)
 
     def urlList(self):
         """
@@ -59,7 +60,7 @@ class DataDownloader(object):
         """
         download_path = os.path.join(self.outdir, os.path.basename(url))
         if not os.path.exists(download_path):
-            print "Downloading url=%s ..." % url
+            print("Downloading url=%s ..." % url)
             urllib.urlretrieve(url, download_path)
 
     def mkdir(self, d, clean=False):

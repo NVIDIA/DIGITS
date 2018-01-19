@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 
 import cPickle
@@ -6,7 +8,7 @@ import tarfile
 
 import PIL.Image
 
-from downloader import DataDownloader
+from .downloader import DataDownloader
 
 
 class Cifar100Downloader(DataDownloader):
@@ -26,7 +28,7 @@ class Cifar100Downloader(DataDownloader):
         assert os.path.exists(filepath), 'Expected "%s" to exist' % filename
 
         if not os.path.exists(os.path.join(self.outdir, 'cifar-100-python')):
-            print "Uncompressing file=%s ..." % filename
+            print("Uncompressing file=%s ..." % filename)
             with tarfile.open(filepath) as tf:
                 tf.extractall(self.outdir)
 
@@ -67,7 +69,7 @@ class Cifar100Downloader(DataDownloader):
         fine_label_names -- mapping from fine_labels to strings
         coarse_label_names -- mapping from coarse_labels to strings
         """
-        print 'Extracting images file=%s ...' % input_file
+        print('Extracting images file=%s ...' % input_file)
 
         # Read the pickle file
         with open(input_file, 'rb') as infile:

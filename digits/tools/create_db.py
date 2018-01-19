@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 
+from __future__ import absolute_import
 import argparse
 from collections import Counter
 import logging
@@ -35,9 +36,14 @@ import caffe.io  # noqa
 import caffe_pb2  # noqa
 
 if digits.config.config_value('tensorflow')['enabled']:
-    import tensorflow as tf
+    from . import tensorflow as tf
 else:
     tf = None
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 logger = logging.getLogger('digits.tools.create_db')
 

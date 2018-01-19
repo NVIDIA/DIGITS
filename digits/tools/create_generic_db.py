@@ -26,6 +26,11 @@ from digits.job import Job  # noqa
 import caffe.io  # noqa
 import caffe_pb2  # noqa
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 logger = logging.getLogger('digits.tools.create_dataset')
 
 

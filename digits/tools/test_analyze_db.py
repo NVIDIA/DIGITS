@@ -13,6 +13,10 @@ from digits import test_utils
 # Must import after importing digits.config
 import caffe.io
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 test_utils.skipIfNotFramework('none')
 

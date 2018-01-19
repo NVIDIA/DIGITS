@@ -1,6 +1,7 @@
 
 # Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import copy
 import os
@@ -104,7 +105,7 @@ def parse_lines(lines):
     value is a list of words without punctuation.
     """
     data = []
-    print "lines are %s" % lines
+    print("lines are %s" % lines)
     story = None
     for line in lines:
         # convert to lower case

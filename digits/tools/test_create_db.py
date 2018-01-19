@@ -13,6 +13,10 @@ import PIL.Image
 from . import create_db
 from digits import test_utils
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 test_utils.skipIfNotFramework('none')
 

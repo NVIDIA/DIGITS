@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import itertools
 import json
@@ -27,6 +28,11 @@ from digits import test_utils
 import digits.webapp
 from digits.frameworks import CaffeFramework
 from google.protobuf import text_format
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -262,7 +268,7 @@ class BaseViewsTestWithDataset(BaseViewsTest,
 
         if request_json:
             if rv.status_code != 200:
-                print json.loads(rv.data)
+                print(json.loads(rv.data))
                 raise RuntimeError('Model creation failed with %s' % rv.status_code)
             data = json.loads(rv.data)
             if 'jobs' in data.keys():
@@ -272,13 +278,13 @@ class BaseViewsTestWithDataset(BaseViewsTest,
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
-            print 'Status code:', rv.status_code
+            print('Status code:', rv.status_code)
             s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
-                print div[0]
+                print(div[0])
             else:
-                print rv.data
+                print(rv.data)
             raise RuntimeError('Failed to create dataset - status %s' % rv.status_code)
 
         job_id = cls.job_id_from_response(rv)

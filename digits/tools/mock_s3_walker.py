@@ -1,4 +1,5 @@
-from s3_walker import S3Walker
+from __future__ import absolute_import
+from .s3_walker import S3Walker
 
 
 class MockS3Walker(S3Walker):

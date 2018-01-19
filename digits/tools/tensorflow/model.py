@@ -21,6 +21,11 @@ import tf_data
 import utils as digits
 from utils import model_property
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)

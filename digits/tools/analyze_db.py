@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
 
+from __future__ import print_function
 import argparse
 from collections import Counter
 import logging
@@ -123,8 +124,8 @@ def analyze_db(database,
 
         if print_data:
             array = caffe.io.datum_to_array(datum)
-            print '>>> Datum #%d (shape=%s)' % (count, array.shape)
-            print array
+            print('>>> Datum #%d (shape=%s)' % (count, array.shape))
+            print(array)
 
         if (not datum.HasField('height') or datum.height == 0 or
                 not datum.HasField('width') or datum.width == 0):

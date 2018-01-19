@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import operator
 import os
@@ -21,6 +22,12 @@ from digits.utils import subclass, override, constants
 
 # Must import after importing digit.config
 import caffe_pb2
+from functools import reduce
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 # NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 1
@@ -481,7 +488,7 @@ class TorchTrainTask(TrainTask):
                 self.traceback = traceback
 
             if 'DIGITS_MODE_TEST' in os.environ:
-                print output
+                print(output)
 
     @override
     def detect_snapshots(self):

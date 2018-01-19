@@ -1,5 +1,6 @@
 # Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
+from __future__ import print_function
 
 import json
 import os
@@ -14,6 +15,11 @@ import digits.test_views
 from digits import extensions
 from digits import test_utils
 from digits.utils import constants
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 # May be too short on a slow system
 TIMEOUT_DATASET = 45
@@ -95,9 +101,9 @@ class BaseViewsTestWithDataset(BaseViewsTest):
             s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
-                print div[0]
+                print(div[0])
             else:
-                print rv.data
+                print(rv.data)
             raise RuntimeError(
                 'Failed to create dataset - status %s' % rv.status_code)
 
@@ -207,7 +213,7 @@ class GenericViewsTest(BaseViewsTest):
 
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/generic/new/%s' % self.EXTENSION_ID)
-        print rv.data
+        print(rv.data)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         assert extensions.data.get_extension(self.EXTENSION_ID).get_title() in rv.data, 'unexpected page format'
 

@@ -13,6 +13,11 @@ from digits import device_query
 from digits.task import Task
 from digits.utils import subclass, override
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 # NOTE: Increment this every time the picked object changes
 PICKLE_VERSION = 2
 

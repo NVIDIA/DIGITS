@@ -2,6 +2,11 @@ import time
 import numpy as np
 import wx
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 # This has been set up to optionally use the wx.BufferedDC if
 # USE_BUFFERED_DC is True, it will be used. Otherwise, it uses the raw
 # wx.Memory DC , etc.

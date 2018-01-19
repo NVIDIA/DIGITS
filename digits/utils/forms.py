@@ -9,6 +9,16 @@ from wtforms.compat import string_types
 
 from digits.utils.routing import get_request_arg
 
+try:
+    basestring        # Python 2
+except NameError:
+    basestring = str  # Python 3
+
+try:
+    text_types = (str, unicode)  # Python 2
+except NameError:
+    text_types = (str, )         # Python 3
+
 
 def validate_required_iff(**kwargs):
     """
@@ -27,7 +37,7 @@ def validate_required_iff(**kwargs):
         if all_conditions_met:
             # Verify that data exists
             if field.data is None \
-                    or (isinstance(field.data, (str, unicode)) and not field.data.strip()) \
+                    or (isinstance(field.data, text_types) and not field.data.strip()) \
                     or (isinstance(field.data, FileStorage) and not field.data.filename.strip()):
                 raise validators.ValidationError('This field is required.')
         else:
@@ -51,7 +61,7 @@ def validate_required_if_set(other_field, **kwargs):
         if other_field_value:
             # Verify that data exists
             if field.data is None or \
-                    (isinstance(field.data, (str, unicode)) and not field.data.strip()) \
+                    (isinstance(field.data, text_types) and not field.data.strip()) \
                     or (isinstance(field.data, FileStorage) and not field.data.filename.strip()):
                 raise validators.ValidationError('This field is required if %s is set.' % other_field)
         else:

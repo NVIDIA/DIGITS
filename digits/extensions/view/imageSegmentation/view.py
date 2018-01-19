@@ -16,6 +16,11 @@ from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
 from .forms import ConfigForm
 from ..interface import VisualizationInterface
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 CONFIG_TEMPLATE = "config_template.html"
 HEADER_TEMPLATE = "header_template.html"
 APP_BEGIN_TEMPLATE = "app_begin_template.html"

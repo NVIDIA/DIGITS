@@ -3,6 +3,7 @@
 """
 Functions for creating a dummy image segmentation dataset
 """
+from __future__ import print_function
 
 import argparse
 import numpy as np
@@ -12,6 +13,10 @@ import PIL.ImageDraw
 import shutil
 import time
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 INPUT_FOLDER = "input"
 TARGET_FOLDER = "target"
@@ -106,4 +111,4 @@ if __name__ == '__main__':
 
     create_images(args['output'], args['image_count'], args['image_size'], args['grid_size'])
 
-    print 'Done after %s seconds' % (time.time() - start_time,)
+    print('Done after %s seconds' % (time.time() - start_time,))

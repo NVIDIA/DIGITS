@@ -5,6 +5,7 @@ Functions for creating temporary datasets
 Used in test_views
 """
 from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
 from collections import defaultdict
@@ -93,7 +94,7 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
 
-    print 'Creating images at "%s" ...' % args['folder']
+    print('Creating images at "%s" ...' % args['folder'])
 
     start_time = time.time()
 
@@ -102,4 +103,4 @@ if __name__ == '__main__':
                                    image_count=args['image_count'],
                                    )
 
-    print 'Done after %s seconds' % (time.time() - start_time,)
+    print('Done after %s seconds' % (time.time() - start_time,))

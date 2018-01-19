@@ -5,6 +5,7 @@ Functions for creating temporary LMDBs
 Used in test_views
 """
 from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
 import os
@@ -20,6 +21,11 @@ except ImportError:
 import lmdb
 import numpy as np
 import PIL.Image
+
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
 
 if __name__ == '__main__':
     dirname = os.path.dirname(os.path.realpath(__file__))
@@ -193,12 +199,12 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     if os.path.exists(args['folder']):
-        print 'ERROR: Folder already exists'
+        print('ERROR: Folder already exists')
         sys.exit(1)
     else:
         os.makedirs(args['folder'])
 
-    print 'Creating images at "%s" ...' % args['folder']
+    print('Creating images at "%s" ...' % args['folder'])
 
     start_time = time.time()
 
@@ -208,4 +214,4 @@ if __name__ == '__main__':
                  image_count=args['image_count'],
                  )
 
-    print 'Done after %s seconds' % (time.time() - start_time,)
+    print('Done after %s seconds' % (time.time() - start_time,))

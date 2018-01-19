@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.
 
+from __future__ import print_function
 import argparse
 import os
 import pickle

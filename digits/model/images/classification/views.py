@@ -23,6 +23,11 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
+try:
+    xrange          # Python 2
+except NameError:
+    xrange = range  # Python 3
+
 blueprint = flask.Blueprint(__name__, __name__)
 
 """
