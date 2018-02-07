@@ -5,7 +5,7 @@ import os
 import re
 
 import caffe.draw
-import caffe_pb2
+import caffe.proto.caffe_pb2 as caffe_pb2
 from google.protobuf import text_format
 
 from .errors import BadNetworkError

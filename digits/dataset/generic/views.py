@@ -8,7 +8,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-import caffe_pb2
+import caffe.proto.caffe_pb2 as caffe_pb2
 import flask
 import matplotlib as mpl
 import matplotlib.pyplot as plt

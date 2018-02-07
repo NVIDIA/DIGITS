@@ -8,7 +8,7 @@ import shutil
 import tempfile
 import time
 import unittest
-import caffe_pb2
+import caffe.proto.caffe_pb2 as caffe_pb2
 import math
 
 

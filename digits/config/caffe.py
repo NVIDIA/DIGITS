@@ -128,10 +128,6 @@ def import_pycaffe(dirname=None):
         print 'Did you forget to "make pycaffe"?'
         raise
 
-    # Strange issue with protocol buffers and pickle - see issue #32
-    sys.path.insert(0, os.path.join(
-        os.path.dirname(caffe.__file__), 'proto'))
-
     # Turn GLOG output back on for subprocess calls
     if GLOG_minloglevel is None:
         del os.environ['GLOG_minloglevel']

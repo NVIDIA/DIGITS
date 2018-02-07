@@ -7,7 +7,7 @@ from google.protobuf import text_format
 from digits import test_utils
 
 # Must import after importing digit.config
-import caffe_pb2
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 
 def check_positive(desc, stage):

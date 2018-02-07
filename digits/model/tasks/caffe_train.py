@@ -25,7 +25,7 @@ from digits.utils.filesystem import tail
 
 # Must import after importing digit.config
 import caffe
-import caffe_pb2
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 # NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 5

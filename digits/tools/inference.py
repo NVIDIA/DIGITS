@@ -23,7 +23,7 @@ from digits.job import Job  # noqa
 from digits.utils.lmdbreader import DbReader  # noqa
 
 # Import digits.config before caffe to set the path
-import caffe_pb2  # noqa
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 logger = logging.getLogger('digits.tools.inference')
 

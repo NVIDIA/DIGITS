@@ -33,7 +33,7 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                 if task.encoding == "jpg":
                     if task.mean_file.endswith('.binaryproto'):
                         import numpy as np
-                        import caffe_pb2
+                        import caffe.proto.caffe_pb2 as caffe_pb2
 
                         old_blob = caffe_pb2.BlobProto()
                         with open(task.path(task.mean_file), 'rb') as infile:
