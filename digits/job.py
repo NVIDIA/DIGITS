@@ -35,7 +35,18 @@ class Job(StatusCls):
         job_dir = os.path.join(config_value('jobs_dir'), job_id)
         filename = os.path.join(job_dir, cls.SAVE_FILE)
         with open(filename, 'rb') as savefile:
-            job = pickle.load(savefile)
+            try:
+                job = pickle.load(savefile)
+            except ImportError:
+                savefile.seek(0)
+                s = savefile.read()
+                if s:
+                    shutil.copyfile(filename, filename+'.bak')
+                    #workaround for old jobs
+                    job = pickle.loads(s.replace('ccaffe_pb2', 'ccaffe.proto.caffe_pb2'))
+                else:
+                    raise ImportError("Empty status file")
+
             # Reset this on load
             job._dir = job_dir
             for task in job.tasks:

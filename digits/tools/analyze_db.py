@@ -26,7 +26,7 @@ from digits import log  # noqa
 
 # Import digits.config first to set path to Caffe
 import caffe.io  # noqa
-import caffe_pb2  # noqa
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 logger = logging.getLogger('digits.tools.analyze_db')
 np.set_printoptions(suppress=True, precision=3)

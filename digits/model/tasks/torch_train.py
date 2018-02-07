@@ -20,7 +20,7 @@ from digits.config import config_value
 from digits.utils import subclass, override, constants
 
 # Must import after importing digit.config
-import caffe_pb2
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 # NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 1

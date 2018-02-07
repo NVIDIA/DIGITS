@@ -18,7 +18,7 @@ import scipy.misc
 
 os.environ['GLOG_minloglevel'] = '2'  # Suppress most caffe output
 import caffe  # noqa
-from caffe.proto import caffe_pb2  # noqa
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 
 def get_net(caffemodel, deploy_file, use_gpu=True):

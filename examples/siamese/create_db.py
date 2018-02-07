@@ -25,7 +25,7 @@ from digits import utils  # noqa
 
 # Import digits.config first to set the path to Caffe
 import caffe.io  # noqa
-import caffe_pb2  # noqa
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 IMAGE_SIZE = 10
 TRAIN_IMAGE_COUNT = 1000

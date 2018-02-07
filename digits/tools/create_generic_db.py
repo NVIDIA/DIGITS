@@ -24,7 +24,7 @@ from digits.job import Job  # noqa
 
 # Import digits.config first to set the path to Caffe
 import caffe.io  # noqa
-import caffe_pb2  # noqa
+import caffe.proto.caffe_pb2 as caffe_pb2
 
 logger = logging.getLogger('digits.tools.create_dataset')
 
