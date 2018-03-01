@@ -73,10 +73,12 @@ cd python
 sudo python setup.py install --cpp_implementation
 ```
 
-### Caffe. I use Cudnn version 5 though I think it will work with version 6. Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
+### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.1 for cuda 8.0 as follows. Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
 ```
-sudo apt-get install libcudnn5
-sudo apt-mark hold libcudnn5
+# download ubuntu cudnn packages from https://developer.nvidia.com/rdp/cudnn-download to match your version of CUDA and Ubuntu
+sudo dpkg -i libcudnn7_7*******  #whatever version
+sudo dpkg -i libcudnn7_7-dev
+sudo dpkg -i libcudnn7_7-doc   #if you want docs and code samples
 sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-pydot python-scipy python-skimage python-sklearn libnccl-dev
 emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
