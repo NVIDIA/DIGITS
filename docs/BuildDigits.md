@@ -97,7 +97,7 @@ sudo make install
 ```
 sudo apt-get install --no-install-recommends git software-properties-common
 export TORCH_ROOT=/usr/local/torch
-git clone https://github.com/torch/distro.git $TORCH_ROOT --recursive
+sudo git clone https://github.com/torch/distro.git $TORCH_ROOT --recursive
 cd $TORCH_ROOT
 sudo ./install-deps
 sudo ./install.sh -b
