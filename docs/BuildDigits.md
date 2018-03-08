@@ -105,6 +105,7 @@ sudo apt-get install --no-install-recommends libhdf5-serial-dev liblmdb-dev
 source ~/.bashrc
 sudo su
 source /usr/local/torch/install/bin/torch-activate
+git config --global url."https://".insteadOf git://   #because you need to do this as root as well for the following
 luarocks install tds
 luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
 luarocks install "https://raw.github.com/Neopallium/lua-pb/master/lua-pb-scm-0.rockspec"
