@@ -60,7 +60,7 @@ lsmod | grep nouveau
 ```
 
 ## Dependencies - I choose to put everything in /usr/local but this is up to personal preference.
-### Protobuf - in some cases I had trouble with git:// endpoints so I modified to always use https in the second line.
+### Protobuf - in some cases I had trouble with git:// endpoints so I modified to always use https in the second line. 3.2.x is what appears to be compatible with DIGITS - newer versions gave me Caffe errors.
 ```
 sudo apt-get install autoconf automake libtool curl make g++ git python-dev python-setuptools unzip
 git config --global url."https://".insteadOf git://
