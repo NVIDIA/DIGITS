@@ -24,18 +24,17 @@ sudo emacs /etc/dhcp/dhclient.conf
 ### Install CUDA which will pull the latest Nvidia driver. I have always pulled 8-0 which is good for DIGITS 6.
 ```
 cd /tmp
-CUDA_REPO_PKG=http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+CUDA_REPO_PKG=http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
 ML_REPO_PKG=http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64/nvidia-machine-learning-repo-ubuntu1604_1.0.0-1_amd64.deb
 wget "$CUDA_REPO_PKG" -O /tmp/cuda-repo.deb && sudo dpkg -i /tmp/cuda-repo.deb && rm -f /tmp/cuda-repo.deb
 wget "$ML_REPO_PKG" -O /tmp/ml-repo.deb && sudo dpkg -i /tmp/ml-repo.deb && rm -f /tmp/ml-repo.deb
 sudo apt-get update
-sudo apt-get install cuda-8-0
-sudo apt-mark hold cuda-8-0
-```
-### The above, in my experience, pulls the 390 version of the Nvidia drivers. If not, you can do the following.
-```
-sudo apt-get install nvidia-390
-apt-mark hold nvidia-390
+sudo apt-get install cuda-9-0
+sudo apt-mark hold cuda-9-0
+wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/2/cuda-repo-ubuntu1604-9-0-local-cublas-performance-update-2_1.0-1_amd64-deb
+sudo dpkg -i cuda-repo-ubuntu1604-9-0-local-cublas-performance-update-2_1.0-1_amd64-deb
+sudo apt-mark hold nvidia-390
 ```
 ### Since we are using Nvidia, don't use Nouveau. Make a few changes to not try to boot to the GUI but command line instead.
 ```
@@ -62,7 +61,7 @@ lsmod | grep nouveau
 sudo apt-get install autoconf automake libtool curl make g++ git python-dev python-setuptools unzip
 git config --global url."https://".insteadOf git://
 export PROTOBUF_ROOT=/usr/local/protobuf
-sudo git clone https://github.com/google/protobuf.git $PROTOBUF_ROOT -b '3.2.x'
+sudo git clone https://github.com/google/protobuf.git $PROTOBUF_ROOT
 cd $PROTOBUF_ROOT
 sudo ./autogen.sh
 sudo ./configure
@@ -73,12 +72,12 @@ cd python
 sudo python setup.py install --cpp_implementation
 ```
 
-### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.1 for cuda 8.0 as follows. Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
+### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.0.5 for cuda 9.0 as follows. Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
 ```
 # download ubuntu cudnn packages from https://developer.nvidia.com/rdp/cudnn-download to match your version of CUDA and Ubuntu
-sudo dpkg -i libcudnn7_7*******  #whatever version
-sudo dpkg -i libcudnn7-dev
-sudo dpkg -i libcudnn7-doc   #if you want docs and code samples
+sudo dpkg -i libcudnn7_7.0.5.15-1+cuda9.0_amd64.deb
+sudo dpkg -i libcudnn7-dev_7.0.5.15-1+cuda9.0_amd64.deb
+sudo dpkg -i libcudnn7-doc_7.0.5.15-1+cuda9.0_amd64.deb
 sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-pydot python-scipy python-skimage python-sklearn libnccl-dev
 emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
