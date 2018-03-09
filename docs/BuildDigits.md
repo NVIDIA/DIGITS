@@ -1,6 +1,6 @@
 # Building DIGITS for Ubuntu Server 16.04
 
-I've built Ubuntu Server instances for DIGITS multiple times and have compiled a list of steps that seems to work well for me. Configuring all the dependencies and installing all the prerequisites can be tricky so I thought I'd share it in one place with some notes.
+I've built Ubuntu Server instances for DIGITS multiple times and have compiled a list of steps that seems to work well for me. Configuring all the dependencies and installing all the prerequisites can be tricky so I thought I'd share it in one place with some notes. It does depend somewhat on the compute capability of your Nvidia card.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ I do the typical installation using LVM to encrypt the whole drive. No automatic
 ```
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install emacs
+sudo apt-get install emacs    #sorry vim fanboys
 ```
 ### I like to try and request a specific IP. Insert the following lines into dhclient.conf. If you can get a static IP even better.
 ```
@@ -21,7 +21,7 @@ sudo emacs /etc/dhcp/dhclient.conf
 	#try to get a specific ip; dhclient -r -v to request again if it fails on startup
 	send dhcp-requested-address XXX.XX.XXX.XXX;
 ```
-### Install CUDA which will pull the latest Nvidia driver. I have always pulled 8-0 which is good for DIGITS 6.
+### Install CUDA which will pull the latest Nvidia driver. I am currently using 9.0 with DIGITS 6.1.
 ```
 cd /tmp
 sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
@@ -72,13 +72,13 @@ cd python
 sudo python setup.py install --cpp_implementation
 ```
 
-### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.0.5 for cuda 9.0 as follows. Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
+### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.0.5 for cuda 9.0 as follows. I'm also now pulling the latest version of caffe (curently 0.16). Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
 ```
 # download ubuntu cudnn packages from https://developer.nvidia.com/rdp/cudnn-download to match your version of CUDA and Ubuntu
 sudo dpkg -i libcudnn7_7.0.5.15-1+cuda9.0_amd64.deb
 sudo dpkg -i libcudnn7-dev_7.0.5.15-1+cuda9.0_amd64.deb
 sudo dpkg -i libcudnn7-doc_7.0.5.15-1+cuda9.0_amd64.deb
-sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-pydot python-scipy python-skimage python-sklearn libnccl-dev
+sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-pydot python-scipy python-skimage python-sklearn libnccl-dev libboost-regex-dev libturbojpeg libopenblas-dev
 emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
 source ~/.bashrc
@@ -112,9 +112,9 @@ luarocks install lightningmdb 0.9.18.1-1 LMDB_INCDIR=/usr/include LMDB_LIBDIR=/u
 <exit root>
 ```
 
-### Tensorflow. Using 1.2.1 currently per DIGITS recommendations but I've worked with 1.4 as well. Some of this depends on the compute capability of your card.
+### Tensorflow. Using 1.5 currently. Some of this depends on the compute capability of your card - I think must be at least 3.5 for tensorflow 1.5.
 ```
-pip install tensorflow-gpu==1.2.1
+pip install tensorflow-gpu==1.5
 ```
 
 ### DIGITS. Note that I've given control to the local user for the jobs directory and digits log file. This depends on what user will be running the DIGITS server.
