@@ -106,13 +106,16 @@ sudo -H make install
 
 ### Torch
 ```
-sudo -H apt-get install --no-install-recommends git software-properties-common
+sudo apt-get install --no-install-recommends git software-properties-common
 export TORCH_ROOT=/usr/local/torch
-sudo -H git clone https://github.com/torch/distro.git $TORCH_ROOT --recursive
+sudo git clone https://github.com/torch/distro.git $TORCH_ROOT --recursive
 cd $TORCH_ROOT
-sudo -H ./install-deps
-sudo -H ./install.sh -b
-sudo -H apt-get install --no-install-recommends libhdf5-serial-dev liblmdb-dev
+sudo su
+./install-deps
+export TORCH_NVCC_FLAGS="-D__CUDA_NO_HALF_OPERATORS__"   #something with cuda 9.0? needs to be in root environment
+./install.sh -b
+exit  #exit root
+sudo apt-get install --no-install-recommends libhdf5-serial-dev liblmdb-dev
 source ~/.bashrc
 sudo su
 source /usr/local/torch/install/bin/torch-activate
@@ -121,20 +124,26 @@ luarocks install tds
 luarocks install "https://raw.github.com/deepmind/torch-hdf5/master/hdf5-0-0.rockspec"
 luarocks install "https://raw.github.com/Neopallium/lua-pb/master/lua-pb-scm-0.rockspec"
 luarocks install lightningmdb 0.9.18.1-1 LMDB_INCDIR=/usr/include LMDB_LIBDIR=/usr/lib/x86_64-linux-gnu
-<exit root>
+exit  #exit root
 ```
 
 ### Tensorflow. Using 1.5 currently. Some of this depends on the compute capability of your card - I think must be at least 3.5 for tensorflow 1.5.
 ```
 pip install tensorflow-gpu==1.5
+#test tensorflow if you want
+python
+    import tensorflow as tf
+    hello = tf.constant('Hello, TensorFlow!')
+    sess = tf.Session()
+    print(sess.run(hello))    #should get "Hello, TensorFlow!"
 ```
 
 ### DIGITS. Note that I've given control to the local user for the jobs directory and digits log file. This depends on what user will be running the DIGITS server.
 ```
 DIGITS_ROOT=/usr/local/digits
 sudo git clone https://github.com/NVIDIA/DIGITS.git $DIGITS_ROOT
-pip install -r $DIGITS_ROOT/requirements.txt
-sudo pip install -e $DIGITS_ROOT
+sudo -H pip install -r $DIGITS_ROOT/requirements.txt
+sudo -H pip install -e $DIGITS_ROOT
 sudo apt-get install python-tk
 sudo mkdir /usr/local/digits/digits/jobs
 sudo chown <user>:<user> /usr/local/digits/digits/jobs
