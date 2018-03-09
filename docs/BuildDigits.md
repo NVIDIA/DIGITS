@@ -168,9 +168,9 @@ sudo emacs /lib/systemd/system/digits.service
 
 	[Install]
 	WantedBy=multi-user.target
-systemctl daemon-reload
-systemctl enable digits
-systemctl start digits
+sudo systemctl daemon-reload
+sudo systemctl enable digits
+sudo systemctl start digits
 ```
 
 # Getting started
