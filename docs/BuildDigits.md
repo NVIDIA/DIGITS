@@ -65,7 +65,7 @@ lsmod | grep nouveau
 sudo apt-get install autoconf automake libtool curl make g++ git python-dev python-setuptools unzip
 git config --global url."https://".insteadOf git://
 export PROTOBUF_ROOT=/usr/local/protobuf
-sudo -H git clone https://github.com/google/protobuf.git $PROTOBUF_ROOT
+sudo -H git clone https://github.com/google/protobuf.git $PROTOBUF_ROOT -b '3.2.x'
 cd $PROTOBUF_ROOT
 sudo -H ./autogen.sh
 sudo -H ./configure
