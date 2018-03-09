@@ -15,12 +15,14 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install emacs    #sorry vim fanboys
 ```
+
 ### I like to try and request a specific IP. Insert the following lines into dhclient.conf. If you can get a static IP even better.
 ```
 sudo emacs /etc/dhcp/dhclient.conf
 	#try to get a specific ip; dhclient -r -v to request again if it fails on startup
 	send dhcp-requested-address XXX.XX.XXX.XXX;
 ```
+
 ### Install CUDA which will pull the latest Nvidia driver. I am currently using 9.0 with DIGITS 6.1.
 ```
 cd /tmp
@@ -36,6 +38,7 @@ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/2/cuda-repo-ubun
 sudo dpkg -i cuda-repo-ubuntu1604-9-0-local-cublas-performance-update-2_1.0-1_amd64-deb
 sudo apt-mark hold nvidia-390
 ```
+
 ### Since we are using Nvidia, don't use Nouveau. Make a few changes to not try to boot to the GUI but command line instead.
 ```
 sudo emacs /etc/modprobe.d/blacklist-nouveau.conf
@@ -49,6 +52,7 @@ sudo emacs /etc/default/grub
 sudo systemctl set-default multi-user.target
 sudo reboot now
 ```
+
 ### After reboot, double check. The first command should show stuff, the second not (if successful).
 ```
 lsmod | grep nvidia
@@ -61,15 +65,15 @@ lsmod | grep nouveau
 sudo apt-get install autoconf automake libtool curl make g++ git python-dev python-setuptools unzip
 git config --global url."https://".insteadOf git://
 export PROTOBUF_ROOT=/usr/local/protobuf
-sudo git clone https://github.com/google/protobuf.git $PROTOBUF_ROOT
+sudo -H git clone https://github.com/google/protobuf.git $PROTOBUF_ROOT
 cd $PROTOBUF_ROOT
-sudo ./autogen.sh
-sudo ./configure
-sudo make "-j$(nproc)"
-sudo make install
-sudo ldconfig
+sudo -H ./autogen.sh
+sudo -H ./configure
+sudo -H make "-j$(nproc)"
+sudo -H make install
+sudo -H ldconfig
 cd python
-sudo python setup.py install --cpp_implementation
+sudo -H python setup.py install --cpp_implementation
 ```
 
 ### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.0.5 for cuda 9.0 as follows. I'm also now pulling the latest version of caffe (curently 0.16). Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
@@ -86,29 +90,29 @@ make clean
 make
 ./mnistCUDNN   #should say "Test Passed!"
 rm -rf /tmp/cudnn_samples_v7
-sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-pydot python-scipy python-skimage python-sklearn libnccl-dev libboost-regex-dev libturbojpeg libopenblas-dev
+sudo -H apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev libnccl-dev libboost-regex-dev libturbojpeg libopenblas-dev
 emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
-source ~/.bashrc
-sudo git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT -b 'caffe-0.15'
-pip install -r $CAFFE_ROOT/python/requirements.txt
+source ~/.bashrc   #you may need to source or log out and log back in again to get pip added to your PATH
+sudo -H git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT
+sudo -H pip install -r $CAFFE_ROOT/python/requirements.txt   #you seem to need root access at least for some of these libraries
 cd $CAFFE_ROOT
-sudo mkdir build
+sudo -H mkdir build
 cd build
-sudo cmake ..
-sudo make -j"$(nproc)"
-sudo make install
+sudo -H cmake ..
+sudo -H make -j"$(nproc)"
+sudo -H make install
 ```
 
 ### Torch
 ```
-sudo apt-get install --no-install-recommends git software-properties-common
+sudo -H apt-get install --no-install-recommends git software-properties-common
 export TORCH_ROOT=/usr/local/torch
-sudo git clone https://github.com/torch/distro.git $TORCH_ROOT --recursive
+sudo -H git clone https://github.com/torch/distro.git $TORCH_ROOT --recursive
 cd $TORCH_ROOT
-sudo ./install-deps
-sudo ./install.sh -b
-sudo apt-get install --no-install-recommends libhdf5-serial-dev liblmdb-dev
+sudo -H ./install-deps
+sudo -H ./install.sh -b
+sudo -H apt-get install --no-install-recommends libhdf5-serial-dev liblmdb-dev
 source ~/.bashrc
 sudo su
 source /usr/local/torch/install/bin/torch-activate
