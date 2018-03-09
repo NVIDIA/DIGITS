@@ -17,7 +17,7 @@ sudo apt-get install emacs
 ```
 ### I like to try and request a specific IP. Insert the following lines into dhclient.conf. If you can get a static IP even better.
 ```
-emacs /etc/dhcp/dhclient.conf
+sudo emacs /etc/dhcp/dhclient.conf
 	#try to get a specific ip; dhclient -r -v to request again if it fails on startup
 	send dhcp-requested-address XXX.XX.XXX.XXX;
 ```
