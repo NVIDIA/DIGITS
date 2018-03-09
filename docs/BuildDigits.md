@@ -78,6 +78,14 @@ sudo python setup.py install --cpp_implementation
 sudo dpkg -i libcudnn7_7.0.5.15-1+cuda9.0_amd64.deb
 sudo dpkg -i libcudnn7-dev_7.0.5.15-1+cuda9.0_amd64.deb
 sudo dpkg -i libcudnn7-doc_7.0.5.15-1+cuda9.0_amd64.deb
+# test your cudnn installation
+cd /tmp
+cp -r /usr/src/cudnn_samples_v7/ .
+cd cudnn_samples_v7/mnistCUDNN/
+make clean
+make
+./mnistCUDNN   #should say "Test Passed!"
+rm -rf /tmp/cudnn_samples_v7
 sudo apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pip python-pydot python-scipy python-skimage python-sklearn libnccl-dev libboost-regex-dev libturbojpeg libopenblas-dev
 emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
