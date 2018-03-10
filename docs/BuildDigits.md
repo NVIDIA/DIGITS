@@ -76,7 +76,7 @@ cd python
 sudo -H python setup.py install --cpp_implementation
 ```
 
-### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.0.5 for cuda 9.0 as follows. I'm also now pulling the latest version of caffe (curently 0.16). Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
+### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.0.5 for cuda 9.0 as follows. Detectnet requires caffe version 0.15. Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
 ```
 # download ubuntu cudnn packages from https://developer.nvidia.com/rdp/cudnn-download to match your version of CUDA and Ubuntu
 sudo dpkg -i libcudnn7_7.0.5.15-1+cuda9.0_amd64.deb
