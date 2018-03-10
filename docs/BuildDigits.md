@@ -162,6 +162,7 @@ sudo emacs /lib/systemd/system/digits.service
 	[Service]
 	User=<user>
 	Environment=CAFFE_ROOT=/usr/local/caffe
+	Environment=TORCH_ROOT=/usr/local/torch
 	WorkingDirectory=/usr/local/digits
 	ExecStart=/bin/bash digits-devserver
 	Restart=always
