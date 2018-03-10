@@ -94,7 +94,7 @@ sudo -H apt-get install --no-install-recommends build-essential cmake git gfortr
 emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
 source ~/.bashrc   #you may need to source or log out and log back in again to get pip added to your PATH
-sudo -H git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT
+sudo -H git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT -b 'caffe-0.15'
 sudo -H pip install -r $CAFFE_ROOT/python/requirements.txt   #you seem to need root access at least for some of these libraries
 cd $CAFFE_ROOT
 sudo -H mkdir build
