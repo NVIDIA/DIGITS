@@ -135,7 +135,7 @@ exit  #exit root
 
 ### Tensorflow. Using 1.5 currently. Some of this depends on the compute capability of your card - I think must be at least 3.5 for tensorflow 1.5.
 ```
-pip install tensorflow-gpu==1.5
+sudo -H pip install tensorflow-gpu==1.5
 #test tensorflow if you want
 python
     import tensorflow as tf
