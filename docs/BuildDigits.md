@@ -96,7 +96,7 @@ rm -rf /tmp/cudnn_samples_v7
 sudo -H apt-get install --no-install-recommends build-essential cmake git gfortran libatlas-base-dev libboost-filesystem-dev libboost-python-dev libboost-system-dev libboost-thread-dev libgflags-dev libgoogle-glog-dev libhdf5-serial-dev libleveldb-dev liblmdb-dev libopencv-dev libsnappy-dev python-all-dev python-dev python-h5py python-matplotlib python-numpy python-opencv python-pil python-pydot python-scipy python-skimage python-sklearn libnccl-dev libboost-regex-dev libturbojpeg libopenblas-dev
 emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
-source ~/.bashrc   #you may need to source or log out and log back in again to get pip added to your PATH
+source ~/.bashrc
 sudo -H pip install pip --upgrade
 sudo -H pip install numpy --upgrade
 sudo -H git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT -b 'caffe-0.15'
