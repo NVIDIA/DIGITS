@@ -76,6 +76,7 @@ sudo -H make install
 sudo -H ldconfig
 cd python
 sudo -H python setup.py install --cpp_implementation
+protoc --version     #should say "libprotoc 3.2.1"
 ```
 
 ### Caffe. Update: the ubuntu libcudnn libraries are not found when you try and build Caffe. It's possible you could set environment variables to find them, but now I'm building from scratch using cudnn v. 7.0.5 for cuda 9.0 as follows. Detectnet requires caffe version 0.15. Note that you need to add an environment variable to the .bashrc file for whatever user will be running DIGITS so it knows where Caffe is.
