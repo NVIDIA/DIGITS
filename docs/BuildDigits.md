@@ -53,10 +53,12 @@ sudo systemctl set-default multi-user.target
 sudo reboot now
 ```
 
-### After reboot, double check. The first command should show stuff, the second not (if successful).
+### After reboot, double check. The first command should show stuff, the second not (if successful). The check packages and upgrade.
 ```
 lsmod | grep nvidia
 lsmod | grep nouveau
+sudo apt-get update
+sudo apt-get ugprade
 ```
 
 ## Dependencies - I choose to put everything in /usr/local but this is up to personal preference.
