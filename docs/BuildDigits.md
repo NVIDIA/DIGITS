@@ -98,9 +98,9 @@ emacs ~/.bashrc
 	export CAFFE_ROOT=/usr/local/caffe
 source ~/.bashrc
 sudo -H pip install pip --upgrade
-sudo -H pip install numpy --upgrade
 sudo -H git clone https://github.com/NVIDIA/caffe.git $CAFFE_ROOT -b 'caffe-0.15'
 sudo -H pip install -r $CAFFE_ROOT/python/requirements.txt   #you seem to need root access at least for some of these libraries
+sudo -H pip install numpy --upgrade
 cd $CAFFE_ROOT
 sudo -H mkdir build
 cd build
