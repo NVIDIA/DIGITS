@@ -10,6 +10,7 @@ env:
     global:
         - PROTOBUF_ROOT=~/protobuf
         - CAFFE_ROOT=~/caffe
+        - CAFFE_TAG=v0.16.4
         - TORCH_ROOT=~/torch
         - OMP_NUM_THREADS=1
         - OPENBLAS_MAIN_FREE=1
@@ -86,6 +87,7 @@ addons:
             - libboost-python-dev
             - libboost-system-dev
             - libboost-thread-dev
+            - libboost-regex-dev
             - libgflags-dev
             - libgoogle-glog-dev
             - libhdf5-serial-dev
@@ -93,6 +95,7 @@ addons:
             - liblmdb-dev
             - libopenblas-dev
             - libopencv-dev
+            - libturbojpeg
             - libsnappy-dev
             - python-dev
             - python-flask
@@ -124,6 +127,7 @@ install:
     - echo "backend:agg" > ~/.config/matplotlib/matplotlibrc
     - ./scripts/travis/install-protobuf.sh $PROTOBUF_ROOT
     - ./scripts/travis/install-caffe.sh $CAFFE_ROOT
+    - pip install tornado==4.5.3
     - if [ "$DIGITS_TEST_FRAMEWORK" == "torch" ]; then travis_wait ./scripts/travis/install-torch.sh $TORCH_ROOT; else unset TORCH_ROOT; fi
     - pip install -r ./requirements.txt --force-reinstall
     - if [ "$DIGITS_TEST_FRAMEWORK" == "tensorflow" ]; then travis_wait ./scripts/travis/install-tensorflow.sh; fi

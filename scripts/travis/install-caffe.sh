@@ -29,9 +29,14 @@ set -x
 git clone "https://github.com/${CAFFE_FORK}/caffe.git" "$INSTALL_DIR" $CAFFE_BRANCH --depth 1
 
 # configure project
-mkdir -p "${INSTALL_DIR}/build"
-cd "${INSTALL_DIR}/build"
-cmake .. -DCPU_ONLY=On -DBLAS=Open
+cd "$INSTALL_DIR"
+if [ "$CAFFE_FORK" == "NVIDIA" ]; then
+    git fetch --all --tags --prune
+    git checkout "tags/$CAFFE_TAG"
+fi
+mkdir -p build
+cd build
+cmake .. -DCPU_ONLY=1 -DBLAS=Open
 
 # build
 make --jobs="$(nproc)"
