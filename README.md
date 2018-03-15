@@ -47,3 +47,5 @@ Then, take a look at some of the other documentation at [docs/](docs/) and [exam
 * Bonus points if you want to contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)!
   * You will need to send a signed copy of the [Contributor License Agreement](CLA) to digits@nvidia.com before your change can be accepted.
 
+# Notice on security
+ Users shall understand that DIGITS is not designed to be run as an exposed external web service.
