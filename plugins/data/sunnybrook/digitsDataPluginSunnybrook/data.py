@@ -8,7 +8,7 @@ import os
 import random
 import re
 
-import dicom
+import pydicom
 import numpy as np
 
 from digits.utils import subclass, override, constants
@@ -95,7 +95,7 @@ def load_contour(contour, img_path):
 
 
 def load_image(full_path):
-    f = dicom.read_file(full_path)
+    f = pydicom.dcmread(full_path)
     return f.pixel_array.astype(np.int)
 
 
