@@ -35,38 +35,6 @@ matrix:
           script:
               - ./digits-lint
 
-        - env: DIST
-          services: docker
-          addons:
-              apt:
-                  packages:
-                      - devscripts
-                      - debhelper
-                      - dput
-                      - gnupg
-          install:
-              - git fetch --unshallow
-              - git remote add nvidia-digits-upstream https://github.com/NVIDIA/DIGITS.git  # for forks
-              - git fetch nvidia-digits-upstream --tags
-              - pip install twine
-          script:
-              - DEBIAN_REVISION=1ppa1~trusty ./packaging/deb/build.sh
-              - DEBIAN_REVISION=1ppa1~xenial ./packaging/deb/build.sh
-              - python setup.py sdist bdist_wheel
-          deploy:
-              - provider: script
-                skip_cleanup: true
-                script: ./scripts/travis/ppa-upload.sh stable
-                on:
-                    repo: NVIDIA/DIGITS
-                    tags: true
-              - provider: script
-                skip_cleanup: true
-                script: ./scripts/travis/ppa-upload.sh dev
-                on:
-                    repo: NVIDIA/DIGITS
-                    branch: master
-
 cache:
     apt: true
     directories:
