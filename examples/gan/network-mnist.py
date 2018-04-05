@@ -366,8 +366,8 @@ class UserModel(Tower):
             # Extra hook for debug: log chi-square distance between G's output histogram and the dataset's histogram
             value_range = [0.0, 1.0]
             nbins = 100
-            hist_g = tf.histogram_fixed_width(self.G, value_range, nbins=nbins, dtype=tf.float32) / nbins
-            hist_images = tf.histogram_fixed_width(self.images, value_range, nbins=nbins, dtype=tf.float32) / nbins
+            hist_g = tf.to_float(tf.histogram_fixed_width(self.G, value_range, nbins=nbins)) / nbins
+            hist_images = tf.to_float(tf.histogram_fixed_width(self.images, value_range, nbins=nbins)) / nbins
             chi_square = tf.reduce_mean(tf.div(tf.square(hist_g - hist_images), hist_g + hist_images + 1e-5))
             self.summaries.append(scalar_summary("chi_square", chi_square))
         else:
