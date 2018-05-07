@@ -8,8 +8,10 @@ import math
 import os
 import random
 import re
-
-import dicom
+try:
+    import dicom
+except:
+    import pydicom as dicom
 import numpy as np
 
 from digits.utils import subclass, override, constants
