@@ -10,7 +10,8 @@ env:
     global:
         - PROTOBUF_ROOT=~/protobuf
         - CAFFE_ROOT=~/caffe
-        - CAFFE_TAG=v0.16.4
+        - NV_CAFFE_TAG=v0.16.4
+        - BVLC_CAFFE_COMMIT=306672023ea79f0755e92ca345bc70c068a91cc4
         - TORCH_ROOT=~/torch
         - OMP_NUM_THREADS=1
         - OPENBLAS_MAIN_FREE=1

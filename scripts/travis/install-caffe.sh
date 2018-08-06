@@ -25,14 +25,19 @@ fi
 
 set -x
 
-# get source
-git clone "https://github.com/${CAFFE_FORK}/caffe.git" "$INSTALL_DIR" $CAFFE_BRANCH --depth 1
-
-# configure project
-cd "$INSTALL_DIR"
 if [ "$CAFFE_FORK" == "NVIDIA" ]; then
+    # get source
+    git clone "https://github.com/${CAFFE_FORK}/caffe.git" "$INSTALL_DIR" $CAFFE_BRANCH --depth 1
+    # configure project
+    cd "$INSTALL_DIR"
     git fetch --all --tags --prune
-    git checkout "tags/$CAFFE_TAG"
+    git checkout "tags/$NV_CAFFE_TAG"
+else
+    # get source
+    git clone "https://github.com/${CAFFE_FORK}/caffe.git" "$INSTALL_DIR" 
+    # configure project
+    cd "$INSTALL_DIR"
+    git checkout "$BVLC_CAFFE_COMMIT"
 fi
 mkdir -p build
 cd build
