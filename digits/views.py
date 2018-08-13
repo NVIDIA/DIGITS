@@ -646,12 +646,19 @@ def handle_error(e):
                                      trace=trace,
                                      ), status_code
 
-# Register this handler for all error codes
-# Necessary for flask<=0.10.1
-for code in HTTP_STATUS_CODES:
-    if code not in [301]:
-        app.register_error_handler(code, handle_error)
 
+# Register this handler for all error codes.
+# In flask>=0.11 only codes that are defined
+# in werkzeug default_exceptions are valid
+if str(flask.__version__) >= "0.11":
+    for code in HTTP_STATUS_CODES:
+        if code in werkzeug.exceptions.default_exceptions:
+            app.register_error_handler(code, handle_error)
+# Necessary for flask<=0.10.1
+else:
+    for code in HTTP_STATUS_CODES:
+        if code not in [301]:
+            app.register_error_handler(code, handle_error)
 # File serving
 
 
