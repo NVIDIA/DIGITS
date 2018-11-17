@@ -5,6 +5,12 @@
 DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is a webapp for training deep learning models.
 The currently supported frameworks are: Caffe, Torch, and Tensorflow.
 
+# Documentation
+
+Current and most updated document is availabel at
+ [NVIDIA Accelerated Computing, Deep Learning Documentation, NVIDIA DIGITS](https://docs.nvidia.com/deeplearning/digits/index.html).
+
+
 # Installation
 
 | Installation method | Supported platform[s] | Available versions | Instructions |
