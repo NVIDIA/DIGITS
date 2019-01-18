@@ -1,5 +1,8 @@
 # DIGITS
 
+# Feedback
+In addition to submitting pull requests, feel free to submit and vote on feature requests via [our ideas portal]( https://nvdigits.ideas.aha.io/).
+
 [![Build Status](https://travis-ci.org/NVIDIA/DIGITS.svg?branch=master)](https://travis-ci.org/NVIDIA/DIGITS)
 
 DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is a webapp for training deep learning models.
@@ -55,6 +58,3 @@ Then, take a look at some of the other documentation at [docs/](docs/) and [exam
 
 # Notice on security
  Users shall understand that DIGITS is not designed to be run as an exposed external web service.
-
-# Feedback
-In addition to submitting pull requests, feel free to submit and vote on feature requests via [our ideas portal]( https://nvdigits.ideas.aha.io/).
