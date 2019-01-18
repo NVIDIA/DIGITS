@@ -55,3 +55,6 @@ Then, take a look at some of the other documentation at [docs/](docs/) and [exam
 
 # Notice on security
  Users shall understand that DIGITS is not designed to be run as an exposed external web service.
+
+# Feedback
+In addition to submitting pull requests, feel free to submit and vote on feature requests via [our ideas portal]( https://nvdigits.ideas.aha.io/).
