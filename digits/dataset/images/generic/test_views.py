@@ -96,7 +96,7 @@ class BaseViewsTestWithImageset(BaseViewsTest):
         request_json = data.pop('json', False)
         url = '/datasets/images/generic'
         if request_json:
-            url += '.json'
+            url += '/json'
 
         rv = cls.app.post(url, data=data)
 
@@ -199,7 +199,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
         job1_id = self.create_dataset(**options_1)
         assert self.dataset_wait_completion(job1_id) == 'Done', 'first job failed'
-        rv = self.app.get('/datasets/%s.json' % job1_id)
+        rv = self.app.get('/datasets/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content1 = json.loads(rv.data)
 
@@ -210,7 +210,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
 
         job2_id = self.create_dataset(**options_2)
         assert self.dataset_wait_completion(job2_id) == 'Done', 'second job failed'
-        rv = self.app.get('/datasets/%s.json' % job2_id)
+        rv = self.app.get('/datasets/%s/json' % job2_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content2 = json.loads(rv.data)
 
@@ -233,7 +233,7 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
     """
 
     def test_index_json(self):
-        rv = self.app.get('/index.json')
+        rv = self.app.get('/index/json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         found = False
@@ -244,7 +244,7 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
         assert found, 'dataset not found in list'
 
     def test_dataset_json(self):
-        rv = self.app.get('/datasets/%s.json' % self.dataset_id)
+        rv = self.app.get('/datasets/%s/json' % self.dataset_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert content['id'] == self.dataset_id, 'expected different job_id'

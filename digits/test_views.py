@@ -85,7 +85,7 @@ class BaseViewsTest(object):
         """
         Get job information (full JSON response)
         """
-        url = '/%s/%s.json' % (job_type, job_id)
+        url = '/%s/%s/json' % (job_type, job_id)
         rv = cls.app.get(url)
         assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (job_id, url, rv.status_code)
         info = json.loads(rv.data)
@@ -128,7 +128,7 @@ class BaseViewsTest(object):
             status = cls.job_status(job_id, job_type=job_type)
             if status in ['Done', 'Abort', 'Error']:
                 # make sure job appears in completed jobs
-                url = '/completed_jobs.json'
+                url = '/completed_jobs/json'
                 rv = cls.app.get(url)
                 assert rv.status_code == 200, 'Cannot get info from job %s. "%s" returned %s' % (
                     job_id, url, rv.status_code)

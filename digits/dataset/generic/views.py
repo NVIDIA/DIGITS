@@ -58,7 +58,7 @@ def new(extension_id):
     )
 
 
-@blueprint.route('/create/<extension_id>.json', methods=['POST'])
+@blueprint.route('/create/<extension_id>/json', methods=['POST'])
 @blueprint.route('/create/<extension_id>',
                  methods=['POST'],
                  strict_slashes=False)

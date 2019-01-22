@@ -124,11 +124,11 @@ Similar results are obtained from the Torch model however the angle between feat
 
 You can also provide DIGITS with any grayscale image from the MNIST dataset and DIGITS will convert it to an RGB image. In that case
 the left and right components of the Siamese network will be activated in the same way and will produce the same feature vectors. You
-can also use DIGITS `/models/images/generic/infer_many.json` route to compute the feature vectors of all the images in the MNIST
+can also use DIGITS `/models/images/generic/infer_many/json` route to compute the feature vectors of all the images in the MNIST
 dataset in one command line:
 
 ```
-curl localhost:5000/models/images/generic/infer_many.json -XPOST -F job_id=20151203-082705-7ad6 -F image_list=@../../digits/jobs/20151111-210842-a4ec/train.txt > predictions.txt
+curl localhost:5000/models/images/generic/infer_many/json -XPOST -F job_id=20151203-082705-7ad6 -F image_list=@../../digits/jobs/20151111-210842-a4ec/train.txt > predictions.txt
 ```
 
 The above command dumps all predictions into a large file that can be parsed to display clusters of image classes as in the below figure:

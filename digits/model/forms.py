@@ -3,7 +3,7 @@
 import os
 
 import flask
-from flask.ext.wtf import Form
+from flask_wtf import Form
 import wtforms
 from wtforms import validators
 

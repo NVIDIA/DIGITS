@@ -210,7 +210,7 @@ This could be useful if you wish to implement any kind of post-processing of the
 In the below command, replace the `job_id` and `db_path` with your job ID and LMDB path respectively:
 
 ```sh
-curl localhost:5000/models/images/generic/infer_db.json -XPOST -F job_id=20160414-040451-9cc5 -F db_path="/path/to/dbpedia/test" > predictions.txt
+curl localhost:5000/models/images/generic/infer_db/json -XPOST -F job_id=20160414-040451-9cc5 -F db_path="/path/to/dbpedia/test" > predictions.txt
 ```
 
 Running this command will dump inference data in a format similar to:

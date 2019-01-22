@@ -86,7 +86,7 @@ def new():
                                  )
 
 
-@blueprint.route('.json', methods=['POST'])
+@blueprint.route('/json', methods=['POST'])
 @blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
 def create():
@@ -370,7 +370,7 @@ def large_graph():
     return flask.render_template('models/large_graph.html', job=job)
 
 
-@blueprint.route('/classify_one.json', methods=['POST'])
+@blueprint.route('/classify_one/json', methods=['POST'])
 @blueprint.route('/classify_one', methods=['POST', 'GET'])
 def classify_one():
     """
@@ -462,7 +462,7 @@ def classify_one():
                                      ), status_code
 
 
-@blueprint.route('/classify_many.json', methods=['POST'])
+@blueprint.route('/classify_many/json', methods=['POST'])
 @blueprint.route('/classify_many', methods=['POST', 'GET'])
 def classify_many():
     """

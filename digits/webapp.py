@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import os
 
 import flask
-from flask.ext.socketio import SocketIO
+from flask_socketio import SocketIO
 from gevent import monkey
 monkey.patch_all()
 

@@ -80,7 +80,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         request_json = data.pop('json', False)
         url = '/datasets/generic/create/%s' % cls.EXTENSION_ID
         if request_json:
-            url += '.json'
+            url += '/json'
 
         rv = cls.app.post(url, data=data)
 
@@ -110,7 +110,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
 
     @classmethod
     def get_dataset_json(cls):
-        rv = cls.app.get('/datasets/%s.json' % cls.dataset_id)
+        rv = cls.app.get('/datasets/%s/json' % cls.dataset_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         return json.loads(rv.data)
 
@@ -262,7 +262,7 @@ class GenericCreationTest(BaseViewsTestWithDataset):
 
         job1_id = self.create_dataset(**options_1)
         assert self.dataset_wait_completion(job1_id) == 'Done', 'first job failed'
-        rv = self.app.get('/datasets/%s.json' % job1_id)
+        rv = self.app.get('/datasets/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content1 = json.loads(rv.data)
 
@@ -273,7 +273,7 @@ class GenericCreationTest(BaseViewsTestWithDataset):
 
         job2_id = self.create_dataset(**options_2)
         assert self.dataset_wait_completion(job2_id) == 'Done', 'second job failed'
-        rv = self.app.get('/datasets/%s.json' % job2_id)
+        rv = self.app.get('/datasets/%s/json' % job2_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content2 = json.loads(rv.data)
 
@@ -296,7 +296,7 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
     """
 
     def test_index_json(self):
-        rv = self.app.get('/index.json')
+        rv = self.app.get('/index/json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         found = False

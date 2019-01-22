@@ -55,9 +55,9 @@ def new(extension_id=None):
     )
 
 
-@blueprint.route('<extension_id>.json', methods=['POST'])
+@blueprint.route('<extension_id>/json', methods=['POST'])
 @blueprint.route('<extension_id>', methods=['POST'], strict_slashes=False)
-@blueprint.route('.json', methods=['POST'])
+@blueprint.route('/json', methods=['POST'])
 @blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
 def create(extension_id=None):
@@ -331,7 +331,7 @@ def large_graph():
     return flask.render_template('models/large_graph.html', job=job)
 
 
-@blueprint.route('/infer_one.json', methods=['POST'])
+@blueprint.route('/infer_one/json', methods=['POST'])
 @blueprint.route('/infer_one', methods=['POST', 'GET'])
 def infer_one():
     """
@@ -426,7 +426,7 @@ def infer_one():
         ), status_code
 
 
-@blueprint.route('/infer_extension.json', methods=['POST'])
+@blueprint.route('/infer_extension/json', methods=['POST'])
 @blueprint.route('/infer_extension', methods=['POST', 'GET'])
 def infer_extension():
     """
@@ -522,7 +522,7 @@ def infer_extension():
         ), status_code
 
 
-@blueprint.route('/infer_db.json', methods=['POST'])
+@blueprint.route('/infer_db/json', methods=['POST'])
 @blueprint.route('/infer_db', methods=['POST', 'GET'])
 def infer_db():
     """
@@ -608,7 +608,7 @@ def infer_db():
         ), status_code
 
 
-@blueprint.route('/infer_many.json', methods=['POST'])
+@blueprint.route('/infer_many/json', methods=['POST'])
 @blueprint.route('/infer_many', methods=['POST', 'GET'])
 def infer_many():
     """

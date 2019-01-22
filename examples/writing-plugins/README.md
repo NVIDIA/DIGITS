@@ -103,7 +103,7 @@ Take a moment to review the interface API and docstrings.
 The `DataIngestion` class is the only interface between DIGITS and the Sunnybrook plug-in.
 Have a look at the interface for details on the required methods to implement in this class.
 The most important ones are:
-- `get_dataset_form`: this is a static method that returns a form (a child of `flask.ext.wtf.Form`) which contains all the fields required to create a dataset. For example a form may include text fields to allow users to specify file names or various dataset options.
+- `get_dataset_form`: this is a static method that returns a form (a child of `flask_wtf.Form`) which contains all the fields required to create a dataset. For example a form may include text fields to allow users to specify file names or various dataset options.
 - `get_dataset_template`: this is a static method that returns a Jinja template for the form to display in the DIGITS web user interface; this method also returns a dictionary of context variables that should include all the variables that are referenced in the Jinja template. For example, the Sunnybrook plug-in gives `form` as context because the Jinja template references this variable to render the form into the web user interface.
 - `get_inference_form`: this is similar to `get_dataset_form` but this is used when showing data ingestion options during inference. Note that this method may return `None` to indicate that your data plug-in cannot be operated during inference. In this case, it is expected that the regular image inference option in DIGITS will work for the model you are training.
 - `get_inference_template`: this is similar to `get_dataset_template` but this is used during inference.
@@ -119,7 +119,7 @@ The most important ones are:
 
 This is where we define the `DatasetForm` class to use to specify a dataset and optionally the `InferenceForm` class to specify inference data.
 In the Sunnybrook example, instances of these classes are created and returned in `DataIngestion:get_dataset_form` and `DataIngestion:get_inference_form`, respectively.
-These classes are children of `flask.ext.wtf.Form`.
+These classes are children of `flask_wtf.Form`.
 Refer to the [WTForms doc](https://wtforms.readthedocs.io/en/latest/) for more information.
 
 ### digitsDataPluginSunnybrook/templates/dataset_template.py
