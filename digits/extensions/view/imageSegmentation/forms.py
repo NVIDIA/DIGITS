@@ -1,7 +1,7 @@
 # Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from flask.ext.wtf import Form
+from flask_wtf import Form
 
 from digits import utils
 from digits.utils import subclass

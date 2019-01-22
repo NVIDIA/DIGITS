@@ -68,7 +68,7 @@ Assuming you have already downloaded the MNIST dataset as per the Getting Starte
 
 ```sh
 $ export MNIST_PATH=/path/to/mnist
-$ curl localhost/datasets/images/classification.json -b digits.cookie -XPOST -F folder_train=$MNIST_PATH/train -F encoding=png -F resize_channels=1 -F resize_width=28 -F resize_height=28 -F method=folder -F dataset_name=mnist_dataset
+$ curl localhost/datasets/images/classification/json -b digits.cookie -XPOST -F folder_train=$MNIST_PATH/train -F encoding=png -F resize_channels=1 -F resize_width=28 -F resize_height=28 -F method=folder -F dataset_name=mnist_dataset
 {
   "id": "20160809-103210-ccbf",
   "name": "mnist_dataset",
@@ -92,7 +92,7 @@ The above output indicates that the job has completed.
 We can now get more detailed job information by doing:
 
 ```sh
-$ curl localhost/datasets/20160809-103210-ccbf.json
+$ curl localhost/datasets/20160809-103210-ccbf/json
 {
   "CreateDbTasks": [
     {
@@ -132,10 +132,10 @@ $ curl localhost/datasets/20160809-103210-ccbf.json
 }
 ```
 
-You can also use the `/index.json` route to list all existing jobs:
+You can also use the `/index/json` route to list all existing jobs:
 
 ```sh
-$ curl localhost/index.json
+$ curl localhost/index/json
 {
   "datasets": [
     {
@@ -155,7 +155,7 @@ $ curl localhost/index.json
 Now that we have a dataset we may create the model:
 
 ```sh
-$  curl localhost/models/images/classification.json -b digits.cookie -XPOST -F method=standard -F standard_networks=lenet -F train_epochs=30 -F framework=caffe -F model_name=lnet_mnist -F dataset=20160809-103957-6d37
+$  curl localhost/models/images/classification/json -b digits.cookie -XPOST -F method=standard -F standard_networks=lenet -F train_epochs=30 -F framework=caffe -F model_name=lnet_mnist -F dataset=20160809-103957-6d37
 {
   "caffe flavor": "NVIDIA",
   "caffe version": "0.15.9",
@@ -189,7 +189,7 @@ For more information on the parameters to the model creation form, refer to the 
 While the model is being trained we can query its status:
 
 ```sh
-$ curl localhost/models/20160809-112414-0296.json
+$ curl localhost/models/20160809-112414-0296/json
 {
   "caffe flavor": "NVIDIA",
   "caffe version": "0.15.9",
@@ -226,10 +226,10 @@ $ curl localhost/models/20160809-112414-0296.json
 
 ### Classification
 
-Now that we have a trained model we can classify an image by using the `/models/images/classification/classify_one.json` route:
+Now that we have a trained model we can classify an image by using the `/models/images/classification/classify_one/json` route:
 
 ```sh
-$ curl localhost/models/images/classification/classify_one.json -XPOST -F job_id=20160809-112414-0296 -F image_file=@$MNIST_PATH/test/0/00003.png
+$ curl localhost/models/images/classification/classify_one/json -XPOST -F job_id=20160809-112414-0296 -F image_file=@$MNIST_PATH/test/0/00003.png
 {
   "predictions": [
     [
@@ -256,11 +256,11 @@ $ curl localhost/models/images/classification/classify_one.json -XPOST -F job_id
 }
 ```
 
-We can also classify many images at once by using the `/models/images/classification/classify_many.json` route.
+We can also classify many images at once by using the `/models/images/classification/classify_many/json` route.
 We can get the image list from the validation set in the dataset job folder:
 
 ```
-$ curl localhost/models/images/classification/classify_many.json -XPOST -F job_id=20160809-112414-0296 -F image_list=@/home/greg/ws/digits/digits/jobs/20160809-103957-6d37/va.txt > predictions.txt
+$ curl localhost/models/images/classification/classify_many/json -XPOST -F job_id=20160809-112414-0296 -F image_list=@/home/greg/ws/digits/digits/jobs/20160809-103957-6d37/va.txt > predictions.txt
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
 100 4880k  100 4162k  100  717k   631k   108k  0:00:06  0:00:06 --:--:--  959k
@@ -285,12 +285,12 @@ If you haven't gone through this tutorial, please do so now.
 ### Creating the regression dataset
 
 We will use the gradients extension to easily create a dataset of gradient images.
-The regression dataset may be created by using the `/datasets/generic/create/<extension_id>.json` route.
+The regression dataset may be created by using the `/datasets/generic/create/<extension_id>/json` route.
 The `extension_id` for the gradients extension is `image-gradients`.
 The following command creates a dataset named `gradient_dataset` with all default parameters:
 
 ```sh
-$ curl localhost/datasets/generic/create/image-gradients.json -b digits.cookie -X POST -F dataset_name=gradient_dataset
+$ curl localhost/datasets/generic/create/image-gradients/json -b digits.cookie -X POST -F dataset_name=gradient_dataset
 {
   "id": "20160809-115121-bf13",
   "name": "gradient_dataset",
@@ -304,7 +304,7 @@ For more information on the parameters to the gradients extension creation form,
 We can query the status of the dataset creation job by using the same route as in the image classification case:
 
 ```sh
-$ curl localhost/datasets/20160809-115121-bf13.json
+$ curl localhost/datasets/20160809-115121-bf13/json
 {
   "create_db_tasks": [
     {
@@ -343,13 +343,13 @@ $ curl localhost/datasets/20160809-115121-bf13.json
 
 ### Creating the regression model
 
-Now that we have a dataset, we can create the model by using the `/models/images/generic.json` route.
+Now that we have a dataset, we can create the model by using the `/models/images/generic/json` route.
 We will be using Torch in this example, as specified by `-F framework=torch`.
 In order to use a custom network, write the model description into a file (in this example `model.lua`).
 Then type the following command:
 
 ```sh
-$ curl localhost/models/images/generic.json -b digits.cookie -X POST -F method=custom -F train_epochs=3 -F framework=torch -F model_name=gradients_model -F dataset=20160809-115121-bf13 -F custom_network="$(<model.lua)"
+$ curl localhost/models/images/generic/json -b digits.cookie -X POST -F method=custom -F train_epochs=3 -F framework=torch -F model_name=gradients_model -F dataset=20160809-115121-bf13 -F custom_network="$(<model.lua)"
 {
   "creation time": "2016-08-09 12:19:39.867502",
   "dataset_id": "20160809-115121-bf13",
@@ -375,10 +375,10 @@ For more information on the parameters to the generic image model creation form,
 
 ### Inference
 
-Now that we have a model we can extract features from a test image using the `/models/images/generic/infer_one.json` route:
+Now that we have a model we can extract features from a test image using the `/models/images/generic/infer_one/json` route:
 
 ```sh
-$ curl localhost/models/images/generic/infer_one.json -XPOST -F job_id=20160809-121939-ab6f -F image_file=@/home/greg/ws/digits/examples/regression/test.png
+$ curl localhost/models/images/generic/infer_one/json -XPOST -F job_id=20160809-121939-ab6f -F image_file=@/home/greg/ws/digits/examples/regression/test.png
 {
   "outputs": {
     "output": [
@@ -391,5 +391,5 @@ $ curl localhost/models/images/generic/infer_one.json -XPOST -F job_id=20160809-
 }
 ```
 
-It is also possible to perform multiple image inference using the `/models/images/generic/infer_many.json` route.
+It is also possible to perform multiple image inference using the `/models/images/generic/infer_many/json` route.
 This is left as an exercise to the reader.

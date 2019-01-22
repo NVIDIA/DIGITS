@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 import os
 
-from flask.ext.wtf import Form
+from flask_wtf import Form
 from wtforms import validators
 
 from digits import utils

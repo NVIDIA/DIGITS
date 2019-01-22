@@ -373,7 +373,7 @@ def new():
     return flask.render_template('datasets/images/classification/new.html', form=form)
 
 
-@blueprint.route('.json', methods=['POST'])
+@blueprint.route('/json', methods=['POST'])
 @blueprint.route('', methods=['POST'], strict_slashes=False)
 @utils.auth.requires_login(redirect=False)
 def create():

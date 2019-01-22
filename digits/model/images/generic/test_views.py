@@ -206,7 +206,7 @@ class BaseViewsTestWithAnyDataset(BaseViewsTest):
         request_json = data.pop('json', False)
         url = '/models/images/generic'
         if request_json:
-            url += '.json'
+            url += '/json'
 
         rv = cls.app.post(url, data=data)
 
@@ -322,7 +322,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
     def test_snapshot_interval_2(self):
         job_id = self.create_model(snapshot_interval=0.5)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
-        rv = self.app.get('/models/%s.json' % job_id)
+        rv = self.app.get('/models/%s/json' % job_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']) > 1, 'should take >1 snapshot'
@@ -330,7 +330,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
     def test_snapshot_interval_0_5(self):
         job_id = self.create_model(train_epochs=4, snapshot_interval=2)
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
-        rv = self.app.get('/models/%s.json' % job_id)
+        rv = self.app.get('/models/%s/json' % job_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']) == 2, 'should take 2 snapshots'
@@ -411,7 +411,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
     def test_retrain(self):
         job1_id = self.create_model()
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
-        rv = self.app.get('/models/%s.json' % job1_id)
+        rv = self.app.get('/models/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']), 'should have at least snapshot'
@@ -429,7 +429,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         # retrain from a job which already had a pretrained model
         job1_id = self.create_model()
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
-        rv = self.app.get('/models/%s.json' % job1_id)
+        rv = self.app.get('/models/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert len(content['snapshots']), 'should have at least snapshot'
@@ -483,7 +483,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
 
         job1_id = self.create_model(**options_1)
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
-        rv = self.app.get('/models/%s.json' % job1_id)
+        rv = self.app.get('/models/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content1 = json.loads(rv.data)
 
@@ -494,7 +494,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
 
         job2_id = self.create_model(**options_2)
         assert self.model_wait_completion(job2_id) == 'Done', 'second job failed'
-        rv = self.app.get('/models/%s.json' % job2_id)
+        rv = self.app.get('/models/%s/json' % job2_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
         content2 = json.loads(rv.data)
 
@@ -544,7 +544,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
         assert rv.status_code == 200, 'download "%s" failed with %s' % (url, rv.status_code)
 
     def test_index_json(self):
-        rv = self.app.get('/index.json')
+        rv = self.app.get('/index/json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         found = False
@@ -555,7 +555,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
         assert found, 'model not found in list'
 
     def test_model_json(self):
-        rv = self.app.get('/models/%s.json' % self.model_id)
+        rv = self.app.get('/models/%s/json' % self.model_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
         content = json.loads(rv.data)
         assert content['id'] == self.model_id, 'expected different job_id'
@@ -599,7 +599,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-            '/models/images/generic/infer_one.json?job_id=%s' % self.model_id,
+            '/models/images/generic/infer_one/json?job_id=%s' % self.model_id,
             data={
                 'image_file': image_upload,
             }
@@ -669,7 +669,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
         file_upload = (StringIO(textfile_images), 'images.txt')
 
         rv = self.app.post(
-            '/models/images/generic/infer_many.json?job_id=%s' % self.model_id,
+            '/models/images/generic/infer_many/json?job_id=%s' % self.model_id,
             data={'image_list': file_upload}
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
@@ -680,7 +680,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
         if self.val_db_path is None:
             raise unittest.SkipTest('Class has no validation db')
         rv = self.app.post(
-            '/models/images/generic/infer_db.json?job_id=%s' % self.model_id,
+            '/models/images/generic/infer_db/json?job_id=%s' % self.model_id,
             data={'db_path': self.val_db_path}
         )
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, rv.data)
@@ -726,7 +726,7 @@ class BaseTestCreatedWithGradientDataExtension(BaseTestCreatedWithAnyDataset,
 
     def test_infer_extension_json(self):
         rv = self.app.post(
-            '/models/images/generic/infer_extension.json?job_id=%s' % self.model_id,
+            '/models/images/generic/infer_extension/json?job_id=%s' % self.model_id,
             data={
                 'gradient_x': 0.5,
                 'gradient_y': -0.5,
@@ -824,7 +824,7 @@ class UserModel(Tower):
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-            '/models/images/generic/infer_one.json?job_id=%s' % self.model_id,
+            '/models/images/generic/infer_one/json?job_id=%s' % self.model_id,
             data={'image_file': image_upload}
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
@@ -861,7 +861,7 @@ class UserModel(Tower):
         image_upload = (s, 'image.png')
         # post request
         rv = self.app.post(
-            '/models/images/generic/infer_one.json?job_id=%s' % self.model_id,
+            '/models/images/generic/infer_one/json?job_id=%s' % self.model_id,
             data={'image_file': image_upload, 'dont_resize': 'y'}
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
@@ -1218,7 +1218,7 @@ end
             image_upload = (StringIO(infile.read()), 'image.png')
 
         rv = self.app.post(
-            '/models/images/generic/infer_one.json?job_id=%s' % self.model_id,
+            '/models/images/generic/infer_one/json?job_id=%s' % self.model_id,
             data={
                 'image_file': image_upload,
             }
