@@ -22,6 +22,7 @@ Current and most updated document is availabel at
 | --- | --- | --- | --- |
 | Source | Ubuntu 14.04, 16.04 | [GitHub tags](https://github.com/NVIDIA/DIGITS/releases) | [docs/BuildDigits.md](docs/BuildDigits.md) |
 
+Official DIGITS container is available at nvcr.io via docker pull command.
 
 # Usage
 
