@@ -1008,6 +1008,9 @@ class CaffeTrainTask(TrainTask):
             self.new_iteration(i)
 
         # net output
+        leading_match = re.match(r'(\(\d\.\d\)?\s{0,7})(.*)', message)
+        if leading_match:
+            message = leading_match.group(2)
         match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
         if match:
             phase = match.group(1)
