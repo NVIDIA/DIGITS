@@ -69,7 +69,7 @@ try {
         $scope.load_jobs = function() {
             $http({
                 method: 'GET',
-                url: URL_PREFIX + '/completed_jobs.json',
+                url: URL_PREFIX + '/completed_jobs/json',
             }).then(function success(response) {
                 // Find the dataset reference count
                 var count = {};
