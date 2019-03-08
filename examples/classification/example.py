@@ -34,7 +34,9 @@ def get_net(caffemodel, deploy_file, use_gpu=True):
     """
     if use_gpu:
         caffe.set_mode_gpu()
-
+    else:
+        caffe.set_mode_cpu()
+        
     # load a new model
     return caffe.Net(deploy_file, caffemodel, caffe.TEST)
 
