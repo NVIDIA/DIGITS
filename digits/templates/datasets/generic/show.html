@@ -30,7 +30,7 @@
             <dd>
             {{ task.label_shape }}
             </dd>
-            {% for name,path in task.dbs.iteritems() %}
+            {% for name,path in task.dbs.items() %}
                 <dt>{{ name }} DB</dt>
                 <dd>{{ job.path(path) }}</dd>
                 <dd>
