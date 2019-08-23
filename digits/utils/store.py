@@ -1,7 +1,7 @@
 # Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 import time
 
 

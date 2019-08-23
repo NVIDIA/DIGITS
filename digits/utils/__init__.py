@@ -9,7 +9,7 @@ import os
 import pkg_resources
 import platform
 from random import uniform
-from urlparse import urlparse
+from urllib import parse
 
 if not platform.system() == 'Windows':
     import fcntl
@@ -20,7 +20,7 @@ HTTP_TIMEOUT = 6.05
 
 
 def is_url(url):
-    return url is not None and urlparse(url).scheme != "" and not os.path.exists(url)
+    return url is not None and parse.urlparse(url).scheme != "" and not os.path.exists(url)
 
 
 def wait_time():
@@ -83,7 +83,7 @@ def subclass(cls):
     Verify all @override methods
     Use a class decorator to find the method's class
     """
-    for name, method in cls.__dict__.iteritems():
+    for name, method in cls.__dict__.items():
         if hasattr(method, 'override'):
             found = False
             for base_class in inspect.getmro(cls)[1:]:
