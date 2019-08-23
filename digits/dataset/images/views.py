@@ -7,7 +7,7 @@ import os.path
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 import flask
 import PIL.Image

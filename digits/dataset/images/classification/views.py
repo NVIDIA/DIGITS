@@ -8,9 +8,9 @@ import shutil
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
+from io import BytesIO
 
-import caffe_pb2
 import flask
 import PIL.Image
 
@@ -18,6 +18,8 @@ from .forms import ImageClassificationDatasetForm
 from .job import ImageClassificationDatasetJob
 from digits import utils
 from digits.dataset import tasks
+from digits.dataset import dataset_pb2
+from digits.dataset.datum import datum_to_array
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.lmdbreader import DbReader
 from digits.utils.routing import request_wants_json, job_from_request
@@ -48,6 +50,8 @@ def from_folders(job, form):
     min_per_class = form.folder_train_min_per_class.data
     max_per_class = form.folder_train_max_per_class.data
 
+    if max_per_class is None:
+        max_per_class = 0
     parse_train_task = tasks.ParseFolderTask(
         job_dir=job.dir(),
         folder=form.folder_train.data,
@@ -68,6 +72,8 @@ def from_folders(job, form):
         min_per_class = form.folder_val_min_per_class.data
         max_per_class = form.folder_val_max_per_class.data
 
+        if max_per_class is None:
+            max_per_class = 0
         parse_val_task = tasks.ParseFolderTask(
             job_dir=job.dir(),
             parents=parse_train_task,
@@ -84,6 +90,8 @@ def from_folders(job, form):
         min_per_class = form.folder_test_min_per_class.data
         max_per_class = form.folder_test_max_per_class.data
 
+        if max_per_class is None:
+            max_per_class = 0
         parse_test_task = tasks.ParseFolderTask(
             job_dir=job.dir(),
             parents=parse_train_task,
@@ -498,21 +506,20 @@ def explore():
         else:
             total_entries = label_entries
 
-    max_page = min((total_entries - 1) / size, page + 5)
+    max_page = min(total_entries - 1 // size, page + 5)
     pages = range(min_page, max_page + 1)
     for key, value in reader.entries():
         if count >= page * size:
-            datum = caffe_pb2.Datum()
+            datum = dataset_pb2.Datum()
             datum.ParseFromString(value)
             if label is None or datum.label == label:
                 if datum.encoded:
-                    s = StringIO()
+                    s = BytesIO()
                     s.write(datum.data)
                     s.seek(0)
                     img = PIL.Image.open(s)
                 else:
-                    import caffe.io
-                    arr = caffe.io.datum_to_array(datum)
+                    arr = datum_to_array(datum)
                     # CHW -> HWC
                     arr = arr.transpose((1, 2, 0))
                     if arr.shape[2] == 1:
@@ -527,7 +534,7 @@ def explore():
         if label is None:
             count += 1
         else:
-            datum = caffe_pb2.Datum()
+            datum = dataset_pb2.Datum()
             datum.ParseFromString(value)
             if datum.label == int(label):
                 count += 1
