@@ -212,6 +212,7 @@ class BaseViewsTestWithAnyDataset(BaseViewsTest):
 
         if request_json:
             if rv.status_code != 200:
+                print(json.loads(rv.get_data(as_text=True)))
                 raise RuntimeError('Model creation failed with %s' % rv.status_code)
             data = json.loads(rv.get_data(as_text=True))
             if 'jobs' in data.keys():
