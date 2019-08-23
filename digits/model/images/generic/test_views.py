@@ -14,7 +14,7 @@ import unittest
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 from bs4 import BeautifulSoup
 
@@ -212,9 +212,8 @@ class BaseViewsTestWithAnyDataset(BaseViewsTest):
 
         if request_json:
             if rv.status_code != 200:
-                print json.loads(rv.data)
                 raise RuntimeError('Model creation failed with %s' % rv.status_code)
-            data = json.loads(rv.data)
+            data = json.loads(rv.get_data(as_text=True))
             if 'jobs' in data.keys():
                 return [j['id'] for j in data['jobs']]
             else:
@@ -222,13 +221,13 @@ class BaseViewsTestWithAnyDataset(BaseViewsTest):
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
-            print 'Status code:', rv.status_code
+            print('Status code:', rv.status_code)
             s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
-                print div[0]
+                print(div[0])
             else:
-                print rv.data
+                print(rv.get_data(as_text=True))
             raise RuntimeError('Failed to create dataset - status %s' % rv.status_code)
 
         job_id = cls.job_id_from_response(rv)
@@ -268,7 +267,7 @@ class BaseTestViews(BaseViewsTest):
     def test_page_model_new(self):
         rv = self.app.get('/models/images/generic/new')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        assert 'New Image Model' in rv.data, 'unexpected page format'
+        assert 'New Image Model' in rv.get_data(as_text=True), 'unexpected page format'
 
     def test_nonexistent_model(self):
         assert not self.model_exists('foo'), "model shouldn't exist"
@@ -324,7 +323,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         rv = self.app.get('/models/%s/json' % job_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         assert len(content['snapshots']) > 1, 'should take >1 snapshot'
 
     def test_snapshot_interval_0_5(self):
@@ -332,7 +331,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job_id) == 'Done', 'create failed'
         rv = self.app.get('/models/%s/json' % job_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         assert len(content['snapshots']) == 2, 'should take 2 snapshots'
 
     @unittest.skipIf(
@@ -364,9 +363,11 @@ class BaseTestCreation(BaseViewsTestWithDataset):
     def test_select_gpus(self):
         # test all possible combinations
         gpu_list = config_value('gpu_list').split(',')
-        for i in xrange(len(gpu_list)):
+        for i in range(len(gpu_list)):
             for combination in itertools.combinations(gpu_list, i + 1):
-                yield self.check_select_gpus, combination
+                # Don't test more than 4 GPUs
+                if len(combination) <= 4:
+                    yield self.check_select_gpus, combination
 
     def check_select_gpus(self, gpu_list):
         job_id = self.create_model(select_gpus_list=','.join(gpu_list), batch_size=len(gpu_list))
@@ -413,7 +414,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
         rv = self.app.get('/models/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         assert len(content['snapshots']), 'should have at least snapshot'
 
         options = {
@@ -431,7 +432,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
         rv = self.app.get('/models/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         assert len(content['snapshots']), 'should have at least snapshot'
         options_2 = {
             'method': 'previous',
@@ -485,7 +486,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job1_id) == 'Done', 'first job failed'
         rv = self.app.get('/models/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content1 = json.loads(rv.data)
+        content1 = json.loads(rv.get_data(as_text=True))
 
         # Clone job1 as job2
         options_2 = {
@@ -496,7 +497,7 @@ class BaseTestCreation(BaseViewsTestWithDataset):
         assert self.model_wait_completion(job2_id) == 'Done', 'second job failed'
         rv = self.app.get('/models/%s/json' % job2_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content2 = json.loads(rv.data)
+        content2 = json.loads(rv.get_data(as_text=True))
 
         # These will be different
         content1.pop('id')
@@ -546,7 +547,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
     def test_index_json(self):
         rv = self.app.get('/index/json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         found = False
         for m in content['models']:
             if m['id'] == self.model_id:
@@ -557,7 +558,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
     def test_model_json(self):
         rv = self.app.get('/models/%s/json' % self.model_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         assert content['id'] == self.model_id, 'expected different job_id'
         assert len(content['snapshots']) > 0, 'no snapshots in list'
 
@@ -605,7 +606,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
             }
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
-        data = json.loads(rv.data)
+        data = json.loads(rv.get_data(as_text=True))
         assert data['outputs']['output'][0][0] > 0 and \
             data['outputs']['output'][0][1] > 0, \
             'image regression result is wrong: %s' % data['outputs']['output']
@@ -673,7 +674,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
             data={'image_list': file_upload}
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
-        data = json.loads(rv.data)
+        data = json.loads(rv.get_data(as_text=True))
         assert 'outputs' in data, 'invalid response'
 
     def test_infer_db_json(self):
@@ -684,7 +685,7 @@ class BaseTestCreatedWithAnyDataset(BaseViewsTestWithModelWithAnyDataset):
             data={'db_path': self.val_db_path}
         )
         assert rv.status_code == 200, 'POST failed with %s\n\n%s' % (rv.status_code, rv.data)
-        data = json.loads(rv.data)
+        data = json.loads(rv.get_data(as_text=True))
         assert 'outputs' in data, 'invalid response'
 
 
@@ -733,7 +734,7 @@ class BaseTestCreatedWithGradientDataExtension(BaseTestCreatedWithAnyDataset,
             }
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
-        data = json.loads(rv.data)
+        data = json.loads(rv.get_data(as_text=True))
         output = data['outputs'][data['outputs'].keys()[0]]['output']
         assert output[0] > 0 and \
             output[1] < 0, \
@@ -828,7 +829,7 @@ class UserModel(Tower):
             data={'image_file': image_upload}
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
-        data = json.loads(rv.data)
+        data = json.loads(rv.get_data(as_text=True))
         data_shape = np.array(data['outputs']['output']).shape
         if not self.VARIABLE_SIZE_DATASET:
             if data_shape != (1, self.CHANNELS, self.IMAGE_WIDTH, self.IMAGE_HEIGHT):
@@ -865,7 +866,7 @@ class UserModel(Tower):
             data={'image_file': image_upload, 'dont_resize': 'y'}
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
-        data = json.loads(rv.data)
+        data = json.loads(rv.get_data(as_text=True))
         data_shape = np.array(data['outputs']['output']).shape
         if data_shape != (1,) + shape:
                 raise ValueError("Shapes differ: got %s expected %s" % (repr(data_shape), repr((1,) + shape)))
@@ -1225,7 +1226,7 @@ end
         )
         assert rv.status_code == 200, 'POST failed with %s' % rv.status_code
         # make sure the shape of the output matches the shape of the input
-        data = json.loads(rv.data)
+        data = json.loads(rv.get_data(as_text=True))
         output = np.array(data['outputs']['output'][0])
         assert output.shape == (1, self.CROP_SIZE, self.CROP_SIZE), \
             'shape mismatch: %s' % str(output.shape)

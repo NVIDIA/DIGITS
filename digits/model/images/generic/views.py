@@ -21,6 +21,7 @@ from digits.utils import constants
 from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
+from digits.job import Job
 
 blueprint = flask.Blueprint(__name__, __name__)
 
@@ -104,7 +105,7 @@ def create(extension_id=None):
     add_learning_rate = len(form.learning_rate.data) > 1
 
     # Add swept batch_size
-    sweeps = [dict(s.items() + [('batch_size', bs)]) for bs in form.batch_size.data for s in sweeps[:]]
+    sweeps = [{**s, **{'batch_size': bs}} for bs in form.batch_size.data for s in sweeps[:]]
     add_batch_size = len(form.batch_size.data) > 1
     n_jobs = len(sweeps)
 
@@ -269,6 +270,7 @@ def create(extension_id=None):
                 rms_decay=form.rms_decay.data,
                 shuffle=form.shuffle.data,
                 data_aug=data_aug,
+                blob_format=form.nvcaffe_blob_format.data,
             )
             )
 
@@ -784,7 +786,7 @@ def get_datasets(extension_id):
                 if (isinstance(j, GenericImageDatasetJob) or isinstance(j, GenericDatasetJob)) and
                 (j.status.is_running() or j.status == Status.DONE)]
     return [(j.id(), j.name())
-            for j in sorted(jobs, cmp=lambda x, y: cmp(y.id(), x.id()))]
+            for j in sorted(jobs, key=Job.id)]
 
 
 def get_inference_visualizations(dataset, inputs, outputs):
@@ -810,7 +812,7 @@ def get_inference_visualizations(dataset, inputs, outputs):
     visualizations = []
     # process data
     n = len(inputs['ids'])
-    for idx in xrange(n):
+    for idx in range(n):
         input_id = inputs['ids'][idx]
         input_data = inputs['data'][idx]
         output_data = {key: outputs[key][idx] for key in outputs}
@@ -831,7 +833,7 @@ def get_inference_visualizations(dataset, inputs, outputs):
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, GenericImageModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
@@ -839,7 +841,7 @@ def get_previous_networks():
 def get_previous_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, GenericImageModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
@@ -859,7 +861,7 @@ def get_previous_network_snapshots():
 def get_pretrained_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
@@ -867,7 +869,7 @@ def get_pretrained_networks():
 def get_pretrained_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
