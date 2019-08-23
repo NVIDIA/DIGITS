@@ -49,6 +49,9 @@ class CaffeMixin(object):
     @classmethod
     def setUpClass(cls):
         skipIfNotFramework('caffe')
+        if cls.FRAMEWORK == 'caffe' and not config_value('caffe')['loaded']:
+            raise unittest.SkipTest('Caffe not found')
+
 
         # Call super.setUpClass() unless we're the last in the class hierarchy
         supercls = super(CaffeMixin, cls)
