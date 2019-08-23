@@ -506,7 +506,7 @@ def explore():
         else:
             total_entries = label_entries
 
-    max_page = min(total_entries - 1 // size, page + 5)
+    max_page = min((total_entries - 1) // size, page + 5)
     pages = range(min_page, max_page + 1)
     for key, value in reader.entries():
         if count >= page * size:
