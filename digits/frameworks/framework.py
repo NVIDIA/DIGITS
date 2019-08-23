@@ -8,6 +8,22 @@ class Framework(object):
     Defines required methods to interact with a framework
     """
 
+    # whether this framework can shuffle data during training
+    CAN_SHUFFLE_DATA = False
+    SUPPORTS_PYTHON_LAYERS_FILE = False
+    SUPPORTS_TIMELINE_TRACING = False
+
+    SUPPORTED_SOLVER_TYPES = []
+
+    SUPPORTED_DATA_TRANSFORMATION_TYPES = []
+    SUPPORTED_DATA_AUGMENTATION_TYPES = []
+
+    NAME = 'Name_FRAMEWORK'
+
+    def __init__(self):
+        self.framework_id = 'Id_FRAMEWORK'
+
+
     def get_name(self):
         """
         return self-descriptive name
