@@ -102,18 +102,18 @@ class BaseViewsTestWithImageset(BaseViewsTest):
 
         if request_json:
             if rv.status_code != 200:
-                print json.loads(rv.data)
+                print(json.loads(rv.get_data(as_text=True)))
                 raise RuntimeError('Model creation failed with %s' % rv.status_code)
-            return json.loads(rv.data)['id']
+            return json.loads(rv.get_data(as_text=True))['id']
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
             s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
-                print div[0]
+                print(div[0])
             else:
-                print rv.data
+                print(rv.get_data(as_text=True))
             raise RuntimeError('Failed to create dataset - status %s' % rv.status_code)
 
         job_id = cls.job_id_from_response(rv)
@@ -147,7 +147,7 @@ class TestViews(BaseViewsTest, test_utils.DatasetMixin):
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/images/generic/new')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        assert 'New Image Dataset' in rv.data, 'unexpected page format'
+        assert 'New Image Dataset' in rv.get_data(as_text=True), 'unexpected page format'
 
     def test_nonexistent_dataset(self):
         assert not self.dataset_exists('foo'), "dataset shouldn't exist"
@@ -201,7 +201,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
         assert self.dataset_wait_completion(job1_id) == 'Done', 'first job failed'
         rv = self.app.get('/datasets/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content1 = json.loads(rv.data)
+        content1 = json.loads(rv.get_data(as_text=True))
 
         # Clone job1 as job2
         options_2 = {
@@ -212,7 +212,7 @@ class TestCreation(BaseViewsTestWithImageset, test_utils.DatasetMixin):
         assert self.dataset_wait_completion(job2_id) == 'Done', 'second job failed'
         rv = self.app.get('/datasets/%s/json' % job2_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content2 = json.loads(rv.data)
+        content2 = json.loads(rv.get_data(as_text=True))
 
         # These will be different
         content1.pop('id')
@@ -235,7 +235,7 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
     def test_index_json(self):
         rv = self.app.get('/index/json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         found = False
         for d in content['datasets']:
             if d['id'] == self.dataset_id:
@@ -246,7 +246,7 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
     def test_dataset_json(self):
         rv = self.app.get('/datasets/%s/json' % self.dataset_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         assert content['id'] == self.dataset_id, 'expected different job_id'
 
     def test_edit_name(self):
@@ -257,7 +257,7 @@ class TestCreated(BaseViewsTestWithDataset, test_utils.DatasetMixin):
         assert status == 200, 'failed with %s' % status
         rv = self.app.get('/datasets/summary?job_id=%s' % self.dataset_id)
         assert rv.status_code == 200
-        assert 'new name' in rv.data
+        assert 'new name' in rv.get_data(as_text=True)
 
     def test_edit_notes(self):
         status = self.edit_job(

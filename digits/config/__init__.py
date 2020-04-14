@@ -16,6 +16,8 @@ from . import (  # noqa
     url_prefix,
 )
 
+if option_list['caffe']['loaded'] is False and option_list['tensorflow']['enabled']:
+    option_list['caffe']['multi_gpu'] = True
 
 def config_value(option):
     """

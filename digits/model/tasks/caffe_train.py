@@ -13,7 +13,7 @@ import time
 from google.protobuf import text_format
 import numpy as np
 import platform
-import scipy
+from skimage import transform
 
 from .train import TrainTask
 import digits
@@ -230,6 +230,7 @@ class CaffeTrainTask(TrainTask):
 
     def get_mean_image(self, mean_file, resize=False):
         mean_image = None
+        spline_order = 1
         with open(self.dataset.path(mean_file), 'rb') as f:
             blob = caffe_pb2.BlobProto()
             blob.MergeFromString(f.read())
@@ -264,10 +265,11 @@ class CaffeTrainTask(TrainTask):
                 # other than 3 or 4.  If it's 1, imresize expects an
                 # array.
                 if (len(shape) == 2 or (len(shape) == 3 and (shape[2] == 3 or shape[2] == 4))):
-                    mean_image = scipy.misc.imresize(mean_image, (data_shape[2], data_shape[3]))
+                    mean_image = transform.resize(mean_image, (data_shape[2], data_shape[3]),
+                                                  order=spline_order, preserve_range=True).astype(np.uint8)
                 else:
-                    mean_image = scipy.misc.imresize(mean_image[:, :, 0],
-                                                     (data_shape[2], data_shape[3]))
+                    mean_image = transform.resize(mean_image[:, :, 0],(data_shape[2], data_shape[3]),
+                                                  order=spline_order, preserve_range=True).astype(np.uint8)
                     mean_image = np.expand_dims(mean_image, axis=2)
                 mean_image = mean_image.transpose(2, 0, 1)
                 mean_image = mean_image.astype('float')
@@ -510,6 +512,8 @@ class CaffeTrainTask(TrainTask):
         solver.solver_type = getattr(solver, self.solver_type)
         solver.net = self.train_val_file
 
+        if hasattr(solver, 'store_blobs_in_old_format') and self.blob_format is not None:
+            solver.store_blobs_in_old_format = True if self.blob_format=='Compatible' else False
         # Set CPU/GPU mode
         if config_value('caffe')['cuda_enabled'] and \
                 bool(config_value('gpu_list')):
@@ -1139,7 +1143,7 @@ class CaffeTrainTask(TrainTask):
             # return the last 20 lines
             self.traceback = '\n'.join(lines[len(lines) - 20:])
             if 'DIGITS_MODE_TEST' in os.environ:
-                print output
+                print(output)
 
     # TrainTask overrides
 
@@ -1412,7 +1416,7 @@ class CaffeTrainTask(TrainTask):
         y, x = np.histogram(data, bins=20)
         y = list(y.astype(np.float32))
         ticks = x[[0, len(x) / 2, -1]]
-        x = [((x[i] + x[i + 1]) / 2.0).astype(np.float32) for i in xrange(len(x) - 1)]
+        x = [((x[i] + x[i + 1]) / 2.0).astype(np.float32) for i in range(len(x) - 1)]
         ticks = list(ticks.astype(np.float32))
         return (mean, std, [y, x, ticks])
 
@@ -1459,7 +1463,7 @@ class CaffeTrainTask(TrainTask):
             data_shape = (constants.DEFAULT_BATCH_SIZE,) + data_shape
 
         outputs = None
-        for chunk in [caffe_images[x:x + data_shape[0]] for x in xrange(0, len(caffe_images), data_shape[0])]:
+        for chunk in [caffe_images[x:x + data_shape[0]] for x in range(0, len(caffe_images), data_shape[0])]:
             new_shape = (len(chunk),) + data_shape[1:]
             if net.blobs['data'].data.shape != new_shape:
                 net.blobs['data'].reshape(*new_shape)
@@ -1479,7 +1483,7 @@ class CaffeTrainTask(TrainTask):
             else:
                 for name, blob in output.iteritems():
                     outputs[name] = np.vstack((outputs[name], blob))
-            print 'Processed %s/%s images' % (len(outputs[outputs.keys()[0]]), len(caffe_images))
+            print('Processed %s/%s images' % (len(outputs[outputs.keys()[0]]), len(caffe_images)))
 
         return outputs
 

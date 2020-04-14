@@ -32,8 +32,8 @@ def load_logfile_filename():
                 pass
         except:
             if throw_error:
-                print '"%s" is not a valid value for logfile_filename.' % filename
-                print 'Set the envvar DIGITS_LOGFILE_FILENAME to fix your configuration.'
+                print('"%s" is not a valid value for logfile_filename.' % filename)
+                print('Set the envvar DIGITS_LOGFILE_FILENAME to fix your configuration.')
                 raise
             else:
                 filename = None

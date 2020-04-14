@@ -59,6 +59,7 @@ class LRPolicy(object):
         else:
             self.stepvalues_list = []
 
+        self.stepvalues_list = list(self.stepvalues_list)
         if (self.max_steps < len(self.stepvalues_list)):
             self.policy = 'step'
             self.stepvalues_list[0] = 1

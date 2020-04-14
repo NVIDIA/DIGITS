@@ -753,7 +753,7 @@ class TorchTrainTask(TrainTask):
         y, x = np.histogram(data, bins=20)
         y = list(y)
         ticks = x[[0, len(x) / 2, -1]]
-        x = [(x[i] + x[i + 1]) / 2.0 for i in xrange(len(x) - 1)]
+        x = [(x[i] + x[i + 1]) / 2.0 for i in range(len(x) - 1)]
         ticks = list(ticks)
         return (mean, std, [y, x, ticks])
 

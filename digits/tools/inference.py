@@ -12,18 +12,20 @@ import sys
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
+from io import BytesIO
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import digits.config  # noqa
 from digits import utils, log  # noqa
+from digits.dataset.datum import datum_to_array
 from digits.inference.errors import InferenceError  # noqa
 from digits.job import Job  # noqa
 from digits.utils.lmdbreader import DbReader  # noqa
 
 # Import digits.config before caffe to set the path
-import caffe_pb2  # noqa
+from digits.dataset import dataset_pb2  # noqa
 
 logger = logging.getLogger('digits.tools.inference')
 
@@ -93,17 +95,16 @@ def infer(input_list,
         # load images from database
         reader = DbReader(input_list)
         for key, value in reader.entries():
-            datum = caffe_pb2.Datum()
+            datum = dataset_pb2.Datum()
             datum.ParseFromString(value)
             if datum.encoded:
-                s = StringIO()
+                s = BytesIO()
                 s.write(datum.data)
                 s.seek(0)
                 img = PIL.Image.open(s)
                 img = np.array(img)
             else:
-                import caffe.io
-                arr = caffe.io.datum_to_array(datum)
+                arr = datum_to_array(datum)
                 # CHW -> HWC
                 arr = arr.transpose((1, 2, 0))
                 if arr.shape[2] == 1:
@@ -142,7 +143,7 @@ def infer(input_list,
                 input_data.append(image)
                 n_input_samples = n_input_samples + 1
             except utils.errors.LoadImageError as e:
-                print e
+                print(e)
 
     # perform inference
     visualizations = None

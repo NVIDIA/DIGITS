@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import os.path
 import re
+import pdb
 
 from digits import test_utils
 
@@ -40,8 +41,11 @@ class TestVersion():
         import digits
         filename = os.path.join(os.path.dirname(digits.__file__), 'version.py')
         file_locals = {}
-        execfile(filename, {}, file_locals)
-        assert file_locals.keys() == ['__version__'], \
+        # execfile(filename, {}, file_locals)
+        with open(filename) as f:
+            code = compile(f.read(), filename, 'exec')
+            exec(code, {}, file_locals)
+        assert file_locals.keys() == {'__version__'}, \
             'version.py should only declare a single variable'
         self.check_version(file_locals['__version__'])
 

@@ -6,15 +6,16 @@ import argparse
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 import lmdb
 import logging
 import numpy as np
 import os
 import PIL.Image
-import Queue
+import queue
 import sys
 import threading
+from io import BytesIO
 
 # Add path for DIGITS package
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -23,8 +24,9 @@ from digits import extensions, log  # noqa
 from digits.job import Job  # noqa
 
 # Import digits.config first to set the path to Caffe
-import caffe.io  # noqa
-import caffe_pb2  # noqa
+# import caffe.io  # noqa
+from digits.dataset import dataset_pb2  # noqa
+from digits.dataset.datum import array_to_datum
 
 logger = logging.getLogger('digits.tools.create_dataset')
 
@@ -36,7 +38,7 @@ class DbWriter(threading.Thread):
 
     def __init__(self, output_dir, total_batches):
         self._dir = output_dir
-        self.write_queue = Queue.Queue(10)
+        self.write_queue = queue.Queue(10)
         # sequence number
         self.seqn = 0
         self.total_batches = total_batches
@@ -64,7 +66,7 @@ class DbWriter(threading.Thread):
         while True:
             try:
                 batch = self.write_queue.get(timeout=0.1)
-            except Queue.Empty:
+            except queue.Empty:
                 if self.done:
                     # break out of main loop and terminate
                     break
@@ -108,7 +110,7 @@ class LmdbWriter(DbWriter):
                                                           sub_dir))
         return db
 
-    def array_to_datum(self, data, scalar_label, encoding):
+    def _array_to_datum(self, data, scalar_label, encoding):
         if data.ndim != 3:
             raise ValueError('Invalid number of dimensions: %d' % data.ndim)
         if encoding == 'none':
@@ -116,11 +118,11 @@ class LmdbWriter(DbWriter):
                 # RGB to BGR
                 # XXX see issue #59
                 data = data[[2, 1, 0], ...]
-            datum = caffe.io.array_to_datum(data, scalar_label)
+            datum = array_to_datum(data, scalar_label)
         else:
             # Transpose to (height, width, channel)
             data = data.transpose((1, 2, 0))
-            datum = caffe_pb2.Datum()
+            datum = dataset_pb2.Datum()
             datum.height = data.shape[0]
             datum.width = data.shape[1]
             datum.channels = data.shape[2]
@@ -128,7 +130,7 @@ class LmdbWriter(DbWriter):
             if data.shape[2] == 1:
                 # grayscale
                 data = data[:, :, 0]
-            s = StringIO()
+            s = BytesIO()
             if encoding == 'png':
                 PIL.Image.fromarray(data).save(s, format='PNG')
             elif encoding == 'jpg':
@@ -153,7 +155,7 @@ class LmdbWriter(DbWriter):
             if not (label.ndim == 3 or label.size == 1):
                 raise ValueError("LMDB/Caffe expect 3D or scalar label - ndim=%d" % label.ndim)
             if label.size > 1:
-                label_datum = self.array_to_datum(
+                label_datum = self._array_to_datum(
                     label,
                     0,
                     self.label_encoding)
@@ -163,7 +165,7 @@ class LmdbWriter(DbWriter):
             else:
                 label = label[0]
                 label_datum = None
-            feature_datum = self.array_to_datum(
+            feature_datum = self._array_to_datum(
                 feature,
                 label,
                 self.feature_encoding)
@@ -196,7 +198,7 @@ class LmdbWriter(DbWriter):
         try:
             with db.begin(write=True) as lmdb_txn:
                 for key, datum in batch:
-                    lmdb_txn.put(key, datum)
+                    lmdb_txn.put(key.encode('utf-8'), datum)
         except lmdb.MapFullError:
             # double the map_size
             curr_limit = db.info()['map_size']
@@ -215,9 +217,9 @@ class LmdbWriter(DbWriter):
 
 class Encoder(threading.Thread):
 
-    def __init__(self, queue, writer, extension, error_queue, force_same_shape):
+    def __init__(self, queue_, writer, extension, error_queue, force_same_shape):
         self.extension = extension
-        self.queue = queue
+        self.queue = queue_
         self.writer = writer
         self.label_shape = None
         self.feature_shape = None
@@ -235,7 +237,7 @@ class Encoder(threading.Thread):
             # don't block- if the queue is empty then we're done
             try:
                 batch = self.queue.get_nowait()
-            except Queue.Empty:
+            except queue.Empty:
                 # break out of main loop and terminate
                 break
 
@@ -294,16 +296,17 @@ class DbCreator(object):
                   force_same_shape):
         # retrieve itemized list of entries
         entry_ids = extension.itemize_entries(stage)
-        entry_count = len(entry_ids)
+        temp = list(entry_ids)
+        entry_count = len(temp)
 
         if entry_count > 0:
             # create a queue to write errors to
-            error_queue = Queue.Queue()
+            error_queue = queue.Queue()
 
             # create and fill encoder queue
-            encoder_queue = Queue.Queue()
-            batch_indices = xrange(0, len(entry_ids), batch_size)
-            for batch in [entry_ids[start:start+batch_size] for start in batch_indices]:
+            encoder_queue = queue.Queue()
+            batch_indices = range(0, len(temp), batch_size)
+            for batch in [temp[start:start+batch_size] for start in batch_indices]:
                 # queue this batch
                 encoder_queue.put(batch)
 
@@ -319,7 +322,7 @@ class DbCreator(object):
 
             # create encoder threads
             encoders = []
-            for _ in xrange(num_threads):
+            for _ in range(num_threads):
                 encoder = Encoder(encoder_queue, writer, extension, error_queue, force_same_shape)
                 encoder.daemon = True
                 encoder.start()
@@ -390,7 +393,7 @@ class DbCreator(object):
             # Add a channels axis
             data = data[np.newaxis, :, :]
 
-        blob = caffe_pb2.BlobProto()
+        blob = dataset_pb2.BlobProto()
         blob.num = 1
         blob.channels, blob.height, blob.width = data.shape
         blob.data.extend(data.astype(float).flat)
@@ -478,5 +481,5 @@ if __name__ == '__main__':
             args['stage']
         )
     except Exception as e:
-        logger.error('%s: %s' % (type(e).__name__, e.message))
+        logger.error('%s: %s' % (type(e).__name__, e))
         raise

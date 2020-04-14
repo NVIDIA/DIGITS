@@ -185,7 +185,7 @@ def visualize_lr():
     datalist = []
     for j, lr in enumerate(lrs):
         data = ['Learning Rate %d' % j]
-        for i in xrange(101):
+        for i in range(101):
             if policy == 'fixed':
                 data.append(lr)
             elif policy == 'step':
@@ -354,7 +354,7 @@ def download(job_id, extension):
     # and store in tempfile (for archive)
     info = json.dumps(job.json_dict(verbose=False, epoch=epoch), sort_keys=True, indent=4, separators=(',', ': '))
     info_io = io.BytesIO()
-    info_io.write(info)
+    info_io.write(info.encode('utf-8'))
 
     b = io.BytesIO()
     if extension in ['tar', 'tar.gz', 'tgz', 'tar.bz2']:

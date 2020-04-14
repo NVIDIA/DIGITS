@@ -5,7 +5,7 @@ import csv
 import operator
 import os
 import random
-import StringIO
+import io
 
 import numpy as np
 
@@ -32,7 +32,7 @@ class DataIngestion(DataIngestionInterface):
         # attributes by superclass constructor
 
         if hasattr(self, 'custom_classes') and self.custom_classes != '':
-            s = StringIO.StringIO(self.custom_classes)
+            s = io.StringIO(self.custom_classes)
             reader = csv.reader(s)
             self.class_mappings = {}
             for idx, name in enumerate(reader.next()):

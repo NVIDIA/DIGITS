@@ -6,7 +6,7 @@ from collections import Counter
 import logging
 import math
 import os
-import Queue
+import queue
 import random
 import re
 import shutil
@@ -18,8 +18,9 @@ import time
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
+from io import BytesIO
 import h5py
 import lmdb
 import numpy as np
@@ -31,8 +32,9 @@ import digits.config  # noqa
 from digits import utils, log  # noqa
 
 # Import digits.config first to set the path to Caffe
-import caffe.io  # noqa
-import caffe_pb2  # noqa
+# import caffe.io  # noqa
+from digits.dataset import dataset_pb2  # noqa
+from digits.dataset.datum import array_to_datum
 
 if digits.config.config_value('tensorflow')['enabled']:
     import tensorflow as tf
@@ -162,8 +164,8 @@ class Hdf5Writer(DbWriter):
             self._count += split
 
         self._create_new_file(len(batch) - split)
-        self._db['data'][:] = data_batch[split:]
-        self._db['label'][:] = label_batch[split:]
+        self._db['data'][:] = data_batch[int(split):]
+        self._db['label'][:] = label_batch[int(split):]
         self._count += len(batch) - split
 
     def _create_new_file(self, initial_count):
@@ -270,7 +272,7 @@ def create_db(input_file, output_dir,
 
     # Load lines from input_file into a load_queue
 
-    load_queue = Queue.Queue()
+    load_queue = queue.Queue()
     image_count = _fill_load_queue(input_file, load_queue, shuffle)
 
     # Start some load threads
@@ -279,10 +281,10 @@ def create_db(input_file, output_dir,
                                        bool(backend == 'hdf5'), kwargs.get('hdf5_dset_limit'),
                                        image_channels, image_height, image_width)
     num_threads = _calculate_num_threads(batch_size, shuffle)
-    write_queue = Queue.Queue(2 * batch_size)
-    summary_queue = Queue.Queue()
+    write_queue = queue.Queue(2 * batch_size)
+    summary_queue = queue.Queue()
 
-    for _ in xrange(num_threads):
+    for _ in range(num_threads):
         p = threading.Thread(target=_load_thread,
                              args=(load_queue, write_queue, summary_queue,
                                    image_width, image_height, image_channels,
@@ -355,7 +357,7 @@ def _create_tfrecords(image_count, write_queue, batch_size, output_dir,
 
     writers = []
     with open(os.path.join(output_dir, LIST_FILENAME), 'w') as outfile:
-        for shard_id in xrange(num_shards):
+        for shard_id in range(num_shards):
             shard_name = 'SHARD_%03d.tfrecords' % (shard_id)
             filename = os.path.join(output_dir, shard_name)
             writers.append(tf.python_io.TFRecordWriter(filename))
@@ -676,7 +678,7 @@ def _load_thread(load_queue, write_queue, summary_queue,
     while not load_queue.empty():
         try:
             path, label = load_queue.get(True, 0.05)
-        except Queue.Empty:
+        except queue.Empty:
             continue
 
         # prepend path with image_folder, if appropriate
@@ -738,7 +740,7 @@ def _array_to_tf_feature(image, label, encoding):
         image_raw = image.tostring()
         encoding_id = 0
     else:
-        s = StringIO()
+        s = BytesIO()
         if encoding == 'png':
             PIL.Image.fromarray(image).save(s, format='PNG')
             encoding_id = 1
@@ -784,9 +786,9 @@ def _array_to_datum(image, label, encoding):
             image = image[np.newaxis, :, :]
         else:
             raise Exception('Image has unrecognized shape: "%s"' % image.shape)
-        datum = caffe.io.array_to_datum(image, label)
+        datum = array_to_datum(image, label)
     else:
-        datum = caffe_pb2.Datum()
+        datum = dataset_pb2.Datum()
         if image.ndim == 3:
             datum.channels = image.shape[2]
         else:
@@ -795,7 +797,7 @@ def _array_to_datum(image, label, encoding):
         datum.width = image.shape[1]
         datum.label = label
 
-        s = StringIO()
+        s = BytesIO()
         if encoding == 'png':
             PIL.Image.fromarray(image).save(s, format='PNG')
         elif encoding == 'jpg':
@@ -815,7 +817,7 @@ def _write_batch_lmdb(db, batch, image_count):
         with db.begin(write=True) as lmdb_txn:
             for i, datum in enumerate(batch):
                 key = '%08d_%d' % (image_count + i, datum.label)
-                lmdb_txn.put(key, datum.SerializeToString())
+                lmdb_txn.put(key.encode('utf-8'), datum.SerializeToString())
 
     except lmdb.MapFullError:
         # double the map_size
@@ -855,7 +857,7 @@ def _save_means(image_sum, image_count, mean_files):
                 # Add a channels axis
                 data = data[np.newaxis, :, :]
 
-            blob = caffe_pb2.BlobProto()
+            blob = dataset_pb2.BlobProto()
             blob.num = 1
             blob.channels, blob.height, blob.width = data.shape
             blob.data.extend(data.astype(float).flat)

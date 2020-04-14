@@ -192,8 +192,8 @@ class Model(object):
                 with tf.device(available_devices[0]):
                     n_losses = len(grad_towers[0])
                     grad_averages = []
-                    for loss in xrange(n_losses):
-                        grad_averages.append(average_gradients([grad_towers[gpu][loss] for gpu in xrange(n_gpus)]))
+                    for loss in range(n_losses):
+                        grad_averages.append(average_gradients([grad_towers[gpu][loss] for gpu in range(n_gpus)]))
             apply_gradient_ops = []
             for grad_avg in grad_averages:
                 apply_gradient_ops.append(self.optimizer.apply_gradients(grad_avg, global_step=self.global_step))

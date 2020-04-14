@@ -13,7 +13,7 @@ import time
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 import lmdb
 import numpy as np
@@ -25,8 +25,9 @@ import digits.config  # noqa
 from digits import log  # noqa
 
 # Import digits.config first to set path to Caffe
-import caffe.io  # noqa
-import caffe_pb2  # noqa
+# import caffe.io  # noqa
+from digits.dataset import dataset_pb2  # noqa
+from digits.dataset.datum import datum_to_array
 
 logger = logging.getLogger('digits.tools.analyze_db')
 np.set_printoptions(suppress=True, precision=3)
@@ -118,13 +119,13 @@ def analyze_db(database,
     count = 0
     update_time = None
     for key, value in reader.entries():
-        datum = caffe_pb2.Datum()
+        datum = dataset_pb2.Datum()
         datum.ParseFromString(value)
 
         if print_data:
-            array = caffe.io.datum_to_array(datum)
-            print '>>> Datum #%d (shape=%s)' % (count, array.shape)
-            print array
+            array = datum_to_array(datum)
+            print('>>> Datum #%d (shape=%s)' % (count, array.shape))
+            print(array)
 
         if (not datum.HasField('height') or datum.height == 0 or
                 not datum.HasField('width') or datum.width == 0):
@@ -169,7 +170,7 @@ def analyze_db(database,
             # quit after reading one
             count = reader.total_entries
             logger.info('Assuming all entries have same shape ...')
-            unique_shapes[unique_shapes.keys()[0]] = count
+            unique_shapes[list(unique_shapes.keys())[0]] = count
             break
 
     if count != reader.total_entries:

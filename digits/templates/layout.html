@@ -96,7 +96,7 @@ $(".explanation-tooltip").tooltip();
 
 window.onload = function () {
     $('.autocomplete_path').autocomplete({
-       serviceUrl: '/autocomplete/path',
+       serviceUrl: "{{config['URL_PREFIX']}}/autocomplete/path",
        formatResult: function (suggestion, currentValue)
        {
             function baseName(str)

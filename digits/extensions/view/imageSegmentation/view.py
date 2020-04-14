@@ -194,7 +194,7 @@ class Visualization(VisualizationInterface):
             fill_data = (self.map.to_rgba(class_data) * 255).astype('uint8')
         else:
             fill_data = np.ndarray((class_data.shape[0], class_data.shape[1], 4), dtype='uint8')
-            for x in xrange(3):
+            for x in range(3):
                 fill_data[:, :, x] = class_data.copy()
 
         # Assuming that class 0 is the background

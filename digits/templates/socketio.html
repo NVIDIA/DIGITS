@@ -4,7 +4,7 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/3rdparty/socket.io-1.4.5.min.js', ver=dir_hash) }}"></script>
 <script>
 var socket = io.connect(
-    'http://' + document.domain + ':' + location.port + "{{namespace}}",
+    '//' + document.domain + ':' + location.port + "{{namespace}}",
     {path: "{{config['URL_PREFIX']}}/socket.io"}
 );
 

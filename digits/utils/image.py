@@ -9,11 +9,12 @@ import requests
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 import numpy as np
+from io import BytesIO
 import PIL.Image
-import scipy.misc
+from skimage import transform
 
 from . import is_url, HTTP_TIMEOUT, errors
 
@@ -52,20 +53,20 @@ def load_image(path):
                              allow_redirects=False,
                              timeout=HTTP_TIMEOUT)
             r.raise_for_status()
-            stream = StringIO(r.content)
+            stream = BytesIO(r.content)
             image = PIL.Image.open(stream)
         except requests.exceptions.RequestException as e:
-            raise errors.LoadImageError, e.message
+            raise errors.LoadImageError(errors.LoadImageError, e.response)
         except IOError as e:
-            raise errors.LoadImageError, e.message
+            raise errors.LoadImageError(errors.LoadImageError, e.message)
     elif os.path.exists(path):
         try:
             image = PIL.Image.open(path)
             image.load()
         except IOError as e:
-            raise errors.LoadImageError, 'IOError: Trying to load "%s": %s' % (path, e.message)
+            raise errors.LoadImageError(errors.LoadImageError, 'IOError: Trying to load "%s": %s' % (path, e))
     else:
-        raise errors.LoadImageError, '"%s" not found' % path
+        raise errors.LoadImageError(errors.LoadImageError, '"%s" not found' % path)
 
     if image.mode in ['L', 'RGB']:
         # No conversion necessary
@@ -87,7 +88,7 @@ def load_image(path):
         new.paste(image, mask=image.convert('RGBA'))
         return new
     else:
-        raise errors.LoadImageError, 'Image mode "%s" not supported' % image.mode
+        raise ValueError(errors.LoadImageError, 'Image mode "%s" not supported' % image.mode)
 
 
 def upscale(image, ratio):
@@ -209,6 +210,7 @@ def resize_image(image, height, width,
 
     # convert to array
     image = image_to_array(image, channels)
+    result_type = image.dtype
 
     # No need to resize
     if image.shape[0] == height and image.shape[1] == width:
@@ -216,11 +218,12 @@ def resize_image(image, height, width,
 
     # Resize
     interp = 'bilinear'
+    spline_order = 1
 
     width_ratio = float(image.shape[1]) / width
     height_ratio = float(image.shape[0]) / height
     if resize_mode == 'squash' or width_ratio == height_ratio:
-        return scipy.misc.imresize(image, (height, width), interp=interp)
+        return transform.resize(image, (height, width), order=spline_order, preserve_range=True).astype(result_type)
     elif resize_mode == 'crop':
         # resize to smallest of ratios (relatively larger image), keeping aspect ratio
         if width_ratio > height_ratio:
@@ -229,7 +232,8 @@ def resize_image(image, height, width,
         else:
             resize_width = width
             resize_height = int(round(image.shape[0] / width_ratio))
-        image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+        image = transform.resize(image, (resize_height, resize_width),
+                                 order=spline_order, preserve_range=True).astype(result_type)
 
         # chop off ends of dimension that is still too long
         if width_ratio > height_ratio:
@@ -251,7 +255,8 @@ def resize_image(image, height, width,
                 resize_width = int(round(image.shape[1] / height_ratio))
                 if (width - resize_width) % 2 == 1:
                     resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = transform.resize(image, (resize_height, resize_width),
+                                     order=spline_order, preserve_range=True).astype(result_type)
         elif resize_mode == 'half_crop':
             # resize to average ratio keeping aspect ratio
             new_ratio = (width_ratio + height_ratio) / 2.0
@@ -261,7 +266,8 @@ def resize_image(image, height, width,
                 resize_height += 1
             elif width_ratio < height_ratio and (width - resize_width) % 2 == 1:
                 resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = transform.resize(image, (resize_height, resize_width),
+                                     order=spline_order, preserve_range=True).astype(result_type)
             # chop off ends of dimension that is still too long
             if width_ratio > height_ratio:
                 start = int(round((resize_width - width) / 2.0))
@@ -274,17 +280,19 @@ def resize_image(image, height, width,
 
         # fill ends of dimension that is too short with random noise
         if width_ratio > height_ratio:
-            padding = (height - resize_height) / 2
+            padding = int((height - resize_height) / 2)
             noise_size = (padding, width)
             if channels > 1:
                 noise_size += (channels,)
             noise = np.random.randint(0, 255, noise_size).astype('uint8')
             image = np.concatenate((noise, image, noise), axis=0)
         else:
-            padding = (width - resize_width) / 2
+            padding = int((width - resize_width) / 2)
+            padding = int((width - resize_width) / 2)
             noise_size = (height, padding)
             if channels > 1:
                 noise_size += (channels,)
+            # noise = np.random.randint(0, 255, noise_size).astype('uint8')
             noise = np.random.randint(0, 255, noise_size).astype('uint8')
             image = np.concatenate((noise, image, noise), axis=1)
 
@@ -316,9 +324,10 @@ def embed_image_html(image):
     else:
         fmt = fmt.lower()
 
-    string_buf = StringIO()
-    image.save(string_buf, format=fmt)
-    data = string_buf.getvalue().encode('base64').replace('\n', '')
+    string_buf = BytesIO()
+    image.save(str(string_buf), format=fmt)
+    import base64
+    data = base64.b64encode(string_buf.getvalue()).decode('base64').replace('\n', '')
     return 'data:image/%s;base64,%s' % (fmt, data)
 
 
@@ -444,9 +453,9 @@ def vis_square(images,
         # they're grayscale - convert to a colormap
         redmap, greenmap, bluemap = get_color_map(colormap)
 
-        red = np.interp(images * (len(redmap) - 1) / 255.0, xrange(len(redmap)), redmap)
-        green = np.interp(images * (len(greenmap) - 1) / 255.0, xrange(len(greenmap)), greenmap)
-        blue = np.interp(images * (len(bluemap) - 1) / 255.0, xrange(len(bluemap)), bluemap)
+        red = np.interp(images * (len(redmap) - 1) / 255.0, range(len(redmap)), redmap)
+        green = np.interp(images * (len(greenmap) - 1) / 255.0, range(len(greenmap)), greenmap)
+        blue = np.interp(images * (len(bluemap) - 1) / 255.0, range(len(bluemap)), bluemap)
 
         # Slap the channels back together
         images = np.concatenate((red[..., np.newaxis], green[..., np.newaxis], blue[..., np.newaxis]), axis=3)
@@ -511,7 +520,7 @@ def get_color_map(name):
         bluemap = [1, 0.5]
     else:
         if name != 'jet':
-            print 'Warning: colormap "%s" not supported. Using jet instead.' % name
+            print('Warning: colormap "%s" not supported. Using jet instead.' % name)
         redmap = [0, 0, 0, 0, 0.5, 1, 1, 1, 0.5]
         greenmap = [0, 0, 0.5, 1, 1, 1, 0.5, 0, 0]
         bluemap = [0.5, 1, 1, 1, 0.5, 0, 0, 0, 0]

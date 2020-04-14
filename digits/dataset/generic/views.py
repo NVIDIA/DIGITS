@@ -6,18 +6,20 @@ import os
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
-
-import caffe_pb2
+    from io import StringIO
+from io import BytesIO
+# import caffe_pb2
 import flask
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL.Image
+import base64
 
 from .forms import GenericDatasetForm
 from .job import GenericDatasetJob
 from digits import extensions, utils
+from digits.dataset import dataset_pb2
 from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.utils.lmdbreader import DbReader
@@ -172,16 +174,16 @@ def explore():
     min_page = max(0, page - 5)
     total_entries = reader.total_entries
 
-    max_page = min((total_entries - 1) / size, page + 5)
+    max_page = min((total_entries - 1) // size, page + 5)
     pages = range(min_page, max_page + 1)
     for key, value in reader.entries():
         if count >= page * size:
-            datum = caffe_pb2.Datum()
+            datum = dataset_pb2.Datum()
             datum.ParseFromString(value)
             if not datum.encoded:
                 raise RuntimeError("Expected encoded database")
             s = StringIO()
-            s.write(datum.data)
+            s.write(datum.data.decode())
             s.seek(0)
             img = PIL.Image.open(s)
             if cmap and img.mode in ['L', '1']:

@@ -139,7 +139,7 @@ class DrawWindow(BufferedWindow):
 
                 image = wx.EmptyImage(width, height)
 
-                for i in xrange(img_count):
+                for i in range(img_count):
                     x = width * (i // grid_size)
                     y = height * (i % grid_size)
                     s = data[i].tostring()

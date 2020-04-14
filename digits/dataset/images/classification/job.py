@@ -33,9 +33,9 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                 if task.encoding == "jpg":
                     if task.mean_file.endswith('.binaryproto'):
                         import numpy as np
-                        import caffe_pb2
+                        from digits.dataset import dataset_pb2
 
-                        old_blob = caffe_pb2.BlobProto()
+                        old_blob = dataset_pb2.BlobProto()
                         with open(task.path(task.mean_file), 'rb') as infile:
                             old_blob.ParseFromString(infile.read())
                         data = np.array(old_blob.data).reshape(
@@ -43,7 +43,7 @@ class ImageClassificationDatasetJob(ImageDatasetJob):
                             old_blob.height,
                             old_blob.width)
                         data = data[[2, 1, 0], ...]  # channel swap
-                        new_blob = caffe_pb2.BlobProto()
+                        new_blob = dataset_pb2.BlobProto()
                         new_blob.num = 1
                         new_blob.channels, new_blob.height, new_blob.width = data.shape
                         new_blob.data.extend(data.astype(float).flat)

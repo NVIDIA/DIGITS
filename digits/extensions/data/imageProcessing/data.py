@@ -108,7 +108,7 @@ class DataIngestion(DataIngestionInterface):
     @override
     def itemize_entries(self, stage):
         if stage == constants.TEST_DB:
-            # don't retun anything for the test stage
+            # don't return anything for the test stage
             return []
 
         if stage == constants.TRAIN_DB or (not self.has_val_folder):
@@ -156,7 +156,7 @@ class DataIngestion(DataIngestionInterface):
     def split_image_list(self, filelist, stage):
         if self.random_indices is None:
             self.random_indices = range(len(filelist))
-            random.shuffle(self.random_indices)
+            random.shuffle(list(self.random_indices))
         elif len(filelist) != len(self.random_indices):
             raise ValueError(
                 "Expect same number of images in folders (%d!=%d)"

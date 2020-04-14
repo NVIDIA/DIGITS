@@ -15,7 +15,7 @@
 {% macro print_errors(form) %}
     {% if form.errors %}
         <div class="alert alert-danger">
-            {% for field_name, field in form._fields.iteritems() %}
+            {% for field_name, field in form._fields.items() %}
                 {% if field.errors %}
                     <li><label>{{ field.label.text }}</label>
                         <ul>
@@ -30,7 +30,7 @@
     {% endif %}
     {% if form.warnings %}
         <div class="alert alert-warning">
-            {% for field_name, field in form._fields.iteritems() %}
+            {% for field_name, field in form._fields.items() %}
                 {% if field.warnings %}
                     <li><label>{{ field.label.text }}</label>
                         <ul>
@@ -48,7 +48,7 @@
 {% macro print_combined_errors(errors, warnings) %}
     {% if errors %}
         <div class="alert alert-danger">
-            {% for field_name, field in errors.iteritems() %}
+            {% for field_name, field in errors.items() %}
                 <li><label>{{ field_name }}</label>
                     <ul>
                         {% for e in field %}
@@ -61,7 +61,7 @@
     {% endif %}
     {% if warnings %}
         <div class="alert alert-warning">
-            {% for field_name, field in warnings.iteritems() %}
+            {% for field_name, field in warnings.items() %}
                 <li><label>{{ field.label.text }}</label>
                     <ul>
                         {% for e in field %}

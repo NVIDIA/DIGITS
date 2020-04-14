@@ -247,7 +247,7 @@ class Scheduler:
         Deletes an entire job folder from disk
         Returns True if the Job was found and deleted
         """
-        if isinstance(job, str) or isinstance(job, unicode):
+        if isinstance(job, str) or isinstance(job, str):
             job_id = str(job)
         elif isinstance(job, Job):
             job_id = job.id()
@@ -467,7 +467,7 @@ class Scheduler:
         """
         try:
             # reserve resources
-            for resource_type, requests in resources.iteritems():
+            for resource_type, requests in resources.items():
                 for identifier, value in requests:
                     found = False
                     for resource in self.resources[resource_type]:
@@ -491,7 +491,7 @@ class Scheduler:
         Release resources previously reserved for a task
         """
         # release resources
-        for resource_type, requests in resources.iteritems():
+        for resource_type, requests in resources.items():
             for identifier, value in requests:
                 for resource in self.resources[resource_type]:
                     if resource.identifier == identifier:

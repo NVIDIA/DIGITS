@@ -75,7 +75,7 @@ class InferenceTask(Task):
             # create a file to pass the list of images to perform inference on
             imglist_handle, self.image_list_path = tempfile.mkstemp(dir=self.job_dir, suffix='.txt')
             for image_path in self.images:
-                os.write(imglist_handle, "%s\n" % image_path)
+                os.write(imglist_handle, ("%s\n" % image_path).encode('utf-8'))
             os.close(imglist_handle)
 
     @override

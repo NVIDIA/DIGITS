@@ -41,7 +41,7 @@ def main():
     import digits
 
     if args['version']:
-        print (digits.__version__)
+        print(digits.__version__)
         sys.exit()
 
     print('  ___ ___ ___ ___ _____ ___')

@@ -35,7 +35,7 @@ class MnistDownloader(DataDownloader):
             assert os.path.exists(zipped_path), 'Expected "%s" to exist' % zipped
             unzipped_path = os.path.join(self.outdir, unzipped)
             if not os.path.exists(unzipped_path):
-                print "Uncompressing file=%s ..." % zipped
+                print("Uncompressing file=%s ..." % zipped)
                 with gzip.open(zipped_path) as infile, open(unzipped_path, 'wb') as outfile:
                     outfile.write(infile.read())
 
@@ -54,7 +54,7 @@ class MnistDownloader(DataDownloader):
         output_dir = os.path.join(self.outdir, phase)
         self.mkdir(output_dir, clean=True)
         with open(os.path.join(output_dir, 'labels.txt'), 'w') as outfile:
-            for label in xrange(10):
+            for label in range(10):
                 outfile.write('%s\n' % label)
         with open(os.path.join(output_dir, '%s.txt' % phase), 'w') as outfile:
             for index, image in enumerate(images):
@@ -68,7 +68,7 @@ class MnistDownloader(DataDownloader):
         """
         Returns a list of ints
         """
-        print 'Reading labels from %s ...' % filename
+        print('Reading labels from %s ...' % filename)
         labels = []
         with open(filename, 'rb') as infile:
             infile.read(4)  # ignore magic number
@@ -83,7 +83,7 @@ class MnistDownloader(DataDownloader):
         """
         Returns a list of PIL.Image objects
         """
-        print 'Reading images from %s ...' % filename
+        print('Reading images from %s ...' % filename)
         images = []
         with open(filename, 'rb') as infile:
             infile.read(4)  # ignore magic number
@@ -91,7 +91,7 @@ class MnistDownloader(DataDownloader):
             rows = struct.unpack('>i', infile.read(4))[0]
             columns = struct.unpack('>i', infile.read(4))[0]
 
-            for i in xrange(count):
+            for i in range(count):
                 data = infile.read(rows * columns)
                 image = np.fromstring(data, dtype=np.uint8)
                 image = image.reshape((rows, columns))

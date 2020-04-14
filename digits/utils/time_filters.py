@@ -14,13 +14,13 @@ def print_time(t, ref_time=None):
         now = time.localtime(ref_time)
 
     if lt.tm_year != now.tm_year:
-        return time.strftime('%b %d %Y, %I:%M:%S %p', lt).decode('utf-8')
+        return time.strftime('%b %d %Y, %I:%M:%S %p', lt)
     elif lt.tm_mon != now.tm_mon:
-        return time.strftime('%b %d, %I:%M:%S %p', lt).decode('utf-8')
+        return time.strftime('%b %d, %I:%M:%S %p', lt)
     elif lt.tm_mday != now.tm_mday:
-        return time.strftime('%a %b %d, %I:%M:%S %p', lt).decode('utf-8')
+        return time.strftime('%a %b %d, %I:%M:%S %p', lt)
     else:
-        return time.strftime('%I:%M:%S %p', lt).decode('utf-8')
+        return time.strftime('%I:%M:%S %p', lt)
 
 
 def print_time_diff(diff):

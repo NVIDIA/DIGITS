@@ -15,7 +15,7 @@ import time
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 import lmdb
 import numpy as np
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     import digits.config  # noqa
 
 # Import digits.config first to set the path to Caffe
-import caffe_pb2  # noqa
+from digits.dataset import dataset_pb2  # noqa
 
 
 IMAGE_SIZE = 10
@@ -74,7 +74,7 @@ def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
 
         image_sum = np.zeros((image_height, image_width), 'float64')
 
-        for i in xrange(image_count):
+        for i in range(image_count):
             xslope, yslope = np.random.random_sample(2) - 0.5
             a = xslope * 255 / image_width
             b = yslope * 255 / image_height
@@ -86,18 +86,18 @@ def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
             pil_img = PIL.Image.fromarray(image)
 
             # create image Datum
-            image_datum = caffe_pb2.Datum()
+            image_datum = dataset_pb2.Datum()
             image_datum.height = image.shape[0]
             image_datum.width = image.shape[1]
             image_datum.channels = 1
             s = StringIO()
-            pil_img.save(s, format='PNG')
-            image_datum.data = s.getvalue()
+            pil_img.save(str(s), format='PNG')
+            image_datum.data = s.getvalue().encode('utf-8')
             image_datum.encoded = True
             _write_to_lmdb(image_db, str(i), image_datum.SerializeToString())
 
             # create label Datum
-            label_datum = caffe_pb2.Datum()
+            label_datum = dataset_pb2.Datum()
             label_datum.channels, label_datum.height, label_datum.width = 1, 1, 2
             label_datum.float_data.extend(np.array([xslope, yslope]).flat)
             _write_to_lmdb(label_db, str(i), label_datum.SerializeToString())
@@ -133,7 +133,7 @@ def _write_to_lmdb(db, key, value):
     while not success:
         txn = db.begin(write=True)
         try:
-            txn.put(key, value)
+            txn.put(key.encode('utf-8'), value)
             txn.commit()
             success = True
         except lmdb.MapFullError:
@@ -154,7 +154,7 @@ def _save_mean(mean, filename):
     filename -- the location to save the image
     """
     if filename.endswith('.binaryproto'):
-        blob = caffe_pb2.BlobProto()
+        blob = dataset_pb2.BlobProto()
         blob.num = 1
         blob.channels = 1
         blob.height, blob.width = mean.shape
@@ -193,12 +193,12 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     if os.path.exists(args['folder']):
-        print 'ERROR: Folder already exists'
+        print('ERROR: Folder already exists')
         sys.exit(1)
     else:
         os.makedirs(args['folder'])
 
-    print 'Creating images at "%s" ...' % args['folder']
+    print('Creating images at "%s" ...' % args['folder'])
 
     start_time = time.time()
 
@@ -208,4 +208,4 @@ if __name__ == '__main__':
                  image_count=args['image_count'],
                  )
 
-    print 'Done after %s seconds' % (time.time() - start_time,)
+    print('Done after %s seconds' % (time.time() - start_time,))
