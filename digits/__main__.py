@@ -19,6 +19,12 @@ if not found_parent_dir:
 def main():
     parser = argparse.ArgumentParser(description='DIGITS server')
     parser.add_argument(
+        '-H', '--host',
+        type=str,
+        default='0.0.0.0',
+        help='Host to run app on (default 0.0.0.0)'
+    )
+    parser.add_argument(
         '-p', '--port',
         type=int,
         default=5000,
@@ -59,7 +65,7 @@ def main():
             print 'ERROR: Scheduler would not start'
         else:
             digits.webapp.app.debug = args['debug']
-            digits.webapp.socketio.run(digits.webapp.app, '0.0.0.0', args['port'])
+            digits.webapp.socketio.run(digits.webapp.app, args['host'], args['port'])
     except KeyboardInterrupt:
         pass
     finally:
