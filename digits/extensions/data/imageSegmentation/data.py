@@ -220,7 +220,7 @@ class DataIngestion(DataIngestionInterface):
 
     def split_image_list(self, filelist, stage):
         if self.random_indices is None:
-            self.random_indices = range(len(filelist))
+            self.random_indices = list(range(len(filelist)))
             random.shuffle(self.random_indices)
         elif len(filelist) != len(self.random_indices):
             raise ValueError(
