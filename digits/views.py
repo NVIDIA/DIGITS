@@ -9,6 +9,7 @@ import os
 
 import flask
 from flask_socketio import join_room, leave_room
+from werkzeug import HTTP_STATUS_CODES
 import werkzeug.exceptions
 
 from .config import config_value
@@ -17,6 +18,7 @@ import digits
 from digits import dataset, extensions, model, utils, pretrained_model
 from digits.log import logger
 from digits.utils.routing import request_wants_json
+from digits.frameworks.errors import NetworkVisualizationError as nve
 
 blueprint = flask.Blueprint(__name__, __name__)
 

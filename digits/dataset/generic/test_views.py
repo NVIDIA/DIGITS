@@ -88,16 +88,16 @@ class BaseViewsTestWithDataset(BaseViewsTest):
             if rv.status_code != 200:
                 raise RuntimeError(
                     'Dataset creation failed with %s' % rv.status_code)
-            return json.loads(rv.data)['id']
+            return json.loads(rv.get_data(as_text=True))['id']
 
         # expect a redirect
         if not 300 <= rv.status_code <= 310:
             s = BeautifulSoup(rv.data, 'html.parser')
             div = s.select('div.alert-danger')
             if div:
-                print div[0]
+                print(div[0])
             else:
-                print rv.data
+                print(rv.get_data(as_text=True))
             raise RuntimeError(
                 'Failed to create dataset - status %s' % rv.status_code)
 
@@ -112,7 +112,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
     def get_dataset_json(cls):
         rv = cls.app.get('/datasets/%s/json' % cls.dataset_id)
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        return json.loads(rv.data)
+        return json.loads(rv.get_data(as_text=True))
 
     @classmethod
     def get_entry_count(cls, stage):
@@ -138,7 +138,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         if not hasattr(cls, 'imageset_folder'):
             # create a temporary folder
             cls.imageset_folder = tempfile.mkdtemp()
-            for i in xrange(num_images):
+            for i in range(num_images):
                 x = np.random.randint(
                     low=0,
                     high=256,
@@ -162,7 +162,7 @@ class BaseViewsTestWithDataset(BaseViewsTest):
         if not hasattr(cls, 'imageset_folder'):
             # create a temporary folder
             cls.imageset_folder = tempfile.mkdtemp()
-            for i in xrange(num_images):
+            for i in range(num_images):
                 image_width = np.random.randint(low=8, high=32)
                 image_height = np.random.randint(low=8, high=32)
                 x = np.random.randint(
@@ -207,9 +207,9 @@ class GenericViewsTest(BaseViewsTest):
 
     def test_page_dataset_new(self):
         rv = self.app.get('/datasets/generic/new/%s' % self.EXTENSION_ID)
-        print rv.data
+        print(rv.get_data(as_text=True))
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        assert extensions.data.get_extension(self.EXTENSION_ID).get_title() in rv.data, 'unexpected page format'
+        assert extensions.data.get_extension(self.EXTENSION_ID).get_title() in rv.get_data(as_text=True), 'unexpected page format'
 
     def test_nonexistent_dataset(self):
         assert not self.dataset_exists('foo'), "dataset shouldn't exist"
@@ -264,7 +264,7 @@ class GenericCreationTest(BaseViewsTestWithDataset):
         assert self.dataset_wait_completion(job1_id) == 'Done', 'first job failed'
         rv = self.app.get('/datasets/%s/json' % job1_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content1 = json.loads(rv.data)
+        content1 = json.loads(rv.get_data(as_text=True))
 
         # Clone job1 as job2
         options_2 = {
@@ -275,7 +275,7 @@ class GenericCreationTest(BaseViewsTestWithDataset):
         assert self.dataset_wait_completion(job2_id) == 'Done', 'second job failed'
         rv = self.app.get('/datasets/%s/json' % job2_id)
         assert rv.status_code == 200, 'json load failed with %s' % rv.status_code
-        content2 = json.loads(rv.data)
+        content2 = json.loads(rv.get_data(as_text=True))
 
         # These will be different
         content1.pop('id')
@@ -298,7 +298,7 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
     def test_index_json(self):
         rv = self.app.get('/index/json')
         assert rv.status_code == 200, 'page load failed with %s' % rv.status_code
-        content = json.loads(rv.data)
+        content = json.loads(rv.get_data(as_text=True))
         found = False
         for d in content['datasets']:
             if d['id'] == self.dataset_id:
@@ -318,7 +318,7 @@ class GenericCreatedTest(BaseViewsTestWithDataset):
         assert status == 200, 'failed with %s' % status
         rv = self.app.get('/datasets/summary?job_id=%s' % self.dataset_id)
         assert rv.status_code == 200
-        assert 'new name' in rv.data
+        assert 'new name' in rv.get_data(as_text=True)
 
     def test_edit_notes(self):
         status = self.edit_job(

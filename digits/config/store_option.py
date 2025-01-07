@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 import os
-from urlparse import urlparse
+from urllib import parse
 
 from . import option_list
 
@@ -14,7 +14,7 @@ def validate(value):
     if isinstance(value, str):
         url_list = value.split(',')
         for url in url_list:
-            if url is not None and urlparse(url).scheme != "" and not os.path.exists(url):
+            if url is not None and parse.urlparse(url).scheme != "" and not os.path.exists(url):
                 valid_url_list.append(url)
             else:
                 raise ValueError('"%s" is not a valid URL' % url)

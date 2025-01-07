@@ -4,7 +4,7 @@ from collections import Counter
 import os.path
 import shutil
 import tempfile
-import Queue
+import queue
 
 import nose.tools
 import numpy as np
@@ -42,10 +42,10 @@ class BaseTest():
         cls.pil_image_gray.save(cls.gray_image_file[1])
 
         cls.image_count = 0
-        for i in xrange(3):
-            for j in xrange(3):
-                os.write(cls.good_file[0], '%s %s\n' % (cls.color_image_file[1], i))
-                os.write(cls.good_file[0], '%s %s\n' % (cls.gray_image_file[1], i))
+        for i in range(3):
+            for j in range(3):
+                os.write(cls.good_file[0], ('%s %s\n' % (cls.color_image_file[1], i)).encode("utf-8"))
+                os.write(cls.good_file[0], ('%s %s\n' % (cls.gray_image_file[1], i)).encode('utf-8'))
                 cls.image_count += 2
 
     @classmethod
@@ -69,21 +69,21 @@ class TestFillLoadQueue(BaseTest):
             yield self.check_valid_file, shuffle
 
     def check_valid_file(self, shuffle):
-        queue = Queue.Queue()
-        result = create_db._fill_load_queue(self.good_file[1], queue, shuffle)
+        queue_ = queue.Queue()
+        result = create_db._fill_load_queue(self.good_file[1], queue_, shuffle)
         assert result == self.image_count, 'lines not added'
-        assert queue.qsize() == self.image_count, 'queue not full'
+        assert queue_.qsize() == self.image_count, 'queue not full'
 
     def test_empty_file(self):
         for shuffle in True, False:
             yield self.check_empty_file, shuffle
 
     def check_empty_file(self, shuffle):
-        queue = Queue.Queue()
+        queue_ = queue.Queue()
         nose.tools.assert_raises(
             create_db.BadInputFileError,
             create_db._fill_load_queue,
-            self.empty_file[1], queue, shuffle)
+            self.empty_file[1], queue_, shuffle)
 
 
 class TestParseLine():

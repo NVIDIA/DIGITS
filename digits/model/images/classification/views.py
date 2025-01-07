@@ -23,6 +23,7 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
+from digits.job import Job
 blueprint = flask.Blueprint(__name__, __name__)
 
 """
@@ -40,7 +41,7 @@ def read_image_list(image_list, image_folder, num_test_images):
             continue
 
         # might contain a numerical label at the end
-        match = re.match(r'(.*\S)\s+(\d+)$', line)
+        match = re.match(r'(.*\S)\s+(\d+)$', line.decode('utf-8'))
         if match:
             path = match.group(1)
             ground_truth = int(match.group(2))
@@ -131,7 +132,7 @@ def create():
     add_learning_rate = len(form.learning_rate.data) > 1
 
     # Add swept batch_size
-    sweeps = [dict(s.items() + [('batch_size', bs)]) for bs in form.batch_size.data for s in sweeps[:]]
+    sweeps = [{**s, **{'batch_size': bs}} for bs in form.batch_size.data for s in sweeps[:]]
     add_batch_size = len(form.batch_size.data) > 1
     n_jobs = len(sweeps)
 
@@ -309,6 +310,7 @@ def create():
                 rms_decay=form.rms_decay.data,
                 shuffle=form.shuffle.data,
                 data_aug=data_aug,
+                blob_format=form.nvcaffe_blob_format.data,
             )
             )
 
@@ -586,7 +588,7 @@ def classify_many():
             top1_accuracy = round(100.0 * n_top1_accurate / n_ground_truth, 2)
             top5_accuracy = round(100.0 * n_top5_accurate / n_ground_truth, 2)
             per_class_accuracy = []
-            for x in xrange(n_labels):
+            for x in range(n_labels):
                 n_examples = sum(confusion_matrix[x])
                 per_class_accuracy.append(
                     round(100.0 * confusion_matrix[x, x] / n_examples, 2) if n_examples > 0 else None)
@@ -689,9 +691,9 @@ def top_n():
         images_per_category = min(top_n, len(images))
         # Can't have more categories than the number of labels or the number of outputs
         n_categories = min(indices.shape[1], len(labels))
-        for i in xrange(n_categories):
+        for i in range(n_categories):
             result_images = []
-            for j in xrange(images_per_category):
+            for j in range(images_per_category):
                 result_images.append(images[indices[j][i]])
             results.append((
                 labels[i],
@@ -712,7 +714,7 @@ def get_datasets():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationDatasetJob) and
          (j.status.is_running() or j.status == Status.DONE)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
@@ -732,7 +734,7 @@ def get_default_standard_network():
 def get_previous_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
@@ -740,7 +742,7 @@ def get_previous_networks():
 def get_previous_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, ImageClassificationModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
@@ -760,7 +762,7 @@ def get_previous_network_snapshots():
 def get_pretrained_networks():
     return [(j.id(), j.name()) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]
 
@@ -768,6 +770,6 @@ def get_pretrained_networks():
 def get_pretrained_networks_fulldetails():
     return [(j) for j in sorted(
         [j for j in scheduler.jobs.values() if isinstance(j, PretrainedModelJob)],
-        cmp=lambda x, y: cmp(y.id(), x.id())
+        key=Job.id
     )
     ]

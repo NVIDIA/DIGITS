@@ -189,7 +189,7 @@ def average_head_keys(tags, vals):
             sums[a] += b
             nums[a] += 1
     tags_clean = sums.keys()
-    return tags_clean, np.asarray(sums.values())/np.asarray(nums.values())
+    return tags_clean, np.asarray(list(sums.values()))/np.asarray(list(nums.values()))
 
 
 def summary_to_lists(summary_str):

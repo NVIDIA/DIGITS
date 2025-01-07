@@ -26,8 +26,8 @@ try:
     if not os.path.exists(value):
         os.makedirs(value)
 except:
-    print '"%s" is not a valid value for jobs_dir.' % value
-    print 'Set the envvar DIGITS_JOBS_DIR to fix your configuration.'
+    print('"%s" is not a valid value for jobs_dir.' % value)
+    print('Set the envvar DIGITS_JOBS_DIR to fix your configuration.')
     raise
 
 

@@ -10,7 +10,7 @@ def test_tf_import():
     try:
         import tensorflow  # noqa
         return True
-    except (ImportError, TypeError):
+    except ImportError:
         return False
 
 tf_enabled = test_tf_import()

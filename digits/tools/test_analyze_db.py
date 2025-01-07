@@ -9,9 +9,7 @@ import numpy as np
 
 from . import analyze_db
 from digits import test_utils
-
-# Must import after importing digits.config
-import caffe.io
+from digits.dataset.datum import array_to_datum
 
 
 test_utils.skipIfNotFramework('none')
@@ -27,14 +25,14 @@ class BaseTestWithDB(object):
     def setUpClass(cls):
         cls._data_dir = tempfile.mkdtemp()
         cls.db = lmdb.open(os.path.join(cls._data_dir, 'db'))
-        for i in xrange(2):
+        for i in range(2):
             if cls.SAME_SHAPE:
                 width = 10
             else:
                 width = 10 + i
             datum = cls.create_datum(10, width, 3)
             with cls.db.begin(write=True) as txn:
-                txn.put(str(i), datum.SerializeToString())
+                txn.put(str(i).encode('utf-8'), datum.SerializeToString())
 
     @classmethod
     def tearDownClass(cls):
@@ -47,7 +45,7 @@ class BaseTestWithDB(object):
         Creates a datum with an image of the given shape
         """
         image = np.ones(shape, dtype='uint8')
-        return caffe.io.array_to_datum(image)
+        return array_to_datum(image)
 
     def test_defaults(self):
         assert analyze_db.analyze_db(self.db.path()) == self.PASS_DEFAULTS

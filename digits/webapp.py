@@ -13,6 +13,7 @@ from digits import utils  # noqa
 from digits.utils import filesystem as fs  # noqa
 from digits.utils.store import StoreCache  # noqa
 import digits.scheduler  # noqa
+import binascii
 
 # Create Flask, Scheduler and SocketIO objects
 
@@ -22,7 +23,7 @@ app.config['DEBUG'] = True
 # Disable CSRF checking in WTForms
 app.config['WTF_CSRF_ENABLED'] = False
 # This is still necessary for SocketIO
-app.config['SECRET_KEY'] = os.urandom(12).encode('hex')
+app.config['SECRET_KEY'] = binascii.hexlify(os.urandom(12)).decode()
 app.url_map.redirect_defaults = False
 app.config['URL_PREFIX'] = url_prefix
 socketio = SocketIO(app, async_mode='gevent', path=url_prefix+'/socket.io')
@@ -34,8 +35,13 @@ scheduler = digits.scheduler.Scheduler(config_value('gpu_list'), True)
 
 app.jinja_env.globals['server_name'] = config_value('server_name')
 app.jinja_env.globals['server_version'] = digits.__version__
-app.jinja_env.globals['caffe_version'] = config_value('caffe')['version']
-app.jinja_env.globals['caffe_flavor'] = config_value('caffe')['flavor']
+if config_value('caffe')['loaded']:
+    app.jinja_env.globals['caffe_version'] = config_value('caffe')['version']
+    app.jinja_env.globals['caffe_flavor'] = config_value('caffe')['flavor']
+else:
+    app.jinja_env.globals['caffe_version'] = 'Unavailable'
+    app.jinja_env.globals['caffe_flavor'] = 'Unavailable'
+
 app.jinja_env.globals['dir_hash'] = fs.dir_hash(
     os.path.join(os.path.dirname(digits.__file__), 'static'))
 app.jinja_env.filters['print_time'] = utils.time_filters.print_time
@@ -94,7 +100,7 @@ def username_decorator(f):
         return f(*args, **kwargs)
     return decorated
 
-for endpoint, function in app.view_functions.iteritems():
+for endpoint, function in app.view_functions.items():
     app.view_functions[endpoint] = username_decorator(function)
 
 # Setup the environment

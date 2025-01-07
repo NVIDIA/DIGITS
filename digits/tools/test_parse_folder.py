@@ -179,13 +179,13 @@ class TestCalculatePercentages():
         mock_output.return_value = True
 
         permutes = itertools.combinations(['train', 'val', 'test'], 2)
-        expected_outputs = itertools.izip(permutes, itertools.repeat((32, 68)))
+        expected_outputs = zip(permutes, itertools.repeat((32, 68)))
 
         for supplied, expected in expected_outputs:
             args = {k: None for k in ['labels_file', 'train_file', 'percent_train',
                                       'val_file', 'percent_val', 'test_file', 'percent_test']}
             args.update({k + '_file': '' for k in supplied})
-            args.update({'percent_' + k: v for k, v in itertools.izip(supplied, expected)})
+            args.update({'percent_' + k: v for k, v in zip(supplied, expected)})
 
             # Tricky line. itertools returns combinations in sorted order, always.
             # The order of the returned non-zero values should always be correct.
