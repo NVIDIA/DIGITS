@@ -1,10 +1,10 @@
 # DIGITS
 
-[![Build Status](https://travis-ci.org/NVIDIA/DIGITS.svg?branch=master)](https://travis-ci.org/NVIDIA/DIGITS)
-
 DIGITS (the **D**eep Learning **G**PU **T**raining **S**ystem) is a webapp for training deep learning models.
-The currently supported frameworks are: Caffe, Torch, and Tensorflow.
 
+_**Note:** We are no longer adding features, fixing bugs, or supporting the NVIDIA Deep Learning GPU Training System (DIGITS) software. You may continue to use the software if it meets your needs. However:_
+* _For developers creating vision AI applications, we suggest NVIDIA TAO, an open source toolkit for AI model training and customization. Learn more about [NVIDIA TAO](https://developer.nvidia.com/tao-toolkit)._
+* _For developers interested in NVIDIA Project DIGITS, to learn more, visit [NVIDIA Project DIGITS](https://www.nvidia.com/en-us/project-digits/)._
 
 # Feedback
 In addition to submitting pull requests, feel free to submit and vote on feature requests via [our ideas portal]( https://nvdigits.ideas.aha.io/).
@@ -12,7 +12,7 @@ In addition to submitting pull requests, feel free to submit and vote on feature
 
 # Documentation
 
-Current and most updated document is availabel at
+Current and most updated document is available at
  [NVIDIA Accelerated Computing, Deep Learning Documentation, NVIDIA DIGITS](https://docs.nvidia.com/deeplearning/digits/index.html).
 
 
