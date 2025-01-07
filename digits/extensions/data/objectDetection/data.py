@@ -35,7 +35,7 @@ class DataIngestion(DataIngestionInterface):
             s = StringIO.StringIO(self.custom_classes)
             reader = csv.reader(s)
             self.class_mappings = {}
-            for idx, name in enumerate(reader.next()):
+            for idx, name in enumerate(next(reader)):
                 self.class_mappings[name.strip().lower()] = idx
         else:
             self.class_mappings = None
