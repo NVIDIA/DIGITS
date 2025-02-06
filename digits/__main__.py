@@ -3,6 +3,7 @@
 import argparse
 import os.path
 import sys
+import signal
 
 
 # Update PATH to include the local DIGITS directory
@@ -15,6 +16,8 @@ for p in sys.path:
 if not found_parent_dir:
     sys.path.insert(0, PARENT_DIR)
 
+# Install default signal handler for SIGINT
+signal.signal(signal.SIGINT, signal.default_int_handler)
 
 def main():
     parser = argparse.ArgumentParser(description='DIGITS server')
