@@ -1,5 +1,9 @@
 # DIGITS NGINX site
 
+upstream digits {
+        server localhost:34448;
+}
+
 server {
     listen 80; #AUTOCONFIG port (DO NOT DELETE THIS LINE)
 
@@ -7,7 +11,7 @@ server {
     location / {
         client_max_body_size 500M; # Increase this if you receive error 413
 
-        proxy_pass http://127.0.0.1:34448;
+        proxy_pass http://digits;
         proxy_redirect off;
 
         proxy_set_header Host $host:$server_port;
@@ -20,7 +24,7 @@ server {
 
     # Socketio
     location /socket.io {
-        proxy_pass http://127.0.0.1:34448/socket.io;
+        proxy_pass http://digits;
         proxy_redirect off;
         proxy_buffering off;
 
