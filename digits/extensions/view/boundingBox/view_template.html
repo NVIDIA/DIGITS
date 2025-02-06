@@ -15,11 +15,13 @@
             style="max-width:100%;"
             resize></canvas>
     <p align="center">
-        <span ng-repeat="(key, boxes) in bboxes">
-            <span ng-if="boxes.length > 0" style="display:inline-block;">
-                <span style="display:inline-block; width:10px;height:10px;border:1px solid #000; background-color: {[get_color($index)]}"></span>
-                <span style="display:inline-block; padding-right:10px">{[key]}</span>
-            </span>
+      <span ng-repeat="(idx,boxobj) in bboxes">
+	<span ng-repeat="(key,boxes) in boxobj">
+          <span ng-if="boxes!='null'" style="display:inline-block;">
+            <span style="display:inline-block; width:10px;height:10px;border:1px solid #000; background-color: {[get_color(idx)]}"></span>
+	    <span style="display:inline-block; padding-right:10px">{[key]}</span>
+	  </span>
         </span>
+      </span>
     </p>
 </div>

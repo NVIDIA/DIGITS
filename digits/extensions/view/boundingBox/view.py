@@ -114,15 +114,21 @@ class Visualization(VisualizationInterface):
 
         # create arrays in expected format
         keys = inference_data.keys()
-        bboxes = dict(zip(keys, [[] for x in range(0, len(keys))]))
+        bboxes = []
         for key, outputs in inference_data.items():
+            added = False
             # last number is confidence
-            bboxes[key] = [list(o) for o in outputs if o[-1] > 0]
-            self.bbox_count += len(bboxes[key])
+            for o in outputs:
+                if o[-1]>0:
+                    bboxes.append({key: list(o)})
+                    self.bbox_count += 1
+                    added = True
+            if not added:
+                bboxes.append({key: "null"})
         image_html = digits.utils.image.embed_image_html(image)
 
         return {
             'image': image_html,
-            'bboxes': bboxes,
+            'bboxes': sorted(bboxes),
             'index': self.image_count,
         }

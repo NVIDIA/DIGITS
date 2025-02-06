@@ -40,7 +40,7 @@
  };
 
  // Add a bounding box draw method to the canvas
- CanvasRenderingContext2D.prototype.draw_bbox = function(bbox, color, opacity) {
+     CanvasRenderingContext2D.prototype.draw_bbox = function(bbox, color, opacity) {
      this.globalAlpha = opacity;
      this.fillStyle = color;
      this.fillRect(bbox[0],
@@ -147,7 +147,7 @@
 
      // Draw the image and the bounding boxes with line_width and desaturated by desaturation.
      $scope.draw_bboxes = function(image, bboxes) {
-         var canvas = document.getElementById($scope.canvas_id);
+	 var canvas = document.getElementById($scope.canvas_id);
          var context = canvas.getContext('2d'); 
          
          // first set the size of the canvas
@@ -171,14 +171,11 @@
          // rectangle fill opacity
          var opacity = $rootScope.storage.opacity / 100.0;
 
-         // draw the bounding boxes
-         var keys = Object.keys(bboxes);
-         keys.sort();
-         for (var k = 0; k < keys.length; k++) {
-             var color = $scope.get_color(k);
-             for (var i = 0; i < bboxes[keys[k]].length; i++) {
-                 context.draw_bbox(bboxes[keys[k]][i], color, opacity);
-             }
+	 // draw the bounding boxes
+         for (var b = 0; b < bboxes.length; b++) {
+             var color = $scope.get_color(b);
+	     var key = Object.keys(bboxes[b])[0];
+	     context.draw_bbox(bboxes[b][key], color, opacity);
          }
      }
 
