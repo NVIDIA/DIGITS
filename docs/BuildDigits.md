@@ -43,7 +43,7 @@ Follow [these instructions](BuildCaffe.md) to build Caffe (**required**).
 
 Follow [these instructions](BuildTorch.md) to build Torch7 (*suggested*).
 
-Follow [these instructions](BuildTensorflow.md) to build Tensorflow (*suggseted*).
+Follow [these instructions](BuildTensorflow.md) to build Tensorflow (*suggested*).
 
 ## Download source
 
