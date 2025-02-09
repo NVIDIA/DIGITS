@@ -49,6 +49,11 @@ After that compiler is installed, finish the above python -m pip install command
 
 At this moment, do not install gevent yet.  We need to install it after installing DIGITS.
 
+However, these .whl installation method is no longer recommended. This is due to the vesion of the python packages supported by digits such as specified in the requirements.txt file (~\digits\requirements.txt) are nomlonger hosted there. Therefore, it's much better to install it via Conda. Follow the instructions at https://conda.io/docs/user-guide/install/windows.html . During installation , please configure that anaconda is added to PATH and is recognized as a pythonpath. 
+Afterwards, intall the python packages according to the requirements.txt file by using the 
+conda install (packagename)=(packageversion)
+command in CMD, running as administrator. That way, it's simpler and you would be able to install the suitable version. 
+
 ### CUDA 7.5
 CUDA 7.5 can be obtained at NVIDIA CUDA (https://developer.nvidia.com/cuda-downloads).
 Please select Windows 7 to download.
