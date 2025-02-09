@@ -22,7 +22,7 @@ We will train an image segmentation neural network and learn how to implement a 
 We will also see how transfer learning can help in cases where the dataset is too small to reach the desired accuracy.
 Lastly, we will see how a finer segmentation model helps address the issue of coarse segmentation contours.
 
-We will use the [Sunnybrook Left Ventricle Segmentation Challenge Dataset](http://smial.sri.utoronto.ca/LV_Challenge/) to train a neural network to segment the Left Ventricle out of MRI images.
+We will use the [Sunnybrook Left Ventricle Segmentation Challenge Dataset](http://www.cardiacatlas.org/studies/sunnybrook-cardiac-data/) to train a neural network to segment the Left Ventricle out of MRI images.
 The dataset was originally published in:
 
 > Radau P, Lu Y, Connelly K, Paul G, Dick AJ, Wright GA. “Evaluation Framework for Algorithms Segmenting Short Axis Cardiac MRI.” The MIDAS Journal – Cardiac MR Left Ventricle Segmentation Challenge, http://hdl.handle.net/10380/3070
